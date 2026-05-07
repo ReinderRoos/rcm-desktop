@@ -1,0 +1,92 @@
+from __future__ import annotations
+
+from typing import Any
+
+from rcm_core.models import EffectKlasse, Faalwijze, PBSItem, PMTask
+
+
+ENTITY_SCHEMAS: dict[str, dict[str, Any]] = {
+    "pbs": {
+        "title": "PBS-items",
+        "store_key": "pbs_items",
+        "class": PBSItem,
+        "key_field": "pbs_id",
+        "required_fields": ["pbs_id", "object_naam", "element_naam", "bouwdeel_naam"],
+        "field_types": {
+            "pbs_id": "str",
+            "object_naam": "str",
+            "element_naam": "str",
+            "bouwdeel_naam": "str",
+            "component_naam": "str",
+            "multiplicity": "int",
+            "ontwerpleeftijd_jaar": "float",
+            "bouwjaar": "int",
+            "parent_pbs_id": "str",
+            "library_ref": "str",
+            "notes": "str",
+            "aanname_leeftijd": "str",
+            "aanname_multipliciteit": "str",
+        },
+        "fk_rules": {"parent_pbs_id": "pbs"},
+    },
+    "faalwijzes": {
+        "title": "Faalwijzen",
+        "store_key": "faalwijzes",
+        "class": Faalwijze,
+        "key_field": "fm_id",
+        "required_fields": ["fm_id", "pbs_id", "failure_type", "mttf_jaar"],
+        "field_types": {
+            "fm_id": "str",
+            "pbs_id": "str",
+            "functie_id": "str",
+            "faalwijze_omschrijving": "str",
+            "failure_type": "str",
+            "mttf_jaar": "float",
+            "sigma_jaar": "float",
+            "repair_quality": "float",
+            "is_evident": "bool",
+            "p_ongewenste_gebeurtenis": "float",
+            "cost_cm_eur": "float",
+            "library_ref": "str",
+        },
+        "fk_rules": {"pbs_id": "pbs", "functie_id": "functies"},
+    },
+    "pm_tasks": {
+        "title": "PM-taken",
+        "store_key": "pm_tasks",
+        "class": PMTask,
+        "key_field": "pm_id",
+        "required_fields": ["pm_id", "fm_id", "taak_type", "interval_jaar"],
+        "field_types": {
+            "pm_id": "str",
+            "fm_id": "str",
+            "taak_type": "str",
+            "taak_omschrijving": "str",
+            "interval_jaar": "float",
+            "cost_eur": "float",
+            "causes_unavailability": "bool",
+            "unavailability_fraction": "float",
+            "task_group_id": "str",
+            "library_ref": "str",
+        },
+        "fk_rules": {"fm_id": "faalwijzes", "task_group_id": "task_groups"},
+    },
+    "effect_klassen": {
+        "title": "Effectklassen",
+        "store_key": "effect_klassen",
+        "class": EffectKlasse,
+        "key_field": "klasse_id",
+        "required_fields": ["klasse_id", "omschrijving"],
+        "field_types": {
+            "klasse_id": "str",
+            "omschrijving": "str",
+            "functie_id": "str",
+            "categorie": "str",
+            "notes": "str",
+            "cost_gevolg_eur": "float",
+            "aanname_gevolg_kosten": "str",
+        },
+        "fk_rules": {"functie_id": "functies"},
+    },
+}
+
