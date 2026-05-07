@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from PySide6.QtCore import Qt, QSortFilterProxyModel
+from PySide6.QtCore import QModelIndex, Qt, QSortFilterProxyModel
 from PySide6.QtWidgets import (
     QFileDialog,
     QFormLayout,
@@ -18,18 +18,30 @@ from PySide6.QtWidgets import (
     QPlainTextEdit,
     QToolButton,
     QTableView,
+    QTreeView,
     QVBoxLayout,
     QWidget,
 )
 
 from rcm_desktop import messages
+from rcm_desktop.adapter.faalwijzen_edit_service import (
+    FaalwijzenEditService,
+    FaalwijzenMaterializeBlockedError,
+    SLICE_FIELD_KEYS,
+)
+from rcm_desktop.adapter.faalwijzen_table_model import (
+    FaalwijzenFkDelegate,
+    FaalwijzenTableModel,
+)
 from rcm_desktop.adapter.fm_results_table_model import FMResultsTableModel, RAW_ROLE
 from rcm_desktop.adapter.pbs_results_table_model import PBSResultsTableModel
+from rcm_desktop.adapter.pbs_results_tree_model import PBSResultsTreeModel
 from rcm_desktop.adapter.project_paths import resolve_default_fixture_path
 from rcm_desktop.adapter.preview_service import ProjectPreview
 from rcm_desktop.adapter.run_runner import RunRunner
 from rcm_desktop.adapter.run_service import RunResult
 from rcm_desktop.adapter.validate_runner import ValidateRunner
+from rcm_desktop.adapter.result_view_service import build_pbs_tree
 from rcm_desktop.adapter.validate_service import DetailItem, ValidateResult, UserFacingError
 from rcm_desktop.app_state import AppState
 from rcm_desktop.formatting import format_eur, format_float, format_int
@@ -51,8 +63,11 @@ class ValidateWindow(QMainWindow):
         self._run_runner.result_ready.connect(self._on_run_result_ready)
         self._state.result_changed.connect(self._render_result)
         self._state.preview_changed.connect(self._render_preview)
-        self._state.project_changed.connect(lambda _project: self._update_run_button_enabled())
+        self._state.project_changed.connect(self._on_state_project_changed)
         self._state.run_changed.connect(self._render_run_result)
+
+        self._faalwijzen_edit = FaalwijzenEditService()
+        self._faalwijzen_model: FaalwijzenTableModel | None = None
 
         self.path_input = QLineEdit()
         self.path_input.setPlaceholderText("Pad naar projectbestand (*.rcm.json)")
@@ -97,6 +112,13 @@ class ValidateWindow(QMainWindow):
         run_values.addRow(messages.RUN_LABEL_TOTAL_COST_EUR, self.run_total_cost_value)
         run_layout.addLayout(run_values)
         self.run_group.setVisible(False)
+        self.faalwijzen_group = QGroupBox(messages.FAALWIJZEN_EDIT_GROUP_TITLE)
+        faal_layout = QVBoxLayout(self.faalwijzen_group)
+        self.faalwijzen_table = QTableView()
+        self.faalwijzen_table.setSortingEnabled(False)
+        self.faalwijzen_table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+        faal_layout.addWidget(self.faalwijzen_table)
+        self.faalwijzen_group.setVisible(False)
         self.result_table_group = QGroupBox(messages.FM_RESULTS_GROUP_TITLE)
         result_table_layout = QVBoxLayout(self.result_table_group)
         self.result_table = QTableView()
@@ -116,6 +138,10 @@ class ValidateWindow(QMainWindow):
         self.pbs_table_proxy.setSortRole(RAW_ROLE)
         self.pbs_table.setModel(self.pbs_table_proxy)
         pbs_table_layout.addWidget(self.pbs_table)
+        self.pbs_tree = QTreeView()
+        self.pbs_tree.setSortingEnabled(False)
+        self.pbs_tree.header().setSectionResizeMode(QHeaderView.Stretch)
+        pbs_table_layout.addWidget(self.pbs_tree)
         self.pbs_table_group.setVisible(False)
         self.details_toggle = QToolButton()
         self.details_toggle.setText("Toon details")
@@ -144,12 +170,49 @@ class ValidateWindow(QMainWindow):
         outer.addWidget(self.summary_label)
         outer.addWidget(self.preview_group)
         outer.addWidget(self.run_group)
+        outer.addWidget(self.faalwijzen_group)
         outer.addWidget(self.result_table_group)
         outer.addWidget(self.pbs_table_group)
         outer.addWidget(self.details_toggle)
         outer.addWidget(self.details_text)
         self.setCentralWidget(root)
-        self.resize(760, 440)
+        self.resize(760, 520)
+
+    def _on_state_project_changed(self, _project: object) -> None:
+        self._sync_faalwijzen_panel()
+        self._update_run_button_enabled()
+
+    def _tear_down_faalwijzen_panel(self) -> None:
+        self._faalwijzen_edit.bind_changed(None)
+        self._faalwijzen_model = None
+        self.faalwijzen_table.setModel(None)
+        self.faalwijzen_group.setVisible(False)
+        self._faalwijzen_edit.clear()
+
+    def _sync_faalwijzen_panel(self) -> None:
+        validation_ok = (
+            self._state.last_result is not None
+            and self._state.last_result.status in {"valid", "valid_with_warnings"}
+        )
+        project = self._state.last_project
+        if validation_ok and project is not None:
+            self._faalwijzen_edit.reset(project)
+            self._faalwijzen_edit.bind_changed(self._on_faalwijzen_edit_changed)
+            self._faalwijzen_model = FaalwijzenTableModel(self._faalwijzen_edit, project, parent=self)
+            self.faalwijzen_table.setModel(self._faalwijzen_model)
+            functie_col = SLICE_FIELD_KEYS.index("functie_id")
+            self.faalwijzen_table.setItemDelegateForColumn(
+                functie_col,
+                FaalwijzenFkDelegate(project, self.faalwijzen_table),
+            )
+            self.faalwijzen_group.setVisible(True)
+        else:
+            self._tear_down_faalwijzen_panel()
+
+    def _on_faalwijzen_edit_changed(self) -> None:
+        if self._faalwijzen_model is not None:
+            self._faalwijzen_model.emit_grid_refresh()
+        self._update_run_button_enabled()
 
     def _set_default_fixture_path(self) -> None:
         default_path = resolve_default_fixture_path()
@@ -186,7 +249,7 @@ class ValidateWindow(QMainWindow):
         self.details_text.setVisible(False)
         self._state.set_last_preview(None)
 
-    def _clear_run_view(self) -> None:
+    def _clear_run_output_only(self) -> None:
         self.run_group.setVisible(False)
         self._clear_result_table()
         self._clear_pbs_table()
@@ -198,6 +261,10 @@ class ValidateWindow(QMainWindow):
         self._state.set_last_run(None)
         self._update_run_button_enabled()
 
+    def _clear_run_view(self) -> None:
+        self._clear_run_output_only()
+        self._tear_down_faalwijzen_panel()
+
     def _clear_result_table(self) -> None:
         self.result_table_group.setVisible(False)
         self.result_table_proxy.setSourceModel(None)
@@ -206,6 +273,7 @@ class ValidateWindow(QMainWindow):
         self.pbs_table_group.setVisible(False)
         self.pbs_table_proxy.setSourceModel(None)
         self.pbs_table.horizontalHeader().setSortIndicator(-1, Qt.AscendingOrder)
+        self.pbs_tree.setModel(None)
 
     def _on_runner_state_changed(self, state: str) -> None:
         if state == "busy":
@@ -230,12 +298,20 @@ class ValidateWindow(QMainWindow):
             self._state.set_last_project(None)
         else:
             self._state.set_last_project(project)
-        self._update_run_button_enabled()
 
     def _start_run(self) -> None:
         path = self.path_input.text().strip()
-        self._clear_run_view()
-        started = self._run_runner.start(self._state.last_project, path)
+        project = self._state.last_project
+        if self._faalwijzen_edit.is_active():
+            try:
+                project = self._faalwijzen_edit.materialize_for_run()
+            except FaalwijzenMaterializeBlockedError as exc:
+                self._show_run_error(
+                    UserFacingError(code="EDIT_VALIDATION_BLOCKED", message=str(exc)),
+                )
+                return
+        self._clear_run_output_only()
+        started = self._run_runner.start(project, path)
         if started:
             self.run_button.setEnabled(False)
 
@@ -302,6 +378,12 @@ class ValidateWindow(QMainWindow):
             self.pbs_table_proxy.setSourceModel(pbs_model)
             self.pbs_table_group.setVisible(True)
             self.pbs_table.horizontalHeader().setSortIndicator(-1, Qt.AscendingOrder)
+            tree_roots = build_pbs_tree(run_result.pbs_rows)
+            tree_model = PBSResultsTreeModel(tree_roots, self.pbs_tree)
+            self.pbs_tree.setModel(tree_model)
+            root_index = QModelIndex()
+            for i in range(tree_model.rowCount(root_index)):
+                self.pbs_tree.expand(tree_model.index(i, 0, root_index))
         else:
             self._clear_pbs_table()
         if run_result.error is not None:
@@ -313,7 +395,13 @@ class ValidateWindow(QMainWindow):
             self._state.last_result is not None
             and self._state.last_result.status in {"valid", "valid_with_warnings"}
         )
-        can_run = validation_ok and self._state.last_project is not None and not self._run_runner.busy
+        edit_blocks = self._faalwijzen_edit.is_active() and self._faalwijzen_edit.has_errors()
+        can_run = (
+            validation_ok
+            and self._state.last_project is not None
+            and not self._run_runner.busy
+            and not edit_blocks
+        )
         self.run_button.setEnabled(can_run)
 
     def _on_path_changed(self, _text: str) -> None:

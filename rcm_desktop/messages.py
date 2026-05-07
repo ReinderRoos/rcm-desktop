@@ -42,6 +42,15 @@ PBS_RESULTS_HEADER_FAALMOMENTEN_TOTAL = "Faalmomenten lifecycle (totaal)"
 PBS_RESULTS_HEADER_DOWNTIME_TOTAL_HR = "Downtime (uur, totaal)"
 PBS_RESULTS_HEADER_UNAVAILABILITY_TOTAL = "Niet-beschikbaarheid (%, totaal)"
 PBS_RESULTS_HEADER_COST_TOTAL_EUR = "Totale kosten (EUR, totaal)"
+FAALWIJZEN_EDIT_GROUP_TITLE = "Faalwijzen bewerken"
+FAALWIJZEN_EDIT_HEADER_FM_ID = "FM-id"
+FAALWIJZEN_EDIT_HEADER_PBS_ID = "PBS-id"
+FAALWIJZEN_EDIT_HEADER_OMSCHRIJVING = "Faalwijze (omschrijving)"
+FAALWIJZEN_EDIT_HEADER_FUNCTIE = "Functie-id"
+FAALWIJZEN_EDIT_HEADER_MTTF = "MTTF (jaar)"
+FAALWIJZEN_EDIT_HEADER_SIGMA = "Sigma (jaar)"
+FAALWIJZEN_EDIT_HEADER_COST_CM = "CM-kosten (EUR)"
+FAALWIJZEN_EDIT_HEADER_P_EVENT = "P (ongewenste gebeurtenis)"
 
 
 def status_label(status: str) -> str:

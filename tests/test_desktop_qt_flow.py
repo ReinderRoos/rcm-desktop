@@ -8,9 +8,11 @@ import pytest
 pytest.importorskip("PySide6")
 
 from PySide6.QtTest import QSignalSpy
+from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QApplication, QMessageBox
 
 from rcm_desktop import messages
+from rcm_desktop.adapter.faalwijzen_edit_service import SLICE_FIELD_KEYS
 from rcm_desktop.adapter.project_paths import resolve_default_fixture_path
 from rcm_desktop.adapter.preview_service import ProjectPreview, TopFaalwijze
 from rcm_desktop.adapter.run_runner import RunRunner
@@ -28,6 +30,41 @@ def _ensure_app() -> QApplication:
     if app is None:
         app = QApplication([])
     return app
+
+
+def _spy_count(spy: QSignalSpy) -> int:
+    count_fn = getattr(spy, "count", None)
+    if callable(count_fn):
+        return int(count_fn())
+    return len(spy)
+
+
+def _spy_wait_min(app: QApplication, spy: QSignalSpy, minimum: int = 1, timeout_s: float = 3.0) -> None:
+    deadline = time.time() + timeout_s
+    while _spy_count(spy) < minimum and time.time() < deadline:
+        app.processEvents()
+        time.sleep(0.01)
+
+
+def _spy_emission_args(spy: QSignalSpy, emission_index: int = 0) -> tuple:
+    at = getattr(spy, "at", None)
+    if callable(at):
+        args = at(emission_index)
+        try:
+            return tuple(args[i] for i in range(len(args)))  # type: ignore[arg-type]
+        except Exception:
+            pass
+        try:
+            return tuple(args)
+        except TypeError:
+            return (args,)
+    return tuple(spy[emission_index])
+
+
+def _align_project_path_then_validate_state(window: ValidateWindow, fixture: Path, app: QApplication) -> None:
+    """Match path field to fixture before setting validated project (avoids stale AWZI default path only)."""
+    window.path_input.setText(str(fixture.resolve()))
+    app.processEvents()
 
 
 def test_resolve_default_fixture_path_finds_repo_fixture():
@@ -53,7 +90,7 @@ def test_app_state_keeps_last_result_and_emits_signal():
     app.processEvents()
 
     assert state.last_result == result
-    assert len(spy) == 1
+    assert _spy_count(spy) == 1
 
 
 def test_app_state_keeps_last_preview_and_emits_signal():
@@ -72,7 +109,7 @@ def test_app_state_keeps_last_preview_and_emits_signal():
     app.processEvents()
 
     assert state.last_preview == preview
-    assert len(spy) == 1
+    assert _spy_count(spy) == 1
 
 
 def test_app_state_keeps_last_project_and_emits_signal():
@@ -86,7 +123,7 @@ def test_app_state_keeps_last_project_and_emits_signal():
     app.processEvents()
 
     assert state.last_project == project
-    assert len(spy) == 1
+    assert _spy_count(spy) == 1
 
 
 def test_app_state_keeps_last_run_and_emits_signal():
@@ -107,7 +144,7 @@ def test_app_state_keeps_last_run_and_emits_signal():
     app.processEvents()
 
     assert state.last_run == run_result
-    assert len(spy) == 1
+    assert _spy_count(spy) == 1
 
 
 def test_validate_runner_emits_result_and_rejects_reentry(monkeypatch):
@@ -130,25 +167,26 @@ def test_validate_runner_emits_result_and_rejects_reentry(monkeypatch):
 
     assert runner.start("x.rcm.json") is True
     assert runner.start("x.rcm.json") is False
-    assert results.wait(2000)
-    assert previews.wait(2000)
+    _spy_wait_min(app, results)
+    _spy_wait_min(app, previews)
 
     deadline = time.time() + 2
-    while len(states) < 3 and time.time() < deadline:
+    while _spy_count(states) < 3 and time.time() < deadline:
         app.processEvents()
         time.sleep(0.01)
 
-    assert len(results) == 1
-    assert len(previews) == 1
-    assert len(projects) == 1
-    assert previews[0][0] == preview
-    assert projects[0][0] is not None
-    state_values = [entry[0] for entry in states]
+    assert _spy_count(results) == 1
+    assert _spy_count(previews) == 1
+    assert _spy_count(projects) == 1
+    assert _spy_emission_args(previews, 0)[0] == preview
+    assert _spy_emission_args(projects, 0)[0] is not None
+    state_values = [_spy_emission_args(states, i)[0] for i in range(_spy_count(states))]
     assert "busy" in state_values
     assert "idle" in state_values
 
 
 def test_validate_runner_emits_empty_preview_for_invalid(monkeypatch):
+    app = _ensure_app()
     runner = ValidateRunner()
     result = ValidateResult(status="invalid", summary="bad", details=[])
 
@@ -164,14 +202,16 @@ def test_validate_runner_emits_empty_preview_for_invalid(monkeypatch):
     previews = QSignalSpy(runner.preview_ready)
     projects = QSignalSpy(runner.project_ready)
     assert runner.start("x.rcm.json") is True
-    assert previews.wait(2000)
+    _spy_wait_min(app, previews)
+    _spy_wait_min(app, projects)
 
     assert build_calls["count"] == 0
-    assert previews[0][0] is None
-    assert projects[0][0] is None
+    assert _spy_emission_args(previews, 0)[0] is None
+    assert _spy_emission_args(projects, 0)[0] is None
 
 
 def test_validate_runner_emits_empty_preview_when_project_missing(monkeypatch):
+    app = _ensure_app()
     runner = ValidateRunner()
     result = ValidateResult(status="valid", summary="ok", details=[])
 
@@ -186,10 +226,10 @@ def test_validate_runner_emits_empty_preview_when_project_missing(monkeypatch):
 
     previews = QSignalSpy(runner.preview_ready)
     assert runner.start("x.rcm.json") is True
-    assert previews.wait(2000)
+    _spy_wait_min(app, previews)
 
     assert build_calls["count"] == 0
-    assert previews[0][0] is None
+    assert _spy_emission_args(previews, 0)[0] is None
 
 
 def test_run_runner_emits_result_and_rejects_reentry(monkeypatch):
@@ -212,16 +252,16 @@ def test_run_runner_emits_result_and_rejects_reentry(monkeypatch):
 
     assert runner.start(object(), "x.rcm.json") is True
     assert runner.start(object(), "x.rcm.json") is False
-    assert results.wait(2000)
+    _spy_wait_min(app, results)
 
     deadline = time.time() + 2
-    while len(states) < 3 and time.time() < deadline:
+    while _spy_count(states) < 3 and time.time() < deadline:
         app.processEvents()
         time.sleep(0.01)
 
-    assert len(results) == 1
-    assert results[0][0] == result
-    state_values = [entry[0] for entry in states]
+    assert _spy_count(results) == 1
+    assert _spy_emission_args(results, 0)[0] == result
+    state_values = [_spy_emission_args(states, i)[0] for i in range(_spy_count(states))]
     assert "busy" in state_values
     assert "idle" in state_values
 
@@ -230,13 +270,17 @@ def test_validate_window_run_button_and_panel_flow(monkeypatch):
     app = _ensure_app()
     monkeypatch.setattr(QMessageBox, "critical", lambda *_args, **_kwargs: QMessageBox.Ok)
     window = ValidateWindow()
+    fixture = Path("tests/fixtures/sample_project.rcm.json")
+    _align_project_path_then_validate_state(window, fixture, app)
+    window.show()
 
     assert window.run_button.isEnabled() is False
     window._state.set_last_result(ValidateResult(status="valid", summary="ok", details=[]))
-    fixture = Path("tests/fixtures/sample_project.rcm.json")
     window._state.set_last_project(load_project(fixture))
     app.processEvents()
     assert window.run_button.isEnabled() is True
+    assert window.faalwijzen_group.isVisible() is True
+    assert window.faalwijzen_table.model() is not None
 
     done_result = RunResult(
         status="done",
@@ -280,12 +324,16 @@ def test_validate_window_run_button_and_panel_flow(monkeypatch):
     assert window.result_table_group.isVisible() is True
     assert window.pbs_table_group.isVisible() is True
     assert window.pbs_table.horizontalHeader().sortIndicatorSection() == -1
+    assert window.pbs_tree.model() is not None
 
     window.path_input.setText("nieuw-pad.rcm.json")
     app.processEvents()
     assert window.run_group.isVisible() is False
+    assert window.faalwijzen_group.isVisible() is False
+    assert window.faalwijzen_table.model() is None
     assert window.result_table_group.isVisible() is False
     assert window.pbs_table_group.isVisible() is False
+    assert window.pbs_tree.model() is None
     assert window._state.last_run is None
 
 
@@ -342,6 +390,7 @@ def test_validate_window_hides_pbs_table_for_empty_pbs_rows(monkeypatch):
     app = _ensure_app()
     monkeypatch.setattr(QMessageBox, "critical", lambda *_args, **_kwargs: QMessageBox.Ok)
     window = ValidateWindow()
+    window.show()
     done_result = RunResult(
         status="done",
         summary="klaar",
@@ -365,6 +414,7 @@ def test_validate_window_hides_pbs_table_for_empty_pbs_rows(monkeypatch):
 
     assert window.result_table_group.isVisible() is True
     assert window.pbs_table_group.isVisible() is False
+    assert window.pbs_tree.model() is None
 
 
 def test_validate_window_replaces_previous_result(monkeypatch):
@@ -420,6 +470,7 @@ def test_validate_window_renders_preview_and_clears_on_new_run(monkeypatch):
     app = _ensure_app()
     monkeypatch.setattr(QMessageBox, "critical", lambda *_args, **_kwargs: QMessageBox.Ok)
     window = ValidateWindow()
+    window.show()
     window.path_input.setText("tests/fixtures/sample_project.rcm.json")
 
     preview = ProjectPreview(
@@ -449,6 +500,7 @@ def test_validate_window_hides_existing_preview_on_error_result(monkeypatch):
     app = _ensure_app()
     monkeypatch.setattr(QMessageBox, "critical", lambda *_args, **_kwargs: QMessageBox.Ok)
     window = ValidateWindow()
+    window.show()
 
     preview = ProjectPreview(
         pbs_items=2,
@@ -473,3 +525,96 @@ def test_validate_window_hides_existing_preview_on_error_result(monkeypatch):
 
     assert window.preview_group.isVisible() is False
     assert window.preview_top5_list.count() == 0
+
+
+def _fm_row(model, fm_id: str) -> int:
+    for r in range(model.rowCount()):
+        if model.data(model.index(r, 0), Qt.DisplayRole) == fm_id:
+            return r
+    raise AssertionError(f"missing {fm_id}")
+
+
+def test_validate_window_run_disabled_when_faalwijzen_edit_has_errors(monkeypatch):
+    app = _ensure_app()
+    monkeypatch.setattr(QMessageBox, "critical", lambda *_args, **_kwargs: QMessageBox.Ok)
+    window = ValidateWindow()
+    fixture = Path("tests/fixtures/sample_project.rcm.json")
+    _align_project_path_then_validate_state(window, fixture, app)
+    window.show()
+    window._state.set_last_result(ValidateResult(status="valid", summary="ok", details=[]))
+    window._state.set_last_project(load_project(fixture))
+    app.processEvents()
+    assert window.faalwijzen_group.isVisible() is True
+    model = window.faalwijzen_table.model()
+    row = _fm_row(model, "FM-001")
+    ix = model.index(row, SLICE_FIELD_KEYS.index("mttf_jaar"))
+    model.setData(ix, "0", Qt.EditRole)
+    model.emit_grid_refresh()
+    assert window.run_button.isEnabled() is False
+
+
+def test_validate_window_run_materializes_edited_project(monkeypatch):
+    app = _ensure_app()
+    monkeypatch.setattr(QMessageBox, "critical", lambda *_args, **_kwargs: QMessageBox.Ok)
+    window = ValidateWindow()
+    fixture = Path("tests/fixtures/sample_project.rcm.json")
+    _align_project_path_then_validate_state(window, fixture, app)
+    window.show()
+    window._state.set_last_result(ValidateResult(status="valid", summary="ok", details=[]))
+    window._state.set_last_project(load_project(fixture))
+    app.processEvents()
+
+    model = window.faalwijzen_table.model()
+    row = _fm_row(model, "FM-001")
+    ix = model.index(row, SLICE_FIELD_KEYS.index("mttf_jaar"))
+    model.setData(ix, "77", Qt.EditRole)
+    model.emit_grid_refresh()
+
+    captured: dict[str, object] = {}
+
+    def fake_start(proj: object, path: str) -> bool:
+        captured["project"] = proj
+        captured["path"] = path
+        return True
+
+    monkeypatch.setattr(window._run_runner, "start", fake_start)
+    window._start_run()
+    assert "project" in captured
+    proj = captured["project"]
+    assert proj.faalwijzes["FM-001"].mttf_jaar == pytest.approx(77.0)
+
+
+def test_validate_window_materialize_blocked_shows_modal_and_skips_runner(monkeypatch):
+    app = _ensure_app()
+    msgs: list[str] = []
+
+    def fake_critical(_p, _t, message: str) -> int:
+        msgs.append(message)
+        return QMessageBox.Ok
+
+    monkeypatch.setattr(QMessageBox, "critical", fake_critical)
+    window = ValidateWindow()
+    fixture = Path("tests/fixtures/sample_project.rcm.json")
+    _align_project_path_then_validate_state(window, fixture, app)
+    window.show()
+    window._state.set_last_result(ValidateResult(status="valid", summary="ok", details=[]))
+    window._state.set_last_project(load_project(fixture))
+    app.processEvents()
+
+    model = window.faalwijzen_table.model()
+    row = _fm_row(model, "FM-001")
+    ix = model.index(row, SLICE_FIELD_KEYS.index("mttf_jaar"))
+    model.setData(ix, "0", Qt.EditRole)
+    model.emit_grid_refresh()
+
+    started: list[int] = []
+
+    def fake_start(*_a, **_k) -> bool:
+        started.append(1)
+        return True
+
+    monkeypatch.setattr(window._run_runner, "start", fake_start)
+    window._start_run()
+
+    assert started == []
+    assert msgs
