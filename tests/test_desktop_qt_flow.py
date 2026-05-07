@@ -15,7 +15,7 @@ from rcm_desktop.adapter.project_paths import resolve_default_fixture_path
 from rcm_desktop.adapter.preview_service import ProjectPreview, TopFaalwijze
 from rcm_desktop.adapter.run_runner import RunRunner
 from rcm_desktop.adapter.run_service import RunMetrics, RunResult
-from rcm_desktop.adapter.result_view_service import FMResultRow
+from rcm_desktop.adapter.result_view_service import FMResultRow, PBSResultRow
 from rcm_desktop.adapter.validate_runner import ValidateRunner
 from rcm_desktop.adapter.validate_service import DetailItem, UserFacingError, ValidateResult
 from rcm_desktop.app_state import AppState
@@ -253,6 +253,22 @@ def test_validate_window_run_button_and_panel_flow(monkeypatch):
                 total_cost_eur=1200.0,
             )
         ],
+        pbs_rows=[
+            PBSResultRow(
+                pbs_id="PBS-ROOT",
+                bouwdeel_naam="Root",
+                parent_pbs_id=None,
+                level=0,
+                sort_path=("PBS-ROOT",),
+                expected_failures_self=0.0,
+                total_downtime_hr_self=0.0,
+                total_cost_eur_self=0.0,
+                expected_failures_total=7.0,
+                total_downtime_hr_total=9.5,
+                total_cost_eur_total=1200.0,
+                unavailability_pct_total=1.0,
+            )
+        ],
     )
     window._state.set_last_run(done_result)
     app.processEvents()
@@ -262,11 +278,14 @@ def test_validate_window_run_button_and_panel_flow(monkeypatch):
     assert window.run_total_faalmomenten_value.text() == "9,50"
     assert window.run_total_cost_value.text() == "€ 1.200,00"
     assert window.result_table_group.isVisible() is True
+    assert window.pbs_table_group.isVisible() is True
+    assert window.pbs_table.horizontalHeader().sortIndicatorSection() == -1
 
     window.path_input.setText("nieuw-pad.rcm.json")
     app.processEvents()
     assert window.run_group.isVisible() is False
     assert window.result_table_group.isVisible() is False
+    assert window.pbs_table_group.isVisible() is False
     assert window._state.last_run is None
 
 
@@ -286,6 +305,7 @@ def test_validate_window_shows_run_error_inline_and_modal(monkeypatch):
         summary="kapot",
         metrics=RunMetrics(fm_result_count=0, total_lifecycle_faalmomenten=0.0, total_cost_eur=0.0),
         rows=[],
+        pbs_rows=[],
         error=UserFacingError(code="RUN_INTERNAL_ERROR", message="Analyse intern mislukt"),
     )
 
@@ -294,6 +314,7 @@ def test_validate_window_shows_run_error_inline_and_modal(monkeypatch):
 
     assert window.run_status_value.text() == "Fout"
     assert window.result_table_group.isVisible() is False
+    assert window.pbs_table_group.isVisible() is False
     assert captured["title"] == messages.RUN_ERROR_DIALOG_TITLE
     assert captured["message"] == "Analyse intern mislukt"
 
@@ -307,12 +328,43 @@ def test_validate_window_hides_results_table_for_empty_rows(monkeypatch):
         summary="klaar",
         metrics=RunMetrics(fm_result_count=0, total_lifecycle_faalmomenten=0.0, total_cost_eur=0.0),
         rows=[],
+        pbs_rows=[],
     )
 
     window._state.set_last_run(done_result)
     app.processEvents()
 
     assert window.result_table_group.isVisible() is False
+    assert window.pbs_table_group.isVisible() is False
+
+
+def test_validate_window_hides_pbs_table_for_empty_pbs_rows(monkeypatch):
+    app = _ensure_app()
+    monkeypatch.setattr(QMessageBox, "critical", lambda *_args, **_kwargs: QMessageBox.Ok)
+    window = ValidateWindow()
+    done_result = RunResult(
+        status="done",
+        summary="klaar",
+        metrics=RunMetrics(fm_result_count=1, total_lifecycle_faalmomenten=1.0, total_cost_eur=2.0),
+        rows=[
+            FMResultRow(
+                fm_id="FM-1",
+                faalwijze_omschrijving="omschrijving",
+                pbs_id="PBS-1",
+                bouwdeel_naam="Bouwdeel A",
+                expected_failures=1.0,
+                expected_total_downtime_hr=1.0,
+                total_cost_eur=2.0,
+            )
+        ],
+        pbs_rows=[],
+    )
+
+    window._state.set_last_run(done_result)
+    app.processEvents()
+
+    assert window.result_table_group.isVisible() is True
+    assert window.pbs_table_group.isVisible() is False
 
 
 def test_validate_window_replaces_previous_result(monkeypatch):

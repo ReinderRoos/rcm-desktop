@@ -24,6 +24,7 @@ from PySide6.QtWidgets import (
 
 from rcm_desktop import messages
 from rcm_desktop.adapter.fm_results_table_model import FMResultsTableModel, RAW_ROLE
+from rcm_desktop.adapter.pbs_results_table_model import PBSResultsTableModel
 from rcm_desktop.adapter.project_paths import resolve_default_fixture_path
 from rcm_desktop.adapter.preview_service import ProjectPreview
 from rcm_desktop.adapter.run_runner import RunRunner
@@ -106,6 +107,16 @@ class ValidateWindow(QMainWindow):
         self.result_table.setModel(self.result_table_proxy)
         result_table_layout.addWidget(self.result_table)
         self.result_table_group.setVisible(False)
+        self.pbs_table_group = QGroupBox(messages.PBS_RESULTS_GROUP_TITLE)
+        pbs_table_layout = QVBoxLayout(self.pbs_table_group)
+        self.pbs_table = QTableView()
+        self.pbs_table.setSortingEnabled(True)
+        self.pbs_table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+        self.pbs_table_proxy = QSortFilterProxyModel(self.pbs_table)
+        self.pbs_table_proxy.setSortRole(RAW_ROLE)
+        self.pbs_table.setModel(self.pbs_table_proxy)
+        pbs_table_layout.addWidget(self.pbs_table)
+        self.pbs_table_group.setVisible(False)
         self.details_toggle = QToolButton()
         self.details_toggle.setText("Toon details")
         self.details_toggle.setCheckable(True)
@@ -134,6 +145,7 @@ class ValidateWindow(QMainWindow):
         outer.addWidget(self.preview_group)
         outer.addWidget(self.run_group)
         outer.addWidget(self.result_table_group)
+        outer.addWidget(self.pbs_table_group)
         outer.addWidget(self.details_toggle)
         outer.addWidget(self.details_text)
         self.setCentralWidget(root)
@@ -177,6 +189,7 @@ class ValidateWindow(QMainWindow):
     def _clear_run_view(self) -> None:
         self.run_group.setVisible(False)
         self._clear_result_table()
+        self._clear_pbs_table()
         self.run_status_value.clear()
         self.run_summary_value.clear()
         self.run_fm_result_count_value.setText("0")
@@ -188,6 +201,11 @@ class ValidateWindow(QMainWindow):
     def _clear_result_table(self) -> None:
         self.result_table_group.setVisible(False)
         self.result_table_proxy.setSourceModel(None)
+
+    def _clear_pbs_table(self) -> None:
+        self.pbs_table_group.setVisible(False)
+        self.pbs_table_proxy.setSourceModel(None)
+        self.pbs_table.horizontalHeader().setSortIndicator(-1, Qt.AscendingOrder)
 
     def _on_runner_state_changed(self, state: str) -> None:
         if state == "busy":
@@ -264,6 +282,7 @@ class ValidateWindow(QMainWindow):
         if not isinstance(run_result, RunResult):
             self.run_group.setVisible(False)
             self._clear_result_table()
+            self._clear_pbs_table()
             return
         self.run_group.setVisible(True)
         self.run_status_value.setText(messages.status_label(run_result.status))
@@ -278,6 +297,13 @@ class ValidateWindow(QMainWindow):
             self.result_table.sortByColumn(6, Qt.DescendingOrder)
         else:
             self._clear_result_table()
+        if run_result.status == "done" and run_result.pbs_rows:
+            pbs_model = PBSResultsTableModel(run_result.pbs_rows, self.pbs_table)
+            self.pbs_table_proxy.setSourceModel(pbs_model)
+            self.pbs_table_group.setVisible(True)
+            self.pbs_table.horizontalHeader().setSortIndicator(-1, Qt.AscendingOrder)
+        else:
+            self._clear_pbs_table()
         if run_result.error is not None:
             self._show_run_error(run_result.error)
         self._update_run_button_enabled()

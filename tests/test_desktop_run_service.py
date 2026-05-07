@@ -3,7 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from rcm_core.incremental_run import IncrementalRunResult
-from rcm_core.models import FMResult
+from rcm_core.models import FMResult, PBSResult
 from rcm_core.persistence import load_project
 from rcm_desktop.adapter import run_service
 
@@ -26,15 +26,30 @@ def _fm_result(fm_id: str, expected_failures: float, total_cost_eur: float) -> F
     )
 
 
+def _pbs_result(pbs_id: str, failures: float, downtime: float, cost: float) -> PBSResult:
+    return PBSResult(
+        pbs_id=pbs_id,
+        bouwdeel_naam="Bouwdeel",
+        total_expected_failures=failures,
+        total_downtime_hr=downtime,
+        total_cm_cost_eur=0.0,
+        total_pm_cost_eur=0.0,
+        total_cost_eur=cost,
+        unavailability_pct=0.0,
+        total_risk_contribution=0.0,
+    )
+
+
 def test_run_service_happy_path_maps_metrics_and_status(monkeypatch):
     fixture = Path("tests/fixtures/sample_project.rcm.json")
     project = load_project(fixture)
+    sample_pbs_id = next(iter(project.pbs_items))
     fake_result = IncrementalRunResult(
         fm_results={
             "FM-1": _fm_result("FM-1", expected_failures=1.25, total_cost_eur=100.0),
             "FM-2": _fm_result("FM-2", expected_failures=2.75, total_cost_eur=60.5),
         },
-        pbs_results={},
+        pbs_results={sample_pbs_id: _pbs_result(sample_pbs_id, failures=3.0, downtime=12.0, cost=88.0)},
         cache_only=False,
         affected_fm_ids=[],
         recalculated_fm_count=2,
@@ -53,6 +68,8 @@ def test_run_service_happy_path_maps_metrics_and_status(monkeypatch):
     assert len(result.rows) == 2
     assert result.rows[0].fm_id == "FM-1"
     assert result.rows[0].expected_total_downtime_hr == 1.5
+    assert len(result.pbs_rows) >= 1
+    assert any(row.pbs_id == sample_pbs_id for row in result.pbs_rows)
 
 
 def test_run_service_missing_project_returns_precondition_error():
@@ -63,6 +80,7 @@ def test_run_service_missing_project_returns_precondition_error():
     assert result.error.code == "RUN_PRECONDITION_NOT_MET"
     assert result.metrics.fm_result_count == 0
     assert result.rows == []
+    assert result.pbs_rows == []
 
 
 def test_run_service_maps_unexpected_core_error(monkeypatch):
@@ -82,6 +100,7 @@ def test_run_service_maps_unexpected_core_error(monkeypatch):
     assert result.metrics.total_lifecycle_faalmomenten == 0.0
     assert result.metrics.total_cost_eur == 0.0
     assert result.rows == []
+    assert result.pbs_rows == []
 
 
 def test_run_service_passes_full_recompute_kwarg(monkeypatch):

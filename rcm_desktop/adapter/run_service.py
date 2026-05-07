@@ -5,7 +5,7 @@ from pathlib import Path
 
 from rcm_core.incremental_run import run_incremental_analysis
 from rcm_core.models import RCMProject
-from rcm_desktop.adapter.result_view_service import FMResultRow, build_rows
+from rcm_desktop.adapter.result_view_service import FMResultRow, PBSResultRow, build_pbs_rows, build_rows
 from rcm_desktop.adapter.validate_service import UserFacingError
 
 
@@ -22,6 +22,7 @@ class RunResult:
     summary: str
     metrics: RunMetrics
     rows: list[FMResultRow] = field(default_factory=list)
+    pbs_rows: list[PBSResultRow] = field(default_factory=list)
     error: UserFacingError | None = None
 
 
@@ -38,6 +39,7 @@ def run(
             summary="Run niet gestart: project ontbreekt.",
             metrics=RunMetrics(fm_result_count=0, total_lifecycle_faalmomenten=0.0, total_cost_eur=0.0),
             rows=[],
+            pbs_rows=[],
             error=UserFacingError(
                 code="RUN_PRECONDITION_NOT_MET",
                 message="Start eerst een geldige validate zodat een project geladen is.",
@@ -57,6 +59,7 @@ def run(
             summary="Run mislukt door een interne fout.",
             metrics=RunMetrics(fm_result_count=0, total_lifecycle_faalmomenten=0.0, total_cost_eur=0.0),
             rows=[],
+            pbs_rows=[],
             error=UserFacingError(
                 code="RUN_INTERNAL_ERROR",
                 message="Er ging iets mis tijdens de analyse-run.",
@@ -70,9 +73,11 @@ def run(
         total_cost_eur=sum(item.total_cost_eur for item in fm_results),
     )
     rows = build_rows(project, fm_results)
+    pbs_rows = build_pbs_rows(project, result.pbs_results)
     return RunResult(
         status="done",
         summary=f"Run voltooid met {metrics.fm_result_count} FM-resultaten.",
         metrics=metrics,
         rows=rows,
+        pbs_rows=pbs_rows,
     )

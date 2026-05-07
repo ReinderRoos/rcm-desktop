@@ -34,6 +34,14 @@ FM_RESULTS_HEADER_BOUWDEEL_NAAM = "Bouwdeel"
 FM_RESULTS_HEADER_FAALMOMENTEN = "Faalmomenten lifecycle"
 FM_RESULTS_HEADER_DOWNTIME_HR = "Downtime (uur)"
 FM_RESULTS_HEADER_TOTAL_COST_EUR = "Totale kosten (EUR)"
+PBS_RESULTS_GROUP_TITLE = "PBS-resultaten"
+PBS_RESULTS_HEADER_PBS_ID = "PBS-id"
+PBS_RESULTS_HEADER_BOUWDEEL = "Bouwdeel"
+PBS_RESULTS_HEADER_LEVEL = "Niveau"
+PBS_RESULTS_HEADER_FAALMOMENTEN_TOTAL = "Faalmomenten lifecycle (totaal)"
+PBS_RESULTS_HEADER_DOWNTIME_TOTAL_HR = "Downtime (uur, totaal)"
+PBS_RESULTS_HEADER_UNAVAILABILITY_TOTAL = "Niet-beschikbaarheid (%, totaal)"
+PBS_RESULTS_HEADER_COST_TOTAL_EUR = "Totale kosten (EUR, totaal)"
 
 
 def status_label(status: str) -> str:
