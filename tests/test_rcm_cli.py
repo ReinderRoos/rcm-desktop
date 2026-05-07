@@ -1,19 +1,17 @@
-"""Tests voor CLI-runbeleid en serve-foutpropagatie."""
+"""Tests voor CLI-runbeleid in rcm_core.cli.
+
+Tests voor `cmd_serve` (Streamlit) zijn verwijderd: dat subcommando is in RCM2
+niet meegeporteerd; zie scrub-list in RCM2_REFERENTIE.md.
+"""
 from __future__ import annotations
 
 import argparse
-import importlib.util
 import sys
 from pathlib import Path
-from types import SimpleNamespace
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-_RCM_PATH = Path(__file__).parent.parent / "rcm.py"
-_SPEC = importlib.util.spec_from_file_location("rcm_cli_module", _RCM_PATH)
-assert _SPEC and _SPEC.loader
-rcm = importlib.util.module_from_spec(_SPEC)
-_SPEC.loader.exec_module(rcm)
+from rcm_core import cli as rcm
 
 
 def _args(**overrides):
@@ -40,21 +38,3 @@ def test_resolve_parallel_explicit_parallel_opt_in(monkeypatch):
 def test_resolve_parallel_no_parallel_has_priority(monkeypatch):
     monkeypatch.setattr(rcm.sys, "platform", "linux")
     assert rcm._resolve_parallel_execution(_args(parallel=True, no_parallel=True)) is False
-
-
-def test_cmd_serve_returns_subprocess_returncode(monkeypatch):
-    def fake_run(*_args, **_kwargs):
-        return SimpleNamespace(returncode=7)
-
-    monkeypatch.setattr("subprocess.run", fake_run)
-    result = rcm.cmd_serve(argparse.Namespace(project="awzi_haarlem_waarderpolder_demo.rcm.json"))
-    assert result == 7
-
-
-def test_cmd_serve_missing_streamlit_binary(monkeypatch):
-    def fake_run(*_args, **_kwargs):
-        raise FileNotFoundError("missing")
-
-    monkeypatch.setattr("subprocess.run", fake_run)
-    result = rcm.cmd_serve(argparse.Namespace(project="awzi_haarlem_waarderpolder_demo.rcm.json"))
-    assert result == 1

@@ -260,6 +260,6 @@ class TestGlobalDigest:
         p2 = _make_project(modeljaar=2027)
         assert compute_global_digest(p1) != compute_global_digest(p2)
 
-    def test_fka_issue_11_does_not_require_cache_inputs_version_bump(self):
-        """Issue 11 raakt alleen PBS-classificatie, niet FM-hash/input-contract."""
-        assert CACHE_INPUTS_VERSION == 1
+    def test_cache_inputs_version_is_set_for_rcm2(self):
+        """RCM2 start met CACHE_INPUTS_VERSION>=100 zodat oude RCM1-caches niet vertrouwd worden."""
+        assert CACHE_INPUTS_VERSION >= 100
