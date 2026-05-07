@@ -26,6 +26,14 @@ RUN_LABEL_SUMMARY = "Samenvatting:"
 RUN_LABEL_FM_RESULTS = "#FM-results:"
 RUN_LABEL_TOTAL_FAALMOMENTEN = "Totale faalmomenten lifecycle:"
 RUN_LABEL_TOTAL_COST_EUR = "Totale kosten (EUR):"
+FM_RESULTS_GROUP_TITLE = "Faalwijzen-resultaten"
+FM_RESULTS_HEADER_FM_ID = "FM-id"
+FM_RESULTS_HEADER_FAALWIJZE = "Faalwijze"
+FM_RESULTS_HEADER_PBS_ID = "PBS-id"
+FM_RESULTS_HEADER_BOUWDEEL_NAAM = "Bouwdeel"
+FM_RESULTS_HEADER_FAALMOMENTEN = "Faalmomenten lifecycle"
+FM_RESULTS_HEADER_DOWNTIME_HR = "Downtime (uur)"
+FM_RESULTS_HEADER_TOTAL_COST_EUR = "Totale kosten (EUR)"
 
 
 def status_label(status: str) -> str:

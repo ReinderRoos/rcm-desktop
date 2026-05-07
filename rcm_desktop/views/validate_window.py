@@ -2,10 +2,12 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from PySide6.QtCore import Qt, QSortFilterProxyModel
 from PySide6.QtWidgets import (
     QFileDialog,
     QFormLayout,
     QGroupBox,
+    QHeaderView,
     QHBoxLayout,
     QLabel,
     QLineEdit,
@@ -15,11 +17,13 @@ from PySide6.QtWidgets import (
     QPushButton,
     QPlainTextEdit,
     QToolButton,
+    QTableView,
     QVBoxLayout,
     QWidget,
 )
 
 from rcm_desktop import messages
+from rcm_desktop.adapter.fm_results_table_model import FMResultsTableModel, RAW_ROLE
 from rcm_desktop.adapter.project_paths import resolve_default_fixture_path
 from rcm_desktop.adapter.preview_service import ProjectPreview
 from rcm_desktop.adapter.run_runner import RunRunner
@@ -27,6 +31,7 @@ from rcm_desktop.adapter.run_service import RunResult
 from rcm_desktop.adapter.validate_runner import ValidateRunner
 from rcm_desktop.adapter.validate_service import DetailItem, ValidateResult, UserFacingError
 from rcm_desktop.app_state import AppState
+from rcm_desktop.formatting import format_eur, format_float, format_int
 
 
 class ValidateWindow(QMainWindow):
@@ -91,6 +96,16 @@ class ValidateWindow(QMainWindow):
         run_values.addRow(messages.RUN_LABEL_TOTAL_COST_EUR, self.run_total_cost_value)
         run_layout.addLayout(run_values)
         self.run_group.setVisible(False)
+        self.result_table_group = QGroupBox(messages.FM_RESULTS_GROUP_TITLE)
+        result_table_layout = QVBoxLayout(self.result_table_group)
+        self.result_table = QTableView()
+        self.result_table.setSortingEnabled(True)
+        self.result_table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+        self.result_table_proxy = QSortFilterProxyModel(self.result_table)
+        self.result_table_proxy.setSortRole(RAW_ROLE)
+        self.result_table.setModel(self.result_table_proxy)
+        result_table_layout.addWidget(self.result_table)
+        self.result_table_group.setVisible(False)
         self.details_toggle = QToolButton()
         self.details_toggle.setText("Toon details")
         self.details_toggle.setCheckable(True)
@@ -118,6 +133,7 @@ class ValidateWindow(QMainWindow):
         outer.addWidget(self.summary_label)
         outer.addWidget(self.preview_group)
         outer.addWidget(self.run_group)
+        outer.addWidget(self.result_table_group)
         outer.addWidget(self.details_toggle)
         outer.addWidget(self.details_text)
         self.setCentralWidget(root)
@@ -160,6 +176,7 @@ class ValidateWindow(QMainWindow):
 
     def _clear_run_view(self) -> None:
         self.run_group.setVisible(False)
+        self._clear_result_table()
         self.run_status_value.clear()
         self.run_summary_value.clear()
         self.run_fm_result_count_value.setText("0")
@@ -167,6 +184,10 @@ class ValidateWindow(QMainWindow):
         self.run_total_cost_value.setText("0.0")
         self._state.set_last_run(None)
         self._update_run_button_enabled()
+
+    def _clear_result_table(self) -> None:
+        self.result_table_group.setVisible(False)
+        self.result_table_proxy.setSourceModel(None)
 
     def _on_runner_state_changed(self, state: str) -> None:
         if state == "busy":
@@ -242,13 +263,21 @@ class ValidateWindow(QMainWindow):
     def _render_run_result(self, run_result: object) -> None:
         if not isinstance(run_result, RunResult):
             self.run_group.setVisible(False)
+            self._clear_result_table()
             return
         self.run_group.setVisible(True)
         self.run_status_value.setText(messages.status_label(run_result.status))
         self.run_summary_value.setText(run_result.summary)
-        self.run_fm_result_count_value.setText(str(run_result.metrics.fm_result_count))
-        self.run_total_faalmomenten_value.setText(str(run_result.metrics.total_lifecycle_faalmomenten))
-        self.run_total_cost_value.setText(str(run_result.metrics.total_cost_eur))
+        self.run_fm_result_count_value.setText(format_int(run_result.metrics.fm_result_count))
+        self.run_total_faalmomenten_value.setText(format_float(run_result.metrics.total_lifecycle_faalmomenten))
+        self.run_total_cost_value.setText(format_eur(run_result.metrics.total_cost_eur))
+        if run_result.status == "done" and run_result.rows:
+            model = FMResultsTableModel(run_result.rows, self.result_table)
+            self.result_table_proxy.setSourceModel(model)
+            self.result_table_group.setVisible(True)
+            self.result_table.sortByColumn(6, Qt.DescendingOrder)
+        else:
+            self._clear_result_table()
         if run_result.error is not None:
             self._show_run_error(run_result.error)
         self._update_run_button_enabled()

@@ -50,6 +50,9 @@ def test_run_service_happy_path_maps_metrics_and_status(monkeypatch):
     assert result.metrics.fm_result_count == 2
     assert result.metrics.total_lifecycle_faalmomenten == 4.0
     assert result.metrics.total_cost_eur == 160.5
+    assert len(result.rows) == 2
+    assert result.rows[0].fm_id == "FM-1"
+    assert result.rows[0].expected_total_downtime_hr == 1.5
 
 
 def test_run_service_missing_project_returns_precondition_error():
@@ -59,6 +62,7 @@ def test_run_service_missing_project_returns_precondition_error():
     assert result.error is not None
     assert result.error.code == "RUN_PRECONDITION_NOT_MET"
     assert result.metrics.fm_result_count == 0
+    assert result.rows == []
 
 
 def test_run_service_maps_unexpected_core_error(monkeypatch):
@@ -77,6 +81,7 @@ def test_run_service_maps_unexpected_core_error(monkeypatch):
     assert result.error.code == "RUN_INTERNAL_ERROR"
     assert result.metrics.total_lifecycle_faalmomenten == 0.0
     assert result.metrics.total_cost_eur == 0.0
+    assert result.rows == []
 
 
 def test_run_service_passes_full_recompute_kwarg(monkeypatch):
