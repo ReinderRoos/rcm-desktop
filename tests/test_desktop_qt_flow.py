@@ -862,6 +862,99 @@ def test_validate_window_ltap_pm_label_contract(monkeypatch):
     assert " [" in label and label.count("[") == 3
 
 
+def test_validate_window_uses_harmonized_action_labels(monkeypatch):
+    app = _ensure_app()
+    monkeypatch.setattr(QMessageBox, "critical", lambda *_args, **_kwargs: QMessageBox.Ok)
+    window = ValidateWindow()
+    window.show()
+    app.processEvents()
+
+    assert window.validate_button.text() == messages.VALIDATE_BUTTON_LABEL
+    assert window.run_button.text() == messages.RUN_BUTTON_LABEL
+    assert window.compare_button.text() == messages.COMPARE_BUTTON_LABEL
+    assert window.reset_layout_button.text() == messages.PANEL_RESET_LAYOUT_BUTTON
+    assert window.ltap_reset_button.text() == messages.LTAP_RESET_BUTTON
+
+
+def test_validate_window_ltap_apply_button_requires_selection(monkeypatch):
+    app = _ensure_app()
+    monkeypatch.setattr(QMessageBox, "critical", lambda *_args, **_kwargs: QMessageBox.Ok)
+    window = ValidateWindow()
+    window.show()
+    fixture = Path("tests/fixtures/sample_project.rcm.json")
+    _align_project_path_then_validate_state(window, fixture, app)
+    window._state.set_last_result(ValidateResult(status="valid", summary="ok", details=[]))
+    window._state.set_last_project(load_project(fixture))
+    app.processEvents()
+
+    window.ltap_detail_table.clearSelection()
+    window._sync_ltap_buttons()
+    app.processEvents()
+    assert window.ltap_apply_button.isEnabled() is False
+
+    window.ltap_detail_table.selectRow(0)
+    app.processEvents()
+    assert window.ltap_apply_button.isEnabled() is True
+
+
+def test_validate_window_ltap_context_label_tracks_filter_year_and_selection(monkeypatch):
+    app = _ensure_app()
+    monkeypatch.setattr(QMessageBox, "critical", lambda *_args, **_kwargs: QMessageBox.Ok)
+    window = ValidateWindow()
+    window.show()
+    fixture = Path("tests/fixtures/sample_project.rcm.json")
+    _align_project_path_then_validate_state(window, fixture, app)
+    window._state.set_last_result(ValidateResult(status="valid", summary="ok", details=[]))
+    window._state.set_last_project(load_project(fixture))
+    app.processEvents()
+
+    assert "filter alle taken" in window.ltap_context_label.text()
+    window.ltap_detail_table.selectRow(0)
+    app.processEvents()
+    assert "geselecteerd" in window.ltap_context_label.text()
+    window.ltap_filter_button.click()
+    app.processEvents()
+    assert "filter REV" in window.ltap_context_label.text()
+    window.ltap_year_list.setCurrentRow(1)
+    app.processEvents()
+    assert "jaar " in window.ltap_context_label.text()
+
+
+def test_validate_window_applies_semantic_status_styles(monkeypatch):
+    app = _ensure_app()
+    monkeypatch.setattr(QMessageBox, "critical", lambda *_args, **_kwargs: QMessageBox.Ok)
+    window = ValidateWindow()
+    window.show()
+    app.processEvents()
+
+    window._render_result(ValidateResult(status="valid", summary="ok", details=[]))
+    app.processEvents()
+    assert "2E7D32" in window.status_label.styleSheet()
+
+    window._render_result(ValidateResult(status="error", summary="fout", details=[]))
+    app.processEvents()
+    assert "D32F2F" in window.status_label.styleSheet()
+
+
+def test_validate_window_ltap_table_has_readability_contract(monkeypatch):
+    app = _ensure_app()
+    monkeypatch.setattr(QMessageBox, "critical", lambda *_args, **_kwargs: QMessageBox.Ok)
+    window = ValidateWindow()
+    window.show()
+    fixture = Path("tests/fixtures/sample_project.rcm.json")
+    _align_project_path_then_validate_state(window, fixture, app)
+    window._state.set_last_result(ValidateResult(status="valid", summary="ok", details=[]))
+    window._state.set_last_project(load_project(fixture))
+    app.processEvents()
+
+    assert window.ltap_detail_table.alternatingRowColors() is True
+    assert window.ltap_detail_table.verticalHeader().defaultSectionSize() >= 24
+    assert window.ltap_detail_table.horizontalHeaderItem(0).toolTip() != ""
+    assert (
+        window.ltap_detail_table.item(0, 4).textAlignment() & Qt.AlignRight
+    ) == Qt.AlignRight
+
+
 def test_validate_window_ltap_year_selection_updates_detail_table(monkeypatch):
     app = _ensure_app()
     monkeypatch.setattr(QMessageBox, "critical", lambda *_args, **_kwargs: QMessageBox.Ok)

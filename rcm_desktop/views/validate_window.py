@@ -3,7 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from PySide6.QtCore import QModelIndex, Qt, QSortFilterProxyModel, QSettings
-from PySide6.QtGui import QCloseEvent, QKeySequence, QAction
+from PySide6.QtGui import QColor, QCloseEvent, QKeySequence, QAction
 from PySide6.QtWidgets import (
     QAbstractItemView,
     QFileDialog,
@@ -105,11 +105,11 @@ class ValidateWindow(QMainWindow):
         self.path_input = QLineEdit()
         self.path_input.setPlaceholderText("Pad naar projectbestand (*.rcm.json)")
         self.path_input.textChanged.connect(self._on_path_changed)
-        self.pick_button = QPushButton("Kies bestand")
+        self.pick_button = QPushButton(messages.PICK_BUTTON_LABEL)
         self.pick_button.clicked.connect(self._pick_file)
-        self.validate_button = QPushButton("Validate")
+        self.validate_button = QPushButton(messages.VALIDATE_BUTTON_LABEL)
         self.validate_button.clicked.connect(self._start_validate)
-        self.run_button = QPushButton("Run --full")
+        self.run_button = QPushButton(messages.RUN_BUTTON_LABEL)
         self.run_button.setEnabled(False)
         self.run_button.clicked.connect(self._start_run)
         self.compare_button = QPushButton(messages.COMPARE_BUTTON_LABEL)
@@ -149,6 +149,15 @@ class ValidateWindow(QMainWindow):
         )
         self.reset_layout_button = QPushButton(messages.PANEL_RESET_LAYOUT_BUTTON)
         self.reset_layout_button.clicked.connect(self._reset_layout_defaults)
+        for button in (
+            self.validate_button,
+            self.run_button,
+            self.compare_button,
+            self.save_button,
+            self.save_as_button,
+            self.reset_layout_button,
+        ):
+            button.setMinimumHeight(30)
 
         self.idle_banner = QWidget()
         idle_layout = QVBoxLayout(self.idle_banner)
@@ -190,6 +199,7 @@ class ValidateWindow(QMainWindow):
         self.run_fm_result_count_value = QLabel("0")
         self.run_total_faalmomenten_value = QLabel("0.0")
         self.run_total_cost_value = QLabel("0.0")
+        self.run_total_cost_value.setStyleSheet("font-weight: 700;")
         run_values.addRow(messages.RUN_LABEL_STATUS, self.run_status_value)
         run_values.addRow(messages.RUN_LABEL_SUMMARY, self.run_summary_value)
         run_values.addRow(messages.RUN_LABEL_FM_RESULTS, self.run_fm_result_count_value)
@@ -220,6 +230,7 @@ class ValidateWindow(QMainWindow):
         result_table_layout = QVBoxLayout(self.result_table_group)
         self.result_table = QTableView()
         self.result_table.setSortingEnabled(True)
+        self.result_table.setAlternatingRowColors(True)
         self.result_table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
         self.result_table_proxy = QSortFilterProxyModel(self.result_table)
         self.result_table_proxy.setSortRole(RAW_ROLE)
@@ -230,6 +241,7 @@ class ValidateWindow(QMainWindow):
         pbs_panel_layout = QVBoxLayout(self.pbs_table_group)
         self.pbs_tree = QTreeView()
         self.pbs_tree.setSortingEnabled(False)
+        self.pbs_tree.setAlternatingRowColors(True)
         self.pbs_tree.header().setSectionResizeMode(QHeaderView.Stretch)
         pbs_panel_layout.addWidget(self.pbs_tree)
         self.pbs_table_group.setVisible(False)
@@ -250,6 +262,9 @@ class ValidateWindow(QMainWindow):
         ltap_controls = QHBoxLayout()
         ltap_controls.addWidget(QLabel(messages.LTAP_SELECT_LABEL))
         self.ltap_select_input = QLineEdit()
+        self.ltap_select_input.setReadOnly(True)
+        self.ltap_select_input.setPlaceholderText(messages.LTAP_CONTEXT_SELECTION_EMPTY)
+        self.ltap_select_input.setToolTip("Taaklabels gebruiken SVO/WET/TG voor taaktype, wettelijke status en taakgroep.")
         ltap_controls.addWidget(self.ltap_select_input, stretch=1)
         ltap_controls.addWidget(QLabel(messages.LTAP_SHIFT_LABEL))
         self.ltap_shift_spin = QSpinBox()
@@ -257,15 +272,20 @@ class ValidateWindow(QMainWindow):
         self.ltap_shift_spin.setMaximum(50)
         ltap_controls.addWidget(self.ltap_shift_spin)
         self.ltap_apply_button = QPushButton(messages.LTAP_APPLY_BUTTON)
+        self.ltap_apply_button.setToolTip("Pas de bundel toe op de geselecteerde zichtbare LTAP-taken.")
         self.ltap_apply_button.clicked.connect(self._apply_ltap_bundle)
         ltap_controls.addWidget(self.ltap_apply_button)
         self.ltap_filter_button = QPushButton(messages.LTAP_FILTER_REV_ONLY_BUTTON)
+        self.ltap_filter_button.setToolTip("Schakel tussen alle taken en alleen REV-taken.")
         self.ltap_filter_button.clicked.connect(self._toggle_ltap_filter_mode)
         ltap_controls.addWidget(self.ltap_filter_button)
         self.ltap_reset_button = QPushButton(messages.LTAP_RESET_BUTTON)
+        self.ltap_reset_button.setToolTip("Verwijder de what-if overlay en herstel LTAP-baseline.")
         self.ltap_reset_button.clicked.connect(self._reset_ltap_bundle)
         ltap_controls.addWidget(self.ltap_reset_button)
         ltap_layout.addLayout(ltap_controls)
+        self.ltap_context_label = QLabel("")
+        ltap_layout.addWidget(self.ltap_context_label)
         self.ltap_impact_label = QLabel(messages.LTAP_IMPACT_LABEL_EMPTY)
         ltap_layout.addWidget(self.ltap_impact_label)
         self.ltap_year_summary_label = QLabel(messages.LTAP_YEAR_SUMMARY_EMPTY)
@@ -288,6 +308,9 @@ class ValidateWindow(QMainWindow):
         self.ltap_detail_table = QTableWidget(0, 6)
         self.ltap_detail_table.setSelectionBehavior(QAbstractItemView.SelectRows)
         self.ltap_detail_table.setSelectionMode(QAbstractItemView.ExtendedSelection)
+        self.ltap_detail_table.setAlternatingRowColors(True)
+        self.ltap_detail_table.verticalHeader().setDefaultSectionSize(24)
+        self.ltap_detail_table.itemSelectionChanged.connect(self._on_ltap_selection_changed)
         self.ltap_detail_table.setHorizontalHeaderLabels(
             [
                 messages.LTAP_DETAIL_HEADER_PM_ID,
@@ -299,6 +322,10 @@ class ValidateWindow(QMainWindow):
             ]
         )
         self.ltap_detail_table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+        if self.ltap_detail_table.horizontalHeaderItem(0) is not None:
+            self.ltap_detail_table.horizontalHeaderItem(0).setToolTip(
+                "PM-id met labels: [TYPE] [TG/GEEN-TG] [WET/NIET-WET]"
+            )
         ltap_layout.addWidget(self.ltap_detail_table)
         self.ltap_group.setVisible(False)
         self.details_toggle = QToolButton()
@@ -316,6 +343,7 @@ class ValidateWindow(QMainWindow):
         self._apply_balanced_profile()
         self._restore_layout_preferences()
         self._set_default_fixture_path()
+        self._refresh_ltap_context_label()
 
     def _build_layout(self) -> None:
         root = QWidget()
@@ -592,6 +620,8 @@ class ValidateWindow(QMainWindow):
             busy_text = messages.status_label("busy")
             self.status_label.setText(busy_text)
             self.strip_validate_status_label.setText(busy_text)
+            self._apply_semantic_status_style(self.status_label, "busy")
+            self._apply_semantic_status_style(self.strip_validate_status_label, "busy")
             self._refresh_overview_strip_visibility()
             self._sync_strip_validate_vs_run_face()
             return
@@ -642,6 +672,7 @@ class ValidateWindow(QMainWindow):
     def _on_run_state_changed(self, state: str) -> None:
         if state == "busy":
             self.run_status_value.setText(messages.status_label("busy"))
+            self._apply_semantic_status_style(self.run_status_value, "busy")
         self._refresh_overview_strip_visibility()
         self._sync_strip_validate_vs_run_face()
         self._update_run_button_enabled()
@@ -668,6 +699,8 @@ class ValidateWindow(QMainWindow):
         self.status_label.setText(status_text)
         self.summary_label.setText(result.summary)
         self.strip_validate_status_label.setText(status_text)
+        self._apply_semantic_status_style(self.status_label, result.status)
+        self._apply_semantic_status_style(self.strip_validate_status_label, result.status)
         self.strip_validate_summary_label.setText(result.summary)
         self.details_text.setPlainText(self._format_details(result.details))
         self.details_toggle.setEnabled(bool(result.details))
@@ -712,6 +745,7 @@ class ValidateWindow(QMainWindow):
             self._sync_strip_validate_vs_run_face()
             return
         self.run_status_value.setText(messages.status_label(run_result.status))
+        self._apply_semantic_status_style(self.run_status_value, run_result.status)
         self.run_summary_value.setText(run_result.summary)
         self.run_fm_result_count_value.setText(format_int(run_result.metrics.fm_result_count))
         self.run_total_faalmomenten_value.setText(format_float(run_result.metrics.total_lifecycle_faalmomenten))
@@ -784,10 +818,13 @@ class ValidateWindow(QMainWindow):
         err_status = messages.status_label("error")
         self.status_label.setText(err_status)
         self.strip_validate_status_label.setText(err_status)
+        self._apply_semantic_status_style(self.status_label, "error")
+        self._apply_semantic_status_style(self.strip_validate_status_label, "error")
         QMessageBox.critical(self, messages.ERROR_DIALOG_TITLE, message)
 
     def _show_run_error(self, error: UserFacingError) -> None:
         self.run_status_value.setText(messages.status_label("error"))
+        self._apply_semantic_status_style(self.run_status_value, "error")
         QMessageBox.critical(self, messages.RUN_ERROR_DIALOG_TITLE, error.message)
 
     def _start_compare(self) -> None:
@@ -813,7 +850,7 @@ class ValidateWindow(QMainWindow):
 
     def _sync_ltap_buttons(self) -> None:
         enabled = self.ltap_group.isVisible() and not self._run_runner.busy and not self._compare_runner.busy
-        self.ltap_apply_button.setEnabled(enabled)
+        self.ltap_apply_button.setEnabled(enabled and bool(self._selected_ltap_pm_ids()))
         self.ltap_reset_button.setEnabled(enabled and bool(self._ltap_overlay_anchor_years))
         self.ltap_show_all_button.setEnabled(enabled)
 
@@ -836,6 +873,7 @@ class ValidateWindow(QMainWindow):
         self._set_panel_visible("ltap", True)
         self.ltap_impact_label.setText(messages.LTAP_IMPACT_LABEL_EMPTY)
         self._sync_ltap_buttons()
+        self._refresh_ltap_context_label()
 
     def _clear_ltap_view(self) -> None:
         self._set_panel_visible("ltap", False)
@@ -853,6 +891,7 @@ class ValidateWindow(QMainWindow):
         self._sync_ltap_filter_button_text()
         self._ltap_clear_chart()
         self._sync_ltap_buttons()
+        self._refresh_ltap_context_label()
 
     def _render_ltap_view(self, view: LTAPView) -> None:
         self._ltap_year_rows = {year_row.year: year_row for year_row in view.years}
@@ -885,6 +924,8 @@ class ValidateWindow(QMainWindow):
         self._ltap_chart_years = years
         baseline_set = QBarSet(messages.LTAP_CHART_SERIES_BASELINE)
         current_set = QBarSet(messages.LTAP_CHART_SERIES_WHAT_IF)
+        baseline_set.setColor(QColor("#9AA0A6"))
+        current_set.setColor(QColor("#1E88E5"))
         baseline_by_year = {row.year: row.pm_cost_eur for row in baseline.years}
         for row in current.years:
             baseline_set.append(float(baseline_by_year.get(row.year, 0.0)))
@@ -905,6 +946,7 @@ class ValidateWindow(QMainWindow):
         chart.addAxis(axis_y, Qt.AlignLeft)
         series.attachAxis(axis_y)
         self.ltap_chart_view.setChart(chart)
+        self._refresh_ltap_context_label()
 
     def _on_ltap_bar_clicked(self, index: int) -> None:
         if index < 0 or index >= len(self._ltap_chart_years):
@@ -943,6 +985,7 @@ class ValidateWindow(QMainWindow):
                 delta=format_eur(current_cost - baseline_cost),
             )
         )
+        self._refresh_ltap_context_label()
 
     def _show_all_ltap_years(self) -> None:
         self._ltap_selected_year = None
@@ -955,6 +998,7 @@ class ValidateWindow(QMainWindow):
             all_details.extend(self._ltap_year_rows[year].details)
         self._ltap_populate_details(tuple(all_details))
         self.ltap_year_summary_label.setText(messages.LTAP_YEAR_SUMMARY_EMPTY)
+        self._refresh_ltap_context_label()
 
     def _ltap_populate_details(self, details: tuple[LTAPTaskDetail, ...]) -> None:
         if not details:
@@ -962,6 +1006,7 @@ class ValidateWindow(QMainWindow):
             self.ltap_detail_table.setItem(0, 0, QTableWidgetItem(messages.LTAP_DETAIL_EMPTY_TEXT))
             for col in range(1, self.ltap_detail_table.columnCount()):
                 self.ltap_detail_table.setItem(0, col, QTableWidgetItem(""))
+            self._sync_ltap_selection_text()
             return
         self.ltap_detail_table.setRowCount(len(details))
         for idx, detail in enumerate(details):
@@ -973,9 +1018,16 @@ class ValidateWindow(QMainWindow):
             self.ltap_detail_table.setItem(idx, 0, pm_label_item)
             self.ltap_detail_table.setItem(idx, 1, QTableWidgetItem(detail.fm_id))
             self.ltap_detail_table.setItem(idx, 2, QTableWidgetItem(task_label))
-            self.ltap_detail_table.setItem(idx, 3, QTableWidgetItem(str(detail.executions)))
-            self.ltap_detail_table.setItem(idx, 4, QTableWidgetItem(format_eur(detail.pm_cost_eur)))
-            self.ltap_detail_table.setItem(idx, 5, QTableWidgetItem(format_float(detail.planned_downtime_hr)))
+            executions_item = QTableWidgetItem(str(detail.executions))
+            executions_item.setTextAlignment(Qt.AlignRight | Qt.AlignVCenter)
+            self.ltap_detail_table.setItem(idx, 3, executions_item)
+            cost_item = QTableWidgetItem(format_eur(detail.pm_cost_eur))
+            cost_item.setTextAlignment(Qt.AlignRight | Qt.AlignVCenter)
+            self.ltap_detail_table.setItem(idx, 4, cost_item)
+            downtime_item = QTableWidgetItem(format_float(detail.planned_downtime_hr))
+            downtime_item.setTextAlignment(Qt.AlignRight | Qt.AlignVCenter)
+            self.ltap_detail_table.setItem(idx, 5, downtime_item)
+        self._sync_ltap_selection_text()
 
     def _ltap_year_cost(self, view: LTAPView | None, year: int) -> float:
         if view is None:
@@ -1010,6 +1062,7 @@ class ValidateWindow(QMainWindow):
         self._render_ltap_view(self._ltap_current_view)
         self._recompute_ltap_impact()
         self._sync_ltap_buttons()
+        self._refresh_ltap_context_label()
 
     def _reset_ltap_bundle(self) -> None:
         project = self._state.last_project
@@ -1021,6 +1074,7 @@ class ValidateWindow(QMainWindow):
         self._render_ltap_view(self._ltap_current_view)
         self.ltap_impact_label.setText(messages.LTAP_IMPACT_LABEL_EMPTY)
         self._sync_ltap_buttons()
+        self._refresh_ltap_context_label()
 
     def _selected_ltap_pm_ids(self) -> list[str]:
         selection_model = self.ltap_detail_table.selectionModel()
@@ -1032,12 +1086,22 @@ class ValidateWindow(QMainWindow):
             item = self.ltap_detail_table.item(index.row(), 0)
             if item is None:
                 continue
+            if item.text() == messages.LTAP_DETAIL_EMPTY_TEXT:
+                continue
             pm_id = item.data(Qt.UserRole) or item.text().split(" ")[0]
             if pm_id in seen:
                 continue
             seen.add(pm_id)
             ids.append(str(pm_id))
         return ids
+
+    def _on_ltap_selection_changed(self) -> None:
+        self._sync_ltap_selection_text()
+        self._sync_ltap_buttons()
+        self._refresh_ltap_context_label()
+
+    def _sync_ltap_selection_text(self) -> None:
+        self.ltap_select_input.setText(", ".join(self._selected_ltap_pm_ids()))
 
     def _toggle_ltap_filter_mode(self) -> None:
         project = self._state.last_project
@@ -1050,6 +1114,7 @@ class ValidateWindow(QMainWindow):
         self._render_ltap_view(self._ltap_current_view)
         self._recompute_ltap_impact()
         self._sync_ltap_buttons()
+        self._refresh_ltap_context_label()
 
     def _sync_ltap_filter_button_text(self) -> None:
         if self._ltap_filter_mode == "rev-only":
@@ -1078,6 +1143,7 @@ class ValidateWindow(QMainWindow):
         self.ltap_impact_label.setText(
             f"Δ PM-kosten {format_eur(delta_cost)} | Δ downtime {format_float(delta_downtime)} h | Δ scenario-KPI {format_eur(kpi_delta)}"
         )
+        self._refresh_ltap_context_label()
 
     def _render_compare_result(self, view: ScenarioCompareView) -> None:
         if view.status != "done":
@@ -1106,6 +1172,58 @@ class ValidateWindow(QMainWindow):
         save_as_action.setShortcut(QKeySequence("Ctrl+Shift+S"))
         save_as_action.triggered.connect(self._save_as)
         self.addAction(save_as_action)
+
+        ltap_apply_action = QAction(self)
+        ltap_apply_action.setShortcut(QKeySequence("Ctrl+Return"))
+        ltap_apply_action.triggered.connect(self._apply_ltap_bundle)
+        self.addAction(ltap_apply_action)
+
+        ltap_reset_action = QAction(self)
+        ltap_reset_action.setShortcut(QKeySequence("Ctrl+Backspace"))
+        ltap_reset_action.triggered.connect(self._reset_ltap_bundle)
+        self.addAction(ltap_reset_action)
+
+    def _refresh_ltap_context_label(self) -> None:
+        filter_mode = (
+            messages.LTAP_CONTEXT_FILTER_REV if self._ltap_filter_mode == "rev-only" else messages.LTAP_CONTEXT_FILTER_ALL
+        )
+        year_mode = (
+            messages.LTAP_CONTEXT_YEAR_SELECTED.format(year=self._ltap_selected_year)
+            if self._ltap_selected_year is not None
+            else messages.LTAP_CONTEXT_YEAR_ALL
+        )
+        selected_count = len(self._selected_ltap_pm_ids())
+        selection_mode = (
+            messages.LTAP_CONTEXT_SELECTION_COUNT.format(count=selected_count)
+            if selected_count > 0
+            else messages.LTAP_CONTEXT_SELECTION_EMPTY
+        )
+        overlay_count = len(self._ltap_overlay_anchor_years)
+        overlay_mode = (
+            messages.LTAP_CONTEXT_OVERLAY_ACTIVE.format(count=overlay_count)
+            if overlay_count > 0
+            else messages.LTAP_CONTEXT_OVERLAY_INACTIVE
+        )
+        self.ltap_context_label.setText(
+            messages.LTAP_CONTEXT_LABEL.format(
+                filter_mode=filter_mode,
+                year_mode=year_mode,
+                selection_mode=selection_mode,
+                overlay_mode=overlay_mode,
+            )
+        )
+
+    def _apply_semantic_status_style(self, label: QLabel, status: str) -> None:
+        colors = {
+            "valid": "#2E7D32",
+            "valid_with_warnings": "#ED6C02",
+            "invalid": "#D32F2F",
+            "error": "#D32F2F",
+            "busy": "#1565C0",
+            "idle": "#616161",
+            "done": "#2E7D32",
+        }
+        label.setStyleSheet(f"color: {colors.get(status, '#424242')}; font-weight: 600;")
 
     def _sync_save_buttons(self) -> None:
         can_save = (
