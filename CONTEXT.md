@@ -54,6 +54,31 @@ Rookproef-tool boven de kern; subcommando's `validate`, `impact`, `run`, `fit`,
 **Adapter Qt** (`rcm_desktop.adapter`)
 Qt-zijdige run-orchestratie en model/view-bindings.
 
+## FM-verificatie & spot-check
+
+Drie lagen om **één faalwijze (FM)** te controleren — van streng naar interactief:
+
+1. **pytest / CLI** — Strengste, reproduceerbare verificatie. Gebruik fixtures en
+   motor-`FMResult` (inclusief `horizon_profile` waar aanwezig), reconcile-tests
+   (`tests/test_nmf_schedule.py`, adapter unit-tests). Leg regressies hier vast
+   vóór je in de UI kijkt.
+
+2. **Resultatenwerkruimte, modus FM-detail** — Standaard interactief pad na slice 34.
+   Selecteer één FM in de tabel; het **inspectorpaneel** toont lifecycle-totalen,
+   jaarreeks uit `horizon_profile` (faalmomenten-proxy, correctief EUR, downtime,
+   verborgen NB), reconcile-status en **FM-invoerhash**. Zie
+   `fm_verification_service` en issues onder
+   `.scratch/rcm-desktop-slice34-fm-verificatie-werkruimte/`.
+
+3. **Legacy ValidateWindow** (`--legacy-validate` / `RCM_LEGACY_VALIDATE=1`) —
+   **Projectcockpit** voor bewerken, valideren, run en LTAP/PM what-if — **niet**
+   aanbevelen voor jaar-voor-jaar FM-spot-check. Layout-cleanup (slice 8) is
+   uitgesteld; FM-inspectie in UI levert slice 34, niet ValidateWindow.
+
+Kalenderjaar in de inspector gebruikt dezelfde mapping als LCC/Tijdsplot:
+`modeljaar` + horizonindex. Jaar-faalmomenten in de UI zijn **presentatie-proxy**
+(zelfde pad als Top 10/LCC), geen tweede motorberekening.
+
 ## Wat ontbreekt t.o.v. RCM1 (bewust)
 
 - **Killer/olifant-classificatie** is verwijderd. `PBSResult` heeft geen
