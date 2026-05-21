@@ -49,7 +49,8 @@ Combineert cache-seam met motor (`rcm_core.engine`).
 
 **Adapter CLI** (`rcm_core.cli`)
 Rookproef-tool boven de kern; subcommando's `validate`, `impact`, `run`, `fit`,
-`bibliotheek-*`. Bewust geen `serve`, geen Excel-IO, geen Monte Carlo.
+`bibliotheek-*`. Bewust geen `serve`, geen Monte Carlo in CLI. Excel **import**
+alleen via desktop/adapter (ADR-0004), geen Excel in `rcm_core.cli`.
 
 **Adapter Qt** (`rcm_desktop.adapter`)
 Qt-zijdige run-orchestratie en model/view-bindings.
@@ -87,4 +88,7 @@ Kalenderjaar in de inspector gebruikt dezelfde mapping als LCC/Tijdsplot:
   `total_downtime_hr`, `unavailability_pct`. Zie supersedes-ADR.
 - Streamlit-shell, runflow-contract, dashboard-modules: niet geporteerd; UI
   wordt opnieuw opgebouwd in PySide6.
-- Excel-IO, Monte Carlo, LTAP-light, meekoppelkansen: buiten scope tracer-bullet.
+- **RCM-Cost import (bootstrap):** RCM-Cost export → `.rcm.json` via de
+  resultatenwerkruimte (ADR-0004). Geen gevolgkosten-import; PM-effectlinks alleen
+  volgens PM-spike. Subset-export terug naar Availability Workbench is latere slice.
+- Monte Carlo UI/motor, LTAP-light, meekoppelkansen: buiten scope tracer-bullet.

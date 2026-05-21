@@ -105,8 +105,12 @@ def compute_fm_hash(project: "RCMProject", fm_id: str) -> str:
 # Cache persistentie
 # ---------------------------------------------------------------------------
 
-def _cache_path(project_path: Path) -> Path:
-    return project_path.with_suffix("").with_suffix(".rcm.cache.json")
+def _cache_path(project_path: Path, scenario_key: str | None = None) -> Path:
+    """Pad naar FM-cache: ``.rcm.cache.json`` of ``.rcm.cache.<scenario>.json``."""
+    p = Path(project_path)
+    if scenario_key:
+        return p.with_suffix("").with_suffix(f".rcm.cache.{scenario_key.lower()}.json")
+    return p.with_suffix("").with_suffix(".rcm.cache.json")
 
 
 @dataclass(frozen=True)
@@ -120,9 +124,13 @@ class CacheSnapshot:
     cache_file_existed: bool
 
 
-def load_cache(project_path: str | Path) -> tuple[dict[str, str], dict[str, dict]]:
+def load_cache(
+    project_path: str | Path,
+    *,
+    scenario_key: str | None = None,
+) -> tuple[dict[str, str], dict[str, dict]]:
     """Laad ``hashes`` en ``results`` van schijf zonder digest-validatie (tests / low-level)."""
-    path = _cache_path(Path(project_path))
+    path = _cache_path(Path(project_path), scenario_key)
     if not path.exists():
         return {}, {}
     with open(path, "r", encoding="utf-8") as f:
@@ -130,7 +138,12 @@ def load_cache(project_path: str | Path) -> tuple[dict[str, str], dict[str, dict
     return data.get("hashes") or {}, data.get("results") or {}
 
 
-def load_cache_snapshot(project: "RCMProject", project_path: str | Path) -> CacheSnapshot:
+def load_cache_snapshot(
+    project: "RCMProject",
+    project_path: str | Path,
+    *,
+    scenario_key: str | None = None,
+) -> CacheSnapshot:
     """Laad cache alleen als ``global_digest`` overeenkomt met ``project`` (PoC: beleid b).
 
     Ontbreekt het veld of wijkt het af, dan worden ``hashes`` en ``raw_results`` leeg
@@ -139,7 +152,7 @@ def load_cache_snapshot(project: "RCMProject", project_path: str | Path) -> Cach
 
     Ontbrekend bestand: lege payloads, ``global_layer_trusted`` True (lege cache is ok).
     """
-    path = _cache_path(Path(project_path))
+    path = _cache_path(Path(project_path), scenario_key)
     if not path.exists():
         return CacheSnapshot({}, {}, True, False)
     with open(path, "r", encoding="utf-8") as f:
@@ -160,10 +173,12 @@ def save_cache(
     hashes: dict[str, str],
     fm_results: "dict[str, FMResult]",
     project: "RCMProject",
+    *,
+    scenario_key: str | None = None,
 ) -> None:
     """Sla hashes, resultaten en ``global_digest`` op in het cache-bestand."""
     from rcm_core.models import FMResult  # lokale import om circulaire import te vermijden
-    path = _cache_path(Path(project_path))
+    path = _cache_path(Path(project_path), scenario_key)
     data = {
         "global_digest": compute_global_digest(project),
         "hashes": hashes,

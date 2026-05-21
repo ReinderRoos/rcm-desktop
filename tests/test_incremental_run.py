@@ -8,6 +8,8 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
+from concurrent.futures.process import BrokenProcessPool
+
 import rcm_core.incremental_run as ir
 from rcm_core.cache import CacheSnapshot
 from rcm_core.incremental_run import IncrementalRunResult, run_incremental_analysis
@@ -46,7 +48,7 @@ def test_cache_only_does_not_call_save_cache(sample_project, monkeypatch):
     monkeypatch.setattr(
         ir,
         "load_cache_snapshot",
-        lambda _proj, _path: CacheSnapshot({}, cached_raw, True, True),
+        lambda _proj, _path, **_kw: CacheSnapshot({}, cached_raw, True, True),
     )
     monkeypatch.setattr(ir, "find_affected_fms", lambda _project, _h: [])
 
@@ -69,3 +71,28 @@ def test_cache_only_does_not_call_save_cache(sample_project, monkeypatch):
     assert result.recalculated_fm_count == 0
     assert saves == []
     assert fm_id in result.fm_results
+
+
+def test_broken_process_pool_retries_sequential(sample_project, monkeypatch):
+    calls: list[bool] = []
+
+    def fake_run_analytical(project, fm_ids=None, parallel=True):
+        calls.append(parallel)
+        if parallel:
+            raise BrokenProcessPool("pool broken")
+        return ({}, {})
+
+    monkeypatch.setattr(ir, "run_analytical", fake_run_analytical)
+    monkeypatch.setattr(ir, "save_cache", lambda *_a, **_k: None)
+    monkeypatch.setattr(ir, "_build_fm_hashes", lambda _p: {})
+
+    result = run_incremental_analysis(
+        sample_project,
+        Path(__file__).parent / "fixtures" / "sample_project.rcm.json",
+        full_recompute=True,
+        parallel=True,
+    )
+
+    assert calls == [True, False]
+    assert result.parallel_retried_sequential is True
+    assert isinstance(result.pbs_results, dict)

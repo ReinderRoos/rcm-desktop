@@ -22,6 +22,9 @@ Lokale markdown onder `.scratch/<feature>/` met PRD.md + issues/NN.md
 (mattpocock-conventie). Triage-labels: `needs-triage`, `needs-info`,
 `ready-for-agent`, `ready-for-human`, `wontfix`.
 
+**Slice 35 (RCM-Cost import):** voortgang en sessie-fixes →
+`.scratch/rcm-desktop-slice35-rcm-cost-excel-import/KANBAN_HANDOFF.md`.
+
 ## Architectuurprincipes
 
 - **UI/kern-decoupling als MUST**: `rcm_desktop/views/` mag de kern alleen

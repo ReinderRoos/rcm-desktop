@@ -437,6 +437,19 @@ WORKSPACE_FM_INSPECTOR_FAALMOMENTEN_PROXY_TOOLTIP = (
     "Faalmomenten per jaar zijn presentatie-proxy (zelfde pad als Top 10/LCC), "
     "geen tweede motorberekening."
 )
+WORKSPACE_FM_INSPECTOR_INPUTS_TITLE = "Invoer (domain model)"
+WORKSPACE_FM_INSPECTOR_INITIAL_AGE = "Initiële leeftijd (jaar)"
+WORKSPACE_FM_INSPECTOR_MTTF = "MTTF (jaar)"
+WORKSPACE_FM_INSPECTOR_FAILURE_TYPE = "Faalmodel"
+WORKSPACE_FM_INSPECTOR_FAILURE_RANDOM = "Willekeurig (random)"
+WORKSPACE_FM_INSPECTOR_FAILURE_AGING = "Veroudering (aging)"
+WORKSPACE_FM_INSPECTOR_SIGMA = "Standaarddeviatie (jaar)"
+WORKSPACE_FM_INSPECTOR_SIGMA_DEFAULT_SUFFIX = " (default 15% × MTTF)"
+WORKSPACE_FM_INSPECTOR_MTTR = "MTTR (uur)"
+WORKSPACE_FM_INSPECTOR_COST_CM = "Correctieve herstelkosten (EUR)"
+WORKSPACE_FM_INSPECTOR_EFFECT_LINKS = "Effecttoekenning"
+WORKSPACE_FM_INSPECTOR_EFFECT_LINKS_EMPTY = "Geen FM-effectlinks"
+WORKSPACE_FM_INSPECTOR_INPUTS_MISSING = "Invoer niet beschikbaar (FM ontbreekt in project)."
 
 SAVE_SUCCESS_STATUS = "Project opgeslagen."
 SAVE_BLOCKED_WHILE_RUN = "Opslaan is pas beschikbaar na afronden van de analyse-run."
@@ -445,6 +458,28 @@ SAVE_CONFLICT_MESSAGE = (
     "Het projectbestand is extern gewijzigd sinds laden. "
     "Gebruik 'Opslaan als...' om je wijzigingen veilig te bewaren."
 )
+
+ISOGRAPH_IMPORT_DIALOG_TITLE = "RCM-Cost export importeren"
+ISOGRAPH_IMPORT_DIALOG_INTRO = (
+    "Kies het modeljaar voor leeftijd en kalenderjaar. "
+    "Bij tegenstrijdige initiële leeftijd op één locatie kiest u één waarde."
+)
+ISOGRAPH_IMPORT_MODELJAAR_LABEL = "Modeljaar"
+ISOGRAPH_IMPORT_CONFLICTS_INTRO = (
+    "Meerdere initiële leeftijden op hetzelfde bouwdeel — kies één waarde (jaren):"
+)
+ISOGRAPH_IMPORT_CONFLICT_ROW = "Locatie {pbs_id}"
+ISOGRAPH_IMPORT_AGE_OPTION = "{age_years:.2f} jaar"
+
+ISOGRAPH_OPEN_BUTTON_LABEL = "Open RCM-Cost export…"
+ISOGRAPH_OPEN_FILE_DIALOG_TITLE = "Kies RCM-Cost Excel-export"
+ISOGRAPH_OPEN_FILE_FILTER = "RCM-Cost export (*.xlsx)"
+ISOGRAPH_SAVE_IMPORTED_TITLE = "Opslaan als RCM2-project"
+ISOGRAPH_SAVE_IMPORTED_FILTER = "RCM project (*.rcm.json)"
+ISOGRAPH_IMPORT_VALIDATION_FAILED = (
+    "Het geïmporteerde project is structureel ongeldig en is niet opgeslagen."
+)
+ISOGRAPH_IMPORT_SAVE_SUCCESS = "RCM-Cost export opgeslagen als {path}."
 
 
 def status_label(status: str) -> str:

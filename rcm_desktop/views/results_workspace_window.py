@@ -94,9 +94,19 @@ from rcm_desktop.adapter.planning_cm_preset_service import apply_cm_policy_prese
 from rcm_desktop.adapter.planning_overlay_state import PlanningOverlayState
 from rcm_desktop.adapter.planning_whatif_service import apply_overlay_shift
 from rcm_desktop.adapter.pbs_results_tree_model import PBSResultsTreeModel
+from rcm_desktop.adapter.rcm_navigation_tree_builder import build_rcm_navigation_tree
+from rcm_desktop.adapter.rcm_navigation_tree_model import RcmNavigationTreeModel
 from rcm_desktop.adapter.contribution_horizon_value_service import (
     calendar_years_for_project,
 )
+from rcm_desktop.adapter.isograph_import_dialog import ImportDialogInput, run_import_wizard
+from rcm_desktop.adapter.isograph_open_flow_service import (
+    PersistImportFailure,
+    PersistImportSuccess,
+    check_workbook_importable,
+    persist_import_wizard_result,
+)
+from rcm_desktop.adapter.preview_service import build as build_project_preview
 from rcm_desktop.adapter.project_paths import resolve_default_fixture_path
 from rcm_desktop.adapter.result_filter_service import filter_run_result
 from rcm_desktop.adapter.result_view_service import (
@@ -254,29 +264,6 @@ class _LCCStackedBarChartWidget(QWidget):
             str(last_year),
         )
         painter.end()
-        # #region agent log
-        try:
-            import json as _json
-            import time as _time
-
-            with open("debug-224489.log", "a", encoding="utf-8") as _df:
-                _df.write(
-                    _json.dumps(
-                        {
-                            "sessionId": "224489",
-                            "hypothesisId": "H1",
-                            "location": "results_workspace_window.py:_LCCStackedBarChartWidget.paintEvent",
-                            "message": "paintEvent completed",
-                            "data": {"bucket_count": len(self._buckets), "right_margin": right_margin},
-                            "timestamp": int(_time.time() * 1000),
-                            "runId": "post-fix",
-                        }
-                    )
-                    + "\n"
-                )
-        except OSError:
-            pass
-        # #endregion
 
 
 class _ContributionBarChartWidget(QWidget):
@@ -399,7 +386,7 @@ class ResultsWorkspaceWindow(QMainWindow):
         self._state.result_changed.connect(self._render_validate_result)
 
         self._pbs_scope_id: str | None = None
-        self._pbs_source_model: PBSResultsTreeModel | None = None
+        self._pbs_source_model: PBSResultsTreeModel | RcmNavigationTreeModel | None = None
         self._suppress_path_change = False
         self._project_total_presentation: PresentationProjectTotal | None = None
         self._render_index = WorkspaceRenderIndex()
@@ -427,6 +414,8 @@ class ResultsWorkspaceWindow(QMainWindow):
         self.path_input.textChanged.connect(self._on_path_changed)
         self.pick_button = QPushButton(messages.PICK_BUTTON_LABEL)
         self.pick_button.clicked.connect(self._pick_file)
+        self.open_isograph_button = QPushButton(messages.ISOGRAPH_OPEN_BUTTON_LABEL)
+        self.open_isograph_button.clicked.connect(self._open_rcm_cost_export)
         self.validate_button = QPushButton(messages.VALIDATE_BUTTON_LABEL)
         self.validate_button.setToolTip(messages.VALIDATE_BUTTON_TOOLTIP)
         self.validate_button.clicked.connect(self._start_validate)
@@ -891,6 +880,7 @@ class ResultsWorkspaceWindow(QMainWindow):
         for w in (
             self.path_input,
             self.pick_button,
+            self.open_isograph_button,
             self.validate_button,
             self.run_analyse_button,
         ):
@@ -1005,10 +995,10 @@ class ResultsWorkspaceWindow(QMainWindow):
         source_model = self._pbs_source_model
         if source_model is None:
             return
-        pbs_id = source_model.pbs_id_for_index(source_index)
-        if pbs_id is None:
+        scope_id = self._pbs_scope_from_tree_index(source_model, source_index)
+        if scope_id is None:
             return
-        self.set_pbs_scope(pbs_id)
+        self.set_pbs_scope(scope_id)
 
     def _on_show_whole_project_clicked(self) -> None:
         self.set_pbs_scope(None)
@@ -1105,6 +1095,15 @@ class ResultsWorkspaceWindow(QMainWindow):
         self._rerender_detail_for_current_scope(split_render_depth=split_depth)
         self._last_workspace_snapshot_for_split_depth = snapshot
 
+    def _seed_planning_overlay_from_import(self, project: object) -> None:
+        from rcm_core.models import RCMProject
+
+        if not isinstance(project, RCMProject):
+            return
+        overlay = PlanningOverlayState.from_import_settings(project.import_settings)
+        if overlay.active:
+            self.workspace_state.set_planning_overlay(overlay)
+
     def _on_state_project_changed(self, project: object) -> None:
         self._refresh_contribution_year_combo(project)
         if project is None:
@@ -1124,6 +1123,7 @@ class ResultsWorkspaceWindow(QMainWindow):
         self._last_workspace_snapshot_for_split_depth = None
         self._render_index.on_workspace_state_reset()
         self.workspace_state.reset_for_new_project()
+        self._seed_planning_overlay_from_import(project)
         self._sync_pbs_tree_for_state()
         self._rerender_detail_for_current_scope()
         self._refresh_kpi_table_view()
@@ -1147,11 +1147,27 @@ class ResultsWorkspaceWindow(QMainWindow):
             roots = build_pbs_tree(list(run_result.pbs_rows))
             self._set_pbs_source_model(PBSResultsTreeModel(roots), show_totals=True)
             return
+        if project.functies:
+            nav_roots = build_rcm_navigation_tree(project)
+            self._set_pbs_source_model(
+                RcmNavigationTreeModel(nav_roots, project), show_totals=False
+            )
+            return
         roots = build_pbs_structure_tree(project)
         self._set_pbs_source_model(PBSResultsTreeModel(roots, show_totals=False), show_totals=False)
 
+    def _pbs_scope_from_tree_index(self, source_model, source_index: QModelIndex) -> str | None:
+        if isinstance(source_model, RcmNavigationTreeModel):
+            return source_model.scope_pbs_id_for_index(source_index)
+        if isinstance(source_model, PBSResultsTreeModel):
+            return source_model.pbs_id_for_index(source_index)
+        return None
+
     def _set_pbs_source_model(
-        self, model: PBSResultsTreeModel | None, *, show_totals: bool
+        self,
+        model: PBSResultsTreeModel | RcmNavigationTreeModel | None,
+        *,
+        show_totals: bool,
     ) -> None:
         self._pbs_source_model = model
         self.pbs_proxy.setSourceModel(model)
@@ -1686,6 +1702,70 @@ class ResultsWorkspaceWindow(QMainWindow):
         )
         if filename:
             self.path_input.setText(filename)
+
+    def _open_rcm_cost_export(self) -> None:
+        excel_path, _ = QFileDialog.getOpenFileName(
+            self,
+            messages.ISOGRAPH_OPEN_FILE_DIALOG_TITLE,
+            self.path_input.text() or str(Path.cwd()),
+            messages.ISOGRAPH_OPEN_FILE_FILTER,
+        )
+        if not excel_path:
+            return
+
+        gate_error = check_workbook_importable(Path(excel_path))
+        if gate_error is not None:
+            QMessageBox.critical(self, messages.ERROR_DIALOG_TITLE, gate_error.message)
+            return
+
+        default_modeljaar = 2026
+        project = self._state.last_project
+        if project is not None:
+            default_modeljaar = int(project.config.modeljaar)
+
+        wizard = run_import_wizard(
+            ImportDialogInput(path=Path(excel_path), default_modeljaar=default_modeljaar),
+            parent=self,
+        )
+        if wizard is None:
+            return
+
+        save_path, _ = QFileDialog.getSaveFileName(
+            self,
+            messages.ISOGRAPH_SAVE_IMPORTED_TITLE,
+            str(Path(excel_path).with_suffix(".rcm.json")),
+            messages.ISOGRAPH_SAVE_IMPORTED_FILTER,
+        )
+        if not save_path:
+            return
+
+        outcome = persist_import_wizard_result(wizard, Path(save_path))
+        if isinstance(outcome, PersistImportFailure):
+            if outcome.validate_result is not None:
+                self._state.set_last_result(outcome.validate_result)
+            QMessageBox.critical(
+                self,
+                messages.ERROR_DIALOG_TITLE,
+                outcome.message or messages.ISOGRAPH_IMPORT_VALIDATION_FAILED,
+            )
+            return
+
+        assert isinstance(outcome, PersistImportSuccess)
+        self._apply_import_success(outcome)
+
+    def _apply_import_success(self, outcome: PersistImportSuccess) -> None:
+        self._suppress_path_change = True
+        self.path_input.setText(str(outcome.save_path))
+        self._suppress_path_change = False
+        self._state.set_last_run(None)
+        self._state.set_last_result(outcome.validate_result)
+        self._state.set_last_project(outcome.project)
+        self._state.set_last_preview(build_project_preview(outcome.project))
+        self._project_total_presentation = None
+        self._after_project_validated(outcome.project)
+        self.validate_summary_label.setText(
+            messages.ISOGRAPH_IMPORT_SAVE_SUCCESS.format(path=outcome.save_path)
+        )
 
     def _on_path_changed(self, _text: str) -> None:
         if self._suppress_path_change:

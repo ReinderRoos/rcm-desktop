@@ -7,8 +7,9 @@ preventief onderhoud, taakgroepen en berekeningsresultaten.
 from __future__ import annotations
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Optional
+from typing import Any, Optional
 
+from rcm_core.import_settings_contract import normalize_import_settings
 from rcm_core.units import TimeDuration, TimeUnit
 from rcm_core.config import RCMConfig
 
@@ -272,6 +273,8 @@ class PMTask:
     aanname_kosten: str = ""            # motivatie PM-kosten
     aanname_interval: str = ""          # motivatie interval (bijv. "NEN-3140 vereist 1x/5jaar")
     cm_kosten_als_basis: bool = False   # True → effective_aanname_kosten erft van parent FM
+    is_wettelijk_verplicht: bool = False  # wettelijk verplicht onderhoud (WET-laag in LCC/LTAP)
+    aging_effect_pct: float = 0.0       # REV: effect op veroudering (0–100); default 100 bij REV in from_dict
 
     def effective_aanname_kosten(self, project: "RCMProject") -> str:
         """Retourneert de kostenaanname; erft CM-aanname van parent FM indien cm_kosten_als_basis."""
@@ -304,6 +307,8 @@ class PMTask:
             "aanname_kosten": self.aanname_kosten,
             "aanname_interval": self.aanname_interval,
             "cm_kosten_als_basis": self.cm_kosten_als_basis,
+            "is_wettelijk_verplicht": self.is_wettelijk_verplicht,
+            "aging_effect_pct": self.aging_effect_pct,
         }
 
     @classmethod
@@ -313,6 +318,10 @@ class PMTask:
             d["taak_type"] = TaskType(d["taak_type"])
         if "duration" in d and isinstance(d["duration"], dict):
             d["duration"] = TimeDuration.from_dict(d["duration"])
+        if "aging_effect_pct" not in d:
+            tt = d.get("taak_type")
+            if tt == TaskType.REV or tt == TaskType.REV.value or tt == "REV":
+                d["aging_effect_pct"] = 100.0
         known = {f for f in cls.__dataclass_fields__}
         return cls(**{k: v for k, v in d.items() if k in known})
 
@@ -460,6 +469,27 @@ class PMEffectLink:
 # ---------------------------------------------------------------------------
 
 @dataclass
+class FMHorizonProfile:
+    """Jaarlijkse CM/nb-reeksen per horizonbucket (NMF)."""
+
+    cor_eur: list[float]
+    cor_downtime_hr: list[float]
+    hidden_nb_hr: list[float]
+
+    def to_dict(self) -> dict:
+        return {
+            "cor_eur": list(self.cor_eur),
+            "cor_downtime_hr": list(self.cor_downtime_hr),
+            "hidden_nb_hr": list(self.hidden_nb_hr),
+        }
+
+    @classmethod
+    def from_dict(cls, d: dict) -> "FMHorizonProfile":
+        known = {f for f in cls.__dataclass_fields__}
+        return cls(**{k: v for k, v in d.items() if k in known})
+
+
+@dataclass
 class FMResult:
     fm_id: str
     pbs_id: str
@@ -475,9 +505,11 @@ class FMResult:
     risk_contribution: float            # expected_failures × p_ongewenste_gebeurtenis
     effect_bijdragen: dict[str, float] = field(default_factory=dict)
     # klasse_id → expected_failures × fractie (per FMEffectLink)
+    horizon_profile: FMHorizonProfile | None = None
+    effect_bijdragen_per_jaar: dict[str, list[float]] = field(default_factory=dict)
 
     def to_dict(self) -> dict:
-        return {
+        out = {
             "fm_id": self.fm_id,
             "pbs_id": self.pbs_id,
             "p_failure_lifecycle": self.p_failure_lifecycle,
@@ -491,12 +523,24 @@ class FMResult:
             "total_cost_eur": self.total_cost_eur,
             "risk_contribution": self.risk_contribution,
             "effect_bijdragen": self.effect_bijdragen,
+            "effect_bijdragen_per_jaar": self.effect_bijdragen_per_jaar,
         }
+        if self.horizon_profile is not None:
+            out["horizon_profile"] = self.horizon_profile.to_dict()
+        return out
 
     @classmethod
     def from_dict(cls, d: dict) -> "FMResult":
+        data = dict(d)
+        raw_hp = data.pop("horizon_profile", None)
+        horizon_profile = (
+            FMHorizonProfile.from_dict(raw_hp) if isinstance(raw_hp, dict) else raw_hp
+        )
         known = {f for f in cls.__dataclass_fields__}
-        return cls(**{k: v for k, v in d.items() if k in known})
+        return cls(
+            **{k: v for k, v in data.items() if k in known},
+            horizon_profile=horizon_profile,
+        )
 
 
 @dataclass
@@ -546,6 +590,7 @@ class RCMProject:
     fm_effect_links: dict[str, FMEffectLink] = field(default_factory=dict)
     pm_effect_links: dict[str, PMEffectLink] = field(default_factory=dict)
     bibliotheek: dict[str, BibliotheekItem] = field(default_factory=dict)
+    import_settings: dict[str, Any] = field(default_factory=dict)
 
     # ------------------------------------------------------------------
     # Opzoekhelpers
@@ -717,7 +762,7 @@ class RCMProject:
     # ------------------------------------------------------------------
 
     def to_dict(self) -> dict:
-        return {
+        out: dict[str, Any] = {
             "config": self.config.to_dict(),
             "pbs_items": {k: v.to_dict() for k, v in self.pbs_items.items()},
             "functies": {k: v.to_dict() for k, v in self.functies.items()},
@@ -729,6 +774,11 @@ class RCMProject:
             "pm_effect_links": {k: v.to_dict() for k, v in self.pm_effect_links.items()},
             "bibliotheek": {k: v.to_dict() for k, v in self.bibliotheek.items()},
         }
+        if self.import_settings:
+            normalized = normalize_import_settings(self.import_settings)
+            if len(normalized) > 1:
+                out["import_settings"] = normalized
+        return out
 
     @classmethod
     def from_dict(cls, d: dict) -> "RCMProject":
@@ -750,6 +800,10 @@ class RCMProject:
         bibliotheek = {
             k: BibliotheekItem.from_dict(v) for k, v in d.get("bibliotheek", {}).items()
         }
+        raw_import = d.get("import_settings")
+        import_settings = (
+            normalize_import_settings(raw_import) if raw_import is not None else {}
+        )
         return cls(
             config=config,
             pbs_items=pbs_items,
@@ -761,4 +815,5 @@ class RCMProject:
             fm_effect_links=fm_effect_links,
             pm_effect_links=pm_effect_links,
             bibliotheek=bibliotheek,
+            import_settings=import_settings,
         )

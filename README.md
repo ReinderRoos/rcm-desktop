@@ -23,9 +23,11 @@ python -m rcm_core.cli run     tests\fixtures\awzi_haarlem_waarderpolder_demo.rc
 # tests:
 python -m pytest
 
-# Qt-app (placeholder):
+# Qt-desktop:
 python -m rcm_desktop.main
 ```
+
+Na starten: projectbestand kiezen en **Project inladen** gebruiken (bestand inlezen en domain model valideren).
 
 ## Layout
 
@@ -46,6 +48,17 @@ rcm-desktop/
   AGENTS.md        agent-conventies voor deze repo
   pyproject.toml
 ```
+
+## LTAP tijdgrafiek (PM)
+
+De validate-window bevat een LTAP-paneel voor PM-planning met what-if bundeling:
+
+- **Tijdas als staafdiagram** per lifecycle-jaar met twee reeksen: `baseline` en `what-if`.
+- **Klik op een jaar** filtert de detailtabel op dat jaar.
+- Detailtabel toont de geplande werkzaamheden (what-if), inclusief uitvoeringen, kosten en downtime.
+- Boven de detailtabel staat een compacte jaarsamenvatting: `baseline | what-if | Δ`.
+- **Toon alle jaren** heft het jaarfilter op en zet de tabel terug naar totaaloverzicht.
+- Zonder `QtCharts` blijft LTAP bruikbaar via de lijstselectie + detailtabel (fallback).
 
 ## Wat is bewust niet meegeporteerd
 

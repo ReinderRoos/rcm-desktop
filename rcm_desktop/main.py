@@ -1,8 +1,4 @@
-"""Entry point voor de RCM2 desktop-app.
-
-Tracer-bullet stub: laad fixture, toon één faalwijzentabel + run-knop + Top-X-tabel.
-Implementatie volgt issues onder `.scratch/rcm-desktop-tracer-bullet/`.
-"""
+"""Entry point voor de RCM2 desktop-app (resultatenwerkruimte)."""
 from __future__ import annotations
 
 import sys
@@ -10,7 +6,7 @@ import sys
 
 def main() -> int:
     try:
-        from PySide6.QtWidgets import QApplication, QLabel, QMainWindow
+        from PySide6.QtWidgets import QApplication
     except ImportError:
         print(
             "PySide6 is niet geinstalleerd. Voer eerst uit:\n"
@@ -19,12 +15,23 @@ def main() -> int:
         )
         return 1
 
+    try:
+        import openpyxl  # noqa: F401
+    except ImportError:
+        print(
+            "openpyxl is niet geinstalleerd (nodig voor RCM-Cost import). Voer uit:\n"
+            "  pip install -e .\n"
+            "of: pip install openpyxl>=3.1\n"
+            "vanuit de rcm-desktop directory."
+        )
+        return 1
+
+    from rcm_desktop.views.results_workspace_window import ResultsWorkspaceWindow
+
     app = QApplication(sys.argv)
-    win = QMainWindow()
-    win.setWindowTitle("RCM2 desktop — tracer-bullet (placeholder)")
-    win.setCentralWidget(QLabel("Placeholder. Zie .scratch/rcm-desktop-tracer-bullet/ voor werkpakket."))
-    win.resize(640, 360)
-    win.show()
+    window = ResultsWorkspaceWindow()
+    window.setWindowTitle("RCM2 — resultatenwerkruimte")
+    window.show()
     return app.exec()
 
 

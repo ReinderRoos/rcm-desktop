@@ -59,6 +59,7 @@ def run_incremental_analysis(
     full_recompute: bool = False,
     parallel: bool = True,
     before_analytical: Callable[[list[str]], None] | None = None,
+    scenario_key: str | None = None,
 ) -> IncrementalRunResult:
     """Laad cache, bepaal delta, voer zo nodig ``run_analytical`` uit, werk cache bij.
 
@@ -85,7 +86,7 @@ def run_incremental_analysis(
             else:
                 raise
         new_hashes = _build_fm_hashes(project)
-        save_cache(path, new_hashes, fm_results, project)
+        save_cache(path, new_hashes, fm_results, project, scenario_key=scenario_key)
         return IncrementalRunResult(
             fm_results=fm_results,
             pbs_results=pbs_results,
@@ -95,7 +96,7 @@ def run_incremental_analysis(
             parallel_retried_sequential=retried,
         )
 
-    snap = load_cache_snapshot(project, path)
+    snap = load_cache_snapshot(project, path, scenario_key=scenario_key)
     cached_hashes, cached_raw = snap.hashes, snap.raw_results
     affected = find_affected_fms(project, cached_hashes)
 
@@ -130,7 +131,7 @@ def run_incremental_analysis(
     pbs_results = compute_pbs_results(project, fm_results)
 
     new_hashes = _build_fm_hashes(project)
-    save_cache(path, new_hashes, fm_results, project)
+    save_cache(path, new_hashes, fm_results, project, scenario_key=scenario_key)
 
     return IncrementalRunResult(
         fm_results=fm_results,
