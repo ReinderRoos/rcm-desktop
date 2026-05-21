@@ -59,7 +59,12 @@ from rcm_desktop.adapter.kpi_table_service import build_kpi_table
 from rcm_desktop.adapter.presentation_cache_service import (
     PresentationProjectTotal,
     load_presentation_from_cache,
-    presentation_needs_rebuild,
+)
+from rcm_desktop.adapter.lcc_warmup_runner import LCCWarmupRunner
+from rcm_desktop.adapter.presentation_lazy_service import (
+    default_lcc_warmup_snapshot,
+    presentation_rebuild_needed_for_startup,
+    warm_lcc_render_index,
 )
 from rcm_desktop.adapter.presentation_rebuild_runner import PresentationRebuildRunner
 from rcm_desktop.adapter.run_runner import PHASE_MOTOR, PHASE_PRESENTATION, RunRunner
@@ -82,9 +87,8 @@ from rcm_desktop.adapter.fm_verification_year_table_model import (
 )
 from rcm_desktop.formatting import format_eur, format_float, format_int
 from rcm_desktop.adapter.fm_evident_filter import filter_fm_rows_by_evident
-from rcm_desktop.adapter.lcc_chart_service import LCCYearBucket, build_single_run_lcc_input
+from rcm_desktop.adapter.lcc_chart_service import LCCYearBucket
 from rcm_desktop.adapter.lcc_planning_service import (
-    build_lcc_planning_curve_reconciled,
     build_lcc_year_detail,
 )
 from rcm_desktop.adapter.lcc_detail_selection import rev_row_indices
@@ -375,6 +379,7 @@ class ResultsWorkspaceWindow(QMainWindow):
         self._runner = ValidateRunner()
         self._run_runner = RunRunner()
         self._presentation_rebuild_runner = PresentationRebuildRunner()
+        self._lcc_warmup_runner = LCCWarmupRunner()
         self._runner.state_changed.connect(self._on_validate_state_changed)
         self._runner.result_ready.connect(self._on_validate_result_ready)
         self._runner.project_ready.connect(self._on_project_ready_from_runner)
@@ -399,6 +404,7 @@ class ResultsWorkspaceWindow(QMainWindow):
 
         self.workspace_state = ResultsWorkspaceState()
         self._last_workspace_snapshot_for_split_depth: WorkspaceStateSnapshot | None = None
+        self._last_lcc_render_snapshot: WorkspaceStateSnapshot | None = None
         self._lcc_passive_kept_after_run = False
 
         self._build_toolbar()
@@ -1122,6 +1128,7 @@ class ResultsWorkspaceWindow(QMainWindow):
             self._clear_detail_zone()
             self._project_total_presentation = None
             self._last_workspace_snapshot_for_split_depth = None
+            self._last_lcc_render_snapshot = None
             self._render_index.on_project_changed()
             if self._state.last_run is not None:
                 self._state.set_last_run(None)
@@ -1196,12 +1203,9 @@ class ResultsWorkspaceWindow(QMainWindow):
                 f"{p.horizon}|{year}|{p.unavailability_display}"
             )
         if snapshot.modus == MODE_LCC:
-            f = snapshot.lcc_filters
-            o = snapshot.planning_overlay
-            return (
-                f"lcc|{snapshot.scope_id}|{f.cm}|{f.rev}|{f.in_task}|{f.tst}|{f.svo}|{f.wet}|"
-                f"{o.active}|{o.change_count()}|{snapshot.lcc_calendar_year}"
-            )
+            from rcm_desktop.adapter.lcc_render_cache_service import build_lcc_curve_cache_key
+
+            return build_lcc_curve_cache_key(snapshot)
         if snapshot.modus == MODE_FM_DETAIL:
             return f"fm|{snapshot.scope_id}|{snapshot.fm_evident_filter}"
         return snapshot.modus
@@ -1377,19 +1381,24 @@ class ResultsWorkspaceWindow(QMainWindow):
         self, project, run_result: RunResult, snapshot: WorkspaceStateSnapshot
     ) -> None:
         """LCC-planning met type-filters, overlay en jaardetail (slice 28)."""
-        cache_modus = self._render_cache_modus_key(snapshot)
-        curve = self._render_index.get_or_build(
-            SLOT_CURRENT,
-            snapshot.scope_id,
-            cache_modus,
-            lambda: build_lcc_planning_curve_reconciled(
-                project,
-                run_result,
-                scope_id=snapshot.scope_id,
-                overlay=snapshot.planning_overlay,
-                type_filters=snapshot.lcc_filters,
-            ),
+        from rcm_desktop.adapter.lcc_render_cache_service import (
+            build_lcc_curve_cache_key,
+            lcc_render_scope,
         )
+
+        prev = self._last_lcc_render_snapshot
+        scope = lcc_render_scope(prev, snapshot)
+        cache_modus = build_lcc_curve_cache_key(snapshot)
+        curve = warm_lcc_render_index(
+            self._render_index,
+            project=project,
+            run=run_result,
+            scope_id=snapshot.scope_id,
+            cache_modus_key=cache_modus,
+            overlay=snapshot.planning_overlay,
+            type_filters=snapshot.lcc_filters,
+        )
+        self._last_lcc_render_snapshot = snapshot
         if curve is None or not curve.display_buckets:
             self.lcc_chart_widget.set_buckets(())
             self.lcc_chart_widget.set_selected_year(None)
@@ -1397,6 +1406,11 @@ class ResultsWorkspaceWindow(QMainWindow):
             self._lcc_detail_model.set_view(None)
             self.lcc_empty_state_label.setVisible(True)
             self.lcc_year_summary_label.setText("")
+            return
+        if scope == "detail_only":
+            self.lcc_chart_widget.set_selected_year(snapshot.lcc_calendar_year)
+            self._sync_lcc_chrome(snapshot)
+            self._render_lcc_year_detail(project, run_result, snapshot, planning_curve=curve)
             return
         buckets = tuple(curve.display_buckets)
         self.lcc_chart_widget.set_buckets(buckets)
@@ -1877,6 +1891,9 @@ class ResultsWorkspaceWindow(QMainWindow):
             self._project_total_presentation = presentation
         else:
             self._load_presentation_cache()
+        self._render_index.on_workspace_state_reset()
+        self._last_lcc_render_snapshot = None
+        self._maybe_start_lcc_warmup()
         self._update_run_button_label()
 
     def _on_presentation_rebuild_state_changed(self, state: str) -> None:
@@ -1931,12 +1948,26 @@ class ResultsWorkspaceWindow(QMainWindow):
             or not path
             or not isinstance(run, RunResult)
             or run.status != "done"
-            or not presentation_needs_rebuild(project, path)
+            or not presentation_rebuild_needed_for_startup(project, path)
             or self._run_runner.busy
             or self._presentation_rebuild_runner.busy
         ):
             return
         self._presentation_rebuild_runner.start(project, path, run)
+
+    def _maybe_start_lcc_warmup(self) -> None:
+        project = self._state.last_project
+        run = self._state.last_run
+        if (
+            project is None
+            or not isinstance(run, RunResult)
+            or run.status != "done"
+            or self._run_runner.busy
+            or self._lcc_warmup_runner.busy
+        ):
+            return
+        snapshot = default_lcc_warmup_snapshot(self.workspace_state.snapshot())
+        self._lcc_warmup_runner.start(project, run, self._render_index, snapshot)
 
     def _after_project_validated(self, project: object) -> None:
         from rcm_core.models import RCMProject

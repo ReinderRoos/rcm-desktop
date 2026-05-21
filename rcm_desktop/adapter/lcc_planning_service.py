@@ -11,6 +11,7 @@ from rcm_core.models import RCMProject, TaskType
 from rcm_desktop.adapter.calendar_year import calendar_year_for_horizon_index
 from rcm_desktop.adapter.lcc_chart_service import LCCScenarioCurve, LCCYearBucket, sum_correctief_preventief
 from rcm_desktop.adapter.lcc_type_filter import LCCTypeFilterSet
+from rcm_desktop.adapter.ltap_pm_cost_series import build_ltap_pm_cost_series
 from rcm_desktop.adapter.ltap_service import LTAPTaskDetail, LTAPView
 from rcm_desktop.adapter.ltap_view_cache import get_ltap_view
 from rcm_desktop.adapter.planning_overlay_state import PlanningOverlayState
@@ -100,31 +101,13 @@ def _ltap_preventief_series(
     type_filters: LCCTypeFilterSet,
 ) -> tuple[tuple[float, ...], tuple[float, ...]]:
     """(on-gefilterde PM per jaar, filter-unie PM per jaar)."""
-    view = get_ltap_view(
+    return build_ltap_pm_cost_series(
         project,
         overlay_anchor_years=overlay.anchor_years_dict() if overlay.active else None,
         disabled_pm_ids=disabled_pm_ids,
         fm_pbs_ids=fm_pbs_ids,
+        type_filters=type_filters,
     )
-    n = ltap_horizon_bucket_count(float(project.config.lifecycle_years))
-    raw = [0.0] * n
-    filtered = [0.0] * n
-    for row in view.years:
-        if not (0 <= row.year < n):
-            continue
-        raw[row.year] = float(row.pm_cost_eur)
-        seen: set[str] = set()
-        part = 0.0
-        for detail in row.details:
-            if detail.pm_id in seen:
-                continue
-            task = project.pm_tasks.get(detail.pm_id)
-            if task is None or not type_filters.task_matches(task):
-                continue
-            seen.add(detail.pm_id)
-            part += float(detail.pm_cost_eur)
-        filtered[row.year] = part
-    return tuple(raw), tuple(filtered)
 
 
 def _buckets_from_parts(
@@ -179,16 +162,21 @@ def build_lcc_planning_curve(
         project=project, cm=cm_scaled, unfiltered_preventief=raw_base
     )
 
-    raw_overlay, filt_overlay = _ltap_preventief_series(
-        project,
-        overlay=overlay_state,
-        fm_pbs_ids=fm_scope,
-        disabled_pm_ids=overlay_state.disabled_pm_ids if overlay_state.active else frozenset(),
-        type_filters=filters,
-    )
-    overlay_buckets = _buckets_from_parts(
-        project=project, cm=cm_scaled, unfiltered_preventief=raw_overlay
-    )
+    overlay_affects_pm = _overlay_affects_preventief_presentatie(overlay_state)
+    if overlay_affects_pm:
+        raw_overlay, filt_overlay = _ltap_preventief_series(
+            project,
+            overlay=overlay_state,
+            fm_pbs_ids=fm_scope,
+            disabled_pm_ids=overlay_state.disabled_pm_ids if overlay_state.active else frozenset(),
+            type_filters=filters,
+        )
+        overlay_buckets = _buckets_from_parts(
+            project=project, cm=cm_scaled, unfiltered_preventief=raw_overlay
+        )
+    else:
+        raw_overlay, filt_overlay = raw_base, filt_base
+        overlay_buckets = baseline_buckets
 
     target_pm = sum(float(r.pm_cost_eur) for r in run.fm_core_results)
     if fm_scope is not None and fm_scope:
@@ -207,7 +195,6 @@ def build_lcc_planning_curve(
         target_pm,
     ).baseline_buckets
 
-    overlay_affects_pm = _overlay_affects_preventief_presentatie(overlay_state)
     if overlay_affects_pm:
         display_buckets = filters.apply_curve(
             overlay_buckets,
@@ -258,28 +245,7 @@ def build_lcc_planning_curve_reconciled(
     run: RunResult,
     **kwargs,
 ) -> LCCPlanningCurve | None:
-    curve = build_lcc_planning_curve(project, run, **kwargs)
-    if curve is None:
-        return None
-    fm_scope = _fm_pbs_scope(project, kwargs.get("scope_id"))
-    target_pm = sum(float(r.pm_cost_eur) for r in run.fm_core_results)
-    if fm_scope is not None and fm_scope:
-        target_pm = sum(float(r.pm_cost_eur) for r in run.fm_core_results if r.pbs_id in fm_scope)
-    elif fm_scope is not None:
-        target_pm = 0.0
-    reconciled = reconcile_planning_curve_pm_total(
-        LCCPlanningCurve(
-            baseline_buckets=curve.baseline_buckets,
-            display_buckets=curve.baseline_buckets,
-            preventief_by_type_per_year=(),
-        ),
-        target_pm,
-    )
-    return LCCPlanningCurve(
-        baseline_buckets=reconciled.baseline_buckets,
-        display_buckets=curve.display_buckets,
-        preventief_by_type_per_year=(),
-    )
+    return build_lcc_planning_curve(project, run, **kwargs)
 
 
 def horizon_index_for_calendar_year(project: RCMProject, calendar_year: int) -> int | None:

@@ -49,8 +49,8 @@ def test_module_get_ltap_view_uses_shared_cache():
     assert first is second
 
 
-def test_lcc_planning_curve_calls_ltap_at_most_twice(monkeypatch):
-    """Baseline + overlay LTAP; cache voorkomt extra builds binnen één curve."""
+def test_lcc_planning_curve_calls_ltap_at_most_once_for_inactive_overlay(monkeypatch):
+    """Inactive overlay: één light-path LTAP-build per curve (slice 38)."""
     fixture = Path("tests/fixtures/one_fm_planning.rcm.json")
     project = RCMProject.from_dict(json.loads(fixture.read_text(encoding="utf-8")))
     rr = run_single(project, fixture, full_recompute=True, parallel=False)
@@ -58,13 +58,13 @@ def test_lcc_planning_curve_calls_ltap_at_most_twice(monkeypatch):
 
     invalidate_ltap_view_cache()
     calls = {"n": 0}
-    original = lcc_planning_service.get_ltap_view
+    original = lcc_planning_service.build_ltap_pm_cost_series
 
-    def counting_get_ltap_view(*args, **kwargs):
+    def counting_build(*args, **kwargs):
         calls["n"] += 1
         return original(*args, **kwargs)
 
-    monkeypatch.setattr(lcc_planning_service, "get_ltap_view", counting_get_ltap_view)
+    monkeypatch.setattr(lcc_planning_service, "build_ltap_pm_cost_series", counting_build)
 
     lcc_planning_service.build_lcc_planning_curve_reconciled(project, rr)
-    assert calls["n"] == 2
+    assert calls["n"] == 1

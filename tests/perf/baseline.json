@@ -11,5 +11,19 @@
     "lcc_curve_ltap_calls_max": 2,
     "lcc_render_cycle_ltap_builds_max": 2,
     "lcc_year_detail_curve_rebuilds_with_injected_curve_max": 0
+  },
+  "slice37_contracts": {
+    "_comment": "Post-run presentatie: contribution-only, geen legacy LCC/NB/PM builds",
+    "post_run_contribution_builds_max": 1,
+    "post_run_lcc_builds_max": 0,
+    "post_run_nb_builds_max": 0,
+    "post_run_pm_builds_max": 0
+  },
+  "slice38_contracts": {
+    "_comment": "LCC snel zichtbaar — call-count guardrails (geen wall-clock)",
+    "lcc_year_click_curve_rebuilds_max": 0,
+    "lcc_inactive_overlay_ltap_builds_max": 1,
+    "lcc_reconcile_calls_per_curve_max": 1,
+    "post_run_lcc_warmup_builds_max": 1
   }
 }

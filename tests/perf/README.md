@@ -28,6 +28,31 @@ Timing uit `baseline.json` (pre-slice-24, handmatig gemeten):
 
 Na code-upgrade: één langzame run bij digest-mismatch is normaal; daarna cache-snelheid.
 
+## Slice 37 contracten
+
+```bash
+pytest -m perf tests/perf/test_slice37_regression.py
+```
+
+| Contract | Drempel (`baseline.json` → `slice37_contracts`) |
+|----------|--------------------------------------------------|
+| Post-run presentatie | contribution build ≤ 1; LCC/NB/PM builds == 0 |
+| Contribution DTO | `built_modi == {"bijdragen"}` |
+
+## Slice 38 contracten
+
+```bash
+pytest -m perf tests/perf/test_slice38_regression.py
+```
+
+| Contract | Drempel (`baseline.json` → `slice38_contracts`) |
+|----------|--------------------------------------------------|
+| Jaarklik curve-key | ongewijzigd bij `lcc_calendar_year` wijziging |
+| Inactive overlay curve | ≤ 1 `build_ltap_pm_cost_series` per build |
+| Reconciliatie | ≤ 1 `reconcile_planning_curve_pm_total` per curve |
+| Jaardetail injected curve | 0 curve-rebuilds bij jaarnavigatie |
+| Post-run warmup | ≤ 1 LCC curve build in achtergrond |
+
 ## Overige perf-tests
 
 ```bash

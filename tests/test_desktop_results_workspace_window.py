@@ -1020,9 +1020,10 @@ def test_pbs_scope_applies_to_bijdragen_single_pane(monkeypatch):
     assert full_rows >= scoped_rows
 
 
-def test_lcc_modus_uses_presentation_cache_without_rebuild(monkeypatch):
-    """Slice 26 issue 05 — projecttotaal LCC uit cache, geen tweede build."""
-    import rcm_desktop.views.results_workspace_window as rw
+def test_lcc_modus_reuses_render_index_without_second_build(monkeypatch):
+    """Slice 37 — LCC bouwt via render_index; tweede bezoek hergebruikt cache."""
+    import rcm_desktop.adapter.lcc_planning_service as lcc_planning
+    import rcm_desktop.adapter.presentation_lazy_service as lazy_svc
 
     app = _ensure_app()
     monkeypatch.setattr(QMessageBox, "critical", lambda *_a, **_k: QMessageBox.Ok)
@@ -1034,20 +1035,20 @@ def test_lcc_modus_uses_presentation_cache_without_rebuild(monkeypatch):
     app.processEvents()
 
     calls = {"n": 0}
-    real = rw.build_single_run_lcc_input
+    real = lcc_planning.build_lcc_planning_curve_reconciled
 
-    def counting(project, run_result, *_args, **_kwargs):
+    def counting(*args, **kwargs):
         calls["n"] += 1
-        return real(project, run_result)
+        return real(*args, **kwargs)
 
-    monkeypatch.setattr(rw, "build_single_run_lcc_input", counting)
+    monkeypatch.setattr(lazy_svc, "build_lcc_planning_curve_reconciled", counting)
     window.workspace_state.set_modus(MODE_LCC)
     app.processEvents()
     window.workspace_state.set_modus(MODE_BIJDRAGEN)
     app.processEvents()
     window.workspace_state.set_modus(MODE_LCC)
     app.processEvents()
-    assert calls["n"] == 0
+    assert calls["n"] == 1
 
 
 def test_validate_hydrates_run_from_cache_without_runner(monkeypatch, tmp_path):

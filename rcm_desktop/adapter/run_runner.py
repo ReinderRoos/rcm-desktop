@@ -9,7 +9,7 @@ from rcm_desktop.adapter.run_decision import RunUserIntent, resolve_run_executio
 from rcm_desktop.adapter.presentation_cache_service import (
     PresentationProjectTotal,
     attach_presentation_to_cache,
-    build_project_total_presentation,
+    build_contribution_presentation,
 )
 
 PHASE_MOTOR = "motor"
@@ -50,7 +50,7 @@ class _RunWorker(QObject):
         )
         presentation = None
         if result.status == "done":
-            presentation = build_project_total_presentation(self._project, result)
+            presentation = build_contribution_presentation(self._project, result)
             attach_presentation_to_cache(
                 self._project_path, self._project, presentation
             )

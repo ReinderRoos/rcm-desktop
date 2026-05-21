@@ -8,7 +8,7 @@ from PySide6.QtCore import QObject, QThread, Signal, Slot
 from rcm_desktop.adapter.presentation_cache_service import (
     PresentationProjectTotal,
     attach_presentation_to_cache,
-    build_project_total_presentation,
+    build_contribution_presentation,
 )
 from rcm_desktop.adapter.run_service import RunResult
 
@@ -27,7 +27,7 @@ class _PresentationRebuildWorker(QObject):
         if not isinstance(self._run, RunResult) or self._run.status != "done":
             self.finished.emit(None)
             return
-        dto = build_project_total_presentation(self._project, self._run)
+        dto = build_contribution_presentation(self._project, self._run)
         attach_presentation_to_cache(Path(self._project_path), self._project, dto)
         self.finished.emit(dto)
 
