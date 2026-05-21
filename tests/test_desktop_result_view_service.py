@@ -7,7 +7,13 @@ import pytest
 from rcm_core.config import RCMConfig
 from rcm_core.models import FMResult, PBSItem, PBSResult, RCMProject
 from rcm_core.persistence import load_project
-from rcm_desktop.adapter.result_view_service import build_pbs_rows, build_rows
+from rcm_desktop.adapter.result_view_service import (
+    PBSResultRow,
+    build_pbs_rows,
+    build_pbs_structure_tree,
+    build_pbs_tree,
+    build_rows,
+)
 
 
 def _fm_result(fm_id: str, pbs_id: str, expected_failures: float, downtime: float, cost: float) -> FMResult:
@@ -154,6 +160,104 @@ def test_build_pbs_rows_recomputes_unavailability_parity_for_leaf():
 
     row = build_pbs_rows(project, pbs_results)[0]
     assert row.unavailability_pct_total == pytest.approx(expected_pct)
+
+
+def test_build_pbs_tree_returns_empty_tuple_for_empty_rows():
+    assert build_pbs_tree([]) == ()
+
+
+def test_build_pbs_tree_matches_build_pbs_rows_hierarchy():
+    project = _pbs_project()
+    pbs_results = {
+        "A": _pbs_result("A", failures=1.0, downtime=10.0, cost=100.0),
+        "B": _pbs_result("B", failures=2.0, downtime=20.0, cost=200.0),
+        "C": _pbs_result("C", failures=3.0, downtime=30.0, cost=300.0),
+        "D": _pbs_result("D", failures=4.0, downtime=40.0, cost=400.0),
+    }
+    rows = build_pbs_rows(project, pbs_results)
+    roots = build_pbs_tree(rows)
+
+    assert [n.pbs_id for n in roots] == ["A", "E"]
+    node_a = roots[0]
+    assert node_a.pbs_id == "A"
+    assert [c.pbs_id for c in node_a.children] == ["B", "C"]
+    node_b = node_a.children[0]
+    assert node_b.pbs_id == "B"
+    assert [c.pbs_id for c in node_b.children] == ["D"]
+    assert roots[1].pbs_id == "E"
+    assert roots[1].children == ()
+
+
+def test_build_pbs_tree_first_row_wins_on_duplicate_pbs_id():
+    project = _pbs_project()
+    rows = build_pbs_rows(
+        project,
+        {
+            "A": _pbs_result("A", failures=1.0, downtime=1.0, cost=1.0),
+            "B": _pbs_result("B", failures=2.0, downtime=2.0, cost=2.0),
+        },
+    )
+    row_a_first = next(r for r in rows if r.pbs_id == "A")
+    row_a_dup = PBSResultRow(
+        pbs_id="A",
+        bouwdeel_naam="Ghost",
+        parent_pbs_id="B",
+        level=99,
+        sort_path=("Z",),
+        expected_failures_self=9.0,
+        total_downtime_hr_self=9.0,
+        total_cost_eur_self=9.0,
+        expected_failures_total=9.0,
+        total_downtime_hr_total=9.0,
+        total_cost_eur_total=9.0,
+        unavailability_pct_total=9.0,
+    )
+    merged = list(rows) + [row_a_dup]
+    roots = build_pbs_tree(merged)
+
+    assert roots[0].row is row_a_first
+    assert roots[0].row.bouwdeel_naam != "Ghost"
+    assert roots[0].row.parent_pbs_id is None
+
+
+def test_build_pbs_structure_tree_returns_empty_for_empty_project():
+    project = RCMProject(config=RCMConfig(lifecycle_years=80.0), pbs_items={})
+    assert build_pbs_structure_tree(project) == ()
+
+
+def test_build_pbs_structure_tree_mirrors_parent_links():
+    project = _pbs_project()
+
+    roots = build_pbs_structure_tree(project)
+
+    assert [n.pbs_id for n in roots] == ["A", "E"]
+    node_a = roots[0]
+    assert [c.pbs_id for c in node_a.children] == ["B", "C"]
+    node_b = node_a.children[0]
+    assert [c.pbs_id for c in node_b.children] == ["D"]
+
+
+def test_build_pbs_structure_tree_uses_bouwdeel_from_pbsitem():
+    project = _pbs_project()
+
+    roots = build_pbs_structure_tree(project)
+
+    by_id = {n.pbs_id: n for n in roots}
+    assert by_id["A"].row.bouwdeel_naam == "Root A"
+    assert by_id["E"].row.bouwdeel_naam == "Orphan E"
+
+
+def test_build_pbs_structure_tree_emits_zero_aggregates_before_run():
+    project = _pbs_project()
+
+    roots = build_pbs_structure_tree(project)
+    root_a = roots[0]
+    leaf_d = root_a.children[0].children[0]
+
+    assert root_a.row.expected_failures_total == 0.0
+    assert root_a.row.total_cost_eur_total == 0.0
+    assert root_a.row.unavailability_pct_total == 0.0
+    assert leaf_d.row.expected_failures_total == 0.0
 
 
 def test_build_pbs_rows_handles_cycle_defensively():

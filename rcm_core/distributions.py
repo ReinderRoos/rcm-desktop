@@ -209,3 +209,117 @@ def sample_time_to_failure(
 
     else:
         raise ValueError(f"Onbekend failure_type: {failure_type!r}")
+
+
+# ---------------------------------------------------------------------------
+# REV / kalenderbuckets (slice 24 — hersteld voor adapter-imports)
+# ---------------------------------------------------------------------------
+
+from typing import TYPE_CHECKING
+
+from rcm_core.normal_fast import truncated_normal_conditional_mean
+
+if TYPE_CHECKING:
+    from rcm_core.models import PMTask
+
+RevSchedule = tuple[tuple[float, float], ...]
+
+
+def rejuvenate_age(age: float, effect_fraction: float) -> float:
+    """Gedeeld voor CM (repair_quality) en REV (aging_effect_pct/100)."""
+    return age * (1.0 - effect_fraction)
+
+
+def build_rev_schedule(pm_tasks: list["PMTask"]) -> RevSchedule:
+    """(interval_jaar, effect_fraction) voor REV-taken, gesorteerd op interval."""
+    from rcm_core.models import TaskType
+
+    entries: list[tuple[float, float]] = []
+    for task in pm_tasks:
+        if task.taak_type == TaskType.REV and float(task.interval_jaar) > 0:
+            effect = float(getattr(task, "aging_effect_pct", 100.0)) / 100.0
+            entries.append((float(task.interval_jaar), effect))
+    return tuple(sorted(entries, key=lambda item: item[0]))
+
+
+def expected_aging_lifecycle_faalmomenten_ssot(
+    *,
+    current_age: float,
+    lifecycle_years: float,
+    mttf: float,
+    sigma: float,
+    repair_quality: float,
+    num_buckets: int,
+    rev_schedule: RevSchedule = (),
+    max_iterations: int = 100,
+) -> tuple[float, list[float]]:
+    """Verwachte faalmomenten per kalenderbucket (uniforme fallback)."""
+    del rev_schedule, max_iterations
+    total = expected_failures_lifecycle(
+        current_age,
+        lifecycle_years,
+        "aging",
+        mttf,
+        sigma,
+        repair_quality,
+    )
+    n = max(1, int(num_buckets))
+    per_bucket = [float(total) / n] * n
+    return float(total), per_bucket
+
+
+def _conditional_failures_with_rev_segments(
+    effective_age: float,
+    *,
+    clock_start: float,
+    rem_clock: float,
+    mttf: float,
+    sigma: float,
+    rev_schedule: RevSchedule,
+) -> float:
+    """Fallback zonder REV-segmentatie."""
+    del rev_schedule
+    return _expected_failures_aging(
+        effective_age,
+        clock_start + rem_clock,
+        mttf,
+        sigma,
+        1.0,
+    )
+
+
+# ---------------------------------------------------------------------------
+# AC-50 kalenderbuckets (slice 27)
+# ---------------------------------------------------------------------------
+
+
+def first_failure_mass_per_calendar_bucket(
+    *,
+    current_age: float,
+    lifecycle_years: float,
+    mttf: float,
+    sigma: float,
+) -> list[float]:
+    """Phi-massa per kalenderbucket [age+h, age+h+1) voor eerste-faling (normaal)."""
+    import math
+
+    import numpy as np
+
+    from rcm_core.normal_fast import bucket_phi_segments
+
+    n = max(1, int(math.ceil(lifecycle_years)))
+    edges = np.linspace(float(current_age), float(current_age) + n, n + 1)
+    return bucket_phi_segments(edges, mttf, sigma).tolist()
+
+
+def ac50_mass_fraction_strictly_after_mttf(
+    masses: list[float],
+    *,
+    mttf_jaar: float,
+) -> float:
+    """Fractie van eerste-faling-massa in buckets die starten op of na ``mttf_jaar``."""
+    total = float(sum(masses))
+    if total <= 0.0:
+        return 0.0
+    start_idx = max(0, min(len(masses), int(mttf_jaar)))
+    return float(sum(masses[start_idx:])) / total

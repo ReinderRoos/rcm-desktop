@@ -145,3 +145,22 @@ def test_unknown_fm_id_no_callback(sample_project):
     svc.init(sample_project)
     svc.apply_change("DOES-NOT-EXIST", "mttf_jaar", "10")
     assert calls == []
+
+
+def test_dirty_tracks_baseline_deviation(sample_project):
+    svc = FaalwijzenEditService()
+    svc.init(sample_project)
+    assert svc.is_dirty() is False
+    svc.apply_change("FM-001", "mttf_jaar", "16")
+    assert svc.is_dirty() is True
+    svc.apply_change("FM-001", "mttf_jaar", "15")
+    assert svc.is_dirty() is False
+
+
+def test_mark_saved_resets_dirty_baseline(sample_project):
+    svc = FaalwijzenEditService()
+    svc.init(sample_project)
+    svc.apply_change("FM-001", "mttf_jaar", "18")
+    assert svc.is_dirty() is True
+    svc.mark_saved()
+    assert svc.is_dirty() is False

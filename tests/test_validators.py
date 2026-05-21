@@ -45,6 +45,14 @@ class TestValidators:
         errors = validate_project(project)
         assert errors == []
 
+    def test_nmf_without_test_is_blocking(self):
+        project = _make_valid_project()
+        project.faalwijzes["FM-001"].is_evident = False
+        project.pm_tasks.clear()
+        errors = validate_project(project)
+        codes = {e.code for e in errors}
+        assert "FM_NMF_REQUIRES_TEST" in codes
+
     def test_fm_pbs_fk_missing(self):
         project = _make_valid_project()
         project.faalwijzes["FM-001"].pbs_id = "PBS-NIET_BESTAAND"

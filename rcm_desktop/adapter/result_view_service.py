@@ -139,3 +139,104 @@ def build_pbs_rows(project: RCMProject, pbs_results: dict[str, PBSResult]) -> li
         _walk(remaining_id, 0, tuple(), set())
 
     return rows
+
+
+@dataclass(frozen=True)
+class PBSTreeNode:
+    pbs_id: str
+    row: PBSResultRow
+    children: tuple["PBSTreeNode", ...] = ()
+
+
+def build_pbs_tree(rows: list[PBSResultRow]) -> tuple[PBSTreeNode, ...]:
+    """Bouw PBS-hiërarchie uit rijen; eerste rij per `pbs_id` wint."""
+    if not rows:
+        return ()
+
+    by_id: dict[str, PBSResultRow] = {}
+    for row in rows:
+        by_id.setdefault(row.pbs_id, row)
+
+    children_map: dict[str | None, list[str]] = {}
+    for pbs_id, row in by_id.items():
+        parent = row.parent_pbs_id
+        if parent is None or parent not in by_id:
+            parent_key: str | None = None
+        else:
+            parent_key = parent
+        children_map.setdefault(parent_key, []).append(pbs_id)
+    for child_ids in children_map.values():
+        child_ids.sort()
+
+    def make_node(pbs_id: str) -> PBSTreeNode:
+        child_ids = children_map.get(pbs_id, [])
+        return PBSTreeNode(
+            pbs_id=pbs_id,
+            row=by_id[pbs_id],
+            children=tuple(make_node(cid) for cid in child_ids),
+        )
+
+    root_ids = children_map.get(None, [])
+    root_ids.sort()
+    return tuple(make_node(rid) for rid in root_ids)
+
+
+def build_pbs_structure_tree(project: RCMProject) -> tuple[PBSTreeNode, ...]:
+    """PBS-structuur vóór run: nul-aggregaten, bouwdeel uit `PBSItem`."""
+    if not project.pbs_items:
+        return ()
+
+    children: dict[str | None, list[str]] = {}
+    for pbs_id, item in project.pbs_items.items():
+        parent = item.parent_pbs_id
+        if parent is None or parent not in project.pbs_items:
+            parent_key: str | None = None
+        else:
+            parent_key = parent
+        children.setdefault(parent_key, []).append(pbs_id)
+    for child_ids in children.values():
+        child_ids.sort()
+
+    emitted: set[str] = set()
+    rows: list[PBSResultRow] = []
+
+    def _walk(pbs_id: str, level: int, path: tuple[str, ...], in_path: set[str]) -> None:
+        if pbs_id in emitted:
+            return
+        emitted.add(pbs_id)
+        item = project.pbs_items[pbs_id]
+        parent_id = item.parent_pbs_id
+        if parent_id not in project.pbs_items:
+            parent_id = None
+        next_path = path + (pbs_id,)
+        rows.append(
+            PBSResultRow(
+                pbs_id=pbs_id,
+                bouwdeel_naam=item.bouwdeel_naam,
+                parent_pbs_id=parent_id,
+                level=level,
+                sort_path=next_path,
+                expected_failures_self=0.0,
+                total_downtime_hr_self=0.0,
+                total_cost_eur_self=0.0,
+                expected_failures_total=0.0,
+                total_downtime_hr_total=0.0,
+                total_cost_eur_total=0.0,
+                unavailability_pct_total=0.0,
+            )
+        )
+        next_in_path = set(in_path)
+        next_in_path.add(pbs_id)
+        for child_id in children.get(pbs_id, ()):
+            if child_id in next_in_path:
+                continue
+            _walk(child_id, level + 1, next_path, next_in_path)
+
+    for root_id in children.get(None, ()):
+        if root_id not in emitted:
+            _walk(root_id, 0, tuple(), set())
+    for remaining_id in sorted(project.pbs_items):
+        if remaining_id not in emitted:
+            _walk(remaining_id, 0, tuple(), set())
+
+    return build_pbs_tree(rows)

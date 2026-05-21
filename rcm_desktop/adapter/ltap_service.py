@@ -5,16 +5,23 @@ import math
 
 from rcm_core.models import PMTask, RCMProject, TaskType
 
+PM_COST_DISPLAY_NORMAL = "normal"
+PM_COST_DISPLAY_ZERO_EXPECTED = "zero_expected"
+PM_COST_DISPLAY_ZERO_MISSING = "zero_missing"
+
 
 @dataclass(frozen=True)
 class LTAPTaskDetail:
     pm_id: str
     pm_label: str
     fm_id: str
+    fm_display: str
+    fm_tooltip: str
     taak_type: str
     taak_omschrijving: str
     executions: int
     pm_cost_eur: float
+    pm_cost_display: str
     planned_downtime_hr: float
     anchor_year: float
     shiftable: bool
@@ -37,33 +44,71 @@ class LTAPView:
     total_planned_downtime_hr: float
 
 
+def resolve_ltap_fm_cell(*, fm_id: str, project: RCMProject) -> tuple[str, str]:
+    """Return (cell_display_text, cell_tooltip) for the LTAP Faalwijze column."""
+    fm = project.faalwijzes.get(fm_id)
+    if fm is None:
+        tip = (
+            f"Faalwijze-ID (JSON): {fm_id}\n"
+            "Onbekende faalwijze: deze FM staat niet in het geladen project."
+        )
+        return (fm_id, tip)
+    desc = (fm.faalwijze_omschrijving or "").strip()
+    base_tip = f"Faalwijze-ID (JSON): {fm_id}"
+    if not desc:
+        return (fm_id, f"{base_tip}\nGeen omschrijving in het model.")
+    return (desc, base_tip)
+
+
+def _task_matches_type_filter(task: PMTask, taak_type_filter: str | None) -> bool:
+    if taak_type_filter is None:
+        return True
+    if taak_type_filter == "WET":
+        return task.is_wettelijk_verplicht or "WET" in (task.taak_omschrijving or "").upper()
+    return task.taak_type.value == taak_type_filter
+
+
 def build_ltap_view(
     project: RCMProject,
     *,
     overlay_anchor_years: dict[str, float] | None = None,
     taak_type_filter: str | None = None,
+    disabled_pm_ids: frozenset[str] | None = None,
+    fm_pbs_ids: frozenset[str] | None = None,
 ) -> LTAPView:
     lifecycle_years = float(project.config.lifecycle_years)
     max_year = max(0, math.ceil(lifecycle_years) - 1)
     by_year: dict[int, list[LTAPTaskDetail]] = {year: [] for year in range(max_year + 1)}
+    seq_by_pm_id = build_ltap_pm_display_seq_map(project)
 
+    disabled = disabled_pm_ids or frozenset()
     for task in sorted(project.pm_tasks.values(), key=lambda item: item.pm_id):
-        if taak_type_filter is not None and task.taak_type.value != taak_type_filter:
+        if task.pm_id in disabled:
+            continue
+        if fm_pbs_ids is not None:
+            fm = project.faalwijzes.get(task.fm_id)
+            if fm is None or fm.pbs_id not in fm_pbs_ids:
+                continue
+        if not _task_matches_type_filter(task, taak_type_filter):
             continue
         anchor_year = float((overlay_anchor_years or {}).get(task.pm_id, 0.0))
         executions_by_year = _executions_by_year(task, lifecycle_years=lifecycle_years, anchor_year=anchor_year)
         for year, executions in executions_by_year.items():
             if executions <= 0:
                 continue
+            fm_display, fm_tooltip = resolve_ltap_fm_cell(fm_id=task.fm_id, project=project)
             by_year[year].append(
                 LTAPTaskDetail(
                     pm_id=task.pm_id,
-                    pm_label=format_ltap_pm_label(task),
+                    pm_label=format_ltap_pm_label(task, seq_by_pm_id[task.pm_id]),
                     fm_id=task.fm_id,
+                    fm_display=fm_display,
+                    fm_tooltip=fm_tooltip,
                     taak_type=task.taak_type.value,
                     taak_omschrijving=task.taak_omschrijving,
                     executions=executions,
                     pm_cost_eur=task.cost_eur * executions,
+                    pm_cost_display=classify_pm_cost_display(task, project),
                     planned_downtime_hr=_planned_downtime_per_execution(task) * executions,
                     anchor_year=anchor_year,
                     shiftable=_is_shiftable(task),
@@ -128,7 +173,27 @@ def _is_shiftable(task: PMTask) -> bool:
     return "WET" not in (task.taak_omschrijving or "").upper()
 
 
-def format_ltap_pm_label(task: PMTask) -> str:
-    group_label = "TG" if task.task_group_id else "GEEN-TG"
-    wet_label = "WET" if "WET" in (task.taak_omschrijving or "").upper() else "NIET-WET"
-    return f"{task.pm_id} [{task.taak_type.value}] [{group_label}] [{wet_label}]"
+def build_ltap_pm_display_seq_map(project: RCMProject) -> dict[str, int]:
+    ids = sorted(project.pm_tasks.keys())
+    return {pm_id: idx + 1 for idx, pm_id in enumerate(ids)}
+
+
+def classify_pm_cost_display(task: PMTask, project: RCMProject) -> str:
+    if float(task.cost_eur) != 0.0:
+        return PM_COST_DISPLAY_NORMAL
+    if task.task_group_id:
+        return PM_COST_DISPLAY_ZERO_EXPECTED
+    rationale = task.effective_aanname_kosten(project)
+    if rationale and rationale.strip():
+        return PM_COST_DISPLAY_ZERO_EXPECTED
+    return PM_COST_DISPLAY_ZERO_MISSING
+
+
+def format_ltap_pm_label(task: PMTask, seq: int) -> str:
+    parts = ["PM", task.taak_type.value]
+    if "WET" in (task.taak_omschrijving or "").upper():
+        parts.append("WET")
+    if task.task_group_id:
+        parts.append("TG")
+    parts.append(f"{seq:02d}")
+    return "_".join(parts)

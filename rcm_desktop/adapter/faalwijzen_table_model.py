@@ -6,7 +6,7 @@ from typing import Any
 
 from PySide6.QtCore import QAbstractTableModel, QModelIndex, Qt
 from PySide6.QtGui import QColor
-from PySide6.QtWidgets import QComboBox, QStyledItemDelegate, QWidget
+from PySide6.QtWidgets import QAbstractItemView, QComboBox, QStyledItemDelegate, QStyleOptionViewItem, QWidget
 
 from rcm_desktop import messages
 from rcm_desktop.adapter.faalwijzen_edit_service import (
@@ -183,6 +183,12 @@ class FaalwijzenFkDelegate(QStyledItemDelegate):
     def __init__(self, project: RCMProject, parent: QWidget | None = None) -> None:
         super().__init__(parent)
         self._project = project
+
+    def initStyleOption(self, option: QStyleOptionViewItem, index):  # noqa: ANN001
+        super().initStyleOption(option, index)
+        parent = self.parent()
+        if isinstance(parent, QAbstractItemView) and parent.wordWrap():
+            option.features |= QStyleOptionViewItem.ViewItemFeature.WrapText
 
     def createEditor(self, parent: QWidget, option, index):  # noqa: ANN001
         cb = QComboBox(parent)

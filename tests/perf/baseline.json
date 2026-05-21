@@ -1,0 +1,8 @@
+{
+  "_comment": "Pre-slice-24 handmatige meetwaarden (demo-fixture awzi_haarlem_waarderpolder). Niet wijzigen na publicatie.",
+  "fixture": "tests/fixtures/awzi_haarlem_waarderpolder_demo.rcm.json",
+  "cm_full_run_seconds": 120.0,
+  "pm_full_run_seconds": 120.0,
+  "cm_repeat_run_seconds": 5.0,
+  "cmpm_combined_seconds": 320.0
+}

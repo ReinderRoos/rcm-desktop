@@ -8,7 +8,7 @@ import math
 from dataclasses import dataclass
 
 from rcm_core.cache import compute_fm_hash
-from rcm_core.models import FMResult, RCMProject
+from rcm_core.models import Faalwijze, FMResult, RCMProject
 
 from rcm_desktop.adapter.calendar_year import calendar_year_for_horizon_index
 from rcm_desktop.adapter.contribution_horizon_value_service import (
@@ -17,6 +17,25 @@ from rcm_desktop.adapter.contribution_horizon_value_service import (
 from rcm_core.lcc_profile import ltap_horizon_bucket_count
 
 _RECONCILE_ABS = 1e-3
+
+
+@dataclass(frozen=True)
+class FMVerificationEffectLinkRow:
+    klasse_id: str
+    effect_omschrijving: str
+    fractie: float
+
+
+@dataclass(frozen=True)
+class FMVerificationInputs:
+    initial_age_jaar: float
+    mttf_jaar: float
+    failure_type: str
+    sigma_jaar: float
+    sigma_uses_default: bool
+    mttr_hr: float
+    cost_cm_eur: float
+    effect_links: tuple[FMVerificationEffectLinkRow, ...]
 
 
 @dataclass(frozen=True)
@@ -48,6 +67,7 @@ class FMVerificationView:
     pbs_id: str
     bouwdeel_naam: str
     fm_input_hash: str | None
+    inputs: FMVerificationInputs | None
     lifecycle: FMVerificationLifecycle
     year_rows: tuple[FMVerificationYearRow, ...]
     profile_missing: bool
@@ -76,8 +96,10 @@ def build_fm_verification_view(project: RCMProject, fmr: FMResult) -> FMVerifica
     )
 
     fm_input_hash: str | None = None
+    inputs: FMVerificationInputs | None = None
     if fm is not None:
         fm_input_hash = compute_fm_hash(project, fmr.fm_id)
+        inputs = _build_inputs(project, fm)
 
     hp = fmr.horizon_profile
     profile_missing = hp is None
@@ -127,11 +149,44 @@ def build_fm_verification_view(project: RCMProject, fmr: FMResult) -> FMVerifica
         pbs_id=fmr.pbs_id,
         bouwdeel_naam=bouwdeel_naam,
         fm_input_hash=fm_input_hash,
+        inputs=inputs,
         lifecycle=lifecycle,
         year_rows=year_rows,
         profile_missing=profile_missing,
         reconcile_ok=reconcile_ok,
         reconcile_notes=tuple(reconcile_notes),
+    )
+
+
+def _build_inputs(project: RCMProject, fm: Faalwijze) -> FMVerificationInputs:
+    pbs = project.pbs_items.get(fm.pbs_id)
+    modeljaar = int(project.config.modeljaar)
+    initial_age = pbs.current_age(modeljaar) if pbs is not None else 0.0
+    sigma_raw = float(fm.sigma_jaar)
+    sigma_uses_default = sigma_raw <= 0.0
+    sigma_display = float(fm.effective_sigma) if sigma_uses_default else sigma_raw
+    effect_rows: list[FMVerificationEffectLinkRow] = []
+    for link in sorted(
+        project.get_fm_effect_links_for_fm(fm.fm_id), key=lambda l: l.link_id
+    ):
+        ek = project.effect_klassen.get(link.klasse_id)
+        omsch = ek.omschrijving if ek is not None else ""
+        effect_rows.append(
+            FMVerificationEffectLinkRow(
+                klasse_id=link.klasse_id,
+                effect_omschrijving=omsch,
+                fractie=float(link.fractie),
+            )
+        )
+    return FMVerificationInputs(
+        initial_age_jaar=initial_age,
+        mttf_jaar=float(fm.mttf_jaar),
+        failure_type=fm.failure_type.value,
+        sigma_jaar=sigma_display,
+        sigma_uses_default=sigma_uses_default,
+        mttr_hr=float(fm.downtime_per_failure.to_hours()),
+        cost_cm_eur=float(fm.cost_cm_eur),
+        effect_links=tuple(effect_rows),
     )
 
 
