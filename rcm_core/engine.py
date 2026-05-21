@@ -15,10 +15,13 @@ from rcm_core.models import (
 )
 from rcm_core.units import HOURS_PER_YEAR
 from rcm_core.distributions import (
+    build_rev_schedule,
     effective_age_after_repair,
+    expected_aging_lifecycle_faalmomenten_ssot,
     expected_failures_lifecycle,
     p_failure_by_age,
 )
+from rcm_core.lcc_profile import build_fm_horizon_profile
 
 
 # ---------------------------------------------------------------------------
@@ -193,6 +196,15 @@ def compute_fm_result(
             combined_effect_bijdragen.get(klasse_id, 0.0) + uren
         )
 
+    horizon_profile = build_fm_horizon_profile(
+        config=config,
+        fm=fm,
+        pbs=pbs,
+        pm_tasks=pm_tasks,
+        all_pbs=all_pbs,
+        hidden_nb_per_failure_hr=detection_delay_hr_per_failure,
+    )
+
     return FMResult(
         fm_id=fm.fm_id,
         pbs_id=fm.pbs_id,
@@ -207,6 +219,7 @@ def compute_fm_result(
         total_cost_eur=expected_cm_cost + pm_cost,
         risk_contribution=risk_contribution,
         effect_bijdragen=combined_effect_bijdragen,
+        horizon_profile=horizon_profile,
     )
 
 

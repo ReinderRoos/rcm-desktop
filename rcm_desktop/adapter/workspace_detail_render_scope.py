@@ -10,6 +10,14 @@ from rcm_desktop.adapter.results_workspace_state import WorkspaceStateSnapshot
 
 RenderSplitDepth = Literal["all_splits", "active_modus_only"]
 
+_DETAIL_MODI = frozenset(
+    {
+        "fm_detail",
+        "bijdragen",
+        "lcc",
+    }
+)
+
 
 def workspace_detail_split_render_depth(
     previous: WorkspaceStateSnapshot | None,
@@ -28,3 +36,17 @@ def workspace_detail_split_render_depth(
     if previous.scope_id != current.scope_id:
         return "all_splits"
     return "active_modus_only"
+
+
+def required_detail_builders(
+    snapshot: WorkspaceStateSnapshot,
+    depth: RenderSplitDepth,
+) -> frozenset[str]:
+    """Welke modus-adapters in deze tick herbouwd mogen worden."""
+    if depth == "active_modus_only":
+        return frozenset({snapshot.modus})
+    return frozenset(_DETAIL_MODI)
+
+
+def should_refresh_kpi_for_render_depth(depth: RenderSplitDepth) -> bool:
+    return depth == "all_splits"

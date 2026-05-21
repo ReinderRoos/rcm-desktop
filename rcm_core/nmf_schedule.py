@@ -46,11 +46,15 @@ def build_horizon_profile(
     cost_per_failure_eur: float,
     downtime_per_failure_hr: float,
     num_buckets: int,
+    hidden_nb_per_failure_hr: float | None = None,
 ) -> tuple[list[float], list[float], list[float]]:
     """Bouw ``cor_eur``, ``cor_downtime_hr`` en ``hidden_nb_hr`` per horizonbucket."""
     cor_eur = [0.0] * num_buckets
     cor_downtime_hr = [0.0] * num_buckets
     hidden_nb_hr = [0.0] * num_buckets
+    hidden_rate = float(
+        downtime_per_failure_hr if hidden_nb_per_failure_hr is None else hidden_nb_per_failure_hr
+    )
 
     for h, mass in enumerate(faalmomenten):
         if mass <= 0.0 or h >= num_buckets:
@@ -73,7 +77,7 @@ def build_horizon_profile(
 
         period_lo, period_hi = t_fail, t_disc
         period_len = period_hi - period_lo
-        hidden_total = downtime_per_failure_hr * m
+        hidden_total = hidden_rate * m
         for k in range(num_buckets):
             bucket_lo = float(k)
             bucket_hi = float(k) + 1.0

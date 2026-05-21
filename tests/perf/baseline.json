@@ -4,5 +4,12 @@
   "cm_full_run_seconds": 120.0,
   "pm_full_run_seconds": 120.0,
   "cm_repeat_run_seconds": 5.0,
-  "cmpm_combined_seconds": 320.0
+  "cmpm_combined_seconds": 320.0,
+  "slice36_contracts": {
+    "_comment": "CI guardrails — call-count / cache-only, geen wall-clock asserts",
+    "cache_hit_recalculated_fm_count_max": 0,
+    "lcc_curve_ltap_calls_max": 2,
+    "lcc_render_cycle_ltap_builds_max": 2,
+    "lcc_year_detail_curve_rebuilds_with_injected_curve_max": 0
+  }
 }

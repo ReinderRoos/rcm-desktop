@@ -1,12 +1,38 @@
 from __future__ import annotations
 
-from PySide6.QtCore import QAbstractTableModel, QModelIndex, Qt
+from PySide6.QtCore import QAbstractTableModel, QModelIndex, QSortFilterProxyModel, Qt
 
 from rcm_desktop import messages
 from rcm_desktop.adapter.result_view_service import FMResultRow
 from rcm_desktop.formatting import format_eur, format_float, format_int
 
 RAW_ROLE = Qt.UserRole + 1
+
+_NUMERIC_SORT_COLS = frozenset({4, 5, 6})
+
+
+class FMResultsSortProxy(QSortFilterProxyModel):
+    """Sort proxy: numerieke kolommen via RAW float, tekst via case-insensitive string."""
+
+    def __init__(self, parent=None) -> None:
+        super().__init__(parent)
+        self.setSortRole(RAW_ROLE)
+        self.setDynamicSortFilter(True)
+
+    def lessThan(self, left: QModelIndex, right: QModelIndex) -> bool:  # noqa: N802
+        col = left.column()
+        src = self.sourceModel()
+        if src is None:
+            return False
+        # Qt passes source-model indices to lessThan (not proxy indices).
+        lv = src.data(left, RAW_ROLE)
+        rv = src.data(right, RAW_ROLE)
+        if col in _NUMERIC_SORT_COLS:
+            try:
+                return float(lv) < float(rv)
+            except (TypeError, ValueError):
+                return False
+        return str(lv).casefold() < str(rv).casefold()
 
 
 class FMResultsTableModel(QAbstractTableModel):

@@ -68,7 +68,11 @@ from rcm_desktop.adapter.contribution_chart_service import (
     build_contribution_rows,
 )
 from rcm_desktop.adapter.contribution_table_model import ContributionTableModel
-from rcm_desktop.adapter.fm_results_table_model import FMResultsTableModel, RAW_ROLE
+from rcm_desktop.adapter.fm_results_table_model import (
+    FMResultsSortProxy,
+    FMResultsTableModel,
+    RAW_ROLE,
+)
 from rcm_desktop.adapter.fm_verification_service import (
     FMVerificationView,
     build_fm_verification_view,
@@ -135,6 +139,8 @@ from rcm_desktop.adapter.validate_service import (
 )
 from rcm_desktop.adapter.workspace_detail_render_scope import (
     RenderSplitDepth,
+    required_detail_builders,
+    should_refresh_kpi_for_render_depth,
     workspace_detail_split_render_depth,
 )
 from rcm_desktop.adapter.workspace_render_index import (
@@ -809,6 +815,11 @@ class ResultsWorkspaceWindow(QMainWindow):
         self.fm_table_view.setAlternatingRowColors(True)
         self.fm_table_view.setSelectionBehavior(QAbstractItemView.SelectRows)
         self.fm_table_view.setSelectionMode(QAbstractItemView.SingleSelection)
+        self._fm_table_proxy = FMResultsSortProxy(self.fm_table_view)
+        self.fm_table_view.setModel(self._fm_table_proxy)
+        sel = self.fm_table_view.selectionModel()
+        if sel is not None:
+            sel.selectionChanged.connect(self._on_fm_table_selection_changed)
         table_layout.addWidget(self.fm_table_view, stretch=1)
         self.detail_empty_state_label = QLabel(messages.WORKSPACE_DETAIL_EMPTY_STATE)
         self.detail_empty_state_label.setStyleSheet("color: #9E9E9E;")
@@ -855,7 +866,6 @@ class ResultsWorkspaceWindow(QMainWindow):
         inspector_layout.addWidget(self.fm_inspector_panel)
         self.fm_inspector_panel.setVisible(False)
         self.fm_inspector_container.setVisible(False)
-        self._fm_inspector_selection_wired = False
         self.fm_detail_splitter.addWidget(self.fm_inspector_container)
         self.fm_detail_splitter.setStretchFactor(0, 2)
         self.fm_detail_splitter.setStretchFactor(1, 1)
@@ -1080,18 +1090,18 @@ class ResultsWorkspaceWindow(QMainWindow):
                 self._refresh_fm_inspector(None)
         if lcc_active:
             self._sync_lcc_filter_checks(snapshot.lcc_filters)
-        # KPI-tabel hangt af van actieve scope; refresh bij elke state-wissel.
-        if hasattr(self, "kpi_table_view"):
+        # KPI-tabel hangt af van actieve scope; refresh bij scope-wissel.
+        split_depth = workspace_detail_split_render_depth(
+            self._last_workspace_snapshot_for_split_depth,
+            snapshot,
+        )
+        if should_refresh_kpi_for_render_depth(split_depth) and hasattr(self, "kpi_table_view"):
             self._refresh_kpi_table_view()
         self._sync_kpi_panel_visibility(snapshot)
         # Sync scope_id with the orchestrator (clicks set both, but reset paths only update state).
         if snapshot.scope_id != self._pbs_scope_id:
             self._pbs_scope_id = snapshot.scope_id
             self._update_scope_status_label()
-        split_depth = workspace_detail_split_render_depth(
-            self._last_workspace_snapshot_for_split_depth,
-            snapshot,
-        )
         self._rerender_detail_for_current_scope(split_render_depth=split_depth)
         self._last_workspace_snapshot_for_split_depth = snapshot
 
@@ -1201,8 +1211,6 @@ class ResultsWorkspaceWindow(QMainWindow):
         *,
         split_render_depth: RenderSplitDepth = "all_splits",
     ) -> None:
-        del split_render_depth
-
         project = self._state.last_project
         run_result = self._state.last_run
         snapshot = self.workspace_state.snapshot()
@@ -1210,27 +1218,51 @@ class ResultsWorkspaceWindow(QMainWindow):
         if project is None or not isinstance(run_result, RunResult) or run_result.status != "done":
             self._clear_detail_zone()
             return
+
+        required = required_detail_builders(snapshot, split_render_depth)
+        if split_render_depth == "all_splits":
+            self._render_index.on_workspace_state_reset()
+
         modus = snapshot.modus
-        if modus == MODE_FM_DETAIL:
+        if modus == MODE_FM_DETAIL and MODE_FM_DETAIL in required:
             view = filter_run_result(project, run_result, snapshot.scope_id)
             rows = filter_fm_rows_by_evident(
                 view.fm_rows, project, snapshot.fm_evident_filter
             )
             self._render_fm_rows(rows)
-        elif modus == MODE_BIJDRAGEN:
+        elif modus == MODE_BIJDRAGEN and MODE_BIJDRAGEN in required:
             self._render_bijdragen_for_snapshot(project, run_result, snapshot)
-        elif modus == MODE_LCC:
+        elif modus == MODE_LCC and MODE_LCC in required:
             self._render_lcc_for_run(project, run_result, snapshot)
 
+    def _selected_fm_id_from_table(self) -> str | None:
+        model = self.fm_table_view.model()
+        sel_model = self.fm_table_view.selectionModel()
+        if model is None or sel_model is None:
+            return None
+        indexes = sel_model.selectedRows()
+        if not indexes:
+            return None
+        fm_id = model.data(indexes[0], RAW_ROLE)
+        return str(fm_id) if fm_id is not None else None
+
     def _render_fm_rows(self, fm_rows) -> None:
+        prior_fm_id = self._selected_fm_id_from_table()
         model = FMResultsTableModel(list(fm_rows), self.fm_table_view)
-        self.fm_table_view.setModel(model)
+        self._fm_table_proxy.setSourceModel(model)
         self.detail_empty_state_label.setVisible(model.rowCount() == 0)
-        sel = self.fm_table_view.selectionModel()
-        if sel is not None and not self._fm_inspector_selection_wired:
-            sel.selectionChanged.connect(self._on_fm_table_selection_changed)
-            self._fm_inspector_selection_wired = True
-        self._refresh_fm_inspector(None)
+        restore_row: int | None = None
+        if prior_fm_id is not None:
+            for row in range(self._fm_table_proxy.rowCount()):
+                if self._fm_table_proxy.data(
+                    self._fm_table_proxy.index(row, 0), RAW_ROLE
+                ) == prior_fm_id:
+                    restore_row = row
+                    break
+        if restore_row is not None:
+            self.fm_table_view.selectRow(restore_row)
+        else:
+            self._refresh_fm_inspector(None)
 
     def _on_fm_table_selection_changed(
         self,
@@ -1373,7 +1405,7 @@ class ResultsWorkspaceWindow(QMainWindow):
         self.lcc_table_view.setModel(self._lcc_table_model_legacy)
         self.lcc_empty_state_label.setVisible(False)
         self._sync_lcc_chrome(snapshot)
-        self._render_lcc_year_detail(project, run_result, snapshot)
+        self._render_lcc_year_detail(project, run_result, snapshot, planning_curve=curve)
 
     def _sync_lcc_chrome(self, snapshot: WorkspaceStateSnapshot) -> None:
         project = self._state.last_project
@@ -1413,7 +1445,12 @@ class ResultsWorkspaceWindow(QMainWindow):
             self.lcc_overlay_status_label.setVisible(False)
 
     def _render_lcc_year_detail(
-        self, project, run_result: RunResult, snapshot: WorkspaceStateSnapshot
+        self,
+        project,
+        run_result: RunResult,
+        snapshot: WorkspaceStateSnapshot,
+        *,
+        planning_curve=None,
     ) -> None:
         year = snapshot.lcc_calendar_year
         if year is None:
@@ -1427,6 +1464,7 @@ class ResultsWorkspaceWindow(QMainWindow):
             scope_id=snapshot.scope_id,
             overlay=snapshot.planning_overlay,
             type_filters=snapshot.lcc_filters,
+            planning_curve=planning_curve,
         )
         if detail is None:
             self.lcc_year_summary_label.setText(messages.WORKSPACE_LCC_DETAIL_EMPTY_YEAR)
@@ -1671,7 +1709,7 @@ class ResultsWorkspaceWindow(QMainWindow):
         self.bijdragen_chart_label.setVisible(len(rows) == 0)
 
     def _clear_detail_zone(self) -> None:
-        self.fm_table_view.setModel(None)
+        self._fm_table_proxy.setSourceModel(None)
         self.detail_empty_state_label.setVisible(True)
         self._refresh_fm_inspector(None)
         self.bijdragen_chart_widget.set_rows(())
@@ -1792,7 +1830,18 @@ class ResultsWorkspaceWindow(QMainWindow):
         if project is None:
             return
         overlay = self.workspace_state.snapshot().planning_overlay
-        if self._run_runner.start(project, path, planning_overlay=overlay):
+        path = self.path_input.text().strip()
+        force = bool(
+            project is not None
+            and path
+            and fm_cache_available(project, path)
+        )
+        if self._run_runner.start(
+            project,
+            path,
+            planning_overlay=overlay,
+            force_recompute=force,
+        ):
             self.run_analyse_button.setEnabled(False)
 
     def _on_run_state_changed(self, _state: str) -> None:

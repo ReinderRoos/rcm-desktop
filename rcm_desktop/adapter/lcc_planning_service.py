@@ -11,7 +11,8 @@ from rcm_core.models import RCMProject, TaskType
 from rcm_desktop.adapter.calendar_year import calendar_year_for_horizon_index
 from rcm_desktop.adapter.lcc_chart_service import LCCScenarioCurve, LCCYearBucket, sum_correctief_preventief
 from rcm_desktop.adapter.lcc_type_filter import LCCTypeFilterSet
-from rcm_desktop.adapter.ltap_service import LTAPTaskDetail, LTAPView, build_ltap_view
+from rcm_desktop.adapter.ltap_service import LTAPTaskDetail, LTAPView
+from rcm_desktop.adapter.ltap_view_cache import get_ltap_view
 from rcm_desktop.adapter.planning_overlay_state import PlanningOverlayState
 from rcm_desktop.adapter.result_filter_service import collect_pbs_subtree_ids
 from rcm_desktop.adapter.run_service import RunResult
@@ -99,7 +100,7 @@ def _ltap_preventief_series(
     type_filters: LCCTypeFilterSet,
 ) -> tuple[tuple[float, ...], tuple[float, ...]]:
     """(on-gefilterde PM per jaar, filter-unie PM per jaar)."""
-    view = build_ltap_view(
+    view = get_ltap_view(
         project,
         overlay_anchor_years=overlay.anchor_years_dict() if overlay.active else None,
         disabled_pm_ids=disabled_pm_ids,
@@ -298,6 +299,7 @@ def build_lcc_year_detail(
     scope_id: str | None = None,
     overlay: PlanningOverlayState | None = None,
     type_filters: LCCTypeFilterSet | None = None,
+    planning_curve: LCCPlanningCurve | None = None,
 ) -> LCCYearDetailView | None:
     if run.status != "done" or not run.fm_core_results:
         return None
@@ -307,9 +309,11 @@ def build_lcc_year_detail(
     overlay_state = overlay or PlanningOverlayState.inactive()
     filters = type_filters or LCCTypeFilterSet.all_on()
     fm_scope = _fm_pbs_scope(project, scope_id)
-    curve = build_lcc_planning_curve_reconciled(
-        project, run, scope_id=scope_id, overlay=overlay_state, type_filters=filters
-    )
+    curve = planning_curve
+    if curve is None:
+        curve = build_lcc_planning_curve_reconciled(
+            project, run, scope_id=scope_id, overlay=overlay_state, type_filters=filters
+        )
     if curve is None:
         return None
     base_b = curve.baseline_buckets[h]
@@ -320,7 +324,7 @@ def build_lcc_year_detail(
 
     rows: list[LCCYearDetailRow] = []
     if not cm_only:
-        view = build_ltap_view(
+        view = get_ltap_view(
             project,
             overlay_anchor_years=overlay_state.anchor_years_dict() if overlay_state.active else None,
             disabled_pm_ids=overlay_state.disabled_pm_ids if overlay_state.active else frozenset(),

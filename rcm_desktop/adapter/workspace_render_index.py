@@ -7,6 +7,8 @@ from __future__ import annotations
 from collections.abc import Callable
 from typing import TypeVar
 
+from rcm_desktop.adapter.ltap_view_cache import invalidate_ltap_view_cache
+
 SLOT_CURRENT = "CURRENT"
 SLOT_CM = "CM"
 SLOT_PM = "PM"
@@ -44,6 +46,7 @@ class WorkspaceRenderIndex:
 
     def on_project_changed(self) -> None:
         self._cache.clear()
+        invalidate_ltap_view_cache()
 
     def on_workspace_state_reset(self) -> None:
         self._cache.clear()

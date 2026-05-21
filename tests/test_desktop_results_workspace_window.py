@@ -1105,6 +1105,62 @@ def test_fm_detail_selection_shows_inspector_identity_and_lifecycle(monkeypatch)
     assert messages.WORKSPACE_FM_INSPECTOR_HASH_PREFIX in window.fm_inspector_hash_label.text()
 
 
+def test_fm_inspector_selection_after_scope_rerender(monkeypatch):
+    """Inspector blijft reageren op rijselectie na FM-tabel re-render (proxy wiring)."""
+    app = _ensure_app()
+    monkeypatch.setattr(QMessageBox, "critical", lambda *_a, **_k: QMessageBox.Ok)
+    window = ResultsWorkspaceWindow()
+    window.show()
+    project = _three_level_project()
+    window._state.set_last_project(project)
+    window._state.set_last_run(_done_run_for_fixture())
+    window.modus_buttons["fm_detail"].click()
+    app.processEvents()
+
+    window.fm_table_view.selectRow(0)
+    app.processEvents()
+    assert window.fm_inspector_panel.isVisible()
+    assert "FM-A" in window.fm_inspector_identity_label.text()
+
+    window.show_whole_project_button.click()
+    app.processEvents()
+
+    model = window.fm_table_view.model()
+    fm_b_row = next(
+        row
+        for row in range(model.rowCount())
+        if model.data(model.index(row, 0), Qt.DisplayRole) == "FM-B"
+    )
+    window.fm_table_view.selectRow(fm_b_row)
+    app.processEvents()
+
+    assert window.fm_inspector_panel.isVisible()
+    assert "FM-B" in window.fm_inspector_identity_label.text()
+
+
+def test_fm_table_sorts_by_total_cost_column(monkeypatch):
+    """FM-tabel sorteert numeriek via proxy + RAW_ROLE (kolom totale kosten)."""
+    app = _ensure_app()
+    monkeypatch.setattr(QMessageBox, "critical", lambda *_a, **_k: QMessageBox.Ok)
+    window = ResultsWorkspaceWindow()
+    window.show()
+    project = _three_level_project()
+    window._state.set_last_project(project)
+    window._state.set_last_run(_done_run_for_fixture())
+    window.modus_buttons["fm_detail"].click()
+    app.processEvents()
+
+    model = window.fm_table_view.model()
+    assert model is not None and model.rowCount() == 2
+    window.fm_table_view.sortByColumn(6, Qt.DescendingOrder)
+    app.processEvents()
+
+    top_fm = model.data(model.index(0, 0), Qt.DisplayRole)
+    bottom_fm = model.data(model.index(1, 0), Qt.DisplayRole)
+    assert top_fm == "FM-B"
+    assert bottom_fm == "FM-A"
+
+
 def test_fm_detail_inspector_empty_without_selection(monkeypatch):
     """Slice 34 issue 03 — lege staat zonder FM-selectie."""
     app = _ensure_app()

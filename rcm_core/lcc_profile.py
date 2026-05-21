@@ -19,7 +19,8 @@ from rcm_core.distributions import (
     build_rev_schedule,
     expected_aging_lifecycle_faalmomenten_ssot,
 )
-from rcm_core.models import FMResult, RCMProject
+from rcm_core.models import FMHorizonProfile, FMResult, Faalwijze, PBSItem, PMTask, RCMProject, TaskType
+from rcm_core.nmf_schedule import build_horizon_profile
 
 
 def ltap_horizon_bucket_count(lifecycle_years: float) -> int:
@@ -70,21 +71,73 @@ def expected_faalmomenten_per_bucket_proportional(
     return [total_expected_failures * float(oh) / s for oh in overlaps]
 
 
-def _fm_horizon_context(project: RCMProject, _fm_id: str, pbs_id: str) -> tuple[float, float, float]:
+def _fm_horizon_context(
+    config,
+    pbs_id: str,
+    all_pbs: dict[str, PBSItem],
+) -> tuple[float, float, float]:
     """(current_age, lifecycle_end_age, multiplicity) — zelfde semantiek als compute_fm_result."""
-    pbs = project.pbs_items.get(pbs_id)
+    pbs = all_pbs.get(pbs_id)
     if pbs is None:
-        return 0.0, float(project.config.lifecycle_years), 1.0
-    all_pbs = project.pbs_items
-    if all_pbs is not None:
-        eff_bouwjaar = pbs.effective_bouwjaar(all_pbs)
-        current_age = float(project.config.modeljaar - eff_bouwjaar) if eff_bouwjaar > 0 else 0.0
-        eff_mult = float(pbs.effective_multiplicity(all_pbs))
-    else:
-        current_age = float(pbs.current_age(project.config.modeljaar))
-        eff_mult = float(pbs.multiplicity)
-    lifecycle_end = float(project.config.lifecycle_years)
+        return 0.0, float(config.lifecycle_years), 1.0
+    eff_bouwjaar = pbs.effective_bouwjaar(all_pbs)
+    current_age = float(config.modeljaar - eff_bouwjaar) if eff_bouwjaar > 0 else 0.0
+    eff_mult = float(pbs.effective_multiplicity(all_pbs))
+    lifecycle_end = float(config.lifecycle_years)
     return current_age, lifecycle_end, eff_mult
+
+
+def build_fm_horizon_profile(
+    *,
+    config,
+    fm: Faalwijze,
+    pbs: PBSItem,
+    pm_tasks: list[PMTask],
+    all_pbs: dict[str, PBSItem] | None = None,
+    hidden_nb_per_failure_hr: float | None = None,
+) -> FMHorizonProfile:
+    """Bouw NMF-horizonprofiel voor één FM (slice 27 SSOT, slice 36 run-koppeling)."""
+    pbs_map = all_pbs if all_pbs is not None else {pbs.pbs_id: pbs}
+    num = ltap_horizon_bucket_count(float(config.lifecycle_years))
+    current_age, lifecycle_end, mult = _fm_horizon_context(config, fm.pbs_id, pbs_map)
+    if fm.failure_type.value == "random":
+        moments = expected_faalmomenten_per_bucket_random(
+            current_age=current_age,
+            lifecycle_end_age=lifecycle_end,
+            mttf=float(fm.mttf_jaar),
+            multiplicity=mult,
+            num_buckets=num,
+        )
+    else:
+        _, moments_u = expected_aging_lifecycle_faalmomenten_ssot(
+            current_age=current_age,
+            lifecycle_years=lifecycle_end,
+            mttf=float(fm.mttf_jaar),
+            sigma=float(fm.effective_sigma),
+            repair_quality=float(fm.repair_quality),
+            num_buckets=num,
+            rev_schedule=build_rev_schedule(pm_tasks),
+        )
+        moments = [float(m) * mult for m in moments_u]
+    test_intervals = [
+        float(t.interval_jaar)
+        for t in pm_tasks
+        if t.taak_type == TaskType.TST and float(t.interval_jaar) > 0.0
+    ]
+    cor_eur, cor_dt, hidden = build_horizon_profile(
+        faalmomenten=moments,
+        is_evident=fm.is_evident,
+        test_intervals_years=test_intervals,
+        cost_per_failure_eur=float(fm.cost_cm_eur),
+        downtime_per_failure_hr=float(fm.downtime_per_failure.to_hours()),
+        num_buckets=num,
+        hidden_nb_per_failure_hr=hidden_nb_per_failure_hr,
+    )
+    return FMHorizonProfile(
+        cor_eur=cor_eur,
+        cor_downtime_hr=cor_dt,
+        hidden_nb_hr=hidden,
+    )
 
 
 def _legacy_cm_eur_per_fm(
@@ -97,7 +150,9 @@ def _legacy_cm_eur_per_fm(
     fm = project.faalwijzes.get(fr.fm_id)
     if fm is None:
         return
-    current_age, lifecycle_end, mult = _fm_horizon_context(project, fr.fm_id, fr.pbs_id)
+    current_age, lifecycle_end, mult = _fm_horizon_context(
+        project.config, fr.pbs_id, project.pbs_items
+    )
     if fm.failure_type.value == "random":
         moments = expected_faalmomenten_per_bucket_random(
             current_age=current_age,

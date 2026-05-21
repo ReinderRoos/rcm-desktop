@@ -5,6 +5,7 @@ from PySide6.QtCore import QObject, QThread, Signal, Slot
 
 from rcm_desktop.adapter import run_service
 from rcm_desktop.adapter.planning_overlay_state import PlanningOverlayState
+from rcm_desktop.adapter.run_decision import RunUserIntent, resolve_run_execution
 from rcm_desktop.adapter.presentation_cache_service import (
     PresentationProjectTotal,
     attach_presentation_to_cache,
@@ -23,19 +24,28 @@ class _RunWorker(QObject):
         project: object,
         project_path: str,
         planning_overlay: PlanningOverlayState | None,
+        *,
+        force_recompute: bool,
     ) -> None:
         super().__init__()
         self._project = project
         self._project_path = project_path
         self._planning_overlay = planning_overlay
+        self._force_recompute = force_recompute
 
     @Slot()
     def run(self) -> None:
+        intent = (
+            RunUserIntent.FORCE_RECOMPUTE
+            if self._force_recompute
+            else RunUserIntent.START_ANALYSE
+        )
+        opts = resolve_run_execution(user_intent=intent)
         result = run_service.run(
             self._project,
             self._project_path,
-            full_recompute=True,
-            parallel=False,
+            full_recompute=opts.full_recompute,
+            parallel=opts.parallel,
             planning_overlay=self._planning_overlay,
         )
         presentation = None
@@ -68,6 +78,7 @@ class RunRunner(QObject):
         project_path: str,
         *,
         planning_overlay: PlanningOverlayState | None = None,
+        force_recompute: bool = False,
     ) -> bool:
         if self._busy:
             return False
@@ -77,7 +88,12 @@ class RunRunner(QObject):
         self.phase_changed.emit(PHASE_MOTOR)
 
         self._thread = QThread()
-        self._worker = _RunWorker(project, project_path, planning_overlay)
+        self._worker = _RunWorker(
+            project,
+            project_path,
+            planning_overlay,
+            force_recompute=force_recompute,
+        )
         self._worker.moveToThread(self._thread)
         self._thread.started.connect(self._worker.run)
         self._worker.finished.connect(self._on_worker_finished)

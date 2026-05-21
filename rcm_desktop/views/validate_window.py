@@ -46,7 +46,11 @@ from rcm_desktop.adapter.faalwijzen_table_model import (
     FaalwijzenTableModel,
 )
 from rcm_desktop.adapter.compare_runner import CompareRunner
-from rcm_desktop.adapter.fm_results_table_model import FMResultsTableModel, RAW_ROLE
+from rcm_desktop.adapter.fm_results_table_model import (
+    FMResultsSortProxy,
+    FMResultsTableModel,
+    RAW_ROLE,
+)
 from rcm_desktop.adapter.ltap_bundle_service import apply_bundle_shift, reset_overlay
 from rcm_desktop.adapter.ltap_service import LTAPTaskDetail, LTAPView, LTAPYearRow, build_ltap_view
 from rcm_desktop.adapter.pbs_results_tree_model import PBSResultsTreeModel
@@ -232,8 +236,7 @@ class ValidateWindow(QMainWindow):
         self.result_table.setSortingEnabled(True)
         self.result_table.setAlternatingRowColors(True)
         self.result_table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
-        self.result_table_proxy = QSortFilterProxyModel(self.result_table)
-        self.result_table_proxy.setSortRole(RAW_ROLE)
+        self.result_table_proxy = FMResultsSortProxy(self.result_table)
         self.result_table.setModel(self.result_table_proxy)
         result_table_layout.addWidget(self.result_table)
         self.result_table_group.setVisible(False)
@@ -664,7 +667,7 @@ class ValidateWindow(QMainWindow):
                 )
                 return
         self._clear_run_output_only()
-        started = self._run_runner.start(project, path)
+        started = self._run_runner.start(project, path, force_recompute=False)
         if started:
             self.run_button.setEnabled(False)
         self._sync_dirty_ui()
