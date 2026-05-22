@@ -401,6 +401,28 @@ WORKSPACE_LCC_SHIFT_SELECTION_HINT = (
     "verschuif met de knop rechts."
 )
 WORKSPACE_LCC_SELECT_REV_IN_YEAR = "Selecteer REV in dit jaar"
+WORKSPACE_MEEKOPPEL_PANEL_TITLE = "Meekoppelkansen"
+WORKSPACE_MEEKOPPEL_WHATIF_HINT = "Schakel what-if planning in om meekoppelkansen te zien."
+WORKSPACE_MEEKOPPEL_EMPTY = "Geen meekoppelkansen voor het gekozen tijdsvenster."
+WORKSPACE_MEEKOPPEL_WINDOW_LABEL = "Tijdsvenster (jaren):"
+WORKSPACE_MEEKOPPEL_PREVIEW = "Preview"
+WORKSPACE_MEEKOPPEL_APPLY = "Toepassen"
+WORKSPACE_MEEKOPPEL_SELECT_ROW = "Selecteer een suggestie in de tabel."
+WORKSPACE_MEEKOPPEL_PREVIEW_TITLE = "Preview meekoppelen"
+WORKSPACE_MEEKOPPEL_PREVIEW_ANCHOR_EARLIER = "Anker: vroegste due-jaar"
+WORKSPACE_MEEKOPPEL_PREVIEW_ANCHOR_LATER = "Anker: laatste due-jaar"
+WORKSPACE_MEEKOPPEL_PREVIEW_BODY = (
+    "PM {shifted}: jaar {from_year} → {to_year} (verschuiving {shift} jaar).\n"
+    "Paar: {pm_a} / {pm_b}."
+)
+WORKSPACE_MEEKOPPEL_PREVIEW_BLOCKED = "Geen shift mogelijk: {reason}"
+WORKSPACE_MEEKOPPEL_HEADER_ELEMENT = "Element"
+WORKSPACE_MEEKOPPEL_HEADER_PM_A = "PM A"
+WORKSPACE_MEEKOPPEL_HEADER_PM_B = "PM B"
+WORKSPACE_MEEKOPPEL_HEADER_JAAR_A = "Jaar A"
+WORKSPACE_MEEKOPPEL_HEADER_JAAR_B = "Jaar B"
+WORKSPACE_MEEKOPPEL_HEADER_DELTA = "Δ"
+WORKSPACE_MEEKOPPEL_HEADER_REDEN = "Reden"
 WORKSPACE_KPI_COLLAPSE_TOOLTIP = "KPI-paneel in- of uitklappen (alleen Tijdsplot-modus)."
 WORKSPACE_KPI_PANEL_TITLE = "KPI — huidige analyse"
 WORKSPACE_PM_MODE_REDIRECT = (

@@ -36,9 +36,12 @@ from PySide6.QtWidgets import (
     QHeaderView,
     QLabel,
     QLineEdit,
+    QDialog,
+    QDialogButtonBox,
     QMainWindow,
     QMessageBox,
     QPushButton,
+    QRadioButton,
     QSpinBox,
     QSplitter,
     QStackedWidget,
@@ -99,6 +102,14 @@ from rcm_desktop.adapter.lcc_year_detail_table_model import (
 )
 from rcm_desktop.adapter.lcc_year_table_model import LCCYearTableModel
 from rcm_desktop.adapter.planning_cm_preset_service import apply_cm_policy_preset
+from rcm_desktop.adapter.meekoppel_apply_service import (
+    apply_meekoppel_suggestion,
+    preview_meekoppel_suggestion,
+)
+from rcm_desktop.adapter.meekoppelkansen_discovery_service import discover_meekoppelkansen
+from rcm_desktop.adapter.meekoppel_suggestions_table_model import (
+    MeekoppelSuggestionsTableModel,
+)
 from rcm_desktop.adapter.planning_overlay_state import PlanningOverlayState
 from rcm_desktop.adapter.planning_whatif_service import apply_overlay_shift
 from rcm_desktop.adapter.pbs_results_tree_model import PBSResultsTreeModel
@@ -750,6 +761,46 @@ class ResultsWorkspaceWindow(QMainWindow):
         self.lcc_overlay_status_label.setStyleSheet("color: #E65100; font-weight: 600;")
         page_layout.addWidget(self.lcc_overlay_status_label)
 
+        self.meekoppel_panel = QWidget()
+        meekoppel_layout = QVBoxLayout(self.meekoppel_panel)
+        meekoppel_layout.setContentsMargins(0, 0, 0, 0)
+        self.meekoppel_title_label = QLabel(messages.WORKSPACE_MEEKOPPEL_PANEL_TITLE)
+        self.meekoppel_title_label.setStyleSheet("font-weight: 600;")
+        meekoppel_layout.addWidget(self.meekoppel_title_label)
+        self.meekoppel_whatif_hint_label = QLabel(messages.WORKSPACE_MEEKOPPEL_WHATIF_HINT)
+        self.meekoppel_whatif_hint_label.setWordWrap(True)
+        self.meekoppel_whatif_hint_label.setStyleSheet("color: #757575;")
+        meekoppel_layout.addWidget(self.meekoppel_whatif_hint_label)
+        meekoppel_tb = QHBoxLayout()
+        meekoppel_tb.addWidget(QLabel(messages.WORKSPACE_MEEKOPPEL_WINDOW_LABEL))
+        self.meekoppel_window_spin = QSpinBox()
+        self.meekoppel_window_spin.setRange(1, 5)
+        self.meekoppel_window_spin.setValue(2)
+        self.meekoppel_window_spin.valueChanged.connect(self._on_meekoppel_window_changed)
+        meekoppel_tb.addWidget(self.meekoppel_window_spin)
+        self.meekoppel_preview_button = QPushButton(messages.WORKSPACE_MEEKOPPEL_PREVIEW)
+        self.meekoppel_preview_button.clicked.connect(self._on_meekoppel_preview)
+        meekoppel_tb.addWidget(self.meekoppel_preview_button)
+        self.meekoppel_apply_button = QPushButton(messages.WORKSPACE_MEEKOPPEL_APPLY)
+        self.meekoppel_apply_button.clicked.connect(self._on_meekoppel_apply)
+        meekoppel_tb.addWidget(self.meekoppel_apply_button)
+        meekoppel_tb.addStretch(1)
+        meekoppel_layout.addLayout(meekoppel_tb)
+        self.meekoppel_empty_label = QLabel(messages.WORKSPACE_MEEKOPPEL_EMPTY)
+        self.meekoppel_empty_label.setStyleSheet("color: #9E9E9E;")
+        meekoppel_layout.addWidget(self.meekoppel_empty_label)
+        self.meekoppel_table_view = QTableView()
+        self.meekoppel_table_view.setAlternatingRowColors(True)
+        self.meekoppel_table_view.setSelectionBehavior(QAbstractItemView.SelectRows)
+        self.meekoppel_table_view.setSelectionMode(QAbstractItemView.SingleSelection)
+        _apply_workspace_data_table_header_policy(self.meekoppel_table_view.horizontalHeader())
+        self._meekoppel_table_model = MeekoppelSuggestionsTableModel(parent=self.meekoppel_table_view)
+        self.meekoppel_table_view.setModel(self._meekoppel_table_model)
+        meekoppel_layout.addWidget(self.meekoppel_table_view, stretch=1)
+        self.meekoppel_panel.setVisible(False)
+        self._meekoppel_last_anchor: str = "earlier"
+        page_layout.addWidget(self.meekoppel_panel)
+
         self.lcc_year_summary_label = QLabel("")
         self.lcc_year_summary_label.setWordWrap(True)
         page_layout.addWidget(self.lcc_year_summary_label)
@@ -1087,6 +1138,9 @@ class ResultsWorkspaceWindow(QMainWindow):
         self.lcc_filter_bar.setVisible(lcc_active)
         self.lcc_show_all_years_button.setVisible(lcc_active)
         self.lcc_year_summary_label.setVisible(lcc_active)
+        self.meekoppel_panel.setVisible(lcc_active)
+        if lcc_active:
+            self._sync_meekoppel_panel(snapshot)
         fm_active = snapshot.modus == MODE_FM_DETAIL
         self.fm_evident_filter_combo.setVisible(fm_active)
         self.fm_evident_filter_combo.setEnabled(fm_active)
@@ -1457,6 +1511,127 @@ class ResultsWorkspaceWindow(QMainWindow):
             self.lcc_overlay_status_label.setVisible(True)
         else:
             self.lcc_overlay_status_label.setVisible(False)
+        if snapshot.modus == MODE_LCC:
+            self._sync_meekoppel_panel(snapshot)
+
+    def _sync_meekoppel_panel(self, snapshot: WorkspaceStateSnapshot) -> None:
+        project = self._state.last_project
+        overlay = snapshot.planning_overlay
+        whatif = overlay.active
+        self.meekoppel_whatif_hint_label.setVisible(not whatif)
+        self.meekoppel_window_spin.setEnabled(whatif)
+        self.meekoppel_table_view.setVisible(whatif)
+        self.meekoppel_preview_button.setEnabled(whatif)
+        self.meekoppel_apply_button.setEnabled(whatif)
+        if not whatif or project is None:
+            self._meekoppel_table_model.set_rows(())
+            self.meekoppel_empty_label.setVisible(False)
+            return
+        window = int(self.meekoppel_window_spin.value())
+        rows = discover_meekoppelkansen(project, window_years=window)
+        self._meekoppel_table_model.set_rows(rows)
+        empty = len(rows) == 0
+        self.meekoppel_empty_label.setVisible(empty)
+        self.meekoppel_table_view.setVisible(not empty)
+
+    def _selected_meekoppel_suggestion(self):
+        selection = self.meekoppel_table_view.selectionModel()
+        if selection is None or not selection.hasSelection():
+            return None
+        row = selection.selectedRows()[0].row()
+        return self._meekoppel_table_model.row_at(row)
+
+    def _meekoppel_preview_anchor(self) -> str:
+        dialog = QDialog(self)
+        dialog.setWindowTitle(messages.WORKSPACE_MEEKOPPEL_PREVIEW_TITLE)
+        layout = QVBoxLayout(dialog)
+        earlier = QRadioButton(messages.WORKSPACE_MEEKOPPEL_PREVIEW_ANCHOR_EARLIER)
+        later = QRadioButton(messages.WORKSPACE_MEEKOPPEL_PREVIEW_ANCHOR_LATER)
+        earlier.setChecked(True)
+        layout.addWidget(earlier)
+        layout.addWidget(later)
+        buttons = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
+        buttons.accepted.connect(dialog.accept)
+        buttons.rejected.connect(dialog.reject)
+        layout.addWidget(buttons)
+        if dialog.exec() != QDialog.DialogCode.Accepted:
+            return ""
+        anchor = "later" if later.isChecked() else "earlier"
+        self._meekoppel_last_anchor = anchor
+        return anchor
+
+    def _on_meekoppel_window_changed(self, _value: int) -> None:
+        snapshot = self.workspace_state.snapshot()
+        if snapshot.modus == MODE_LCC:
+            self._sync_meekoppel_panel(snapshot)
+
+    def _on_meekoppel_preview(self) -> None:
+        project = self._state.last_project
+        if project is None:
+            return
+        overlay = self.workspace_state.snapshot().planning_overlay
+        if not overlay.active:
+            return
+        suggestion = self._selected_meekoppel_suggestion()
+        if suggestion is None:
+            QMessageBox.warning(
+                self,
+                messages.LTAP_ERROR_DIALOG_TITLE,
+                messages.WORKSPACE_MEEKOPPEL_SELECT_ROW,
+            )
+            return
+        anchor = self._meekoppel_preview_anchor()
+        if not anchor:
+            return
+        prev = preview_meekoppel_suggestion(
+            project, overlay, suggestion, anchor=anchor  # type: ignore[arg-type]
+        )
+        if prev.blocked_reason:
+            QMessageBox.information(
+                self,
+                messages.WORKSPACE_MEEKOPPEL_PREVIEW_TITLE,
+                messages.WORKSPACE_MEEKOPPEL_PREVIEW_BLOCKED.format(reason=prev.blocked_reason),
+            )
+            return
+        QMessageBox.information(
+            self,
+            messages.WORKSPACE_MEEKOPPEL_PREVIEW_TITLE,
+            messages.WORKSPACE_MEEKOPPEL_PREVIEW_BODY.format(
+                shifted=prev.shifted_pm_id,
+                from_year=prev.from_year,
+                to_year=prev.to_year,
+                shift=prev.shift_years,
+                pm_a=prev.pm_a,
+                pm_b=prev.pm_b,
+            ),
+        )
+
+    def _on_meekoppel_apply(self) -> None:
+        project = self._state.last_project
+        if project is None:
+            return
+        overlay = self.workspace_state.snapshot().planning_overlay
+        if not overlay.active:
+            return
+        suggestion = self._selected_meekoppel_suggestion()
+        if suggestion is None:
+            QMessageBox.warning(
+                self,
+                messages.LTAP_ERROR_DIALOG_TITLE,
+                messages.WORKSPACE_MEEKOPPEL_SELECT_ROW,
+            )
+            return
+        result = apply_meekoppel_suggestion(
+            project,
+            overlay,
+            suggestion,
+            anchor=self._meekoppel_last_anchor,  # type: ignore[arg-type]
+        )
+        if result.error:
+            QMessageBox.critical(self, messages.LTAP_ERROR_DIALOG_TITLE, result.error)
+            return
+        self.workspace_state.set_planning_overlay(result.overlay)
+        self._sync_meekoppel_panel(self.workspace_state.snapshot())
 
     def _render_lcc_year_detail(
         self,

@@ -91,4 +91,5 @@ Kalenderjaar in de inspector gebruikt dezelfde mapping als LCC/Tijdsplot:
 - **RCM-Cost import (bootstrap):** RCM-Cost export → `.rcm.json` via de
   resultatenwerkruimte (ADR-0004). Geen gevolgkosten-import; PM-effectlinks alleen
   volgens PM-spike. Subset-export terug naar Availability Workbench is latere slice.
-- Monte Carlo UI/motor, LTAP-light, meekoppelkansen: buiten scope tracer-bullet.
+- Monte Carlo UI/motor, LTAP-light: buiten scope tracer-bullet.
+- Meekoppelkansen: toegestaan via **ADR-0005** (adapter-only in resultatenwerkruimte LCC+what-if); geen scrub-list-port van RCM1-module; `ltap_light` blijft out.
