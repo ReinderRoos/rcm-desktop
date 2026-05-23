@@ -11,8 +11,11 @@ from rcm_core.cache import compute_fm_hash
 from rcm_core.models import Faalwijze, FMResult, RCMProject
 
 from rcm_desktop.adapter.calendar_year import calendar_year_for_horizon_index
-from rcm_desktop.adapter.contribution_horizon_value_service import (
-    _faalmomenten_per_bucket,
+from rcm_desktop.adapter.horizon_bucket_series import (
+    faalmomenten_per_bucket,
+    motor_cor_eur_per_bucket,
+    motor_cor_downtime_per_bucket,
+    motor_hidden_nb_per_bucket,
 )
 from rcm_core.lcc_profile import ltap_horizon_bucket_count
 
@@ -113,10 +116,10 @@ def build_fm_verification_view(project: RCMProject, fmr: FMResult) -> FMVerifica
         )
     else:
         num = ltap_horizon_bucket_count(float(project.config.lifecycle_years))
-        faal_buckets = _faalmomenten_per_bucket(project, fmr)
-        cor_eur = list(hp.cor_eur)
-        cor_dt = list(hp.cor_downtime_hr)
-        hidden = list(hp.hidden_nb_hr)
+        faal_buckets = faalmomenten_per_bucket(project, fmr)
+        cor_eur = motor_cor_eur_per_bucket(fmr, num)
+        cor_dt = motor_cor_downtime_per_bucket(fmr, num)
+        hidden = motor_hidden_nb_per_bucket(fmr, num)
         while len(cor_eur) < num:
             cor_eur.append(0.0)
         while len(cor_dt) < num:

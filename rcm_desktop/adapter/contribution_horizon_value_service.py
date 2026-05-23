@@ -6,27 +6,21 @@ Geen Qt-imports.
 from __future__ import annotations
 
 import math
-from rcm_core.distributions import (
-    build_rev_schedule,
-    expected_aging_lifecycle_faalmomenten_ssot,
-)
-from rcm_core.lcc_profile import (
-    expected_faalmomenten_per_bucket_random,
-    ltap_horizon_bucket_count,
-)
+
+from rcm_core.lcc_profile import ltap_horizon_bucket_count
 from rcm_core.models import FMResult, RCMProject
 
 from rcm_desktop.adapter.calendar_year import calendar_year_for_horizon_index
-from rcm_desktop.adapter.lcc_chart_service import _pm_eur_per_bucket_ltap
+from rcm_desktop.adapter.horizon_bucket_series import (
+    cor_nb_per_bucket,
+    faalmomenten_per_bucket,
+)
+from rcm_desktop.adapter.ltap_pm_cost_series import pm_eur_per_bucket_scaled
 from rcm_desktop.adapter.results_workspace_state import (
     ContributionPresentation,
     METRIC_FAALMOMENTEN,
     METRIC_KOSTEN,
     METRIC_NIET_BESCHIKBAARHEID,
-)
-from rcm_desktop.adapter.unavailability_chart_service import (
-    _cor_nb_per_bucket,
-    _fm_horizon_context,
 )
 
 _HOURS_PER_YEAR = 8760.0
@@ -69,7 +63,7 @@ def _faalmomenten_scalar(
 ) -> float:
     if presentation.horizon == "lifecycle":
         return float(fmr.expected_failures)
-    buckets = _faalmomenten_per_bucket(project, fmr)
+    buckets = faalmomenten_per_bucket(project, fmr)
     if not buckets:
         return 0.0
     if presentation.year_choice == "average":
@@ -114,50 +108,15 @@ def _unavailability_scalar(
     return (hr / _HOURS_PER_YEAR) * 100.0
 
 
-def _faalmomenten_per_bucket(project: RCMProject, fmr: FMResult) -> list[float]:
-    num = _bucket_count(project)
-    if num <= 0:
-        return []
-    fm = project.faalwijzes.get(fmr.fm_id)
-    if fm is None:
-        return [0.0] * num
-    current_age, lifecycle_end, mult = _fm_horizon_context(project, fmr.pbs_id)
-    if fm.failure_type.value == "random":
-        moments = expected_faalmomenten_per_bucket_random(
-            current_age=current_age,
-            lifecycle_end_age=lifecycle_end,
-            mttf=float(fm.mttf_jaar),
-            multiplicity=mult,
-            num_buckets=num,
-        )
-    else:
-        pm_for_fm = [t for t in project.pm_tasks.values() if t.fm_id == fmr.fm_id]
-        _, moments_u = expected_aging_lifecycle_faalmomenten_ssot(
-            current_age=current_age,
-            lifecycle_years=lifecycle_end,
-            mttf=float(fm.mttf_jaar),
-            sigma=float(fm.effective_sigma),
-            repair_quality=float(fm.repair_quality),
-            num_buckets=num,
-            rev_schedule=build_rev_schedule(pm_for_fm),
-        )
-        moments = [float(m) * mult for m in moments_u]
-    out = [0.0] * num
-    for h, mh in enumerate(moments):
-        if h < num:
-            out[h] = float(mh)
-    return out
-
-
 def _nb_hours_per_bucket(project: RCMProject, fmr: FMResult) -> list[float]:
     """CM + hidden NB + PM downtime per horizonbucket, gereconcilieerd naar lifecycle."""
     num = _bucket_count(project)
     if num <= 0:
         return []
-    cm_dt, hidden_nb, used_legacy = _cor_nb_per_bucket(project, (fmr,), num)
+    cm_dt, hidden_nb, used_legacy = cor_nb_per_bucket(project, (fmr,), num)
     target_pm_dt = float(fmr.expected_pm_downtime_hr)
     pm_dt = (
-        _pm_eur_per_bucket_ltap(project, target_pm_dt)
+        pm_eur_per_bucket_scaled(project, target_pm_dt)
         if target_pm_dt > 0
         else [0.0] * num
     )

@@ -3,8 +3,9 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from pathlib import Path
 
+from rcm_core.engine import compute_pbs_results
 from rcm_core.incremental_run import run_incremental_analysis
-from rcm_core.models import FMResult, RCMProject
+from rcm_core.models import FMResult, PBSResult, RCMProject
 from rcm_desktop.adapter.planning_overlay_state import PlanningOverlayState
 from rcm_desktop.adapter.planning_run_materializer import materialize_project_for_overlay
 from rcm_desktop.adapter.result_view_service import FMResultRow, PBSResultRow, build_pbs_rows, build_rows
@@ -31,6 +32,50 @@ class RunResult:
     error: UserFacingError | None = None
     # Kern-FMResultaten voor LCC-builders; leeg bij error.
     fm_core_results: tuple[FMResult, ...] = field(default_factory=tuple)
+
+
+def build_run_result(
+    project: RCMProject,
+    fm_results: list[FMResult],
+    *,
+    pbs_results: dict[str, PBSResult] | None = None,
+    summary_prefix: str = "Run voltooid",
+) -> RunResult:
+    """Enige factory voor motor- en cache-RunResult."""
+    if pbs_results is None:
+        pbs_results = compute_pbs_results(project, {fr.fm_id: fr for fr in fm_results})
+    metrics = RunMetrics(
+        fm_result_count=len(fm_results),
+        total_lifecycle_faalmomenten=sum(item.expected_failures for item in fm_results),
+        total_cost_eur=sum(item.total_cost_eur for item in fm_results),
+        total_downtime_hr=sum(
+            item.expected_total_downtime_hr + item.expected_pm_downtime_hr for item in fm_results
+        ),
+        lifecycle_years=float(project.config.lifecycle_years),
+        total_risk_contribution=sum(item.risk_contribution for item in fm_results),
+    )
+    return RunResult(
+        status="done",
+        summary=f"{summary_prefix} met {metrics.fm_result_count} FM-resultaten.",
+        metrics=metrics,
+        rows=build_rows(project, fm_results),
+        pbs_rows=build_pbs_rows(project, pbs_results),
+        fm_core_results=tuple(fm_results),
+    )
+
+
+def hydrate_run_from_cache(project: RCMProject, project_path: str | Path) -> RunResult | None:
+    from rcm_core.cache import find_affected_fms, load_cache_snapshot
+
+    snap = load_cache_snapshot(project, Path(project_path))
+    if not snap.global_layer_trusted or not snap.raw_results:
+        return None
+    if find_affected_fms(project, snap.hashes):
+        return None
+    fm_results = [FMResult.from_dict(raw) for raw in snap.raw_results.values()]
+    if not fm_results:
+        return None
+    return build_run_result(project, fm_results, summary_prefix="Geladen uit cache")
 
 
 def run(
@@ -87,22 +132,16 @@ def run(
         )
 
     fm_results = list(result.fm_results.values())
-    fm_core_tuple = tuple(fm_results)
-    metrics = RunMetrics(
-        fm_result_count=len(fm_results),
-        total_lifecycle_faalmomenten=sum(item.expected_failures for item in fm_results),
-        total_cost_eur=sum(item.total_cost_eur for item in fm_results),
-        total_downtime_hr=sum(item.expected_total_downtime_hr + item.expected_pm_downtime_hr for item in fm_results),
-        lifecycle_years=float(project.config.lifecycle_years),
-        total_risk_contribution=sum(item.risk_contribution for item in fm_results),
+    built = build_run_result(
+        run_project,
+        fm_results,
+        pbs_results=result.pbs_results,
     )
-    rows = build_rows(run_project, fm_results)
-    pbs_rows = build_pbs_rows(run_project, result.pbs_results)
     return RunResult(
         status="done",
-        summary=f"Run voltooid met {metrics.fm_result_count} FM-resultaten.",
-        metrics=metrics,
-        rows=rows,
-        pbs_rows=pbs_rows,
-        fm_core_results=fm_core_tuple,
+        summary=built.summary,
+        metrics=built.metrics,
+        rows=built.rows,
+        pbs_rows=built.pbs_rows,
+        fm_core_results=built.fm_core_results,
     )

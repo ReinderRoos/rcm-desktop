@@ -21,18 +21,14 @@ import math
 from dataclasses import dataclass
 from typing import Sequence
 
-from rcm_core.distributions import (
-    build_rev_schedule,
-    expected_aging_lifecycle_faalmomenten_ssot,
-)
-from rcm_core.lcc_profile import (
-    expected_faalmomenten_per_bucket_random,
-    ltap_horizon_bucket_count,
-)
+from rcm_core.lcc_profile import ltap_horizon_bucket_count
 from rcm_core.models import FMResult, RCMProject
 
 from rcm_desktop.adapter.calendar_year import calendar_year_for_horizon_index
-from rcm_desktop.adapter.lcc_chart_service import _pm_eur_per_bucket_ltap
+from rcm_desktop.adapter.horizon_bucket_series import (
+    cor_nb_per_bucket as _cor_nb_per_bucket,
+)
+from rcm_desktop.adapter.ltap_pm_cost_series import pm_eur_per_bucket_scaled
 from rcm_desktop.adapter.run_service import RunResult
 
 _HOURS_PER_YEAR = 8760.0
@@ -82,7 +78,7 @@ def build_unavailability_chart_input(
     cm_dt, hidden_nb, used_legacy = _cor_nb_per_bucket(project, fm_subset, num)
 
     target_pm_dt = sum(float(fr.expected_pm_downtime_hr) for fr in fm_subset)
-    pm_dt = _pm_eur_per_bucket_ltap(project, target_pm_dt) if target_pm_dt > 0 else [0.0] * num
+    pm_dt = pm_eur_per_bucket_scaled(project, target_pm_dt) if target_pm_dt > 0 else [0.0] * num
     if len(pm_dt) < num:
         pm_dt = pm_dt + [0.0] * (num - len(pm_dt))
     pm_dt = pm_dt[:num]
@@ -112,130 +108,6 @@ def build_unavailability_chart_input(
         for h in range(num)
     )
     return UnavailabilityChartInput(scope_id=scope_id, rows=rows)
-
-
-def _cor_nb_per_bucket(
-    project: RCMProject,
-    fm_results: Sequence[FMResult],
-    num: int,
-) -> tuple[list[float], list[float], bool]:
-    """``cor_downtime_hr`` en ``hidden_nb_hr`` per bucket; legacy-flag bij ontbrekend profiel."""
-    cor_dt = [0.0] * num
-    hidden = [0.0] * num
-    used_legacy = False
-    for fr in fm_results:
-        hp = fr.horizon_profile
-        if hp is not None:
-            for h in range(min(num, len(hp.cor_downtime_hr))):
-                cor_dt[h] += float(hp.cor_downtime_hr[h])
-            for h in range(min(num, len(hp.hidden_nb_hr))):
-                hidden[h] += float(hp.hidden_nb_hr[h])
-        else:
-            used_legacy = True
-            legacy_dt = _legacy_cm_downtime_per_fm(project, fr, num)
-            for h in range(num):
-                cor_dt[h] += legacy_dt[h]
-    return cor_dt, hidden, used_legacy
-
-
-def _legacy_cm_downtime_per_fm(
-    project: RCMProject,
-    fr: FMResult,
-    num: int,
-) -> list[float]:
-    """Proportionele correctief-downtime (cache-migratie)."""
-    out = [0.0] * num
-    fm = project.faalwijzes.get(fr.fm_id)
-    if fm is None:
-        return out
-    current_age, lifecycle_end, mult = _fm_horizon_context(project, fr.pbs_id)
-    if fm.failure_type.value == "random":
-        moments = expected_faalmomenten_per_bucket_random(
-            current_age=current_age,
-            lifecycle_end_age=lifecycle_end,
-            mttf=float(fm.mttf_jaar),
-            multiplicity=mult,
-            num_buckets=num,
-        )
-    else:
-        pm_for_fm = [t for t in project.pm_tasks.values() if t.fm_id == fr.fm_id]
-        _, moments_u = expected_aging_lifecycle_faalmomenten_ssot(
-            current_age=current_age,
-            lifecycle_years=lifecycle_end,
-            mttf=float(fm.mttf_jaar),
-            sigma=float(fm.effective_sigma),
-            repair_quality=float(fm.repair_quality),
-            num_buckets=num,
-            rev_schedule=build_rev_schedule(pm_for_fm),
-        )
-        moments = [float(m) * mult for m in moments_u]
-    msum = float(sum(moments))
-    dt_total = float(fr.expected_total_downtime_hr)
-    if msum <= 0:
-        if dt_total != 0.0 and num > 0:
-            out[0] = dt_total
-        return out
-    for h, mh in enumerate(moments):
-        out[h] = dt_total * (float(mh) / msum)
-    return out
-
-
-def _cm_downtime_per_bucket(
-    project: RCMProject,
-    fm_results: Sequence[FMResult],
-    num: int,
-) -> list[float]:
-    """Verdeel correctief-downtime over buckets (legacy helper; gebruik ``_cor_nb_per_bucket``)."""
-    out = [0.0] * num
-    for fr in fm_results:
-        fm = project.faalwijzes.get(fr.fm_id)
-        if fm is None:
-            continue
-        current_age, lifecycle_end, mult = _fm_horizon_context(project, fr.pbs_id)
-        if fm.failure_type.value == "random":
-            moments = expected_faalmomenten_per_bucket_random(
-                current_age=current_age,
-                lifecycle_end_age=lifecycle_end,
-                mttf=float(fm.mttf_jaar),
-                multiplicity=mult,
-                num_buckets=num,
-            )
-        else:
-            pm_for_fm = [t for t in project.pm_tasks.values() if t.fm_id == fr.fm_id]
-            _, moments_u = expected_aging_lifecycle_faalmomenten_ssot(
-                current_age=current_age,
-                lifecycle_years=lifecycle_end,
-                mttf=float(fm.mttf_jaar),
-                sigma=float(fm.effective_sigma),
-                repair_quality=float(fm.repair_quality),
-                num_buckets=num,
-                rev_schedule=build_rev_schedule(pm_for_fm),
-            )
-            moments = [float(m) * mult for m in moments_u]
-        msum = float(sum(moments))
-        dt_total = float(fr.expected_total_downtime_hr)
-        if msum <= 0:
-            if dt_total != 0.0 and num > 0:
-                out[0] += dt_total
-            continue
-        for h, mh in enumerate(moments):
-            out[h] += dt_total * (float(mh) / msum)
-    return out
-
-
-def _fm_horizon_context(project: RCMProject, pbs_id: str) -> tuple[float, float, float]:
-    """(current_age, lifecycle_end_age, multiplicity) — zelfde semantiek als `lcc_profile`."""
-    pbs = project.pbs_items.get(pbs_id)
-    if pbs is None:
-        return 0.0, float(project.config.lifecycle_years), 1.0
-    all_pbs = project.pbs_items
-    eff_bouwjaar = pbs.effective_bouwjaar(all_pbs)
-    current_age = (
-        float(project.config.modeljaar - eff_bouwjaar) if eff_bouwjaar > 0 else 0.0
-    )
-    eff_mult = float(pbs.effective_multiplicity(all_pbs))
-    lifecycle_end = float(project.config.lifecycle_years)
-    return current_age, lifecycle_end, eff_mult
 
 
 def _collect_subtree_ids(project: RCMProject, scope_id: str) -> frozenset[str]:

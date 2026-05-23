@@ -2,7 +2,9 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from rcm_core.models import PMTask, RCMProject, TaskType
+from rcm_core.models import RCMProject
+
+from rcm_desktop.adapter.pm_task_policy import is_pm_shiftable
 
 
 @dataclass(frozen=True)
@@ -34,7 +36,7 @@ def apply_bundle_shift(
                 overlay_anchor_years=dict(current_overlay_anchor_years),
                 error=f"Bundelactie geblokkeerd: onbekende PM-taak '{pm_id}'.",
             )
-        if not _is_shiftable(task):
+        if not is_pm_shiftable(task):
             return BundleShiftResult(
                 ok=False,
                 overlay_anchor_years=dict(current_overlay_anchor_years),
@@ -46,9 +48,3 @@ def apply_bundle_shift(
 
 def reset_overlay() -> dict[str, float]:
     return {}
-
-
-def _is_shiftable(task: PMTask) -> bool:
-    if task.taak_type == TaskType.SVO:
-        return False
-    return "WET" not in (task.taak_omschrijving or "").upper()

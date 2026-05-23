@@ -496,10 +496,12 @@ def _build_pm_tasks(
         cost = float(row.get("OperationalCost") or 0.0)
         desc = str(row.get("Description") or "")
         aw_type = str(row.get("Type") or "")
-        is_wet = (
-            "WET" in aw_type.upper()
-            or "WET" in task_id.upper()
-            or "WET" in desc.upper()
+        from rcm_desktop.adapter.pm_task_policy import is_pm_wettelijk_from_import_fields
+
+        is_wet = is_pm_wettelijk_from_import_fields(
+            aw_type=aw_type,
+            task_id=task_id,
+            description=desc,
         )
         out[pm_id] = PMTask(
             pm_id=pm_id,

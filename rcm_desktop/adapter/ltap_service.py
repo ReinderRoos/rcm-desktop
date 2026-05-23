@@ -5,6 +5,8 @@ import math
 
 from rcm_core.models import PMTask, RCMProject, TaskType
 
+from rcm_desktop.adapter.pm_task_policy import is_pm_shiftable, is_pm_wettelijk
+
 PM_COST_DISPLAY_NORMAL = "normal"
 PM_COST_DISPLAY_ZERO_EXPECTED = "zero_expected"
 PM_COST_DISPLAY_ZERO_MISSING = "zero_missing"
@@ -111,7 +113,7 @@ def build_ltap_view(
                     pm_cost_display=classify_pm_cost_display(task, project),
                     planned_downtime_hr=_planned_downtime_per_execution(task) * executions,
                     anchor_year=anchor_year,
-                    shiftable=_is_shiftable(task),
+                    shiftable=is_pm_shiftable(task),
                 )
             )
 
@@ -146,31 +148,19 @@ def build_ltap_view(
 
 
 def _executions_by_year(task: PMTask, *, lifecycle_years: float, anchor_year: float) -> dict[int, int]:
-    interval = float(task.interval_jaar)
-    if interval <= 0:
-        return {}
-    first_k = math.ceil((0.0 - anchor_year) / interval)
-    last_k = math.floor(((lifecycle_years - 1e-9) - anchor_year) / interval)
-    out: dict[int, int] = {}
-    if last_k < first_k:
-        return out
-    for k in range(first_k, last_k + 1):
-        t = anchor_year + k * interval
-        year = int(math.floor(t))
-        out[year] = out.get(year, 0) + 1
-    return out
+    from rcm_desktop.adapter.ltap_execution_schedule import ltap_executions_by_year
+
+    return ltap_executions_by_year(
+        task,
+        lifecycle_years=lifecycle_years,
+        anchor_year=anchor_year,
+    )
 
 
 def _planned_downtime_per_execution(task: PMTask) -> float:
     if not task.causes_unavailability:
         return 0.0
     return task.duration.to_hours() * task.unavailability_fraction
-
-
-def _is_shiftable(task: PMTask) -> bool:
-    if task.taak_type == TaskType.SVO:
-        return False
-    return "WET" not in (task.taak_omschrijving or "").upper()
 
 
 def build_ltap_pm_display_seq_map(project: RCMProject) -> dict[str, int]:
@@ -191,7 +181,7 @@ def classify_pm_cost_display(task: PMTask, project: RCMProject) -> str:
 
 def format_ltap_pm_label(task: PMTask, seq: int) -> str:
     parts = ["PM", task.taak_type.value]
-    if "WET" in (task.taak_omschrijving or "").upper():
+    if is_pm_wettelijk(task):
         parts.append("WET")
     if task.task_group_id:
         parts.append("TG")

@@ -37,15 +37,9 @@ class LCCChartInput:
 
 
 def _pm_eur_per_bucket_ltap(project: RCMProject, target_pm_total: float) -> list[float]:
-    view = build_ltap_view(project)
-    raw = [float(y.pm_cost_eur) for y in view.years]
-    if not raw:
-        return []
-    s = float(sum(raw))
-    if s <= 1e-15:
-        return [0.0] * len(raw)
-    scale = float(target_pm_total) / s
-    return [r * scale for r in raw]
+    from rcm_desktop.adapter.ltap_pm_cost_series import pm_eur_per_bucket_scaled
+
+    return pm_eur_per_bucket_scaled(project, target_pm_total)
 
 
 def _curve_from_project_run(

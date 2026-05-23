@@ -1441,23 +1441,17 @@ class ResultsWorkspaceWindow(QMainWindow):
         self, project, run_result: RunResult, snapshot: WorkspaceStateSnapshot
     ) -> None:
         """LCC-planning met type-filters, overlay en jaardetail (slice 28)."""
-        from rcm_desktop.adapter.lcc_render_cache_service import (
-            build_lcc_curve_cache_key,
-            lcc_render_scope,
-        )
+        from rcm_desktop.adapter.lcc_view_service import build_lcc_view
 
-        prev = self._last_lcc_render_snapshot
-        scope = lcc_render_scope(prev, snapshot)
-        cache_modus = build_lcc_curve_cache_key(snapshot)
-        curve = warm_lcc_render_index(
-            self._render_index,
-            project=project,
-            run=run_result,
-            scope_id=snapshot.scope_id,
-            cache_modus_key=cache_modus,
-            overlay=snapshot.planning_overlay,
-            type_filters=snapshot.lcc_filters,
+        lcc_view = build_lcc_view(
+            project,
+            run_result,
+            snapshot,
+            render_index=self._render_index,
+            prev_snapshot=self._last_lcc_render_snapshot,
         )
+        scope = lcc_view.render_scope
+        curve = lcc_view.curve
         self._last_lcc_render_snapshot = snapshot
         if curve is None or not curve.display_buckets:
             self.lcc_chart_widget.set_buckets(())
@@ -2061,6 +2055,8 @@ class ResultsWorkspaceWindow(QMainWindow):
             self.run_analyse_button.setText(messages.WORKSPACE_RUN_PHASE_PRESENTATION)
 
     def _on_run_result_ready(self, result: object, presentation: object) -> None:
+        from rcm_desktop.adapter.results_workspace_controller import ResultsWorkspaceController
+
         if not isinstance(result, RunResult):
             return
         if result.status != "done":
@@ -2073,16 +2069,17 @@ class ResultsWorkspaceWindow(QMainWindow):
             return
         self._state.set_last_run(result)
         overlay = self.workspace_state.snapshot().planning_overlay
-        had_passive = overlay.active and bool(overlay.disabled_pm_ids)
+        plan = ResultsWorkspaceController.plan_after_successful_run(overlay)
         if overlay.active:
-            self.workspace_state.set_planning_overlay(overlay.after_successful_overlay_run())
-        if had_passive:
+            self.workspace_state.set_planning_overlay(plan.overlay)
+        if plan.had_passive_before_run:
             self._lcc_passive_kept_after_run = True
         if isinstance(presentation, PresentationProjectTotal):
             self._project_total_presentation = presentation
         else:
             self._load_presentation_cache()
-        self._render_index.on_workspace_state_reset()
+        if plan.invalidate_render_index:
+            self._render_index.on_workspace_state_reset()
         self._last_lcc_render_snapshot = None
         self._maybe_start_lcc_warmup()
         self._update_run_button_label()
