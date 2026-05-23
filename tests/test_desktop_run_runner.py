@@ -46,7 +46,7 @@ def test_run_runner_start_analyse_uses_incremental_run(qapp, monkeypatch):
 
     assert captured["kwargs"] == {
         "full_recompute": False,
-        "parallel": True,
+        "parallel": False,
         "scenario_key": None,
     }
 
@@ -78,6 +78,6 @@ def test_run_runner_force_recompute_uses_full_run(qapp, monkeypatch):
 
     assert captured["kwargs"] == {
         "full_recompute": True,
-        "parallel": True,
+        "parallel": False,
         "scenario_key": None,
     }

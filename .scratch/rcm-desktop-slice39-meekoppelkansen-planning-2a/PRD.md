@@ -1,6 +1,6 @@
 # Slice 39 — Meekoppelkansen (Planning-2a)
 
-**Triage:** ready-for-agent  
+**Triage:** done (tracer-bullet af; gate 2a→2b = handmatige Haarlem-checklist)  
 **Type:** AFK (adapter + werkruimte-UI; geen motorwijziging)  
 **Parent:** slice 28–30 (LCC what-if, overlay-shift); slice 38 (LCC render-cache); fase 0 ADR-0005 (meekoppelen onderhoud)  
 **Versie:** 1.0  

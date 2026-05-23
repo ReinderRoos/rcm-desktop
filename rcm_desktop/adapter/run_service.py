@@ -11,23 +11,6 @@ from rcm_desktop.adapter.result_view_service import FMResultRow, PBSResultRow, b
 from rcm_desktop.adapter.validate_service import UserFacingError
 
 
-def _debug_log(hypothesis_id: str, location: str, message: str, data: dict) -> None:
-    # #region agent log
-    payload = {
-        "sessionId": "224489",
-        "runId": "analyse-run",
-        "hypothesisId": hypothesis_id,
-        "location": location,
-        "message": message,
-        "data": data,
-        "timestamp": int(time.time() * 1000),
-    }
-    log_path = Path(__file__).resolve().parents[2] / "debug-224489.log"
-    with log_path.open("a", encoding="utf-8") as fh:
-        fh.write(json.dumps(payload) + "\n")
-    # #endregion
-
-
 @dataclass(frozen=True)
 class RunMetrics:
     fm_result_count: int

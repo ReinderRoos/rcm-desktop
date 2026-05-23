@@ -19,7 +19,7 @@ RCM1 toonde **meekoppelkansen**: REV-taken op hetzelfde PBS-element met due-jare
 | Fase | Inhoud | Slice |
 |------|--------|-------|
 | **2a** | Discovery + suggestietabel + preview/apply als overlay-shift (paar, RCM1-parity) | 39 |
-| **2b** | PBS-bundeling: alle REV per element, default laatste anker, toggle vroegste | 40 |
+| **2b** | PBS-locatiebundeling: alle REV per `pbs_id`, boompad, default laatste anker | 40 |
 | **2c** | Functioneel meekoppelen — spike + go/no-go vóór slice 41 | 41+ |
 
 ### UX
@@ -32,15 +32,20 @@ RCM1 toonde **meekoppelkansen**: REV-taken op hetzelfde PBS-element met due-jare
 - Alleen **presentatie-overlay** (`anchor_years` / `disabled_pm_ids`); **geen motor-run**, geen mutatie van opgeslagen `.rcm.json` tot herberekenen.
 - Apply delegeert aan bestaande `apply_overlay_shift` / `apply_bundle_shift`.
 - Preview toont huidige → doeljaren; **muteert overlay niet**.
-- Default anker: **eerdere** effectieve due-jaar; latere taak verschuift naar die jaar.
+- Default anker: **laatste** effectieve due-jaar (2b); **eerdere** was default in 2a.
 - **Geen ltap_light-korting** bij expliciet meekoppelen; LCC toont som van individuele taakkosten.
 
-### Discovery (2a, RCM1-parity)
+### Discovery (2b, RCM2-locatiesemantiek)
 
-- Alleen `TaskType.REV`; `interval_jaar > 0`; FM/PBS/`element_naam` aanwezig.
+- Alleen `TaskType.REV`; `interval_jaar > 0`; FM/PBS aanwezig.
 - Due-jaar = `int(round(interval_jaar))`.
-- Paar alleen bij zelfde `element_naam` en `|jaar_a − jaar_b| ≤ N` (default **N = 2**).
-- Geen port van scrub-list `meekoppelkansen_v1.py`; geen pandas.
+- Groep per **`pbs_id`** (faalwijze-PBS-knoop): ≥ 2 REV op dezelfde locatie en `max(due) − min(due) ≤ N` (default **N = 2**).
+- Locatielabel: boompad via `parent_pbs_id`; segment = `bouwdeel_naam` of fallback `pbs_id`.
+- **Geen** groepering op globale `element_naam` (RCM1-parity verlaten vanwege import-collisies).
+
+### Discovery (2a, historisch)
+
+- Paar/groep op zelfde `element_naam` — vervangen door 2b in slice 40.
 
 ### UI-plaats
 
@@ -58,7 +63,7 @@ RCM1 toonde **meekoppelkansen**: REV-taken op hetzelfde PBS-element met due-jare
 
 ### Restrisico
 
-- **`element_naam`-collisie:** verschillende PBS met dezelfde elementnaam worden als één element beschouwd (RCM1-parity).
+- **`element_naam`-collisie (2a):** verschillende PBS met dezelfde elementnaam werden als één element beschouwd — opgelost in 2b via `pbs_id`.
 
 ## Consequenties
 

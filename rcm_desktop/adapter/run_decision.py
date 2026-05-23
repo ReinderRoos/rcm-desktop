@@ -19,7 +19,11 @@ class RunExecutionOptions:
 
 
 def resolve_run_execution(*, user_intent: RunUserIntent) -> RunExecutionOptions:
-    """Bepaal motor-parameters uit gebruikersintentie."""
+    """Bepaal motor-parameters uit gebruikersintentie.
+
+    Parallel blijft uit tot taakgroep-PM-kosten in ``compute_all_fm_results`` correct
+    worden gededupliceerd (parallel workers delen geen ``counted_group_ids``).
+    """
     if user_intent == RunUserIntent.FORCE_RECOMPUTE:
-        return RunExecutionOptions(full_recompute=True, parallel=True)
-    return RunExecutionOptions(full_recompute=False, parallel=True)
+        return RunExecutionOptions(full_recompute=True, parallel=False)
+    return RunExecutionOptions(full_recompute=False, parallel=False)

@@ -232,6 +232,8 @@ def _build_pbs_items(
         parent = str(row.get("Parent") or "").strip() or None
         if parent and parent not in kept_ids:
             parent = None
+        # Isograph Quantity = exemplaren op deze locatie; motor gebruikt het product
+        # langs de parent-keten via PBSItem.effective_multiplicity (geen extra import-logic).
         qty = row.get("Quantity")
         multiplicity = int(qty) if qty not in (None, "") else 1
         desc = str(row.get("Description") or loc_id)

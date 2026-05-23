@@ -1,8 +1,12 @@
 # Kanban-handoff — slice 39 meekoppelkansen Planning-2a (2026-05-22)
 
+**Doel:** Vastlegging voor vervolgsessie. Lees dit bestand + `PRD.md` + `docs/adr/ADR-0005-meekoppelen-onderhoud.md` vóór je verder gaat.
+
 **Repo:** `rcm-desktop`  
 **Slice-map:** `.scratch/rcm-desktop-slice39-meekoppelkansen-planning-2a/`  
-**ADR:** `docs/adr/ADR-0005-meekoppelen-onderhoud.md`
+**ADR:** `docs/adr/ADR-0005-meekoppelen-onderhoud.md`  
+**Parent:** slice 28–30 (what-if overlay), slice 38 (LCC render-cache)  
+**Referentie-fixture:** `tests/fixtures/awzi_haarlem_waarderpolder_demo.rcm.json`
 
 ---
 
@@ -29,9 +33,20 @@
 ### Tests
 
 ```powershell
+cd rcm-desktop
+.\.venv\Scripts\Activate.ps1
 python -m pytest tests/test_meekoppelkansen_discovery_service.py `
   tests/test_meekoppel_apply_service.py tests/test_desktop_meekoppel_workspace.py -q
 ```
+
+**Laatste run (2026-05-23):** **13 passed** (12.9s).
+
+**Sessie-start checklist (agent):**
+
+1. Lees ADR-0005 (scope 2a/2b/2c, geen motor-run, geen ltap_light).
+2. Draai bovenstaande pytest-subset — moet groen zijn vóór UI-werk.
+3. Code-pad: discovery → preview/apply → `ResultsWorkspaceWindow` meekoppel-paneel (alleen LCC + what-if).
+4. **Niet starten met slice 40** tot Haarlem-handchecklist hieronder groen is.
 
 ---
 
@@ -60,4 +75,24 @@ Fixture: `tests/fixtures/awzi_haarlem_waarderpolder_demo.rcm.json`
 
 ---
 
-*Laatst bijgewerkt: 2026-05-22 — slice 39 issues 01–04.*
+## ADR-0005 samenvatting (bindend)
+
+| Onderwerp | Besluit |
+|-----------|---------|
+| **2a (slice 39)** | REV-paren,zelfde `element_naam`, \|Δjaar\| ≤ N (default 2); discovery + preview + opt-in apply |
+| **Apply** | Alleen overlay (`apply_overlay_shift`); geen motor-run; geen `.rcm.json`-mutatie |
+| **Kosten** | Geen `ltap_light`-korting bij expliciet meekoppelen |
+| **UI** | Alleen resultatenwerkruimte, modus LCC, what-if aan |
+| **2b (slice 40)** | PBS-bundeling alle REV per element — **na** groene Haarlem-gate |
+| **2c** | Functioneel meekoppelen — spike + go/no-go |
+
+Zie `docs/adr/ADR-0005-meekoppelen-onderhoud.md` voor volledige tekst.
+
+## Volgende stap (mens / product)
+
+- **Gate 2a→2b:** handmatige Haarlem-checklist (sectie hierboven) — enige openstaande exit voor slice 39.
+- **Daarna:** slice 40 PRD/issues (Planning-2b PBS-bundeling).
+
+---
+
+*Laatst bijgewerkt: 2026-05-23 — sessie-start; CI-subset 13/13 groen; gate Haarlem nog open.*

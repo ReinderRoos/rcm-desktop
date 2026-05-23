@@ -103,10 +103,12 @@ from rcm_desktop.adapter.lcc_year_detail_table_model import (
 from rcm_desktop.adapter.lcc_year_table_model import LCCYearTableModel
 from rcm_desktop.adapter.planning_cm_preset_service import apply_cm_policy_preset
 from rcm_desktop.adapter.meekoppel_apply_service import (
-    apply_meekoppel_suggestion,
-    preview_meekoppel_suggestion,
+    apply_meekoppel_location,
+    preview_meekoppel_location,
 )
-from rcm_desktop.adapter.meekoppelkansen_discovery_service import discover_meekoppelkansen
+from rcm_desktop.adapter.meekoppelkansen_discovery_service import (
+    discover_meekoppel_locations,
+)
 from rcm_desktop.adapter.meekoppel_suggestions_table_model import (
     MeekoppelSuggestionsTableModel,
 )
@@ -767,6 +769,10 @@ class ResultsWorkspaceWindow(QMainWindow):
         self.meekoppel_title_label = QLabel(messages.WORKSPACE_MEEKOPPEL_PANEL_TITLE)
         self.meekoppel_title_label.setStyleSheet("font-weight: 600;")
         meekoppel_layout.addWidget(self.meekoppel_title_label)
+        self.meekoppel_help_label = QLabel(messages.WORKSPACE_MEEKOPPEL_PANEL_HELP)
+        self.meekoppel_help_label.setWordWrap(True)
+        self.meekoppel_help_label.setStyleSheet("color: #616161; font-size: 11px;")
+        meekoppel_layout.addWidget(self.meekoppel_help_label)
         self.meekoppel_whatif_hint_label = QLabel(messages.WORKSPACE_MEEKOPPEL_WHATIF_HINT)
         self.meekoppel_whatif_hint_label.setWordWrap(True)
         self.meekoppel_whatif_hint_label.setStyleSheet("color: #757575;")
@@ -798,7 +804,7 @@ class ResultsWorkspaceWindow(QMainWindow):
         self.meekoppel_table_view.setModel(self._meekoppel_table_model)
         meekoppel_layout.addWidget(self.meekoppel_table_view, stretch=1)
         self.meekoppel_panel.setVisible(False)
-        self._meekoppel_last_anchor: str = "earlier"
+        self._meekoppel_last_anchor: str = "later"
         page_layout.addWidget(self.meekoppel_panel)
 
         self.lcc_year_summary_label = QLabel("")
@@ -1528,13 +1534,13 @@ class ResultsWorkspaceWindow(QMainWindow):
             self.meekoppel_empty_label.setVisible(False)
             return
         window = int(self.meekoppel_window_spin.value())
-        rows = discover_meekoppelkansen(project, window_years=window)
+        rows = discover_meekoppel_locations(project, window_years=window)
         self._meekoppel_table_model.set_rows(rows)
         empty = len(rows) == 0
         self.meekoppel_empty_label.setVisible(empty)
         self.meekoppel_table_view.setVisible(not empty)
 
-    def _selected_meekoppel_suggestion(self):
+    def _selected_meekoppel_group(self):
         selection = self.meekoppel_table_view.selectionModel()
         if selection is None or not selection.hasSelection():
             return None
@@ -1547,7 +1553,7 @@ class ResultsWorkspaceWindow(QMainWindow):
         layout = QVBoxLayout(dialog)
         earlier = QRadioButton(messages.WORKSPACE_MEEKOPPEL_PREVIEW_ANCHOR_EARLIER)
         later = QRadioButton(messages.WORKSPACE_MEEKOPPEL_PREVIEW_ANCHOR_LATER)
-        earlier.setChecked(True)
+        later.setChecked(True)
         layout.addWidget(earlier)
         layout.addWidget(later)
         buttons = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
@@ -1572,8 +1578,8 @@ class ResultsWorkspaceWindow(QMainWindow):
         overlay = self.workspace_state.snapshot().planning_overlay
         if not overlay.active:
             return
-        suggestion = self._selected_meekoppel_suggestion()
-        if suggestion is None:
+        group = self._selected_meekoppel_group()
+        if group is None:
             QMessageBox.warning(
                 self,
                 messages.LTAP_ERROR_DIALOG_TITLE,
@@ -1583,8 +1589,8 @@ class ResultsWorkspaceWindow(QMainWindow):
         anchor = self._meekoppel_preview_anchor()
         if not anchor:
             return
-        prev = preview_meekoppel_suggestion(
-            project, overlay, suggestion, anchor=anchor  # type: ignore[arg-type]
+        prev = preview_meekoppel_location(
+            project, overlay, group, anchor=anchor  # type: ignore[arg-type]
         )
         if prev.blocked_reason:
             QMessageBox.information(
@@ -1593,16 +1599,26 @@ class ResultsWorkspaceWindow(QMainWindow):
                 messages.WORKSPACE_MEEKOPPEL_PREVIEW_BLOCKED.format(reason=prev.blocked_reason),
             )
             return
+        if not prev.moves:
+            moves_text = messages.WORKSPACE_MEEKOPPEL_PREVIEW_NO_MOVES
+        else:
+            moves_text = "\n".join(
+                messages.WORKSPACE_MEEKOPPEL_PREVIEW_MOVE_LINE.format(
+                    pm_id=m.pm_id,
+                    from_year=m.from_year,
+                    to_year=m.to_year,
+                    shift=m.shift_years,
+                )
+                for m in prev.moves
+            )
         QMessageBox.information(
             self,
             messages.WORKSPACE_MEEKOPPEL_PREVIEW_TITLE,
             messages.WORKSPACE_MEEKOPPEL_PREVIEW_BODY.format(
-                shifted=prev.shifted_pm_id,
-                from_year=prev.from_year,
-                to_year=prev.to_year,
-                shift=prev.shift_years,
-                pm_a=prev.pm_a,
-                pm_b=prev.pm_b,
+                location=prev.path_label,
+                pbs_id=prev.pbs_id,
+                target=prev.target_year,
+                moves=moves_text,
             ),
         )
 
@@ -1613,18 +1629,18 @@ class ResultsWorkspaceWindow(QMainWindow):
         overlay = self.workspace_state.snapshot().planning_overlay
         if not overlay.active:
             return
-        suggestion = self._selected_meekoppel_suggestion()
-        if suggestion is None:
+        group = self._selected_meekoppel_group()
+        if group is None:
             QMessageBox.warning(
                 self,
                 messages.LTAP_ERROR_DIALOG_TITLE,
                 messages.WORKSPACE_MEEKOPPEL_SELECT_ROW,
             )
             return
-        result = apply_meekoppel_suggestion(
+        result = apply_meekoppel_location(
             project,
             overlay,
-            suggestion,
+            group,
             anchor=self._meekoppel_last_anchor,  # type: ignore[arg-type]
         )
         if result.error:
