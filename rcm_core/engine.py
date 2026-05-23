@@ -142,6 +142,11 @@ def compute_fm_result(
     lifecycle = config.lifecycle_years
 
     # Verwacht aantal falingen
+    rev_schedule = (
+        build_rev_schedule(pm_tasks)
+        if fm.failure_type.value == "aging"
+        else ()
+    )
     expected_failures = expected_failures_lifecycle(
         current_age=current_age,
         lifecycle_years=lifecycle,
@@ -149,6 +154,7 @@ def compute_fm_result(
         mttf=fm.mttf_jaar,
         sigma=fm.effective_sigma,
         repair_quality=fm.repair_quality,
+        rev_schedule=rev_schedule,
     )
     expected_failures *= eff_multiplicity  # vermenigvuldig met (effectieve) multipliciteit
 

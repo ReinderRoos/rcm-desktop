@@ -15,10 +15,9 @@ from rcm_core.distributions import (
     build_rev_schedule,
     expected_aging_lifecycle_faalmomenten_ssot,
     rejuvenate_age,
-    truncated_normal_conditional_mean,
 )
 from rcm_core.models import PMTask, TaskType
-from rcm_core.normal_fast import normal_cdf
+from rcm_core.normal_fast import normal_cdf, truncated_normal_conditional_mean
 
 
 def _slice_weights_for_iteration(

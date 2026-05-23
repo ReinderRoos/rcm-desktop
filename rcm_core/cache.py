@@ -33,7 +33,7 @@ if TYPE_CHECKING:
     from rcm_core.models import FMResult, RCMProject
 
 # Handmatig verhogen wanneer analytische uitkomsten kunnen veranderen zonder wijziging aan project-JSON-vorm.
-CACHE_INPUTS_VERSION = 100  # RCM2 fresh start; oude RCM1-caches (CACHE_INPUTS_VERSION=1..) niet vertrouwen
+CACHE_INPUTS_VERSION = 103  # slice 22/24: aging SSOT Φ-segmenten + REV in motor
 
 
 # ---------------------------------------------------------------------------

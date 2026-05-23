@@ -9,10 +9,17 @@ Tijdseenheden: jaren (leeftijden, MTTF, lifecycle). Uren alleen in conversies el
 from __future__ import annotations
 import math
 from functools import lru_cache
+from typing import TYPE_CHECKING
 
 import numpy as np
 from scipy import stats
-from scipy import integrate
+
+from rcm_core.normal_fast import normal_cdf, truncated_normal_conditional_mean
+
+if TYPE_CHECKING:
+    from rcm_core.models import PMTask
+
+RevSchedule = tuple[tuple[float, float], ...]
 
 
 # ---------------------------------------------------------------------------
@@ -62,6 +69,7 @@ def expected_failures_lifecycle(
     mttf: float,
     sigma: float,
     repair_quality: float,
+    rev_schedule: RevSchedule = (),
 ) -> float:
     """Verwacht aantal falingen gedurende de modelleerperiode.
 
@@ -82,94 +90,16 @@ def expected_failures_lifecycle(
     if failure_type == "random":
         return remaining / mttf
 
-    # aging: numerieke integratie
-    return _expected_failures_aging(current_age, lifecycle_years, mttf, sigma, repair_quality)
-
-
-def _expected_failures_aging(
-    current_age: float,
-    lifecycle_end: float,
-    mttf: float,
-    sigma: float,
-    repair_quality: float,
-    max_iterations: int = 100,
-) -> float:
-    """Verwacht aantal falingen voor aging faalwijze via iteratieve integratie.
-
-    Correcte aanpak: twee klokken bijhouden:
-    - clock_time: verstreken kalendertijd (start = 0)
-    - effective_age: effectieve leeftijd van het component op dat moment
-
-    Na iedere faling:
-    - clock_time += (failure_age - effective_age_before_failure)
-    - effective_age = effective_age_after_repair(failure_age, repair_quality)
-    """
-    if sigma <= 0:
-        sigma = 0.15 * mttf
-
-    total_expected = 0.0
-    clock_time = 0.0        # kalendertijd verstreken t.o.v. modeljaar
-    effective_age = current_age
-
-    for _ in range(max_iterations):
-        remaining = lifecycle_end - clock_time
-        if remaining <= 0:
-            break
-
-        # Age van het component als de lifecycle zou eindigen (zonder tussentijds falen)
-        age_at_lifecycle_end = effective_age + remaining
-
-        # P(faling | component heeft leeftijd effective_age, lifecycle stopt op age_at_lifecycle_end)
-        # = P(T <= age_at_lifecycle_end | T > effective_age)
-        f_current = stats.norm.cdf(effective_age, loc=mttf, scale=sigma)
-        f_end = stats.norm.cdf(age_at_lifecycle_end, loc=mttf, scale=sigma)
-        survival_at_age = 1.0 - f_current
-
-        if survival_at_age < 1e-10:
-            break
-
-        p_fails_before_end = (f_end - f_current) / survival_at_age
-
-        if p_fails_before_end < 1e-10:
-            break
-
-        total_expected += p_fails_before_end
-
-        # Verwachte leeftijd bij falen (conditioneel): E[T | effective_age < T <= age_at_lifecycle_end]
-        expected_failure_age = _conditional_mean_failure_age(
-            effective_age, age_at_lifecycle_end, mttf, sigma
-        )
-
-        # Verstreken kalendertijd bij deze faling
-        time_to_failure = expected_failure_age - effective_age
-        clock_time += time_to_failure
-
-        # Nieuwe effectieve leeftijd na reparatie
-        effective_age = effective_age_after_repair(expected_failure_age, repair_quality)
-
-    return total_expected
-
-
-def _conditional_mean_failure_age(
-    age_lower: float,
-    age_upper: float,
-    mttf: float,
-    sigma: float,
-) -> float:
-    """Verwachte faalmomentsleeftijd gegeven dat falen optreedt tussen age_lower en age_upper."""
-    # E[T | age_lower < T <= age_upper] = integral(t * f(t), lower, upper) / P(lower < T <= upper)
-    f_lower = stats.norm.cdf(age_lower, loc=mttf, scale=sigma)
-    f_upper = stats.norm.cdf(age_upper, loc=mttf, scale=sigma)
-    p_interval = f_upper - f_lower
-
-    if p_interval < 1e-12:
-        return (age_lower + age_upper) / 2.0
-
-    def integrand(t: float) -> float:
-        return t * stats.norm.pdf(t, loc=mttf, scale=sigma)
-
-    result, _ = integrate.quad(integrand, age_lower, age_upper, limit=50)
-    return result / p_interval
+    total, _ = expected_aging_lifecycle_faalmomenten_ssot(
+        current_age=current_age,
+        lifecycle_years=lifecycle_years,
+        mttf=mttf,
+        sigma=sigma,
+        repair_quality=repair_quality,
+        num_buckets=0,
+        rev_schedule=rev_schedule,
+    )
+    return total
 
 
 # ---------------------------------------------------------------------------
@@ -212,17 +142,8 @@ def sample_time_to_failure(
 
 
 # ---------------------------------------------------------------------------
-# REV / kalenderbuckets (slice 24 — hersteld voor adapter-imports)
+# REV / kalenderbuckets (slice 22/24 — aging SSOT)
 # ---------------------------------------------------------------------------
-
-from typing import TYPE_CHECKING
-
-from rcm_core.normal_fast import truncated_normal_conditional_mean
-
-if TYPE_CHECKING:
-    from rcm_core.models import PMTask
-
-RevSchedule = tuple[tuple[float, float], ...]
 
 
 def rejuvenate_age(age: float, effect_fraction: float) -> float:
@@ -242,6 +163,114 @@ def build_rev_schedule(pm_tasks: list["PMTask"]) -> RevSchedule:
     return tuple(sorted(entries, key=lambda item: item[0]))
 
 
+def _conditional_failures_with_rev_segments(
+    effective_age: float,
+    *,
+    clock_start: float,
+    rem_clock: float,
+    mttf: float,
+    sigma: float,
+    rev_schedule: RevSchedule,
+) -> float:
+    """Verwachte faalmomenten tot studie-einde met REV op kalendergrenzen."""
+    if rem_clock <= 0:
+        return 0.0
+
+    clock_end = clock_start + rem_clock
+    f_at_start = float(normal_cdf(effective_age, mttf, sigma))
+    survival = 1.0 - f_at_start
+    if survival < 1e-10:
+        return 0.0
+
+    if not rev_schedule:
+        age_end = effective_age + rem_clock
+        f_end = float(normal_cdf(age_end, mttf, sigma))
+        return (f_end - f_at_start) / survival
+
+    events: list[tuple[float, float]] = []
+    for interval, effect_fraction in rev_schedule:
+        if interval <= 1e-15:
+            continue
+        k = int(math.floor(clock_start / interval)) + 1
+        while True:
+            t = k * interval
+            if t > clock_end + 1e-9:
+                break
+            if t > clock_start + 1e-9:
+                events.append((t, float(effect_fraction)))
+            k += 1
+    events.sort(key=lambda item: item[0])
+
+    grouped: list[tuple[float, list[float]]] = []
+    i = 0
+    while i < len(events):
+        t0 = events[i][0]
+        effects = [events[i][1]]
+        i += 1
+        while i < len(events) and abs(events[i][0] - t0) < 1e-9:
+            effects.append(events[i][1])
+            i += 1
+        grouped.append((t0, effects))
+
+    boundaries = [float(clock_start)] + [t for t, _ in grouped] + [float(clock_end)]
+    age = float(effective_age)
+    total = 0.0
+    rev_idx = 0
+    for bi in range(len(boundaries) - 1):
+        b0, b1 = boundaries[bi], boundaries[bi + 1]
+        if b1 <= b0 + 1e-15:
+            continue
+        age_end = age + (b1 - b0)
+        f_lo = float(normal_cdf(age, mttf, sigma))
+        f_hi = float(normal_cdf(age_end, mttf, sigma))
+        total += (f_hi - f_lo) / survival
+        age = age_end
+        if rev_idx < len(grouped) and abs(b1 - grouped[rev_idx][0]) < 1e-9:
+            for effect in grouped[rev_idx][1]:
+                age = rejuvenate_age(age, effect)
+            rev_idx += 1
+    return total
+
+
+def apply_rev_along_calendar_segment(
+    effective_age: float,
+    *,
+    clock_start: float,
+    clock_end: float,
+    rev_schedule: RevSchedule,
+) -> float:
+    """Lineair verouderen over ``[clock_start, clock_end]`` met REV op interval-grenzen."""
+    if not rev_schedule or clock_end <= clock_start + 1e-15:
+        return float(effective_age)
+
+    events: list[tuple[float, float]] = []
+    for interval, effect_fraction in rev_schedule:
+        if interval <= 1e-15:
+            continue
+        k = int(math.floor(clock_start / interval)) + 1
+        while True:
+            t = k * interval
+            if t > clock_end + 1e-9:
+                break
+            if t > clock_start + 1e-9:
+                events.append((t, float(effect_fraction)))
+            k += 1
+    events.sort(key=lambda item: item[0])
+
+    age = float(effective_age)
+    t_cursor = float(clock_start)
+    i = 0
+    while i < len(events):
+        rev_t = events[i][0]
+        age += rev_t - t_cursor
+        while i < len(events) and abs(events[i][0] - rev_t) < 1e-9:
+            age = rejuvenate_age(age, events[i][1])
+            i += 1
+        t_cursor = rev_t
+    age += float(clock_end) - t_cursor
+    return age
+
+
 def expected_aging_lifecycle_faalmomenten_ssot(
     *,
     current_age: float,
@@ -253,39 +282,112 @@ def expected_aging_lifecycle_faalmomenten_ssot(
     rev_schedule: RevSchedule = (),
     max_iterations: int = 100,
 ) -> tuple[float, list[float]]:
-    """Verwachte faalmomenten per kalenderbucket (uniforme fallback)."""
-    del rev_schedule, max_iterations
-    total = expected_failures_lifecycle(
-        current_age,
-        lifecycle_years,
-        "aging",
-        mttf,
-        sigma,
-        repair_quality,
-    )
-    n = max(1, int(num_buckets))
-    per_bucket = [float(total) / n] * n
-    return float(total), per_bucket
+    """Eén aging-pad: totaal verwachte faalmomenten én per kalenderjaarbucket.
 
+    Per iteratie wordt ``p_fails_before_end`` over **studiejaar-buckets** ``[h, h+1)``
+    verdeeld via Φ-segmenten: leeftijdsinterval ``[effective_age, age_at_lifecycle_end]``
+    wordt affien teruggemapt naar ``[clock_time, clock_time + rem_clock]``.
 
-def _conditional_failures_with_rev_segments(
-    effective_age: float,
-    *,
-    clock_start: float,
-    rem_clock: float,
-    mttf: float,
-    sigma: float,
-    rev_schedule: RevSchedule,
-) -> float:
-    """Fallback zonder REV-segmentatie."""
-    del rev_schedule
-    return _expected_failures_aging(
-        effective_age,
-        clock_start + rem_clock,
-        mttf,
-        sigma,
-        1.0,
-    )
+    ``num_buckets <= 0``: lege lijst, alleen totaal (licht pad voor lifecycle-totaal).
+    """
+    if mttf <= 0:
+        return 0.0, [0.0] * max(0, num_buckets)
+
+    study_start_age = float(current_age)
+    lifecycle_study_end = float(lifecycle_years)
+    study_duration = lifecycle_study_end - study_start_age
+    if study_duration <= 0:
+        return 0.0, [0.0] * max(0, num_buckets)
+
+    sig = float(sigma)
+    if sig <= 0.0:
+        sig = 0.15 * float(mttf)
+
+    total_expected = 0.0
+    clock_time = 0.0
+    effective_age = float(current_age)
+    buckets = [0.0] * num_buckets if num_buckets > 0 else []
+
+    for _ in range(max_iterations):
+        rem_clock = study_duration - clock_time
+        if rem_clock <= 0:
+            break
+
+        age_at_lifecycle_end = effective_age + rem_clock
+
+        f_current = float(normal_cdf(effective_age, mttf, sig))
+        survival_at_age = 1.0 - f_current
+
+        if survival_at_age < 1e-10:
+            break
+
+        p_fails_before_end = _conditional_failures_with_rev_segments(
+            effective_age,
+            clock_start=clock_time,
+            rem_clock=rem_clock,
+            mttf=mttf,
+            sigma=sig,
+            rev_schedule=rev_schedule,
+        )
+
+        if p_fails_before_end < 1e-10:
+            break
+
+        total_expected += p_fails_before_end
+
+        if num_buckets > 0:
+            a0 = float(effective_age)
+            a1 = float(age_at_lifecycle_end)
+            f_end = float(normal_cdf(a1, mttf, sig))
+            denom = f_end - f_current
+            cal_window_lo = float(clock_time)
+            cal_window_hi = float(clock_time) + rem_clock
+            if denom > 1e-18:
+                slices = [0.0] * num_buckets
+                for h in range(num_buckets):
+                    bucket_cal_lo = float(h)
+                    bucket_cal_hi = min(float(h) + 1.0, study_duration)
+                    if bucket_cal_hi <= bucket_cal_lo:
+                        continue
+                    t0 = max(cal_window_lo, bucket_cal_lo)
+                    t1 = min(cal_window_hi, bucket_cal_hi)
+                    if t1 <= t0:
+                        continue
+                    age_lo = effective_age + (t0 - clock_time)
+                    age_hi = effective_age + (t1 - clock_time)
+                    age_lo = max(a0, age_lo)
+                    age_hi = min(a1, age_hi)
+                    if age_hi > age_lo:
+                        phi_lo = float(normal_cdf(age_lo, mttf, sig))
+                        phi_hi = float(normal_cdf(age_hi, mttf, sig))
+                        slices[h] = max(0.0, phi_hi - phi_lo)
+                tail = max(0.0, denom - float(sum(slices)))
+                if tail > 1e-18:
+                    last_h = -1
+                    for h in range(num_buckets):
+                        if float(h) < study_duration - 1e-12:
+                            last_h = h
+                    if last_h >= 0:
+                        slices[last_h] += tail
+                    else:
+                        slices[0] += tail
+                s_sum2 = float(sum(slices))
+                if s_sum2 <= 1e-18:
+                    buckets[0] += p_fails_before_end
+                else:
+                    for h in range(num_buckets):
+                        buckets[h] += p_fails_before_end * (slices[h] / denom)
+            else:
+                buckets[0] += p_fails_before_end
+
+        expected_failure_age = truncated_normal_conditional_mean(
+            effective_age, age_at_lifecycle_end, mttf, sig
+        )
+        time_to_failure = expected_failure_age - effective_age
+        clock_time += time_to_failure
+        effective_age = rejuvenate_age(expected_failure_age, repair_quality)
+
+    return total_expected, buckets
 
 
 # ---------------------------------------------------------------------------
