@@ -63,9 +63,11 @@ def test_open_rcm_cost_export_smoke(monkeypatch, qtbot, tmp_path: Path) -> None:
     save_path = tmp_path / "imported.rcm.json"
     wizard = _valid_wizard_result()
 
+    from rcm_desktop.adapter.import_flow_service import ImportGateResult
+
     monkeypatch.setattr(
-        "rcm_desktop.views.results_workspace_window.check_workbook_importable",
-        lambda _path: None,
+        "rcm_desktop.views.results_workspace_window.gate_workbook",
+        lambda _path: ImportGateResult(ok=True),
     )
     monkeypatch.setattr(
         "rcm_desktop.views.results_workspace_window.QFileDialog.getOpenFileName",

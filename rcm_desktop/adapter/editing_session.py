@@ -26,10 +26,18 @@ class EditingSession:
         init_edit_state(project, session=self._session)
 
     def apply_entity_rows(self, entity: str, rows: list[dict[str, Any]]) -> None:
-        apply_rows(entity, rows, session=self._session)
+        if self._base_project is None:
+            raise ValueError("Geen project geladen in EditingSession.")
+        apply_rows(entity, rows, self._base_project, session=self._session)
 
-    def validate(self) -> dict[str, list[str]]:
-        return validate_all_entities(session=self._session)
+    def validate(self) -> int:
+        if self._base_project is None:
+            return 0
+        return validate_all_entities(self._base_project, session=self._session)
+
+    @property
+    def is_loaded(self) -> bool:
+        return self._base_project is not None
 
     def build_project(self) -> RCMProject:
         if self._base_project is None:

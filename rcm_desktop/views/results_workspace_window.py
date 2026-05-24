@@ -15,7 +15,6 @@ Architectuur-discipline (zie AGENTS.md):
 from __future__ import annotations
 
 from pathlib import Path
-from typing import TYPE_CHECKING
 
 from PySide6.QtCore import (
     QItemSelection,
@@ -25,7 +24,7 @@ from PySide6.QtCore import (
     Qt,
     Signal,
 )
-from PySide6.QtGui import QBrush, QCloseEvent, QColor, QPainter, QPen
+from PySide6.QtGui import QCloseEvent, QColor
 from PySide6.QtWidgets import (
     QAbstractItemView,
     QButtonGroup,
@@ -71,10 +70,6 @@ from rcm_desktop.adapter.presentation_lazy_service import (
 )
 from rcm_desktop.adapter.presentation_rebuild_runner import PresentationRebuildRunner
 from rcm_desktop.adapter.run_runner import PHASE_MOTOR, PHASE_PRESENTATION, RunRunner
-from rcm_desktop.adapter.contribution_chart_service import (
-    ContributionRow,
-    build_contribution_rows,
-)
 from rcm_desktop.adapter.contribution_table_model import ContributionTableModel
 from rcm_desktop.adapter.fm_results_table_model import (
     FMResultsSortProxy,
@@ -89,8 +84,12 @@ from rcm_desktop.adapter.fm_verification_year_table_model import (
     FMVerificationYearTableModel,
 )
 from rcm_desktop.formatting import format_eur, format_float, format_int
-from rcm_desktop.adapter.fm_evident_filter import filter_fm_rows_by_evident
-from rcm_desktop.adapter.lcc_chart_service import LCCYearBucket
+from rcm_desktop.adapter.project_session import ProjectSession
+from rcm_desktop.adapter.workspace_view_service import (
+    build_bijdragen_view,
+    build_fm_detail_view,
+    build_lcc_view,
+)
 from rcm_desktop.adapter.lcc_planning_service import (
     build_lcc_year_detail,
 )
@@ -102,12 +101,12 @@ from rcm_desktop.adapter.lcc_year_detail_table_model import (
 )
 from rcm_desktop.adapter.lcc_year_table_model import LCCYearTableModel
 from rcm_desktop.adapter.planning_cm_preset_service import apply_cm_policy_preset
-from rcm_desktop.adapter.meekoppel_apply_service import (
-    apply_meekoppel_location,
-    preview_meekoppel_location,
-)
-from rcm_desktop.adapter.meekoppelkansen_discovery_service import (
-    discover_meekoppel_locations,
+from rcm_desktop.adapter.import_flow_service import gate_workbook, persist_wizard_result
+from rcm_desktop.adapter.isograph_open_flow_service import PersistImportSuccess
+from rcm_desktop.adapter.meekoppel_panel_service import (
+    apply_meekoppel,
+    preview_meekoppel,
+    sync_meekoppel_panel,
 )
 from rcm_desktop.adapter.meekoppel_suggestions_table_model import (
     MeekoppelSuggestionsTableModel,
@@ -120,16 +119,11 @@ from rcm_desktop.adapter.rcm_navigation_tree_model import RcmNavigationTreeModel
 from rcm_desktop.adapter.contribution_horizon_value_service import (
     calendar_years_for_project,
 )
-from rcm_desktop.adapter.isograph_import_dialog import ImportDialogInput, run_import_wizard
-from rcm_desktop.adapter.isograph_open_flow_service import (
-    PersistImportFailure,
-    PersistImportSuccess,
-    check_workbook_importable,
-    persist_import_wizard_result,
-)
+from rcm_desktop.views.import_wizard_dialog import ImportDialogInput, run_import_wizard
+from rcm_desktop.views.widgets.contribution_bar_chart import ContributionBarChartWidget
+from rcm_desktop.views.widgets.lcc_stacked_bar_chart import LCCStackedBarChartWidget
 from rcm_desktop.adapter.preview_service import build as build_project_preview
 from rcm_desktop.adapter.project_paths import resolve_default_fixture_path
-from rcm_desktop.adapter.result_filter_service import filter_run_result
 from rcm_desktop.adapter.result_view_service import (
     build_pbs_structure_tree,
     build_pbs_tree,
@@ -160,194 +154,15 @@ from rcm_desktop.adapter.workspace_detail_render_scope import (
     should_refresh_kpi_for_render_depth,
     workspace_detail_split_render_depth,
 )
-from rcm_desktop.adapter.workspace_render_index import (
-    SLOT_CURRENT,
-    WorkspaceRenderIndex,
-)
+from rcm_desktop.adapter.workspace_render_index import WorkspaceRenderIndex
 from rcm_desktop.app_state import AppState
 from rcm_desktop.table_ui_constants import PBS_FILTER_MAX_EXPAND_NODES
-
-if TYPE_CHECKING:  # typing-only imports
-    from rcm_core.models import RCMProject
 
 
 def _apply_workspace_data_table_header_policy(header: QHeaderView) -> None:
     """Schaalbare kolombreedtes i.p.v. ResizeToContents op grote tabellen (slice 25)."""
     header.setSectionResizeMode(QHeaderView.Interactive)
     header.setStretchLastSection(True)
-
-
-class _LCCStackedBarChartWidget(QWidget):
-    """Gestapelde staafgrafiek per kalenderjaar (correctief + preventief).
-
-    Tekent een lichte bar voor `correctief_eur` en een donkere bar daarboven
-    voor `preventief_eur`. Bewust gebouwd op standaard `QPainter` — geen
-    QtCharts-afhankelijkheid.
-    """
-
-    year_clicked = Signal(int)
-
-    _CORRECTIEF_COLOR = QColor("#90CAF9")
-    _PREVENTIEF_COLOR = QColor("#1565C0")
-
-    def __init__(self, parent: QWidget | None = None) -> None:
-        super().__init__(parent)
-        self._buckets: tuple[LCCYearBucket, ...] = ()
-        self._selected_year: int | None = None
-        self.setMinimumHeight(220)
-
-    def set_buckets(self, buckets: tuple[LCCYearBucket, ...]) -> None:
-        self._buckets = tuple(buckets)
-        self.update()
-
-    def set_selected_year(self, calendar_year: int | None) -> None:
-        self._selected_year = calendar_year
-        self.update()
-
-    def buckets(self) -> tuple[LCCYearBucket, ...]:
-        return self._buckets
-
-    def _layout_metrics(self, rect):
-        bottom_axis_height = 18
-        left_margin = 8
-        right_margin = 8
-        n = len(self._buckets)
-        usable_w = max(60, rect.width() - left_margin - right_margin)
-        slot_w = max(8, usable_w // max(n, 1))
-        bar_w = max(4, slot_w - 3)
-        plot_h = max(60, rect.height() - bottom_axis_height - 6)
-        baseline_y = 6 + plot_h
-        return left_margin, right_margin, slot_w, bar_w, plot_h, baseline_y
-
-    def _calendar_year_at(self, x: int, y: int) -> int | None:
-        if not self._buckets:
-            return None
-        rect = self.rect()
-        left_margin, _right_margin, slot_w, _bar_w, _plot_h, baseline_y = self._layout_metrics(rect)
-        if y < 0 or y > baseline_y + 18:
-            return None
-        index = (x - left_margin) // slot_w
-        if 0 <= index < len(self._buckets):
-            return self._buckets[index].calendar_year
-        return None
-
-    def mousePressEvent(self, event) -> None:  # noqa: N802
-        if event.button() == Qt.LeftButton:
-            year = self._calendar_year_at(int(event.position().x()), int(event.position().y()))
-            if year is not None:
-                self.year_clicked.emit(year)
-        super().mousePressEvent(event)
-
-    def paintEvent(self, event):  # noqa: N802
-        painter = QPainter(self)
-        painter.setRenderHint(QPainter.Antialiasing, True)
-        rect = self.rect()
-        painter.fillRect(rect, QColor("#FAFAFA"))
-        if not self._buckets:
-            painter.setPen(QPen(QColor("#9E9E9E")))
-            painter.drawText(rect, Qt.AlignCenter, messages.WORKSPACE_LCC_EMPTY_STATE)
-            painter.end()
-            return
-
-        max_value = max(
-            (b.correctief_eur + b.preventief_eur) for b in self._buckets
-        )
-        if max_value <= 0.0:
-            painter.setPen(QPen(QColor("#9E9E9E")))
-            painter.drawText(rect, Qt.AlignCenter, messages.WORKSPACE_LCC_EMPTY_STATE)
-            painter.end()
-            return
-
-        left_margin, right_margin, slot_w, bar_w, plot_h, baseline_y = self._layout_metrics(rect)
-        text_color = QColor("#212121")
-        for i, bucket in enumerate(self._buckets):
-            x = left_margin + i * slot_w
-            total = bucket.correctief_eur + bucket.preventief_eur
-            if total <= 0.0:
-                continue
-            corr_h = int(plot_h * (bucket.correctief_eur / max_value))
-            prev_h = int(plot_h * (bucket.preventief_eur / max_value))
-            if bucket.calendar_year == self._selected_year:
-                painter.setPen(QPen(QColor("#FF6F00"), 2))
-                painter.drawRect(x - 1, baseline_y - corr_h - prev_h - 1, bar_w + 2, corr_h + prev_h + 2)
-            painter.fillRect(
-                x, baseline_y - corr_h, bar_w, corr_h, QBrush(self._CORRECTIEF_COLOR)
-            )
-            painter.fillRect(
-                x, baseline_y - corr_h - prev_h, bar_w, prev_h, QBrush(self._PREVENTIEF_COLOR)
-            )
-        # Lichte as-tekst: eerste en laatste kalenderjaar als anker.
-        painter.setPen(QPen(text_color))
-        first_year = self._buckets[0].calendar_year
-        last_year = self._buckets[-1].calendar_year
-        painter.drawText(left_margin, baseline_y + 14, str(first_year))
-        painter.drawText(
-            rect.width() - right_margin - 50,
-            baseline_y + 14,
-            str(last_year),
-        )
-        painter.end()
-
-
-class _ContributionBarChartWidget(QWidget):
-    """Eenvoudige staafgrafiek voor `Bijdragen`-modus.
-
-    Tekent horizontale bars op basis van de relatieve waarde van elke rij,
-    met label + waarde + aandeel-% in tekstvorm ernaast. Bewust gehouden
-    op standaard `QPainter` (geen QtCharts-afhankelijkheid).
-    """
-
-    def __init__(self, parent: QWidget | None = None) -> None:
-        super().__init__(parent)
-        self._rows: tuple[ContributionRow, ...] = ()
-        self.setMinimumHeight(180)
-
-    def set_rows(self, rows: tuple[ContributionRow, ...]) -> None:
-        self._rows = tuple(rows)
-        self.update()
-
-    def rows(self) -> tuple[ContributionRow, ...]:
-        return self._rows
-
-    def paintEvent(self, event):  # noqa: N802
-        painter = QPainter(self)
-        painter.setRenderHint(QPainter.Antialiasing, True)
-        rect = self.rect()
-        painter.fillRect(rect, QColor("#FAFAFA"))
-        if not self._rows:
-            painter.setPen(QPen(QColor("#9E9E9E")))
-            painter.drawText(rect, Qt.AlignCenter, messages.WORKSPACE_BIJDRAGE_EMPTY_STATE)
-            painter.end()
-            return
-
-        max_value = max((r.value for r in self._rows), default=0.0)
-        if max_value <= 0.0:
-            painter.setPen(QPen(QColor("#9E9E9E")))
-            painter.drawText(rect, Qt.AlignCenter, messages.WORKSPACE_BIJDRAGE_EMPTY_STATE)
-            painter.end()
-            return
-
-        n = len(self._rows)
-        bar_height = max(12, (rect.height() - 12) // max(n, 1) - 4)
-        bar_color = QColor("#1976D2")
-        text_color = QColor("#212121")
-        label_width = 220
-        right_margin = 8
-        for i, row in enumerate(self._rows):
-            y = 6 + i * (bar_height + 4)
-            painter.setPen(QPen(text_color))
-            painter.drawText(6, y + bar_height - 4, row.label[:32])
-            bar_x = label_width
-            bar_max_width = max(20, rect.width() - bar_x - right_margin - 80)
-            bar_w = int(bar_max_width * (row.value / max_value))
-            painter.fillRect(bar_x, y, bar_w, bar_height, QBrush(bar_color))
-            painter.setPen(QPen(text_color))
-            painter.drawText(
-                bar_x + bar_w + 4,
-                y + bar_height - 4,
-                f"{row.share_pct:.1f} %",
-            )
-        painter.end()
 
 
 class _PBSSidebarFilterProxy(QSortFilterProxyModel):
@@ -705,7 +520,7 @@ class ResultsWorkspaceWindow(QMainWindow):
         self.bijdragen_single_slot_pane = QWidget()
         single_layout = QVBoxLayout(self.bijdragen_single_slot_pane)
         single_layout.setContentsMargins(0, 0, 0, 0)
-        self.bijdragen_chart_widget = _ContributionBarChartWidget()
+        self.bijdragen_chart_widget = ContributionBarChartWidget()
         single_layout.addWidget(self.bijdragen_chart_widget, stretch=2)
         self.bijdragen_table_view = QTableView()
         self.bijdragen_table_view.setAlternatingRowColors(True)
@@ -845,7 +660,7 @@ class ResultsWorkspaceWindow(QMainWindow):
         self.lcc_single_slot_pane = QWidget()
         single_layout = QVBoxLayout(self.lcc_single_slot_pane)
         single_layout.setContentsMargins(0, 0, 0, 0)
-        self.lcc_chart_widget = _LCCStackedBarChartWidget()
+        self.lcc_chart_widget = LCCStackedBarChartWidget()
         self.lcc_chart_widget.year_clicked.connect(self._on_lcc_year_clicked)
         single_layout.addWidget(self.lcc_chart_widget, stretch=2)
         self.lcc_table_view = QTableView()
@@ -1172,11 +987,10 @@ class ResultsWorkspaceWindow(QMainWindow):
         self._last_workspace_snapshot_for_split_depth = snapshot
 
     def _seed_planning_overlay_from_import(self, project: object) -> None:
-        from rcm_core.models import RCMProject
-
-        if not isinstance(project, RCMProject):
+        import_settings = getattr(project, "import_settings", None)
+        if import_settings is None:
             return
-        overlay = PlanningOverlayState.from_import_settings(project.import_settings)
+        overlay = PlanningOverlayState.from_import_settings(import_settings)
         if overlay.active:
             self.workspace_state.set_planning_overlay(overlay)
 
@@ -1215,7 +1029,7 @@ class ResultsWorkspaceWindow(QMainWindow):
             self._show_run_error(run_result.error)
 
     def _sync_pbs_tree_for_state(self) -> None:
-        project = self._state.last_project
+        project = self._session_core()
         run_result = self._state.last_run
         if project is None:
             self._set_pbs_source_model(None, show_totals=False)
@@ -1254,32 +1068,24 @@ class ResultsWorkspaceWindow(QMainWindow):
             self.pbs_tree_view.header().setStretchLastSection(True)
         self._on_pbs_filter_text_changed(self.pbs_filter_input.text())
 
-    def _render_cache_modus_key(self, snapshot: WorkspaceStateSnapshot) -> str:
-        if snapshot.modus == MODE_BIJDRAGEN:
-            p = snapshot.contribution_presentation
-            year = p.year_choice if p.year_choice == "average" else int(p.year_choice)
-            return (
-                f"{snapshot.modus}|{snapshot.source}|{snapshot.metric}|{snapshot.top_n}|"
-                f"{p.horizon}|{year}|{p.unavailability_display}"
-            )
-        if snapshot.modus == MODE_LCC:
-            from rcm_desktop.adapter.lcc_render_cache_service import build_lcc_curve_cache_key
+    def _project_session(self) -> ProjectSession | None:
+        return self._state.project_session
 
-            return build_lcc_curve_cache_key(snapshot)
-        if snapshot.modus == MODE_FM_DETAIL:
-            return f"fm|{snapshot.scope_id}|{snapshot.fm_evident_filter}"
-        return snapshot.modus
+    def _session_core(self):
+        session = self._project_session()
+        if session is None:
+            return None
+        return session.loaded.core()
 
     def _rerender_detail_for_current_scope(
         self,
         *,
         split_render_depth: RenderSplitDepth = "all_splits",
     ) -> None:
-        project = self._state.last_project
-        run_result = self._state.last_run
+        session = self._project_session()
         snapshot = self.workspace_state.snapshot()
 
-        if project is None or not isinstance(run_result, RunResult) or run_result.status != "done":
+        if session is None or not session.has_completed_run():
             self._clear_detail_zone()
             return
 
@@ -1289,15 +1095,27 @@ class ResultsWorkspaceWindow(QMainWindow):
 
         modus = snapshot.modus
         if modus == MODE_FM_DETAIL and MODE_FM_DETAIL in required:
-            view = filter_run_result(project, run_result, snapshot.scope_id)
-            rows = filter_fm_rows_by_evident(
-                view.fm_rows, project, snapshot.fm_evident_filter
-            )
-            self._render_fm_rows(rows)
+            fm_view = build_fm_detail_view(session, snapshot)
+            if fm_view is not None:
+                self._render_fm_rows(fm_view.fm_rows)
         elif modus == MODE_BIJDRAGEN and MODE_BIJDRAGEN in required:
-            self._render_bijdragen_for_snapshot(project, run_result, snapshot)
+            bijdragen_view = build_bijdragen_view(
+                session,
+                snapshot,
+                render_index=self._render_index,
+                project_total_presentation=self._project_total_presentation,
+            )
+            if bijdragen_view is not None:
+                self._bind_bijdragen_view(bijdragen_view, snapshot)
         elif modus == MODE_LCC and MODE_LCC in required:
-            self._render_lcc_for_run(project, run_result, snapshot)
+            lcc_view = build_lcc_view(
+                session,
+                snapshot,
+                render_index=self._render_index,
+                prev_snapshot=self._last_lcc_render_snapshot,
+            )
+            if lcc_view is not None:
+                self._render_lcc_view(session, lcc_view, snapshot)
 
     def _selected_fm_id_from_table(self) -> str | None:
         model = self.fm_table_view.model()
@@ -1367,7 +1185,7 @@ class ResultsWorkspaceWindow(QMainWindow):
             self.fm_inspector_empty_label.setVisible(True)
             self.fm_inspector_panel.setVisible(False)
             return
-        project = self._state.last_project
+        project = self._session_core()
         fmr = self._fm_core_result_for_id(fm_id)
         if project is None or fmr is None:
             self.fm_inspector_empty_label.setVisible(True)
@@ -1437,19 +1255,13 @@ class ResultsWorkspaceWindow(QMainWindow):
         notes = "; ".join(view.reconcile_notes)
         self.fm_inspector_reconcile_label.setText(f"{reconcile_prefix} — {notes}")
 
-    def _render_lcc_for_run(
-        self, project, run_result: RunResult, snapshot: WorkspaceStateSnapshot
+    def _render_lcc_view(
+        self,
+        session: ProjectSession,
+        lcc_view,
+        snapshot: WorkspaceStateSnapshot,
     ) -> None:
         """LCC-planning met type-filters, overlay en jaardetail (slice 28)."""
-        from rcm_desktop.adapter.lcc_view_service import build_lcc_view
-
-        lcc_view = build_lcc_view(
-            project,
-            run_result,
-            snapshot,
-            render_index=self._render_index,
-            prev_snapshot=self._last_lcc_render_snapshot,
-        )
         scope = lcc_view.render_scope
         curve = lcc_view.curve
         self._last_lcc_render_snapshot = snapshot
@@ -1461,6 +1273,9 @@ class ResultsWorkspaceWindow(QMainWindow):
             self.lcc_empty_state_label.setVisible(True)
             self.lcc_year_summary_label.setText("")
             return
+        project = session.loaded.core()
+        run_result = session.run
+        assert run_result is not None
         if scope == "detail_only":
             self.lcc_chart_widget.set_selected_year(snapshot.lcc_calendar_year)
             self._sync_lcc_chrome(snapshot)
@@ -1476,7 +1291,7 @@ class ResultsWorkspaceWindow(QMainWindow):
         self._render_lcc_year_detail(project, run_result, snapshot, planning_curve=curve)
 
     def _sync_lcc_chrome(self, snapshot: WorkspaceStateSnapshot) -> None:
-        project = self._state.last_project
+        project = self._session_core()
         overlay = snapshot.planning_overlay
         active = overlay.active
         year_selected = snapshot.lcc_calendar_year is not None
@@ -1515,24 +1330,18 @@ class ResultsWorkspaceWindow(QMainWindow):
             self._sync_meekoppel_panel(snapshot)
 
     def _sync_meekoppel_panel(self, snapshot: WorkspaceStateSnapshot) -> None:
-        project = self._state.last_project
-        overlay = snapshot.planning_overlay
-        whatif = overlay.active
-        self.meekoppel_whatif_hint_label.setVisible(not whatif)
-        self.meekoppel_window_spin.setEnabled(whatif)
-        self.meekoppel_table_view.setVisible(whatif)
-        self.meekoppel_preview_button.setEnabled(whatif)
-        self.meekoppel_apply_button.setEnabled(whatif)
-        if not whatif or project is None:
-            self._meekoppel_table_model.set_rows(())
-            self.meekoppel_empty_label.setVisible(False)
-            return
-        window = int(self.meekoppel_window_spin.value())
-        rows = discover_meekoppel_locations(project, window_years=window)
-        self._meekoppel_table_model.set_rows(rows)
-        empty = len(rows) == 0
-        self.meekoppel_empty_label.setVisible(empty)
-        self.meekoppel_table_view.setVisible(not empty)
+        panel = sync_meekoppel_panel(
+            self._project_session(),
+            snapshot,
+            window_years=int(self.meekoppel_window_spin.value()),
+        )
+        self.meekoppel_whatif_hint_label.setVisible(panel.show_whatif_hint)
+        self.meekoppel_window_spin.setEnabled(panel.window_spin_enabled)
+        self.meekoppel_table_view.setVisible(panel.table_visible)
+        self.meekoppel_preview_button.setEnabled(panel.preview_enabled)
+        self.meekoppel_apply_button.setEnabled(panel.apply_enabled)
+        self._meekoppel_table_model.set_rows(panel.rows)
+        self.meekoppel_empty_label.setVisible(panel.show_empty_label)
 
     def _selected_meekoppel_group(self):
         selection = self.meekoppel_table_view.selectionModel()
@@ -1566,8 +1375,8 @@ class ResultsWorkspaceWindow(QMainWindow):
             self._sync_meekoppel_panel(snapshot)
 
     def _on_meekoppel_preview(self) -> None:
-        project = self._state.last_project
-        if project is None:
+        session = self._project_session()
+        if session is None:
             return
         overlay = self.workspace_state.snapshot().planning_overlay
         if not overlay.active:
@@ -1583,8 +1392,8 @@ class ResultsWorkspaceWindow(QMainWindow):
         anchor = self._meekoppel_preview_anchor()
         if not anchor:
             return
-        prev = preview_meekoppel_location(
-            project, overlay, group, anchor=anchor  # type: ignore[arg-type]
+        prev = preview_meekoppel(
+            session, overlay, group, anchor=anchor  # type: ignore[arg-type]
         )
         if prev.blocked_reason:
             QMessageBox.information(
@@ -1617,8 +1426,8 @@ class ResultsWorkspaceWindow(QMainWindow):
         )
 
     def _on_meekoppel_apply(self) -> None:
-        project = self._state.last_project
-        if project is None:
+        session = self._project_session()
+        if session is None:
             return
         overlay = self.workspace_state.snapshot().planning_overlay
         if not overlay.active:
@@ -1631,8 +1440,8 @@ class ResultsWorkspaceWindow(QMainWindow):
                 messages.WORKSPACE_MEEKOPPEL_SELECT_ROW,
             )
             return
-        result = apply_meekoppel_location(
-            project,
+        result = apply_meekoppel(
+            session,
             overlay,
             group,
             anchor=self._meekoppel_last_anchor,  # type: ignore[arg-type]
@@ -1787,7 +1596,7 @@ class ResultsWorkspaceWindow(QMainWindow):
         self.kpi_collapse_button.setEnabled(lcc_active)
 
     def _on_lcc_bulk_rev_toggle(self) -> None:
-        project = self._state.last_project
+        project = self._session_core()
         if project is None:
             return
         overlay = self.workspace_state.snapshot().planning_overlay
@@ -1800,7 +1609,7 @@ class ResultsWorkspaceWindow(QMainWindow):
         self.workspace_state.set_planning_overlay(overlay)
 
     def _on_lcc_cm_policy_preset(self) -> None:
-        project = self._state.last_project
+        project = self._session_core()
         if project is None:
             return
         overlay = self.workspace_state.snapshot().planning_overlay
@@ -1809,7 +1618,7 @@ class ResultsWorkspaceWindow(QMainWindow):
         self.workspace_state.set_planning_overlay(apply_cm_policy_preset(overlay, project))
 
     def _on_lcc_shift_selected(self) -> None:
-        project = self._state.last_project
+        project = self._session_core()
         if project is None:
             return
         overlay = self.workspace_state.snapshot().planning_overlay
@@ -1862,42 +1671,12 @@ class ResultsWorkspaceWindow(QMainWindow):
         if value in ("all", "nmf_only", "evident_only"):
             self.workspace_state.set_fm_evident_filter(value)
 
-    def _contribution_cache_matches(self, snapshot: WorkspaceStateSnapshot) -> bool:
-        cached = self._project_total_presentation
-        if cached is None or snapshot.scope_id is not None:
-            return False
-        p = snapshot.contribution_presentation
-        return (
-            snapshot.source == cached.contribution_source
-            and snapshot.metric == cached.contribution_metric
-            and snapshot.top_n == cached.contribution_top_n
-            and p == cached.contribution_presentation
-        )
-
-    def _render_bijdragen_for_snapshot(
+    def _bind_bijdragen_view(
         self,
-        project,
-        run_result: RunResult,
+        bijdragen_view,
         snapshot: WorkspaceStateSnapshot,
     ) -> None:
-        if self._contribution_cache_matches(snapshot):
-            rows = self._project_total_presentation.contribution_rows
-        else:
-            cache_modus = self._render_cache_modus_key(snapshot)
-            rows = self._render_index.get_or_build(
-                SLOT_CURRENT,
-                snapshot.scope_id,
-                cache_modus,
-                lambda: build_contribution_rows(
-                    project,
-                    run_result,
-                    source=snapshot.source,
-                    metric=snapshot.metric,
-                    top_n=snapshot.top_n,
-                    scope_id=snapshot.scope_id,
-                    presentation=snapshot.contribution_presentation,
-                ),
-            )
+        rows = bijdragen_view.contribution_rows
         self.bijdragen_chart_widget.set_rows(rows)
         table_model = ContributionTableModel(
             rows,
@@ -1922,7 +1701,7 @@ class ResultsWorkspaceWindow(QMainWindow):
         if self._pbs_scope_id is None:
             self.scope_status_label.setText("Scope: hele project")
             return
-        project = self._state.last_project
+        project = self._session_core()
         bouwdeel = ""
         if project is not None and self._pbs_scope_id in project.pbs_items:
             bouwdeel = project.pbs_items[self._pbs_scope_id].bouwdeel_naam
@@ -1950,13 +1729,13 @@ class ResultsWorkspaceWindow(QMainWindow):
         if not excel_path:
             return
 
-        gate_error = check_workbook_importable(Path(excel_path))
-        if gate_error is not None:
-            QMessageBox.critical(self, messages.ERROR_DIALOG_TITLE, gate_error.message)
+        gate = gate_workbook(Path(excel_path))
+        if not gate.ok:
+            QMessageBox.critical(self, messages.ERROR_DIALOG_TITLE, gate.error.message if gate.error else "")
             return
 
         default_modeljaar = 2026
-        project = self._state.last_project
+        project = self._session_core()
         if project is not None:
             default_modeljaar = int(project.config.modeljaar)
 
@@ -1976,19 +1755,17 @@ class ResultsWorkspaceWindow(QMainWindow):
         if not save_path:
             return
 
-        outcome = persist_import_wizard_result(wizard, Path(save_path))
-        if isinstance(outcome, PersistImportFailure):
+        outcome = persist_wizard_result(wizard, Path(save_path))
+        if outcome.kind == "blocked":
             if outcome.validate_result is not None:
                 self._state.set_last_result(outcome.validate_result)
-            QMessageBox.critical(
-                self,
-                messages.ERROR_DIALOG_TITLE,
-                outcome.message or messages.ISOGRAPH_IMPORT_VALIDATION_FAILED,
-            )
+            failure = outcome.failure
+            message = failure.message if failure is not None else messages.ISOGRAPH_IMPORT_VALIDATION_FAILED
+            QMessageBox.critical(self, messages.ERROR_DIALOG_TITLE, message)
             return
 
-        assert isinstance(outcome, PersistImportSuccess)
-        self._apply_import_success(outcome)
+        assert outcome.success is not None
+        self._apply_import_success(outcome.success)
 
     def _apply_import_success(self, outcome: PersistImportSuccess) -> None:
         self._suppress_path_change = True
@@ -2025,7 +1802,7 @@ class ResultsWorkspaceWindow(QMainWindow):
 
     def _start_analyse(self) -> None:
         path = self.path_input.text().strip()
-        project = self._state.last_project
+        project = self._session_core()
         if project is None:
             return
         overlay = self.workspace_state.snapshot().planning_overlay
@@ -2099,7 +1876,7 @@ class ResultsWorkspaceWindow(QMainWindow):
     def _refresh_kpi_table_view(self) -> None:
         if not hasattr(self, "kpi_table_view"):
             return
-        project = self._state.last_project
+        project = self._session_core()
         scope_id = self.workspace_state.snapshot().scope_id
         table = build_kpi_table(
             project=project,
@@ -2112,7 +1889,7 @@ class ResultsWorkspaceWindow(QMainWindow):
     def _update_run_button_label(self) -> None:
         if not hasattr(self, "run_analyse_button"):
             return
-        project = self._state.last_project
+        project = self._session_core()
         path = self.path_input.text().strip()
         if project is not None and path and fm_cache_available(project, path):
             self.run_analyse_button.setText(messages.WORKSPACE_RECOMPUTE_ANALYSE_BUTTON_LABEL)
@@ -2120,7 +1897,7 @@ class ResultsWorkspaceWindow(QMainWindow):
             self.run_analyse_button.setText(messages.WORKSPACE_START_ANALYSE_BUTTON_LABEL)
 
     def _load_presentation_cache(self) -> None:
-        project = self._state.last_project
+        project = self._session_core()
         path = self.path_input.text().strip()
         if project is None or not path:
             self._project_total_presentation = None
@@ -2128,7 +1905,7 @@ class ResultsWorkspaceWindow(QMainWindow):
         self._project_total_presentation = load_presentation_from_cache(project, path)
 
     def _maybe_start_presentation_rebuild(self) -> None:
-        project = self._state.last_project
+        project = self._session_core()
         path = self.path_input.text().strip()
         run = self._state.last_run
         if (
@@ -2144,7 +1921,7 @@ class ResultsWorkspaceWindow(QMainWindow):
         self._presentation_rebuild_runner.start(project, path, run)
 
     def _maybe_start_lcc_warmup(self) -> None:
-        project = self._state.last_project
+        project = self._session_core()
         run = self._state.last_run
         if (
             project is None
@@ -2158,10 +1935,8 @@ class ResultsWorkspaceWindow(QMainWindow):
         self._lcc_warmup_runner.start(project, run, self._render_index, snapshot)
 
     def _after_project_validated(self, project: object) -> None:
-        from rcm_core.models import RCMProject
-
         path = self.path_input.text().strip()
-        if not isinstance(project, RCMProject) or not path:
+        if project is None or not path or not hasattr(project, "config"):
             return
         hydrated = hydrate_run_from_cache(project, path)
         if hydrated is not None:
@@ -2195,7 +1970,7 @@ class ResultsWorkspaceWindow(QMainWindow):
             and self._state.last_result.status in {"valid", "valid_with_warnings"}
         )
         busy = self._run_runner.busy or self._presentation_rebuild_runner.busy
-        can_run = validation_ok and self._state.last_project is not None and not busy
+        can_run = validation_ok and self._project_session() is not None and not busy
         if hasattr(self, "run_analyse_button"):
             self.run_analyse_button.setEnabled(can_run)
 

@@ -1,16 +1,17 @@
 """Qt-run-runner: motor + presentatie-cache op achtergrondthread."""
+
 from __future__ import annotations
 
-from PySide6.QtCore import QObject, QThread, Signal, Slot
+from PySide6.QtCore import QObject, Signal, Slot
 
 from rcm_desktop.adapter import run_service
 from rcm_desktop.adapter.planning_overlay_state import PlanningOverlayState
-from rcm_desktop.adapter.run_decision import RunUserIntent, resolve_run_execution
 from rcm_desktop.adapter.presentation_cache_service import (
-    PresentationProjectTotal,
     attach_presentation_to_cache,
     build_contribution_presentation,
 )
+from rcm_desktop.adapter.qt.background_runner import BackgroundRunner
+from rcm_desktop.adapter.run_decision import RunUserIntent, resolve_run_execution
 
 PHASE_MOTOR = "motor"
 PHASE_PRESENTATION = "presentation"
@@ -64,13 +65,11 @@ class RunRunner(QObject):
 
     def __init__(self) -> None:
         super().__init__()
-        self._thread: QThread | None = None
-        self._worker: _RunWorker | None = None
-        self._busy = False
+        self._background = BackgroundRunner(self, self.state_changed.emit)
 
     @property
     def busy(self) -> bool:
-        return self._busy
+        return self._background.busy
 
     def start(
         self,
@@ -80,27 +79,17 @@ class RunRunner(QObject):
         planning_overlay: PlanningOverlayState | None = None,
         force_recompute: bool = False,
     ) -> bool:
-        if self._busy:
+        if self._background.busy:
             return False
 
-        self._busy = True
-        self.state_changed.emit("busy")
         self.phase_changed.emit(PHASE_MOTOR)
-
-        self._thread = QThread()
-        self._worker = _RunWorker(
+        worker = _RunWorker(
             project,
             project_path,
             planning_overlay,
             force_recompute=force_recompute,
         )
-        self._worker.moveToThread(self._thread)
-        self._thread.started.connect(self._worker.run)
-        self._worker.finished.connect(self._on_worker_finished)
-        self._worker.finished.connect(self._thread.quit)
-        self._thread.finished.connect(self._cleanup)
-        self._thread.start()
-        return True
+        return self._background.start(worker, on_finished=self._on_worker_finished)
 
     @Slot(object, object)
     def _on_worker_finished(self, result: object, presentation: object) -> None:
@@ -109,14 +98,3 @@ class RunRunner(QObject):
         self.result_ready.emit(result, presentation)
         status = getattr(result, "status", "error")
         self.state_changed.emit("done" if status == "done" else "error")
-
-    @Slot()
-    def _cleanup(self) -> None:
-        if self._worker is not None:
-            self._worker.deleteLater()
-            self._worker = None
-        if self._thread is not None:
-            self._thread.deleteLater()
-            self._thread = None
-        self._busy = False
-        self.state_changed.emit("idle")
