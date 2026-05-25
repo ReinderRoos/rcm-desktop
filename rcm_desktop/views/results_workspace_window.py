@@ -119,6 +119,7 @@ from rcm_desktop.adapter.rcm_navigation_tree_model import RcmNavigationTreeModel
 from rcm_desktop.adapter.contribution_horizon_value_service import (
     calendar_years_for_project,
 )
+from rcm_desktop.views.fm_editor_dialog import FmEditorDialog
 from rcm_desktop.views.import_wizard_dialog import ImportDialogInput, run_import_wizard
 from rcm_desktop.views.widgets.contribution_bar_chart import ContributionBarChartWidget
 from rcm_desktop.views.widgets.lcc_stacked_bar_chart import LCCStackedBarChartWidget
@@ -698,6 +699,7 @@ class ResultsWorkspaceWindow(QMainWindow):
         sel = self.fm_table_view.selectionModel()
         if sel is not None:
             sel.selectionChanged.connect(self._on_fm_table_selection_changed)
+        self.fm_table_view.doubleClicked.connect(self._on_fm_table_double_clicked)
         table_layout.addWidget(self.fm_table_view, stretch=1)
         self.detail_empty_state_label = QLabel(messages.WORKSPACE_DETAIL_EMPTY_STATE)
         self.detail_empty_state_label.setStyleSheet("color: #9E9E9E;")
@@ -1168,6 +1170,60 @@ class ResultsWorkspaceWindow(QMainWindow):
             return
         fm_id = model.data(indexes[0], RAW_ROLE)
         self._refresh_fm_inspector(str(fm_id) if fm_id is not None else None)
+
+    def _on_fm_table_double_clicked(self, index: QModelIndex) -> None:
+        if self.workspace_state.snapshot().modus != MODE_FM_DETAIL:
+            return
+        project = self._session_core()
+        if project is None:
+            QMessageBox.information(
+                self,
+                messages.FM_EDITOR_VALIDATION_TITLE,
+                messages.FM_EDITOR_NO_PROJECT,
+            )
+            return
+        model = self.fm_table_view.model()
+        if model is None:
+            return
+        src_index = index
+        proxy = self._fm_table_proxy
+        if model is proxy:
+            src_index = proxy.mapToSource(index)
+            src_model = proxy.sourceModel()
+        else:
+            src_model = model
+        if src_model is None:
+            return
+        fm_id = src_model.data(src_index, RAW_ROLE)
+        if not fm_id:
+            return
+        fm_key = str(fm_id)
+        if fm_key not in project.faalwijzes:
+            QMessageBox.warning(
+                self,
+                messages.FM_EDITOR_VALIDATION_TITLE,
+                messages.WORKSPACE_FM_INSPECTOR_INPUTS_MISSING,
+            )
+            return
+        path = self.path_input.text().strip() or None
+        dialog = FmEditorDialog(
+            self,
+            project=project,
+            fm_id=fm_key,
+            project_path=path,
+            save_to_disk=bool(path),
+        )
+        if dialog.exec() != QDialog.DialogCode.Accepted or dialog.commit_result is None:
+            return
+        result = dialog.commit_result
+        if result.project is not None:
+            self._state.set_last_project(result.project, path=path)
+        if result.run_result is not None:
+            self._state.set_last_run(result.run_result)
+            self._load_presentation_cache()
+            self._render_index.on_workspace_state_reset()
+            self._rerender_detail_for_current_scope()
+            self._refresh_fm_inspector(str(fm_id))
 
     def _fm_core_result_for_id(self, fm_id: str):
         run = self._state.last_run

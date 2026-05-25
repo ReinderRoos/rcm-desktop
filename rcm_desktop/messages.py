@@ -512,6 +512,42 @@ ISOGRAPH_IMPORT_VALIDATION_FAILED = (
 )
 ISOGRAPH_IMPORT_SAVE_SUCCESS = "RCM-Cost export opgeslagen als {path}."
 
+FM_EDITOR_TITLE = "Faalwijze bewerken — {fm_id}"
+FM_EDITOR_TAB_BASIS = "Basis"
+FM_EDITOR_TAB_EFFECTEN = "Effecten"
+FM_EDITOR_TAB_CORRECTIEF = "Correctief"
+FM_EDITOR_TAB_PREVENTIEF = "Preventief"
+FM_EDITOR_FAILURE_TYPE = "Faaltype"
+FM_EDITOR_MTTF = "MTTF (jaar)"
+FM_EDITOR_SIGMA = "Sigma (jaar)"
+FM_EDITOR_NMF = "Niet-merkbaar falen (NMF)"
+FM_EDITOR_OMSCHRIJVING = "Faalscenario"
+FM_EDITOR_FUNCTIE = "Functie"
+FM_EDITOR_REPAIR_QUALITY = "Herstelkwaliteit (0–1)"
+FM_EDITOR_BOUWJAAR = "Startleeftijd (bouwjaar PBS)"
+FM_EDITOR_PBS_SHARED_WARN = (
+    "Let op: dit PBS-item ({pbs_id}) is gekoppeld aan {count} faalwijzen."
+)
+FM_EDITOR_CM_MATERIAAL = "CM materiaalkosten (EUR)"
+FM_EDITOR_CM_ARBEID = "CM arbeid/engineering (EUR)"
+FM_EDITOR_DOWNTIME_HOURS = "Hersteltijd per falen (uur)"
+FM_EDITOR_NOTES = "Scenario-notities"
+FM_EDITOR_AANNAME_CM = "Aanname CM-kosten"
+FM_EDITOR_AANNAME_DOWNTIME = "Aanname downtime"
+FM_EDITOR_VALIDATION_TITLE = "Bewerken niet opgeslagen"
+FM_EDITOR_COMMIT_FAILED = "Opslaan mislukt: {detail}"
+FM_EDITOR_FM_LINKS = "Effect bij falen"
+FM_EDITOR_PM_LINKS = "Effect bij PM-taken"
+FM_EDITOR_EFFECT_KLASSEN = "Gekoppelde effectklassen"
+FM_EDITOR_ADD_ROW = "Rij toevoegen"
+FM_EDITOR_REMOVE_ROW = "Rij verwijderen"
+FM_EDITOR_PM_TASKS = "PM-taken"
+FM_EDITOR_TASK_GROUP = "Taakgroep (gedeeld)"
+FM_EDITOR_TASK_GROUP_SHARED_WARN = (
+    "Taakgroep {group_id} wordt ook door andere faalwijzen gebruikt."
+)
+FM_EDITOR_NO_PROJECT = "Laad eerst een project voordat je een faalwijze bewerkt."
+
 
 def status_label(status: str) -> str:
     return STATUS_LABELS.get(status, "Onbekende status")

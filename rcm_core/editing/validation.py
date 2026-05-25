@@ -166,6 +166,21 @@ def validate_entity_rows(
                         "repair_quality",
                         error_obj("FM_REPAIR_QUALITY", "repair_quality moet tussen 0 en 1 liggen", "repair_quality", row_key, entity),
                     )
+        if entity in ("fm_effect_links", "pm_effect_links"):
+            fractie = row2.get("fractie")
+            if isinstance(fractie, (int, float)) and not (0.0 <= fractie <= 1.0):
+                set_row_error(
+                    error_bag,
+                    row_key,
+                    "fractie",
+                    error_obj(
+                        "EFFECT_FRACTION",
+                        "fractie moet tussen 0 en 1 liggen",
+                        "fractie",
+                        row_key,
+                        entity,
+                    ),
+                )
         if entity == "pm_tasks":
             interval = row2.get("interval_jaar")
             if isinstance(interval, (int, float)) and interval <= 0:
