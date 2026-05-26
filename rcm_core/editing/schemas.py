@@ -62,6 +62,7 @@ ENTITY_SCHEMAS: dict[str, dict[str, Any]] = {
             "aanname_cm_kosten": "str",
             "aanname_downtime": "str",
             "aanname_effectklasse": "str",
+            "downtime_per_failure": "dict",
         },
         "fk_rules": {"pbs_id": "pbs", "functie_id": "functies"},
     },

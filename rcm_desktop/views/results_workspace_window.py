@@ -119,7 +119,10 @@ from rcm_desktop.adapter.rcm_navigation_tree_model import RcmNavigationTreeModel
 from rcm_desktop.adapter.contribution_horizon_value_service import (
     calendar_years_for_project,
 )
+from rcm_desktop.adapter.faalwijzen_edit_service import FaalwijzenEditService
+from rcm_desktop.adapter.faalwijzen_grid_registry import get_active_grid_service, set_active_grid_service
 from rcm_desktop.views.fm_editor_dialog import FmEditorDialog
+from rcm_desktop.views.validate_faalwijzen_panel import ValidateFaalwijzenPanel
 from rcm_desktop.views.import_wizard_dialog import ImportDialogInput, run_import_wizard
 from rcm_desktop.views.widgets.contribution_bar_chart import ContributionBarChartWidget
 from rcm_desktop.views.widgets.lcc_stacked_bar_chart import LCCStackedBarChartWidget
@@ -264,6 +267,9 @@ class ResultsWorkspaceWindow(QMainWindow):
         self.run_analyse_button.setToolTip(messages.WORKSPACE_START_ANALYSE_BUTTON_TOOLTIP)
         self.run_analyse_button.setEnabled(False)
         self.run_analyse_button.clicked.connect(self._start_analyse)
+        self.batch_faalwijzen_button = QPushButton(messages.WORKSPACE_MENU_FAALWIJZEN_BATCH)
+        self.batch_faalwijzen_button.setToolTip(messages.WORKSPACE_MENU_FAALWIJZEN_BATCH)
+        self.batch_faalwijzen_button.clicked.connect(self._open_batch_faalwijzen_grid)
 
         self.pbs_toggle_button = QToolButton()
         self.pbs_toggle_button.setText(messages.WORKSPACE_PBS_TOGGLE_LABEL)
@@ -772,6 +778,7 @@ class ResultsWorkspaceWindow(QMainWindow):
             self.pick_button,
             self.open_isograph_button,
             self.validate_button,
+            self.batch_faalwijzen_button,
             self.run_analyse_button,
         ):
             toolbar_row.addWidget(w)
@@ -1171,6 +1178,35 @@ class ResultsWorkspaceWindow(QMainWindow):
         fm_id = model.data(indexes[0], RAW_ROLE)
         self._refresh_fm_inspector(str(fm_id) if fm_id is not None else None)
 
+    def _open_batch_faalwijzen_grid(self) -> None:
+        project = self._session_core()
+        if project is None:
+            QMessageBox.information(
+                self,
+                messages.WORKSPACE_MENU_FAALWIJZEN_BATCH,
+                messages.WORKSPACE_FM_INSPECTOR_INPUTS_MISSING,
+            )
+            return
+        grid_svc = get_active_grid_service()
+        if grid_svc is None or not grid_svc.is_active():
+            grid_svc = FaalwijzenEditService()
+            grid_svc.reset(project)
+            set_active_grid_service(grid_svc)
+        dialog = QDialog(self)
+        dialog.setWindowTitle(messages.WORKSPACE_MENU_FAALWIJZEN_BATCH)
+        dialog.resize(960, 520)
+        layout = QVBoxLayout(dialog)
+        panel = ValidateFaalwijzenPanel()
+        panel.attach(grid_svc, project)
+        layout.addWidget(panel)
+        close_btn = QPushButton("Sluiten")
+        close_btn.clicked.connect(dialog.accept)
+        layout.addWidget(close_btn)
+        dialog.exec()
+        if grid_svc.is_dirty() and grid_svc.error_count() == 0:
+            built = grid_svc.materialize_for_run()
+            self._state.set_last_project(built, path=self.path_input.text().strip() or None)
+
     def _on_fm_table_double_clicked(self, index: QModelIndex) -> None:
         if self.workspace_state.snapshot().modus != MODE_FM_DETAIL:
             return
@@ -1205,13 +1241,23 @@ class ResultsWorkspaceWindow(QMainWindow):
                 messages.WORKSPACE_FM_INSPECTOR_INPUTS_MISSING,
             )
             return
+        from rcm_desktop.adapter.dirty_session_coordinator import resolve_grid_dirty_before_editor
+        from rcm_desktop.adapter.faalwijzen_grid_registry import get_active_grid_service
+
+        if resolve_grid_dirty_before_editor(self) == "cancel":
+            return
         path = self.path_input.text().strip() or None
+        grid_svc = get_active_grid_service()
+        shared_session = None
+        if grid_svc is not None and grid_svc.is_active():
+            shared_session = grid_svc.editing_session
         dialog = FmEditorDialog(
             self,
             project=project,
             fm_id=fm_key,
             project_path=path,
             save_to_disk=bool(path),
+            editing_session=shared_session,
         )
         if dialog.exec() != QDialog.DialogCode.Accepted or dialog.commit_result is None:
             return

@@ -79,10 +79,17 @@ Drie lagen om **één faalwijze (FM)** te controleren — van streng naar intera
      Waarschuwingen bij gedeeld PBS of gedeelde taakgroep. PRD/issues:
      `.scratch/rcm-desktop-slice44-fm-bewerken-werkruimte/`.
 
-3. **Legacy ValidateWindow** (`--legacy-validate` / `RCM_LEGACY_VALIDATE=1`) —
-   **Projectcockpit** voor smalle faalwijzen-grid-bewerking, valideren, run en
-   LTAP/PM what-if — **niet** het primaire pad voor volledige FM-bewerking (slice 44).
-   Layout-cleanup (slice 8) is uitgesteld.
+3. **Batch faalwijzen-grid** (slice 46) — homogene modelfouten (faaltype, NMF, MTTF,
+   …) batch-corrigeren via schema-gedreven grid + `apply_bulk_change`. Host:
+   **ValidateFaalwijzenPanel** in ValidateWindow; optioneel ook vanuit de
+   resultatenwerkruimte (toolbar). Canonieke volledige FM-scope blijft
+   **FmEditorDialog**; gedeelde `EditingSession` wanneer grid en editor parallel
+   open zijn. PRD: `.scratch/rcm-desktop-slice46-fm-edit-fase2/`.
+
+4. **Legacy ValidateWindow** (`--legacy-validate` / `RCM_LEGACY_VALIDATE=1`) —
+   **Projectcockpit** voor batch-grid, valideren, run en LTAP/PM what-if — **niet**
+   het primaire pad voor volledige FM-bewerking (slice 44). Layout-cleanup
+   (slice 8) is uitgesteld.
 
 Kalenderjaar in de inspector gebruikt dezelfde mapping als LCC/Tijdsplot:
 `modeljaar` + horizonindex. Jaar-faalmomenten in de UI zijn **presentatie-proxy**

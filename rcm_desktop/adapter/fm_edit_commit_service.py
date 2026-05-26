@@ -30,7 +30,7 @@ def create_edit_session(project: RCMProject) -> EditingSession:
     return EditingSession().clone_with_project(project)
 
 
-def apply_bundle_scope(session: EditingSession, bundle: FmEditBundle) -> None:
+def replace_fm_scope(session: EditingSession, bundle: FmEditBundle) -> None:
     """Vervang alleen rijen in FM-scope; overige projectrijen blijven intact."""
     fm_id = bundle.fm_id
     pbs_id = normalize_key(bundle.pbs_row.get("pbs_id"))
@@ -84,6 +84,11 @@ def apply_bundle_scope(session: EditingSession, bundle: FmEditBundle) -> None:
     merged_ek = [r for r in all_ek if normalize_key(r.get("klasse_id")) not in klasse_ids]
     merged_ek.extend(copy.deepcopy(r) for r in bundle.effect_klasse_rows)
     session.apply_entity_rows("effect_klassen", merged_ek)
+
+
+def apply_bundle_scope(session: EditingSession, bundle: FmEditBundle) -> None:
+    """Compat-wrapper — gebruik ``replace_fm_scope``."""
+    replace_fm_scope(session, bundle)
 
 
 def _collect_error_messages(session: EditingSession) -> tuple[str, ...]:

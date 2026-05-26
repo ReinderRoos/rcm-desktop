@@ -54,6 +54,10 @@ def coerce_value(value: Any, expected: str) -> tuple[Any, bool]:
         if sval in ("0", "false", "nee", "no"):
             return False, True
         return value, False
+    if expected == "dict":
+        if isinstance(value, dict):
+            return value, True
+        return value, False
     return value, True
 
 

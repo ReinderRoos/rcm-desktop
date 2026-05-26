@@ -49,3 +49,4 @@ class EditingSession:
         out = EditingSession()
         out.load_project(cloned)
         return out
+

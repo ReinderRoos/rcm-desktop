@@ -6,6 +6,7 @@ import copy
 from pathlib import Path
 from typing import Any
 
+from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QCheckBox,
     QComboBox,
@@ -17,6 +18,7 @@ from PySide6.QtWidgets import (
     QLabel,
     QLineEdit,
     QMessageBox,
+    QProgressDialog,
     QPushButton,
     QSpinBox,
     QTabWidget,
@@ -28,33 +30,24 @@ from PySide6.QtWidgets import (
 )
 
 from rcm_desktop import messages
-from rcm_desktop.adapter.cm_cost_split_mapper import CmCostSplit, merge_cm_cost, split_cm_cost
+from rcm_desktop.adapter.cm_cost_split_mapper import split_cm_cost
+from rcm_desktop.adapter.fm_edit_bundle_assembler import FmEditDraft, assemble_bundle
 from rcm_desktop.adapter.fm_edit_bundle_service import (
     FmEditBundle,
-    count_faalwijzen_for_pbs,
-    count_faalwijzen_for_task_group,
+    count_faalwijzen_for_pbs_in_edit,
+    count_faalwijzen_for_task_group_in_edit,
     load_bundle,
+    load_bundle_from_session,
 )
+from rcm_desktop.adapter.fm_edit_commit_runner import FmEditCommitRunner
 from rcm_desktop.adapter.fm_edit_commit_service import (
     FmEditCommitResult,
-    apply_bundle_scope,
     commit_edits,
     create_edit_session,
+    replace_fm_scope,
 )
+from rcm_desktop.adapter.fm_edit_row_mappers import downtime_hours_from_row
 from rcm_desktop.adapter.editing_session import EditingSession
-
-
-def _downtime_hours_from_row(row: dict[str, Any]) -> float:
-    raw = row.get("downtime_per_failure")
-    if not isinstance(raw, dict):
-        return 0.0
-    from rcm_core.units import TimeDuration
-
-    return TimeDuration.from_dict(raw).to_hours()
-
-
-def _downtime_dict_from_hours(hours: float) -> dict[str, Any]:
-    return {"value": float(hours), "unit": "uur"}
 
 
 def _new_id(prefix: str, existing: set[str]) -> str:
@@ -76,6 +69,7 @@ class FmEditorDialog(QDialog):
         project_path: str | Path | None = None,
         save_to_disk: bool = False,
         baseline_mtime_ns: int | None = None,
+        editing_session: EditingSession | None = None,
     ) -> None:
         super().__init__(parent)
         self._project = project
@@ -83,9 +77,16 @@ class FmEditorDialog(QDialog):
         self._path = Path(project_path) if project_path else None
         self._save_to_disk = save_to_disk
         self._baseline_mtime_ns = baseline_mtime_ns
-        self._session: EditingSession = create_edit_session(project)
-        self._bundle = load_bundle(project, fm_id)
+        if editing_session is not None:
+            self._session = editing_session
+            self._bundle = load_bundle_from_session(editing_session, fm_id)
+        else:
+            self._session = create_edit_session(project)
+            self._bundle = load_bundle(project, fm_id)
         self.commit_result: FmEditCommitResult | None = None
+        self._commit_runner = FmEditCommitRunner()
+        self._commit_runner.finished.connect(self._on_commit_finished)
+        self._progress: QProgressDialog | None = None
         self._functie_ids = tuple(sorted(project.functies.keys()))
 
         self.setWindowTitle(
@@ -169,7 +170,7 @@ class FmEditorDialog(QDialog):
         form.addRow(messages.FM_EDITOR_BOUWJAAR, self._bouwjaar)
 
         pbs_id = str(self._bundle.pbs_row.get("pbs_id") or "")
-        shared = count_faalwijzen_for_pbs(self._project, pbs_id)
+        shared = count_faalwijzen_for_pbs_in_edit(self._session, pbs_id)
         if shared > 1:
             warn = QLabel(
                 messages.FM_EDITOR_PBS_SHARED_WARN.format(pbs_id=pbs_id, count=shared)
@@ -202,7 +203,7 @@ class FmEditorDialog(QDialog):
         self._downtime_hr = QDoubleSpinBox()
         self._downtime_hr.setRange(0.0, 1e7)
         self._downtime_hr.setDecimals(2)
-        self._downtime_hr.setValue(_downtime_hours_from_row(self._bundle.faalwijze_row))
+        self._downtime_hr.setValue(downtime_hours_from_row(self._bundle.faalwijze_row))
         form.addRow(messages.FM_EDITOR_DOWNTIME_HOURS, self._downtime_hr)
 
         self._notes = QTextEdit(str(self._bundle.faalwijze_row.get("notes") or ""))
@@ -419,7 +420,7 @@ class FmEditorDialog(QDialog):
             g = self._task_group_rows[group_id]
             self._tg_interval.setValue(float(g.get("interval_jaar") or 1.0))
             self._tg_cost.setValue(float(g.get("cost_eur") or 0.0))
-            shared = count_faalwijzen_for_task_group(self._project, group_id)
+            shared = count_faalwijzen_for_task_group_in_edit(self._session, group_id)
             if shared > 1:
                 self._tg_warn.setText(
                     messages.FM_EDITOR_TASK_GROUP_SHARED_WARN.format(group_id=group_id)
@@ -429,26 +430,7 @@ class FmEditorDialog(QDialog):
         else:
             self._tg_warn.setText("")
 
-    def _collect_bundle(self) -> FmEditBundle:
-        faal = copy.deepcopy(self._bundle.faalwijze_row)
-        faal["failure_type"] = self._failure_type.currentData()
-        faal["mttf_jaar"] = self._mttf.value()
-        faal["sigma_jaar"] = self._sigma.value()
-        faal["is_evident"] = not self._nmf.isChecked()
-        faal["faalwijze_omschrijving"] = self._omschrijving.text().strip()
-        faal["functie_id"] = self._functie.currentData()
-        faal["repair_quality"] = self._repair_quality.value()
-        faal["cost_cm_eur"] = merge_cm_cost(
-            CmCostSplit(self._cm_materiaal.value(), self._cm_arbeid.value())
-        )
-        faal["downtime_per_failure"] = _downtime_dict_from_hours(self._downtime_hr.value())
-        faal["notes"] = self._notes.toPlainText().strip()
-        faal["aanname_cm_kosten"] = self._aanname_cm.text().strip()
-        faal["aanname_downtime"] = self._aanname_downtime.text().strip()
-
-        pbs = copy.deepcopy(self._bundle.pbs_row)
-        pbs["bouwjaar"] = self._bouwjaar.value()
-
+    def _build_draft(self) -> FmEditDraft:
         fm_links = self._read_table(
             self._fm_links_table, ("link_id", "klasse_id", "fractie", "aanname_fractie")
         )
@@ -506,26 +488,70 @@ class FmEditorDialog(QDialog):
                 g if str(x.get("group_id")) == gid else x for x in task_groups
             ]
 
-        return FmEditBundle(
+        return FmEditDraft(
             fm_id=self._fm_id,
-            faalwijze_row=faal,
-            pbs_row=pbs,
+            baseline=self._bundle,
+            failure_type=str(self._failure_type.currentData()),
+            mttf_jaar=self._mttf.value(),
+            sigma_jaar=self._sigma.value(),
+            is_evident=not self._nmf.isChecked(),
+            faalwijze_omschrijving=self._omschrijving.text().strip(),
+            functie_id=str(self._functie.currentData() or ""),
+            repair_quality=self._repair_quality.value(),
+            cm_materiaal=self._cm_materiaal.value(),
+            cm_arbeid=self._cm_arbeid.value(),
+            downtime_hours=self._downtime_hr.value(),
+            notes=self._notes.toPlainText().strip(),
+            aanname_cm_kosten=self._aanname_cm.text().strip(),
+            aanname_downtime=self._aanname_downtime.text().strip(),
+            bouwjaar=self._bouwjaar.value(),
             fm_effect_rows=tuple(fm_links),
             pm_task_rows=tuple(pm_tasks),
             pm_effect_rows=tuple(pm_links),
-            task_group_rows=tuple(task_groups),
             effect_klasse_rows=tuple(effect_rows),
+            task_group_rows=tuple(task_groups),
         )
 
     def _on_accept(self) -> None:
-        bundle = self._collect_bundle()
-        apply_bundle_scope(self._session, bundle)
-        result = commit_edits(
+        bundle = assemble_bundle(self._build_draft())
+        replace_fm_scope(self._session, bundle)
+        if self._path is None:
+            result = commit_edits(
+                self._session,
+                project_path=None,
+                save_to_disk=False,
+                baseline_mtime_ns=self._baseline_mtime_ns,
+            )
+            self._finish_commit(result)
+            return
+        self._progress = QProgressDialog(messages.FM_EDITOR_COMMIT_BUSY, "", 0, 0, self)
+        self._progress.setWindowModality(Qt.WindowModality.WindowModal)
+        self._progress.setCancelButton(None)
+        self._progress.show()
+        started = self._commit_runner.start(
             self._session,
             project_path=self._path,
             save_to_disk=self._save_to_disk,
             baseline_mtime_ns=self._baseline_mtime_ns,
         )
+        if not started:
+            self._progress.close()
+            result = commit_edits(
+                self._session,
+                project_path=self._path,
+                save_to_disk=self._save_to_disk,
+                baseline_mtime_ns=self._baseline_mtime_ns,
+            )
+            self._finish_commit(result)
+
+    def _on_commit_finished(self, result: object) -> None:
+        if self._progress is not None:
+            self._progress.close()
+            self._progress = None
+        if isinstance(result, FmEditCommitResult):
+            self._finish_commit(result)
+
+    def _finish_commit(self, result: FmEditCommitResult) -> None:
         if not result.ok:
             detail = "\n".join(result.errors) if result.errors else "Onbekende fout"
             QMessageBox.warning(
