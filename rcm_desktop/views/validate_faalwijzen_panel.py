@@ -27,6 +27,7 @@ from rcm_desktop.adapter.faalwijzen_edit_service import (
     SLICE_FIELD_KEYS,
 )
 from rcm_desktop.adapter.faalwijzen_table_model import (
+    FaalwijzenAgingDistributionDelegate,
     FaalwijzenFailureTypeDelegate,
     FaalwijzenFkDelegate,
     FaalwijzenNmfDelegate,
@@ -113,11 +114,13 @@ class ValidateFaalwijzenPanel(QGroupBox):
 
         self._field_labels = {
             "failure_type": messages.FAALWIJZEN_EDIT_HEADER_FAILURE_TYPE,
+            "aging_distribution": messages.FAALWIJZEN_EDIT_HEADER_AGING_DISTRIBUTION,
             "is_evident": messages.FAALWIJZEN_EDIT_HEADER_NMF,
             "faalwijze_omschrijving": messages.FAALWIJZEN_EDIT_HEADER_OMSCHRIJVING,
             "functie_id": messages.FAALWIJZEN_EDIT_HEADER_FUNCTIE,
             "mttf_jaar": messages.FAALWIJZEN_EDIT_HEADER_MTTF,
             "sigma_jaar": messages.FAALWIJZEN_EDIT_HEADER_SIGMA,
+            "beta_jaar": messages.FAALWIJZEN_EDIT_HEADER_BETA,
             "repair_quality": messages.FAALWIJZEN_EDIT_HEADER_REPAIR_QUALITY,
             "cost_cm_eur": messages.FAALWIJZEN_EDIT_HEADER_COST_CM,
             "p_ongewenste_gebeurtenis": messages.FAALWIJZEN_EDIT_HEADER_P_EVENT,
@@ -151,6 +154,9 @@ class ValidateFaalwijzenPanel(QGroupBox):
         )
         self._table.setItemDelegateForColumn(
             col["failure_type"], FaalwijzenFailureTypeDelegate(self._table)
+        )
+        self._table.setItemDelegateForColumn(
+            col["aging_distribution"], FaalwijzenAgingDistributionDelegate(self._table)
         )
         self._table.setItemDelegateForColumn(
             col["is_evident"], FaalwijzenNmfDelegate(self._table)

@@ -1,15 +1,17 @@
 """PM jaargrafiek-input (presentatie, Qt-vrij)."""
 from __future__ import annotations
 
-import math
 from dataclasses import dataclass
 
 from rcm_core.lcc_profile import ltap_horizon_bucket_count
 from rcm_core.models import RCMProject
 
 from rcm_desktop.adapter.calendar_year import calendar_year_for_horizon_index
-from rcm_desktop.adapter.lcc_chart_service import _pm_eur_per_bucket_ltap
+from rcm_desktop.adapter.lcc_planning_service import build_lcc_planning_curve_reconciled
+from rcm_desktop.adapter.lcc_type_filter import LCCTypeFilterSet
 from rcm_desktop.adapter.ltap_service import build_ltap_view
+from rcm_desktop.adapter.ltap_view_cache import get_ltap_view
+from rcm_desktop.adapter.planning_overlay_state import PlanningOverlayState
 from rcm_desktop.adapter.result_filter_service import collect_pbs_subtree_ids
 from rcm_desktop.adapter.run_service import RunResult
 
@@ -41,11 +43,16 @@ def build_pm_chart_input(
     *,
     submode: str,
     scope_id: str | None = None,
+    overlay: PlanningOverlayState | None = None,
+    type_filters: LCCTypeFilterSet | None = None,
 ) -> PMChartInput | None:
     if project is None or run is None or run.status != "done":
         return None
     if submode not in ALL_PM_SUBMODES:
         raise ValueError(f"Onbekende PM-submode: {submode!r}")
+
+    overlay_state = overlay or PlanningOverlayState.inactive()
+    filters = type_filters or LCCTypeFilterSet.all_on()
 
     if scope_id is None:
         fm_subset = run.fm_core_results
@@ -62,22 +69,46 @@ def build_pm_chart_input(
         return PMChartInput(submode=submode, scope_id=scope_id, rows=())
 
     if submode == PM_SUBMODE_KOSTEN:
-        target = sum(float(fr.pm_cost_eur) for fr in fm_subset)
-        per_year = _pm_eur_per_bucket_ltap(project, target)
+        curve = build_lcc_planning_curve_reconciled(
+            project,
+            run,
+            scope_id=scope_id,
+            overlay=overlay_state,
+            type_filters=filters,
+        )
+        if curve is None:
+            return None
+        per_year = [float(b.preventief_eur) for b in curve.display_buckets]
     else:
-        view = build_ltap_view(project, fm_pbs_ids=pbs_filter)
-        target = float(view.total_task_count)
-        per_year = [float(y.task_count) for y in view.years]
+        # Voor aantallen baseren we ons op LTAP-details zodat type_filters (REV, etc.)
+        # exact dezelfde selectie doen als in LCC-detail.
+        view = get_ltap_view(
+            project,
+            overlay_anchor_years=overlay_state.anchor_years_dict()
+            if overlay_state.active
+            else None,
+            disabled_pm_ids=overlay_state.disabled_pm_ids
+            if overlay_state.active
+            else frozenset(),
+            fm_pbs_ids=pbs_filter,
+        )
+        per_year = []
+        for year in view.years[:num]:
+            count = 0.0
+            for detail in year.details:
+                task = project.pm_tasks.get(detail.pm_id)
+                if task is None or not filters.task_matches(task):
+                    continue
+                count += float(detail.executions)
+            per_year.append(count)
 
     if len(per_year) < num:
         per_year = per_year + [0.0] * (num - len(per_year))
     per_year = per_year[:num]
 
     if submode == PM_SUBMODE_KOSTEN:
-        got = float(sum(per_year))
-        if got > 0.0 and not math.isclose(got, target, rel_tol=0, abs_tol=1e-3):
-            scale = target / got
-            per_year = [v * scale for v in per_year]
+        # Reconciliatie gebeurt al in build_lcc_planning_curve_reconciled.
+        pass
 
     modeljaar = int(project.config.modeljaar)
     rows: list[PMYearRow] = []

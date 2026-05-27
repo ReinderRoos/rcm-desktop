@@ -167,7 +167,7 @@ def _build_inputs(project: RCMProject, fm: Faalwijze) -> FMVerificationInputs:
     initial_age = pbs.current_age(modeljaar) if pbs is not None else 0.0
     sigma_raw = float(fm.sigma_jaar)
     sigma_uses_default = sigma_raw <= 0.0
-    sigma_display = float(fm.effective_sigma) if sigma_uses_default else sigma_raw
+    sigma_display = float(fm.effective_sigma(project.config.default_sigma_fraction)) if sigma_uses_default else sigma_raw
     effect_rows: list[FMVerificationEffectLinkRow] = []
     for link in sorted(
         project.get_fm_effect_links_for_fm(fm.fm_id), key=lambda l: l.link_id

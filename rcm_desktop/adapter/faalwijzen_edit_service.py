@@ -45,11 +45,13 @@ class FaalwijzenRowView:
     fm_id: str
     pbs_id: str
     failure_type: str
+    aging_distribution: str
     is_evident: bool
     faalwijze_omschrijving: str
     functie_id: str
     mttf_jaar: Any
     sigma_jaar: Any
+    beta_jaar: Any
     repair_quality: Any
     cost_cm_eur: Any
     p_ongewenste_gebeurtenis: Any
@@ -114,11 +116,13 @@ def _row_to_view(row: dict[str, Any], session: dict[str, Any]) -> FaalwijzenRowV
         fm_id=fm_id,
         pbs_id=str(row.get("pbs_id") or ""),
         failure_type=str(row.get("failure_type") or "random"),
+        aging_distribution=str(row.get("aging_distribution") or "normal"),
         is_evident=bool(row.get("is_evident", True)),
         faalwijze_omschrijving=str(row.get("faalwijze_omschrijving") or ""),
         functie_id=str(row.get("functie_id") or ""),
         mttf_jaar=row.get("mttf_jaar"),
         sigma_jaar=row.get("sigma_jaar"),
+        beta_jaar=row.get("beta_jaar"),
         repair_quality=row.get("repair_quality"),
         cost_cm_eur=row.get("cost_cm_eur"),
         p_ongewenste_gebeurtenis=row.get("p_ongewenste_gebeurtenis"),

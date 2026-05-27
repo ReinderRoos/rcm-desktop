@@ -21,6 +21,7 @@ class AppState(QObject):
 
     def __init__(self) -> None:
         super().__init__()
+        self._preserve_workspace_ui: bool = False
         self._last_result: ValidateResult | None = None
         self._last_preview: ProjectPreview | None = None
         self._last_project: RCMProject | None = None
@@ -81,7 +82,20 @@ class AppState(QObject):
         self._last_preview = preview
         self.preview_changed.emit(preview)
 
-    def set_last_project(self, project: RCMProject | None, *, path: Path | str | None = None) -> None:
+    def take_preserve_workspace_ui(self) -> bool:
+        """Eenmalig ophalen of de volgende ``project_changed`` de werkruimte-modus behoudt."""
+        preserve = self._preserve_workspace_ui
+        self._preserve_workspace_ui = False
+        return preserve
+
+    def set_last_project(
+        self,
+        project: RCMProject | None,
+        *,
+        path: Path | str | None = None,
+        preserve_workspace_ui: bool = False,
+    ) -> None:
+        self._preserve_workspace_ui = preserve_workspace_ui
         self._last_project = project
         if project is None:
             self._loaded_project = None

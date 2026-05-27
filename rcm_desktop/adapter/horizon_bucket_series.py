@@ -55,7 +55,7 @@ def faalmomenten_per_bucket(project: RCMProject, fmr: FMResult) -> list[float]:
             current_age=current_age,
             lifecycle_years=lifecycle_end,
             mttf=float(fm.mttf_jaar),
-            sigma=float(fm.effective_sigma),
+            sigma=float(fm.effective_sigma(project.config.default_sigma_fraction)),
             repair_quality=float(fm.repair_quality),
             num_buckets=num,
             rev_schedule=build_rev_schedule(pm_for_fm),

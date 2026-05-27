@@ -7,7 +7,9 @@ from pathlib import Path
 from PySide6.QtCore import QObject, Signal, Slot
 
 from rcm_desktop.adapter.editing_session import EditingSession
-from rcm_desktop.adapter.fm_edit_commit_service import FmEditCommitResult, commit_edits
+from rcm_desktop.adapter.fm_edit_bundle_service import FmEditBundle
+from rcm_desktop.adapter.fm_edit_commit_facade import RunPolicy, commit_fm_edit
+from rcm_desktop.adapter.fm_edit_commit_service import FmEditCommitResult
 from rcm_desktop.adapter.qt.background_runner import BackgroundRunner
 
 
@@ -18,23 +20,27 @@ class _FmEditCommitWorker(QObject):
         self,
         session: EditingSession,
         *,
+        bundle: FmEditBundle | None,
         project_path: str | Path | None,
         save_to_disk: bool,
         baseline_mtime_ns: int | None,
     ) -> None:
         super().__init__()
         self._session = session
+        self._bundle = bundle
         self._project_path = project_path
         self._save_to_disk = save_to_disk
         self._baseline_mtime_ns = baseline_mtime_ns
 
     @Slot()
     def run(self) -> None:
-        result = commit_edits(
+        result = commit_fm_edit(
             self._session,
-            project_path=self._project_path,
+            self._bundle,
+            path=self._project_path,
             save_to_disk=self._save_to_disk,
             baseline_mtime_ns=self._baseline_mtime_ns,
+            run_policy=RunPolicy.BLOCKING,
         )
         self.finished.emit(result)
 
@@ -54,6 +60,7 @@ class FmEditCommitRunner(QObject):
         self,
         session: EditingSession,
         *,
+        bundle: FmEditBundle | None = None,
         project_path: str | Path | None = None,
         save_to_disk: bool = False,
         baseline_mtime_ns: int | None = None,
@@ -62,6 +69,7 @@ class FmEditCommitRunner(QObject):
             return False
         worker = _FmEditCommitWorker(
             session,
+            bundle=bundle,
             project_path=project_path,
             save_to_disk=save_to_disk,
             baseline_mtime_ns=baseline_mtime_ns,

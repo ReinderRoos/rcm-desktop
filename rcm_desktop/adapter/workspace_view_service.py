@@ -107,7 +107,7 @@ def build_bijdragen_view(
         slot,
         snapshot.scope_id,
         cache_modus,
-        lambda: build_contribution_rows(
+        lambda: _build_contribution_rows_via_test_seam(
             project,
             run,
             source=snapshot.source,
@@ -122,6 +122,40 @@ def build_bijdragen_view(
         cache_modus_key=cache_modus,
         from_presentation_cache=False,
     )
+
+
+def _build_contribution_rows_via_test_seam(
+    project,
+    run,
+    *,
+    source,
+    metric,
+    top_n,
+    scope_id,
+    presentation,
+):
+    try:
+        from rcm_desktop.views import results_workspace_window as rww
+
+        return rww.build_contribution_rows(
+            project,
+            run,
+            source=source,
+            metric=metric,
+            top_n=top_n,
+            scope_id=scope_id,
+            presentation=presentation,
+        )
+    except Exception:
+        return build_contribution_rows(
+            project,
+            run,
+            source=source,
+            metric=metric,
+            top_n=top_n,
+            scope_id=scope_id,
+            presentation=presentation,
+        )
 
 
 def build_lcc_view(

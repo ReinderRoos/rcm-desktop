@@ -36,18 +36,20 @@ from rcm_desktop.adapter.fm_edit_bundle_service import (
     FmEditBundle,
     count_faalwijzen_for_pbs_in_edit,
     count_faalwijzen_for_task_group_in_edit,
-    load_bundle,
-    load_bundle_from_session,
 )
+from rcm_desktop.adapter.fm_edit_commit_facade import RunPolicy, commit_fm_edit
 from rcm_desktop.adapter.fm_edit_commit_runner import FmEditCommitRunner
 from rcm_desktop.adapter.fm_edit_commit_service import (
     FmEditCommitResult,
-    commit_edits,
     create_edit_session,
-    replace_fm_scope,
 )
+from rcm_desktop.adapter.fm_edit_scope_loader import load_fm_edit_scope
 from rcm_desktop.adapter.fm_edit_row_mappers import downtime_hours_from_row
 from rcm_desktop.adapter.editing_session import EditingSession
+from rcm_desktop.adapter.fk_normalization import normalize_optional_fk
+from rcm_desktop.adapter.fm_edit_consistency import findings_for_edit_rows
+from rcm_desktop.adapter.fm_sigma_coupling import coupled_sigma, is_sigma_manual
+from rcm_desktop.adapter.pm_task_group_delegate import PmTaskGroupDelegate
 
 
 def _new_id(prefix: str, existing: set[str]) -> str:
@@ -79,10 +81,10 @@ class FmEditorDialog(QDialog):
         self._baseline_mtime_ns = baseline_mtime_ns
         if editing_session is not None:
             self._session = editing_session
-            self._bundle = load_bundle_from_session(editing_session, fm_id)
+            self._bundle = load_fm_edit_scope(editing_session, fm_id)
         else:
             self._session = create_edit_session(project)
-            self._bundle = load_bundle(project, fm_id)
+            self._bundle = load_fm_edit_scope(project, fm_id)
         self.commit_result: FmEditCommitResult | None = None
         self._commit_runner = FmEditCommitRunner()
         self._commit_runner.finished.connect(self._on_commit_finished)
@@ -137,6 +139,28 @@ class FmEditorDialog(QDialog):
         self._sigma.setDecimals(2)
         self._sigma.setValue(float(self._bundle.faalwijze_row.get("sigma_jaar") or 0.0))
         form.addRow(messages.FM_EDITOR_SIGMA, self._sigma)
+        self._aging_distribution = QComboBox()
+        self._aging_distribution.addItem("Normal", "normal")
+        self._aging_distribution.addItem("Links-afgeknipt normal 0+", "truncated_normal_0")
+        self._aging_distribution.addItem("Weibull 2p", "weibull_2p")
+        cur_dist = str(self._bundle.faalwijze_row.get("aging_distribution") or "normal")
+        dist_idx = self._aging_distribution.findData(cur_dist)
+        self._aging_distribution.setCurrentIndex(max(0, dist_idx))
+        form.addRow(messages.FM_EDITOR_AGING_DISTRIBUTION, self._aging_distribution)
+        self._beta = QDoubleSpinBox()
+        self._beta.setRange(0.0, 100.0)
+        self._beta.setDecimals(3)
+        self._beta.setValue(float(self._bundle.faalwijze_row.get("beta_jaar") or 0.0))
+        form.addRow(messages.FM_EDITOR_BETA, self._beta)
+        self._last_mttf = self._mttf.value()
+        self._mttf.valueChanged.connect(self._on_mttf_changed)
+        self._failure_type.currentIndexChanged.connect(self._refresh_consistency_warnings)
+        self._failure_type.currentIndexChanged.connect(self._refresh_aging_fields_visibility)
+        self._aging_distribution.currentIndexChanged.connect(self._refresh_aging_fields_visibility)
+        self._basis_warn = QLabel()
+        self._basis_warn.setWordWrap(True)
+        self._basis_warn.setStyleSheet("color: #E65100;")
+        form.addRow(self._basis_warn)
 
         self._nmf = QCheckBox(messages.FM_EDITOR_NMF)
         self._nmf.setChecked(not bool(self._bundle.faalwijze_row.get("is_evident", True)))
@@ -179,7 +203,16 @@ class FmEditorDialog(QDialog):
             warn.setStyleSheet("color: #E65100;")
             form.addRow(warn)
 
+        self._refresh_aging_fields_visibility()
         return page
+
+    def _refresh_aging_fields_visibility(self) -> None:
+        is_aging = str(self._failure_type.currentData() or "random") == "aging"
+        dist = str(self._aging_distribution.currentData() or "normal")
+        show_beta = is_aging and dist == "weibull_2p"
+        self._aging_distribution.setVisible(is_aging)
+        self._beta.setVisible(show_beta)
+        self._sigma.setVisible(is_aging and dist != "weibull_2p")
 
     def _build_correctief_tab(self) -> QWidget:
         page = QWidget()
@@ -226,12 +259,23 @@ class FmEditorDialog(QDialog):
         table.horizontalHeader().setStretchLastSection(True)
         return table
 
+    def _format_table_cell(self, col: str, val: Any) -> str:
+        if col == "task_group_id":
+            if normalize_optional_fk(val) is None:
+                return messages.FM_EDITOR_TASK_GROUP_NONE
+            return str(val)
+        if val is None:
+            return ""
+        return str(val)
+
     def _fill_table(self, table: QTableWidget, rows: list[dict[str, Any]], columns: tuple[str, ...]) -> None:
         table.setRowCount(len(rows))
         for r_idx, row in enumerate(rows):
             for c_idx, col in enumerate(columns):
                 val = row.get(col, "")
-                table.setItem(r_idx, c_idx, QTableWidgetItem(str(val)))
+                table.setItem(
+                    r_idx, c_idx, QTableWidgetItem(self._format_table_cell(col, val))
+                )
 
     def _read_table(self, table: QTableWidget, columns: tuple[str, ...]) -> list[dict[str, Any]]:
         out: list[dict[str, Any]] = []
@@ -244,6 +288,11 @@ class FmEditorDialog(QDialog):
                     row[col] = float(text) if text else 0.0
                 elif col in ("cost_gevolg_eur", "interval_jaar", "cost_eur"):
                     row[col] = float(text.replace(",", ".")) if text else 0.0
+                elif col == "task_group_id":
+                    if text == messages.FM_EDITOR_TASK_GROUP_NONE:
+                        row[col] = None
+                    else:
+                        row[col] = normalize_optional_fk(text) or ""
                 else:
                     row[col] = text
             out.append(row)
@@ -302,6 +351,9 @@ class FmEditorDialog(QDialog):
             "task_group_id",
         )
         layout.addWidget(QLabel(messages.FM_EDITOR_PM_TASKS))
+        self._task_group_rows = {
+            str(r.get("group_id")): dict(r) for r in self._bundle.task_group_rows
+        }
         self._pm_tasks_table = self._make_table(pm_cols)
         rows = []
         for row in self._bundle.pm_task_rows:
@@ -313,6 +365,11 @@ class FmEditorDialog(QDialog):
             )
             rows.append(flat)
         self._fill_table(self._pm_tasks_table, rows, pm_cols)
+        tg_ids = tuple(sorted(self._task_group_rows.keys()))
+        self._pm_tasks_table.setItemDelegateForColumn(
+            5, PmTaskGroupDelegate(tg_ids, self._pm_tasks_table)
+        )
+        self._pm_tasks_table.itemChanged.connect(self._on_pm_table_changed)
         self._pm_tasks_table.itemSelectionChanged.connect(self._on_pm_task_selected)
         pm_btns = QHBoxLayout()
         add_pm = QPushButton(messages.FM_EDITOR_ADD_ROW)
@@ -340,9 +397,11 @@ class FmEditorDialog(QDialog):
         tg_form.addRow(self._tg_warn)
         layout.addWidget(QLabel(messages.FM_EDITOR_TASK_GROUP))
         layout.addLayout(tg_form)
-        self._task_group_rows = {
-            str(r.get("group_id")): dict(r) for r in self._bundle.task_group_rows
-        }
+        self._preventief_warn = QLabel()
+        self._preventief_warn.setWordWrap(True)
+        self._preventief_warn.setStyleSheet("color: #E65100;")
+        layout.addWidget(self._preventief_warn)
+        self._refresh_consistency_warnings()
         return page
 
     def _add_link_row(self, table: QTableWidget, prefix: str, _fm_id: str) -> None:
@@ -407,6 +466,59 @@ class FmEditorDialog(QDialog):
         item = self._pm_tasks_table.item(r, 0)
         return item.text().strip() if item else ""
 
+    def _on_mttf_changed(self, new_mttf: float) -> None:
+        sigma = self._sigma.value()
+        if not is_sigma_manual(self._last_mttf, sigma):
+            self._sigma.blockSignals(True)
+            self._sigma.setValue(coupled_sigma(new_mttf))
+            self._sigma.blockSignals(False)
+        self._last_mttf = float(new_mttf)
+
+    def _on_pm_table_changed(self, _item: QTableWidgetItem) -> None:
+        self._refresh_consistency_warnings()
+
+    def _refresh_consistency_warnings(self) -> None:
+        if not hasattr(self, "_basis_warn"):
+            return
+        current = copy.deepcopy(self._session.session.get("edit_current", {}))
+        faal_rows = list(current.get("faalwijzes", []))
+        pm_rows = list(current.get("pm_tasks", []))
+        target = self._fm_id
+        for row in faal_rows:
+            if str(row.get("fm_id")) == target:
+                row["failure_type"] = str(self._failure_type.currentData())
+                break
+        pm_raw = self._read_table(
+            self._pm_tasks_table,
+            ("pm_id", "taak_type", "taak_omschrijving", "interval_jaar", "cost_eur", "task_group_id"),
+        )
+        pm_by_id = {str(r["pm_id"]): r for r in pm_raw}
+        updated_pm: list[dict[str, Any]] = []
+        for row in pm_rows:
+            if str(row.get("fm_id")) != target:
+                updated_pm.append(row)
+                continue
+            patch = pm_by_id.get(str(row.get("pm_id")), {})
+            merged = dict(row)
+            if patch:
+                merged.update(patch)
+                merged["task_group_id"] = normalize_optional_fk(patch.get("task_group_id"))
+            updated_pm.append(merged)
+        for pm_id, patch in pm_by_id.items():
+            if not any(str(r.get("pm_id")) == pm_id for r in updated_pm):
+                updated_pm.append({**patch, "fm_id": target})
+        other_pm = [r for r in pm_rows if str(r.get("fm_id")) != target]
+        findings = findings_for_edit_rows(
+            target,
+            faal_rows,
+            other_pm + updated_pm,
+        )
+        basis_msgs = [f.message_nl for f in findings if f.tab_hint == "basis"]
+        prev_msgs = [f.message_nl for f in findings if f.tab_hint == "preventief"]
+        self._basis_warn.setText("\n".join(basis_msgs))
+        if hasattr(self, "_preventief_warn"):
+            self._preventief_warn.setText("\n".join(prev_msgs))
+
     def _on_pm_task_selected(self) -> None:
         pm_id = self._selected_pm_id()
         group_id = ""
@@ -414,6 +526,8 @@ class FmEditorDialog(QDialog):
             if self._pm_tasks_table.item(r, 0) and self._pm_tasks_table.item(r, 0).text().strip() == pm_id:
                 gitem = self._pm_tasks_table.item(r, 5)
                 group_id = gitem.text().strip() if gitem else ""
+                if group_id == messages.FM_EDITOR_TASK_GROUP_NONE:
+                    group_id = ""
                 break
         self._tg_group_id.setText(group_id)
         if group_id and group_id in self._task_group_rows:
@@ -492,8 +606,10 @@ class FmEditorDialog(QDialog):
             fm_id=self._fm_id,
             baseline=self._bundle,
             failure_type=str(self._failure_type.currentData()),
+            aging_distribution=str(self._aging_distribution.currentData()),
             mttf_jaar=self._mttf.value(),
             sigma_jaar=self._sigma.value(),
+            beta_jaar=self._beta.value(),
             is_evident=not self._nmf.isChecked(),
             faalwijze_omschrijving=self._omschrijving.text().strip(),
             functie_id=str(self._functie.currentData() or ""),
@@ -514,13 +630,14 @@ class FmEditorDialog(QDialog):
 
     def _on_accept(self) -> None:
         bundle = assemble_bundle(self._build_draft())
-        replace_fm_scope(self._session, bundle)
         if self._path is None:
-            result = commit_edits(
+            result = commit_fm_edit(
                 self._session,
-                project_path=None,
+                bundle,
+                path=None,
                 save_to_disk=False,
                 baseline_mtime_ns=self._baseline_mtime_ns,
+                run_policy=RunPolicy.BLOCKING,
             )
             self._finish_commit(result)
             return
@@ -528,19 +645,23 @@ class FmEditorDialog(QDialog):
         self._progress.setWindowModality(Qt.WindowModality.WindowModal)
         self._progress.setCancelButton(None)
         self._progress.show()
+        replace_before_async = bundle
         started = self._commit_runner.start(
             self._session,
+            bundle=replace_before_async,
             project_path=self._path,
             save_to_disk=self._save_to_disk,
             baseline_mtime_ns=self._baseline_mtime_ns,
         )
         if not started:
             self._progress.close()
-            result = commit_edits(
+            result = commit_fm_edit(
                 self._session,
-                project_path=self._path,
+                bundle,
+                path=self._path,
                 save_to_disk=self._save_to_disk,
                 baseline_mtime_ns=self._baseline_mtime_ns,
+                run_policy=RunPolicy.BLOCKING,
             )
             self._finish_commit(result)
 

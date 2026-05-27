@@ -25,6 +25,12 @@ _FAILURE_TYPE_LABELS = {
     "aging": messages.FAALWIJZEN_FAILURE_AGING,
 }
 
+_AGING_DISTRIBUTION_LABELS = {
+    "normal": "Normal",
+    "truncated_normal_0": "Links-afgeknipt normal 0+",
+    "weibull_2p": "Weibull 2p",
+}
+
 
 def _normalize_display_key(value: Any) -> str:
     if value is None:
@@ -42,11 +48,13 @@ class FaalwijzenTableModel(QAbstractTableModel):
         messages.FAALWIJZEN_EDIT_HEADER_FM_ID,
         messages.FAALWIJZEN_EDIT_HEADER_PBS_ID,
         messages.FAALWIJZEN_EDIT_HEADER_FAILURE_TYPE,
+        messages.FAALWIJZEN_EDIT_HEADER_AGING_DISTRIBUTION,
         messages.FAALWIJZEN_EDIT_HEADER_NMF,
         messages.FAALWIJZEN_EDIT_HEADER_OMSCHRIJVING,
         messages.FAALWIJZEN_EDIT_HEADER_FUNCTIE,
         messages.FAALWIJZEN_EDIT_HEADER_MTTF,
         messages.FAALWIJZEN_EDIT_HEADER_SIGMA,
+        messages.FAALWIJZEN_EDIT_HEADER_BETA,
         messages.FAALWIJZEN_EDIT_HEADER_REPAIR_QUALITY,
         messages.FAALWIJZEN_EDIT_HEADER_COST_CM,
         messages.FAALWIJZEN_EDIT_HEADER_P_EVENT,
@@ -131,6 +139,8 @@ class FaalwijzenTableModel(QAbstractTableModel):
             return row_v.failure_type
         if field == "is_evident":
             return not row_v.is_evident
+        if field == "aging_distribution":
+            return row_v.aging_distribution
         if field == "faalwijze_omschrijving":
             return row_v.faalwijze_omschrijving
         if field == "functie_id":
@@ -139,6 +149,8 @@ class FaalwijzenTableModel(QAbstractTableModel):
             return self._float_edit_string(row_v.mttf_jaar)
         if field == "sigma_jaar":
             return self._float_edit_string(row_v.sigma_jaar)
+        if field == "beta_jaar":
+            return self._float_edit_string(row_v.beta_jaar)
         if field == "repair_quality":
             return self._float_edit_string(row_v.repair_quality)
         if field == "cost_cm_eur":
@@ -161,6 +173,8 @@ class FaalwijzenTableModel(QAbstractTableModel):
             return row_v.pbs_id
         if field == "failure_type":
             return _FAILURE_TYPE_LABELS.get(row_v.failure_type, row_v.failure_type)
+        if field == "aging_distribution":
+            return _AGING_DISTRIBUTION_LABELS.get(row_v.aging_distribution, row_v.aging_distribution)
         if field == "is_evident":
             return _nmf_display(row_v.is_evident)
         if field == "faalwijze_omschrijving":
@@ -176,6 +190,7 @@ class FaalwijzenTableModel(QAbstractTableModel):
         for num_field in (
             "mttf_jaar",
             "sigma_jaar",
+            "beta_jaar",
             "repair_quality",
             "cost_cm_eur",
             "p_ongewenste_gebeurtenis",
@@ -199,7 +214,7 @@ class FaalwijzenTableModel(QAbstractTableModel):
         row_v = self._row_at(index.row())
         if field == "is_evident":
             raw = bool(value)
-        elif field == "failure_type":
+        elif field in ("failure_type", "aging_distribution"):
             raw = str(value)
         else:
             raw = value if isinstance(value, str) else str(value) if value is not None else ""
@@ -266,6 +281,27 @@ class FaalwijzenFailureTypeDelegate(QStyledItemDelegate):
         if not isinstance(editor, QComboBox):
             return
         current = str(index.data(Qt.EditRole) or "random")
+        idx = editor.findData(current)
+        editor.setCurrentIndex(idx if idx >= 0 else 0)
+
+    def setModelData(self, editor: QWidget, model, index: QModelIndex) -> None:
+        if not isinstance(editor, QComboBox):
+            return
+        model.setData(index, editor.currentData(), Qt.EditRole)
+
+
+class FaalwijzenAgingDistributionDelegate(QStyledItemDelegate):
+    def createEditor(self, parent: QWidget, option, index):  # noqa: ANN001
+        cb = QComboBox(parent)
+        cb.addItem("Normal", "normal")
+        cb.addItem("Links-afgeknipt normal 0+", "truncated_normal_0")
+        cb.addItem("Weibull 2p", "weibull_2p")
+        return cb
+
+    def setEditorData(self, editor: QWidget, index: QModelIndex) -> None:
+        if not isinstance(editor, QComboBox):
+            return
+        current = str(index.data(Qt.EditRole) or "normal")
         idx = editor.findData(current)
         editor.setCurrentIndex(idx if idx >= 0 else 0)
 

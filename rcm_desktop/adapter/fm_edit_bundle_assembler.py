@@ -34,13 +34,17 @@ class FmEditDraft:
     pm_effect_rows: tuple[dict[str, Any], ...]
     effect_klasse_rows: tuple[dict[str, Any], ...]
     task_group_rows: tuple[dict[str, Any], ...]
+    aging_distribution: str = "normal"
+    beta_jaar: float = 0.0
 
 
 def assemble_bundle(draft: FmEditDraft) -> FmEditBundle:
     faal = copy.deepcopy(draft.baseline.faalwijze_row)
     faal["failure_type"] = draft.failure_type
+    faal["aging_distribution"] = draft.aging_distribution
     faal["mttf_jaar"] = draft.mttf_jaar
     faal["sigma_jaar"] = draft.sigma_jaar
+    faal["beta_jaar"] = draft.beta_jaar
     faal["is_evident"] = draft.is_evident
     faal["faalwijze_omschrijving"] = draft.faalwijze_omschrijving
     faal["functie_id"] = draft.functie_id

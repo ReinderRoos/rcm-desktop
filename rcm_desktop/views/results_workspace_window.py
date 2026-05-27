@@ -71,6 +71,7 @@ from rcm_desktop.adapter.presentation_lazy_service import (
 from rcm_desktop.adapter.presentation_rebuild_runner import PresentationRebuildRunner
 from rcm_desktop.adapter.run_runner import PHASE_MOTOR, PHASE_PRESENTATION, RunRunner
 from rcm_desktop.adapter.contribution_table_model import ContributionTableModel
+from rcm_desktop.adapter.contribution_chart_service import build_contribution_rows
 from rcm_desktop.adapter.fm_results_table_model import (
     FMResultsSortProxy,
     FMResultsTableModel,
@@ -91,6 +92,7 @@ from rcm_desktop.adapter.workspace_view_service import (
     build_lcc_view,
 )
 from rcm_desktop.adapter.lcc_planning_service import (
+    build_lcc_planning_curve_reconciled,
     build_lcc_year_detail,
 )
 from rcm_desktop.adapter.lcc_detail_selection import rev_row_indices
@@ -119,9 +121,11 @@ from rcm_desktop.adapter.rcm_navigation_tree_model import RcmNavigationTreeModel
 from rcm_desktop.adapter.contribution_horizon_value_service import (
     calendar_years_for_project,
 )
+from rcm_desktop.adapter.editing_host import get_editing_host
 from rcm_desktop.adapter.faalwijzen_edit_service import FaalwijzenEditService
-from rcm_desktop.adapter.faalwijzen_grid_registry import get_active_grid_service, set_active_grid_service
 from rcm_desktop.views.fm_editor_dialog import FmEditorDialog
+from rcm_desktop.views.grid_dirty_guard import resolve_grid_dirty_before_editor
+from rcm_desktop.views.model_settings_dialog import ModelSettingsDialog
 from rcm_desktop.views.validate_faalwijzen_panel import ValidateFaalwijzenPanel
 from rcm_desktop.views.import_wizard_dialog import ImportDialogInput, run_import_wizard
 from rcm_desktop.views.widgets.contribution_bar_chart import ContributionBarChartWidget
@@ -270,6 +274,9 @@ class ResultsWorkspaceWindow(QMainWindow):
         self.batch_faalwijzen_button = QPushButton(messages.WORKSPACE_MENU_FAALWIJZEN_BATCH)
         self.batch_faalwijzen_button.setToolTip(messages.WORKSPACE_MENU_FAALWIJZEN_BATCH)
         self.batch_faalwijzen_button.clicked.connect(self._open_batch_faalwijzen_grid)
+        self.model_settings_button = QPushButton(messages.MODEL_SETTINGS_BUTTON_LABEL)
+        self.model_settings_button.setToolTip(messages.MODEL_SETTINGS_BUTTON_LABEL)
+        self.model_settings_button.clicked.connect(self._open_model_settings)
 
         self.pbs_toggle_button = QToolButton()
         self.pbs_toggle_button.setText(messages.WORKSPACE_PBS_TOGGLE_LABEL)
@@ -779,6 +786,7 @@ class ResultsWorkspaceWindow(QMainWindow):
             self.open_isograph_button,
             self.validate_button,
             self.batch_faalwijzen_button,
+            self.model_settings_button,
             self.run_analyse_button,
         ):
             toolbar_row.addWidget(w)
@@ -1022,7 +1030,8 @@ class ResultsWorkspaceWindow(QMainWindow):
         self._pbs_scope_id = None
         self._last_workspace_snapshot_for_split_depth = None
         self._render_index.on_workspace_state_reset()
-        self.workspace_state.reset_for_new_project()
+        if not self._state.take_preserve_workspace_ui():
+            self.workspace_state.reset_for_new_project()
         self._seed_planning_overlay_from_import(project)
         self._sync_pbs_tree_for_state()
         self._rerender_detail_for_current_scope()
@@ -1178,6 +1187,24 @@ class ResultsWorkspaceWindow(QMainWindow):
         fm_id = model.data(indexes[0], RAW_ROLE)
         self._refresh_fm_inspector(str(fm_id) if fm_id is not None else None)
 
+    def _commit_active_grid_edits(self) -> bool:
+        host = get_editing_host()
+        grid_svc = host.grid_service()
+        if grid_svc is None or not grid_svc.is_active():
+            return True
+        if not grid_svc.is_dirty() or grid_svc.error_count() != 0:
+            return grid_svc.error_count() == 0
+        path = self.path_input.text().strip() or None
+        result = host.commit_grid_edits(path=path, save_to_disk=bool(path))
+        if not result.ok:
+            return False
+        if result.project is not None:
+            self._state.set_last_project(result.project, path=path)
+        if result.run_result is not None:
+            self._state.set_last_run(result.run_result)
+        grid_svc.mark_saved()
+        return True
+
     def _open_batch_faalwijzen_grid(self) -> None:
         project = self._session_core()
         if project is None:
@@ -1187,11 +1214,9 @@ class ResultsWorkspaceWindow(QMainWindow):
                 messages.WORKSPACE_FM_INSPECTOR_INPUTS_MISSING,
             )
             return
-        grid_svc = get_active_grid_service()
-        if grid_svc is None or not grid_svc.is_active():
-            grid_svc = FaalwijzenEditService()
-            grid_svc.reset(project)
-            set_active_grid_service(grid_svc)
+        host = get_editing_host()
+        grid_svc = host.ensure_grid(project)
+        prev_save = host.swap_save_handler(self._commit_active_grid_edits)
         dialog = QDialog(self)
         dialog.setWindowTitle(messages.WORKSPACE_MENU_FAALWIJZEN_BATCH)
         dialog.resize(960, 520)
@@ -1203,9 +1228,9 @@ class ResultsWorkspaceWindow(QMainWindow):
         close_btn.clicked.connect(dialog.accept)
         layout.addWidget(close_btn)
         dialog.exec()
+        host.set_save_handler(prev_save)
         if grid_svc.is_dirty() and grid_svc.error_count() == 0:
-            built = grid_svc.materialize_for_run()
-            self._state.set_last_project(built, path=self.path_input.text().strip() or None)
+            self._commit_active_grid_edits()
 
     def _on_fm_table_double_clicked(self, index: QModelIndex) -> None:
         if self.workspace_state.snapshot().modus != MODE_FM_DETAIL:
@@ -1241,35 +1266,88 @@ class ResultsWorkspaceWindow(QMainWindow):
                 messages.WORKSPACE_FM_INSPECTOR_INPUTS_MISSING,
             )
             return
-        from rcm_desktop.adapter.dirty_session_coordinator import resolve_grid_dirty_before_editor
-        from rcm_desktop.adapter.faalwijzen_grid_registry import get_active_grid_service
+        host = get_editing_host()
+        prev_save = host.swap_save_handler(self._commit_active_grid_edits)
+        try:
+            if resolve_grid_dirty_before_editor(self, host) == "cancel":
+                return
+            path = self.path_input.text().strip() or None
+            grid_svc = host.grid_service()
+            shared_session = None
+            if grid_svc is not None and grid_svc.is_active():
+                shared_session = grid_svc.editing_session
+            dialog = FmEditorDialog(
+                self,
+                project=project,
+                fm_id=fm_key,
+                project_path=path,
+                save_to_disk=bool(path),
+                editing_session=shared_session,
+            )
+            if dialog.exec() != QDialog.DialogCode.Accepted or dialog.commit_result is None:
+                return
+            result = dialog.commit_result
+            if result.project is not None:
+                self._state.set_last_project(
+                    result.project, path=path, preserve_workspace_ui=True
+                )
+            if result.run_result is not None:
+                self._state.set_last_run(result.run_result)
+                self._load_presentation_cache()
+                self._render_index.on_workspace_state_reset()
+                self._rerender_detail_for_current_scope()
+                self._refresh_fm_inspector(str(fm_id))
+        finally:
+            host.set_save_handler(prev_save)
 
-        if resolve_grid_dirty_before_editor(self) == "cancel":
+    def _open_model_settings(self) -> None:
+        project = self._session_core()
+        if project is None:
+            QMessageBox.information(
+                self,
+                messages.MODEL_SETTINGS_BUTTON_LABEL,
+                messages.MODEL_SETTINGS_NO_PROJECT,
+            )
             return
-        path = self.path_input.text().strip() or None
-        grid_svc = get_active_grid_service()
-        shared_session = None
-        if grid_svc is not None and grid_svc.is_active():
-            shared_session = grid_svc.editing_session
-        dialog = FmEditorDialog(
-            self,
-            project=project,
-            fm_id=fm_key,
-            project_path=path,
-            save_to_disk=bool(path),
-            editing_session=shared_session,
-        )
-        if dialog.exec() != QDialog.DialogCode.Accepted or dialog.commit_result is None:
-            return
-        result = dialog.commit_result
-        if result.project is not None:
-            self._state.set_last_project(result.project, path=path)
-        if result.run_result is not None:
-            self._state.set_last_run(result.run_result)
-            self._load_presentation_cache()
-            self._render_index.on_workspace_state_reset()
-            self._rerender_detail_for_current_scope()
-            self._refresh_fm_inspector(str(fm_id))
+        host = get_editing_host()
+        prev_save = host.swap_save_handler(self._commit_active_grid_edits)
+        try:
+            if resolve_grid_dirty_before_editor(self, host) == "cancel":
+                return
+            path = self.path_input.text().strip() or None
+            baseline_mtime = None
+            if path:
+                from rcm_desktop.adapter.save_service import current_mtime_ns
+                from pathlib import Path as PathCls
+
+                baseline_mtime = current_mtime_ns(PathCls(path))
+            dialog = ModelSettingsDialog(
+                self,
+                project=project,
+                project_path=path,
+                save_to_disk=bool(path),
+                baseline_mtime_ns=baseline_mtime,
+            )
+            if dialog.exec() != QDialog.DialogCode.Accepted or dialog.commit_result is None:
+                return
+            result = dialog.commit_result
+            if result.project is not None:
+                self._state.set_last_project(
+                    result.project, path=path, preserve_workspace_ui=True
+                )
+            if result.run_result is not None:
+                self._state.set_last_run(result.run_result)
+                self._load_presentation_cache()
+                self._render_index.on_workspace_state_reset()
+                self._rerender_detail_for_current_scope()
+                self.validate_summary_label.setText("")
+            elif result.requires_rerun:
+                self._state.set_last_run(None)
+                self.validate_summary_label.setText(messages.MODEL_SETTINGS_RERUN_REQUIRED)
+                self._refresh_kpi_table_view()
+                self._update_run_buttons_enabled()
+        finally:
+            host.set_save_handler(prev_save)
 
     def _fm_core_result_for_id(self, fm_id: str):
         run = self._state.last_run

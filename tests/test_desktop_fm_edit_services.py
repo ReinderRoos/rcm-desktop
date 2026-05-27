@@ -14,6 +14,8 @@ from rcm_desktop.adapter.fm_edit_bundle_service import (
     count_faalwijzen_for_task_group_in_edit,
     load_bundle,
 )
+from rcm_desktop.adapter.fm_edit_scope_loader import load_fm_edit_scope
+from rcm_desktop.adapter.fm_edit_commit_facade import commit_fm_edit
 from rcm_desktop.adapter.fm_edit_bundle_assembler import FmEditDraft, assemble_bundle
 from rcm_desktop.adapter.fm_edit_commit_service import (
     apply_bundle_scope,
@@ -30,6 +32,17 @@ def sample_project():
     return load_project(Path("tests/fixtures/sample_project.rcm.json"))
 
 
+def test_load_fm_edit_scope_project_matches_session(sample_project) -> None:
+    session = create_edit_session(sample_project)
+    from_project = load_fm_edit_scope(sample_project, "FM-001")
+    from_session = load_fm_edit_scope(session, "FM-001")
+    assert from_project.fm_id == from_session.fm_id
+    assert from_project.faalwijze_row == from_session.faalwijze_row
+    assert from_project.pbs_row == from_session.pbs_row
+    assert from_project.fm_effect_rows == from_session.fm_effect_rows
+    assert from_project.pm_task_rows == from_session.pm_task_rows
+
+
 def test_load_bundle_scope_for_fm001(sample_project) -> None:
     bundle = load_bundle(sample_project, "FM-001")
     assert bundle.fm_id == "FM-001"
@@ -40,6 +53,68 @@ def test_load_bundle_scope_for_fm001(sample_project) -> None:
     pm_ids = {r["pm_id"] for r in bundle.pm_task_rows}
     for link in bundle.pm_effect_rows:
         assert link["pm_id"] in pm_ids
+
+
+def test_commit_fm_edit_applies_bundle_and_runs(sample_project, tmp_path, monkeypatch) -> None:
+    path = tmp_path / "proj.rcm.json"
+    path.write_text(Path("tests/fixtures/sample_project.rcm.json").read_text(encoding="utf-8"))
+
+    session = create_edit_session(sample_project)
+    bundle = load_fm_edit_scope(sample_project, "FM-001")
+    row = dict(bundle.faalwijze_row)
+    row["mttf_jaar"] = 22.0
+    bundle = type(bundle)(
+        fm_id=bundle.fm_id,
+        faalwijze_row=row,
+        pbs_row=bundle.pbs_row,
+        fm_effect_rows=bundle.fm_effect_rows,
+        pm_task_rows=bundle.pm_task_rows,
+        pm_effect_rows=bundle.pm_effect_rows,
+        task_group_rows=bundle.task_group_rows,
+        effect_klasse_rows=bundle.effect_klasse_rows,
+    )
+
+    mock_inc = MagicMock(
+        return_value=IncrementalRunResult(
+            fm_results={},
+            pbs_results={},
+            cache_only=False,
+            affected_fm_ids=["FM-001"],
+            recalculated_fm_count=1,
+        )
+    )
+    monkeypatch.setattr(
+        "rcm_desktop.adapter.fm_edit_commit_service.run_incremental_analysis",
+        mock_inc,
+    )
+
+    result = commit_fm_edit(session, bundle, path=path, save_to_disk=False)
+    assert result.ok is True
+    assert result.project is not None
+    assert result.project.faalwijzes["FM-001"].mttf_jaar == pytest.approx(22.0)
+    mock_inc.assert_called_once()
+    assert mock_inc.call_args.kwargs.get("full_recompute") is False
+
+
+def test_commit_fm_edit_validation_error(sample_project) -> None:
+    session = create_edit_session(sample_project)
+    bundle = load_fm_edit_scope(sample_project, "FM-001")
+    row = dict(bundle.faalwijze_row)
+    row["mttf_jaar"] = 0.0
+    bad = type(bundle)(
+        fm_id=bundle.fm_id,
+        faalwijze_row=row,
+        pbs_row=bundle.pbs_row,
+        fm_effect_rows=bundle.fm_effect_rows,
+        pm_task_rows=bundle.pm_task_rows,
+        pm_effect_rows=bundle.pm_effect_rows,
+        task_group_rows=bundle.task_group_rows,
+        effect_klasse_rows=bundle.effect_klasse_rows,
+    )
+    result = commit_fm_edit(session, bad, path=None, save_to_disk=False)
+    assert result.ok is False
+    assert result.errors
+    assert result.project is None
 
 
 def test_commit_mttf_change_triggers_incremental_run(sample_project, tmp_path, monkeypatch) -> None:

@@ -40,10 +40,7 @@ from rcm_desktop.adapter.faalwijzen_edit_service import (
     FaalwijzenEditService,
     FaalwijzenMaterializeBlockedError,
 )
-from rcm_desktop.adapter.faalwijzen_grid_registry import (
-    set_active_grid_service,
-    set_grid_save_handler,
-)
+from rcm_desktop.adapter.editing_host import get_editing_host
 from rcm_desktop.views.validate_faalwijzen_panel import ValidateFaalwijzenPanel
 from rcm_desktop.adapter.compare_runner import CompareRunner
 from rcm_desktop.adapter.fm_results_table_model import (
@@ -510,8 +507,9 @@ class ValidateWindow(QMainWindow):
             self._faalwijzen_panel.detach()
         self._set_panel_visible("faalwijzen", False)
         self._faalwijzen_edit.clear()
-        set_active_grid_service(None)
-        set_grid_save_handler(None)
+        host = get_editing_host()
+        host.attach_grid(None)
+        host.set_save_handler(None)
         self._clear_ltap_view()
 
     def _sync_faalwijzen_panel(self) -> None:
@@ -525,8 +523,9 @@ class ValidateWindow(QMainWindow):
             self._faalwijzen_edit.bind_changed(self._on_faalwijzen_edit_changed)
             if self._faalwijzen_panel is not None:
                 self._faalwijzen_panel.attach(self._faalwijzen_edit, project)
-            set_active_grid_service(self._faalwijzen_edit)
-            set_grid_save_handler(self._save_current)
+            host = get_editing_host()
+            host.attach_grid(self._faalwijzen_edit)
+            host.set_save_handler(self._save_current)
             self._set_panel_visible("faalwijzen", True)
             self._sync_dirty_ui()
         else:

@@ -128,7 +128,7 @@ def validate_entity_rows(
 
         for field, target in fk_rules.items():
             fk_val = normalize_key(row2.get(field))
-            if fk_val == "":
+            if fk_val == "" or fk_val.lower() in ("none", "null"):
                 continue
             fk_set = resolve_fk_set(project, edit_current, target)
             if fk_val not in fk_set:
@@ -169,6 +169,37 @@ def validate_entity_rows(
                         row_key,
                         "repair_quality",
                         error_obj("FM_REPAIR_QUALITY", "repair_quality moet tussen 0 en 1 liggen", "repair_quality", row_key, entity),
+                    )
+            failure_type = str(row2.get("failure_type") or "").strip().lower()
+            aging_distribution = str(row2.get("aging_distribution") or "normal").strip().lower()
+            valid_distributions = {"normal", "truncated_normal_0", "weibull_2p"}
+            if failure_type == "aging" and aging_distribution not in valid_distributions:
+                set_row_error(
+                    error_bag,
+                    row_key,
+                    "aging_distribution",
+                    error_obj(
+                        "FM_AGING_DISTRIBUTION_INVALID",
+                        "aging_distribution moet normal, truncated_normal_0 of weibull_2p zijn",
+                        "aging_distribution",
+                        row_key,
+                        entity,
+                    ),
+                )
+            if failure_type == "aging" and aging_distribution == "weibull_2p":
+                beta = row2.get("beta_jaar")
+                if not isinstance(beta, (int, float)) or float(beta) <= 0.0:
+                    set_row_error(
+                        error_bag,
+                        row_key,
+                        "beta_jaar",
+                        error_obj(
+                            "FM_WEIBULL_BETA_MISSING",
+                            "beta_jaar moet > 0 zijn voor aging_distribution=weibull_2p",
+                            "beta_jaar",
+                            row_key,
+                            entity,
+                        ),
                     )
         if entity in ("fm_effect_links", "pm_effect_links"):
             fractie = row2.get("fractie")

@@ -232,6 +232,8 @@ FAALWIJZEN_EDIT_HEADER_OMSCHRIJVING = "Faalwijze (omschrijving)"
 FAALWIJZEN_EDIT_HEADER_FUNCTIE = "Functie-id"
 FAALWIJZEN_EDIT_HEADER_MTTF = "MTTF (jaar)"
 FAALWIJZEN_EDIT_HEADER_SIGMA = "Sigma (jaar)"
+FAALWIJZEN_EDIT_HEADER_AGING_DISTRIBUTION = "Aging-verdeling"
+FAALWIJZEN_EDIT_HEADER_BETA = "Beta (jaar)"
 FAALWIJZEN_EDIT_HEADER_COST_CM = "CM-kosten (EUR)"
 FAALWIJZEN_EDIT_HEADER_P_EVENT = "P (ongewenste gebeurtenis)"
 WORKSPACE_WINDOW_TITLE = "RCM2 desktop — resultatenwerkruimte"
@@ -540,6 +542,8 @@ FM_EDITOR_TAB_PREVENTIEF = "Preventief"
 FM_EDITOR_FAILURE_TYPE = "Faaltype"
 FM_EDITOR_MTTF = "MTTF (jaar)"
 FM_EDITOR_SIGMA = "Sigma (jaar)"
+FM_EDITOR_AGING_DISTRIBUTION = "Aging-verdeling"
+FM_EDITOR_BETA = "Beta (Weibull)"
 FM_EDITOR_NMF = "Niet-merkbaar falen (NMF)"
 FM_EDITOR_OMSCHRIJVING = "Faalscenario"
 FM_EDITOR_FUNCTIE = "Functie"
@@ -575,7 +579,54 @@ FM_EDITOR_TASK_GROUP = "Taakgroep (gedeeld)"
 FM_EDITOR_TASK_GROUP_SHARED_WARN = (
     "Taakgroep {group_id} wordt ook door andere faalwijzen gebruikt."
 )
+FM_EDITOR_TASK_GROUP_NONE = "(geen)"
+FM_EDITOR_WARN_AGING_WITHOUT_REV = (
+    "Faaltype is veroudering (aging), maar er is geen REV-taak op deze faalwijze. "
+    "Overweeg een REV-taak toe te voegen."
+)
+FM_EDITOR_WARN_REV_WITHOUT_AGING = (
+    "Er is een REV-taak, maar het faaltype is geen veroudering (aging). "
+    "Controleer of faaltype en REV-taken bij elkaar passen."
+)
+FM_EDITOR_WARN_PM_BUNDLE_SUGGEST = (
+    "PM-taak {pm_id}: dezelfde maatregel komt op {count} ander(e) component(en) voor "
+    "zonder taakgroep — overweeg een gedeelde taakgroep."
+)
 FM_EDITOR_NO_PROJECT = "Laad eerst een project voordat je een faalwijze bewerkt."
+
+MODEL_SETTINGS_BUTTON_LABEL = "Modelinstellingen"
+MODEL_SETTINGS_SECTION_PROJECT = "Project"
+MODEL_SETTINGS_SECTION_HORIZON = "Horizon & tijd"
+MODEL_SETTINGS_SECTION_AGING = "Veroudering (defaults)"
+MODEL_SETTINGS_SECTION_FAILPARAMS = "Standaard faalparameters"
+MODEL_SETTINGS_SECTION_MONTE_CARLO = "Monte Carlo"
+MODEL_SETTINGS_PROJECTNAAM = "Projectnaam"
+MODEL_SETTINGS_MODELLEUR = "Modelleur"
+MODEL_SETTINGS_LIFECYCLE = "LCC-periode (jaar)"
+MODEL_SETTINGS_MODELJAAR = "Modeljaar"
+MODEL_SETTINGS_BUCKET_INTERVAL = "Bucket-interval"
+MODEL_SETTINGS_BUCKET_INTERVAL_VALUE = "1 kalenderjaar (vast)"
+MODEL_SETTINGS_DEFAULT_MTTF_MULTIPLIER = "MTTF-multiplier (× ontwerpleeftijd)"
+MODEL_SETTINGS_DEFAULT_MTTF_MULTIPLIER_TTIP = (
+    "Beïnvloedt vooral standaard-MTTF op PBS-niveau; bestaande faalwijze-MTTF's worden niet retroactief gewijzigd."
+)
+MODEL_SETTINGS_DEFAULT_SIGMA_FRACTION = "Sigma-fractie (× MTTF bij σ=0)"
+MODEL_SETTINGS_DEFAULT_AGING_DISTRIBUTION = "Default verouderingsdistributie"
+MODEL_SETTINGS_DEFAULT_BETA = "Default beta (Weibull)"
+MODEL_SETTINGS_APPLY_AGING = "Toepassen op alle aging-faalwijzen"
+MODEL_SETTINGS_APPLY_AGING_CONFIRM = (
+    "{count} aging-faalwijzen krijgen {dist}."
+    + "{beta_line} Doorgaan?"
+)
+MODEL_SETTINGS_APPLY_AGING_BETA_LINE = " Beta={beta:.2f}."
+MODEL_SETTINGS_MONTE_CARLO_N = "Aantal simulaties"
+MODEL_SETTINGS_MONTE_CARLO_SEED = "Random seed"
+MODEL_SETTINGS_MONTE_CARLO_DISABLED_TTIP = "Monte Carlo nog niet actief in desktop."
+MODEL_SETTINGS_RERUN_CHECKBOX = "Direct herberekenen"
+MODEL_SETTINGS_RERUN_REQUIRED = "Herbereken vereist — modelinstellingen zijn gewijzigd."
+MODEL_SETTINGS_VALIDATION_TITLE = "Modelinstellingen niet opgeslagen"
+MODEL_SETTINGS_COMMIT_FAILED = "Opslaan mislukt: {detail}"
+MODEL_SETTINGS_NO_PROJECT = "Laad eerst een project voordat je modelinstellingen opent."
 
 
 def status_label(status: str) -> str:

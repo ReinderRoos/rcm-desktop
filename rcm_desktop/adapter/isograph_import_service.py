@@ -144,6 +144,7 @@ def build_from_sheets(
         pm_effect_links=pm_effect_links,
         import_settings=normalized_settings,
     )
+    _prefill_projectnaam_from_import(project, normalized_settings)
     return ImportBuildResult(
         project=project,
         import_settings=normalized_settings,
@@ -156,6 +157,21 @@ def _hours_to_years(raw: object) -> float | None:
     if raw is None or raw == "":
         return None
     return float(raw) / HOURS_PER_YEAR
+
+
+def _prefill_projectnaam_from_import(
+    project: RCMProject,
+    import_settings: dict[str, Any],
+) -> None:
+    if project.projectnaam.strip():
+        return
+    meta = import_settings.get("isograph_project") or {}
+    desc = str(meta.get("Description") or "").strip()
+    fname = str(meta.get("FileName") or "").strip()
+    if desc:
+        project.projectnaam = desc
+    elif fname:
+        project.projectnaam = Path(fname).stem
 
 
 def _build_config(project_rows: list[dict[str, Any]], *, modeljaar: int) -> RCMConfig:

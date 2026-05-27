@@ -12,6 +12,7 @@ from PySide6.QtWidgets import QApplication, QDialog, QMessageBox
 from rcm_core.models import FMHorizonProfile, FMResult
 from rcm_core.persistence import load_project
 from rcm_desktop import messages
+from rcm_desktop.adapter.editing_host import get_editing_host, reset_editing_host_for_tests
 from rcm_desktop.adapter.result_view_service import FMResultRow, PBSResultRow
 from rcm_desktop.adapter.results_workspace_state import (
     METRIC_KOSTEN,
@@ -33,6 +34,13 @@ def _ensure_app() -> QApplication:
     if app is None:
         app = QApplication([])
     return app
+
+
+@pytest.fixture(autouse=True)
+def _reset_editing_host_state():
+    reset_editing_host_for_tests()
+    yield
+    reset_editing_host_for_tests()
 
 
 def _three_level_project():
@@ -1362,6 +1370,42 @@ def test_fm_double_click_opens_editor_only_in_fm_detail(monkeypatch):
     assert opened == ["FM-001"]
 
 
+def test_workspace_batch_grid_smoke_filter_and_edit(monkeypatch):
+    app = _ensure_app()
+    monkeypatch.setattr(QMessageBox, "critical", lambda *_a, **_k: QMessageBox.Ok)
+    project = _three_level_project()
+    window = ResultsWorkspaceWindow()
+    window.show()
+    window._state.set_last_project(project)
+    app.processEvents()
+
+    def _fake_exec(dialog: QDialog):
+        from rcm_desktop.views.validate_faalwijzen_panel import ValidateFaalwijzenPanel
+
+        panel = dialog.findChild(ValidateFaalwijzenPanel)
+        assert panel is not None
+        panel._filter_failure.setCurrentIndex(2)  # aging
+        panel._search.setText("FM-001")
+        app.processEvents()
+        host = get_editing_host()
+        svc = host.grid_service()
+        assert svc is not None
+        svc.apply_change("FM-001", "failure_type", "aging")
+        panel.refresh_view()
+        assert panel._proxy.rowCount() >= 1
+        return int(QDialog.DialogCode.Accepted)
+
+    monkeypatch.setattr(QDialog, "exec", _fake_exec)
+    window._open_batch_faalwijzen_grid()
+    app.processEvents()
+
+    host = get_editing_host()
+    svc = host.grid_service()
+    assert svc is not None
+    row = next(r for r in svc.rows() if r.fm_id == "FM-001")
+    assert row.failure_type == "aging"
+
+
 def test_fm_editor_ok_updates_mttf_and_triggers_incremental_run(monkeypatch, tmp_path):
     """Slice 44 smoke — OK in editor wijzigt MTTF en roept incrementele run aan."""
     app = _ensure_app()
@@ -1466,3 +1510,4 @@ def test_fm_editor_ok_updates_mttf_and_triggers_incremental_run(monkeypatch, tmp
 
     assert window._state.last_project is not None
     assert window._state.last_project.faalwijzes["FM-001"].mttf_jaar == pytest.approx(99.0)
+    assert window.workspace_state.snapshot().modus == MODE_FM_DETAIL
