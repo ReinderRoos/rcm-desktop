@@ -7,10 +7,10 @@ geladen project; presentatie-cache versnelt projecttotaal-modi.
 Architectuur-discipline (zie AGENTS.md):
 - Views consumeren Qt-vrije adapter-output; geen `rcm_core`-imports buiten
   typing-only.
-- Presentatielogica (scope-filter, structuur-/totalen-boom, split-state) zit
+- Presentatielogica (scope-filter, structuur-/totalen-boom) zit
   in `rcm_desktop.adapter.result_filter_service`,
   `rcm_desktop.adapter.result_view_service` en
-  `rcm_desktop.adapter.workspace_split_layout`.
+  `rcm_desktop.adapter.workspace_view_service`.
 """
 from __future__ import annotations
 
@@ -52,20 +52,11 @@ from PySide6.QtWidgets import (
 )
 
 from rcm_desktop import messages
-from rcm_desktop.adapter.analysis_cache_service import (
-    fm_cache_available,
-    hydrate_run_from_cache,
-)
 from rcm_desktop.adapter.kpi_table_model import KPITableModel
-from rcm_desktop.adapter.kpi_table_service import build_kpi_table
-from rcm_desktop.adapter.presentation_cache_service import (
-    PresentationProjectTotal,
-    load_presentation_from_cache,
-)
+from rcm_desktop.adapter.presentation_cache_service import PresentationProjectTotal
 from rcm_desktop.adapter.lcc_warmup_runner import LCCWarmupRunner
 from rcm_desktop.adapter.presentation_lazy_service import (
     default_lcc_warmup_snapshot,
-    presentation_rebuild_needed_for_startup,
     warm_lcc_render_index,
 )
 from rcm_desktop.adapter.presentation_rebuild_runner import PresentationRebuildRunner
@@ -77,10 +68,7 @@ from rcm_desktop.adapter.fm_results_table_model import (
     FMResultsTableModel,
     RAW_ROLE,
 )
-from rcm_desktop.adapter.fm_verification_service import (
-    FMVerificationView,
-    build_fm_verification_view,
-)
+from rcm_desktop.adapter.fm_verification_service import FMVerificationView
 from rcm_desktop.adapter.fm_verification_year_table_model import (
     FMVerificationYearTableModel,
 )
@@ -91,10 +79,7 @@ from rcm_desktop.adapter.workspace_view_service import (
     build_fm_detail_view,
     build_lcc_view,
 )
-from rcm_desktop.adapter.lcc_planning_service import (
-    build_lcc_planning_curve_reconciled,
-    build_lcc_year_detail,
-)
+from rcm_desktop.adapter.lcc_planning_service import build_lcc_planning_curve_reconciled
 from rcm_desktop.adapter.lcc_detail_selection import rev_row_indices
 from rcm_desktop.adapter.lcc_type_filter import LCCTypeFilterSet
 from rcm_desktop.adapter.lcc_year_detail_table_model import (
@@ -102,7 +87,6 @@ from rcm_desktop.adapter.lcc_year_detail_table_model import (
     PASSIVE_COLUMN,
 )
 from rcm_desktop.adapter.lcc_year_table_model import LCCYearTableModel
-from rcm_desktop.adapter.planning_cm_preset_service import apply_cm_policy_preset
 from rcm_desktop.adapter.import_flow_service import gate_workbook, persist_wizard_result
 from rcm_desktop.adapter.isograph_open_flow_service import PersistImportSuccess
 from rcm_desktop.adapter.meekoppel_panel_service import (
@@ -116,12 +100,9 @@ from rcm_desktop.adapter.meekoppel_suggestions_table_model import (
 from rcm_desktop.adapter.planning_overlay_state import PlanningOverlayState
 from rcm_desktop.adapter.planning_whatif_service import apply_overlay_shift
 from rcm_desktop.adapter.pbs_results_tree_model import PBSResultsTreeModel
-from rcm_desktop.adapter.rcm_navigation_tree_builder import build_rcm_navigation_tree
 from rcm_desktop.adapter.rcm_navigation_tree_model import RcmNavigationTreeModel
-from rcm_desktop.adapter.contribution_horizon_value_service import (
-    calendar_years_for_project,
-)
-from rcm_desktop.adapter.editing_host import get_editing_host
+from rcm_desktop.adapter import workspace_session_service as wss
+from rcm_desktop.adapter.editing_host import EditingHost
 from rcm_desktop.adapter.faalwijzen_edit_service import FaalwijzenEditService
 from rcm_desktop.views.fm_editor_dialog import FmEditorDialog
 from rcm_desktop.views.grid_dirty_guard import resolve_grid_dirty_before_editor
@@ -133,7 +114,6 @@ from rcm_desktop.views.widgets.lcc_stacked_bar_chart import LCCStackedBarChartWi
 from rcm_desktop.adapter.preview_service import build as build_project_preview
 from rcm_desktop.adapter.project_paths import resolve_default_fixture_path
 from rcm_desktop.adapter.result_view_service import (
-    build_pbs_structure_tree,
     build_pbs_tree,
 )
 from rcm_desktop.adapter.results_workspace_state import (
@@ -207,7 +187,7 @@ class _PBSSidebarFilterProxy(QSortFilterProxyModel):
 class ResultsWorkspaceWindow(QMainWindow):
     """Hoofdvenster van de nieuwe resultatenwerkruimte (slice 23 fase A)."""
 
-    def __init__(self) -> None:
+    def __init__(self, *, editing_host: EditingHost | None = None) -> None:
         super().__init__()
         self.setWindowTitle(messages.WORKSPACE_WINDOW_TITLE)
 
@@ -237,6 +217,7 @@ class ResultsWorkspaceWindow(QMainWindow):
         self._suppress_path_change = False
         self._project_total_presentation: PresentationProjectTotal | None = None
         self._render_index = WorkspaceRenderIndex()
+        self._editing_host = editing_host if editing_host is not None else EditingHost()
 
         self.workspace_state = ResultsWorkspaceState()
         self._last_workspace_snapshot_for_split_depth: WorkspaceStateSnapshot | None = None
@@ -453,8 +434,9 @@ class ResultsWorkspaceWindow(QMainWindow):
             messages.WORKSPACE_CONTRIBUTION_YEAR_AVERAGE,
             userData="average",
         )
-        if project is not None:
-            for year in calendar_years_for_project(project):
+        session = self._project_session()
+        if session is not None:
+            for year in wss.calendar_years_for_session(session):
                 self.contribution_year_combo.addItem(str(year), userData=year)
         if current is not None:
             idx = self.contribution_year_combo.findData(current)
@@ -554,7 +536,21 @@ class ResultsWorkspaceWindow(QMainWindow):
         page_layout.addWidget(self.lcc_empty_state_label)
 
         self.lcc_filter_bar = QWidget()
-        filter_layout = QHBoxLayout(self.lcc_filter_bar)
+        filter_bar_layout = QVBoxLayout(self.lcc_filter_bar)
+        filter_bar_layout.setContentsMargins(0, 0, 0, 0)
+        filter_bar_layout.setSpacing(2)
+        whatif_header = QHBoxLayout()
+        self.lcc_whatif_collapse_button = QToolButton()
+        self.lcc_whatif_collapse_button.setToolTip(messages.WORKSPACE_LCC_WHATIF_COLLAPSE_TOOLTIP)
+        self.lcc_whatif_collapse_button.clicked.connect(self._on_lcc_whatif_collapse_toggled)
+        self.lcc_whatif_bar_title = QLabel(messages.WORKSPACE_LCC_WHATIF_BAR_TITLE)
+        self.lcc_whatif_bar_title.setStyleSheet("font-weight: 600;")
+        whatif_header.addWidget(self.lcc_whatif_collapse_button)
+        whatif_header.addWidget(self.lcc_whatif_bar_title)
+        whatif_header.addStretch(1)
+        filter_bar_layout.addLayout(whatif_header)
+        self.lcc_whatif_content = QWidget()
+        filter_layout = QHBoxLayout(self.lcc_whatif_content)
         filter_layout.setContentsMargins(0, 0, 0, 0)
         self._lcc_filter_checks: dict[str, QCheckBox] = {}
         for key, label in (
@@ -585,6 +581,7 @@ class ResultsWorkspaceWindow(QMainWindow):
         self.lcc_cm_preset_button.setToolTip(messages.WORKSPACE_LCC_CM_PRESET_TOOLTIP)
         self.lcc_cm_preset_button.clicked.connect(self._on_lcc_cm_policy_preset)
         filter_layout.addWidget(self.lcc_cm_preset_button)
+        filter_bar_layout.addWidget(self.lcc_whatif_content)
         self.lcc_filter_bar.setVisible(False)
         page_layout.addWidget(self.lcc_filter_bar)
 
@@ -595,17 +592,28 @@ class ResultsWorkspaceWindow(QMainWindow):
         self.meekoppel_panel = QWidget()
         meekoppel_layout = QVBoxLayout(self.meekoppel_panel)
         meekoppel_layout.setContentsMargins(0, 0, 0, 0)
+        meekoppel_layout.setSpacing(2)
+        meekoppel_header = QHBoxLayout()
+        self.meekoppel_collapse_button = QToolButton()
+        self.meekoppel_collapse_button.setToolTip(messages.WORKSPACE_MEEKOPPEL_COLLAPSE_TOOLTIP)
+        self.meekoppel_collapse_button.clicked.connect(self._on_meekoppel_collapse_toggled)
         self.meekoppel_title_label = QLabel(messages.WORKSPACE_MEEKOPPEL_PANEL_TITLE)
         self.meekoppel_title_label.setStyleSheet("font-weight: 600;")
-        meekoppel_layout.addWidget(self.meekoppel_title_label)
+        meekoppel_header.addWidget(self.meekoppel_collapse_button)
+        meekoppel_header.addWidget(self.meekoppel_title_label)
+        meekoppel_header.addStretch(1)
+        meekoppel_layout.addLayout(meekoppel_header)
+        self.meekoppel_content = QWidget()
+        meekoppel_content_layout = QVBoxLayout(self.meekoppel_content)
+        meekoppel_content_layout.setContentsMargins(0, 0, 0, 0)
         self.meekoppel_help_label = QLabel(messages.WORKSPACE_MEEKOPPEL_PANEL_HELP)
         self.meekoppel_help_label.setWordWrap(True)
         self.meekoppel_help_label.setStyleSheet("color: #616161; font-size: 11px;")
-        meekoppel_layout.addWidget(self.meekoppel_help_label)
+        meekoppel_content_layout.addWidget(self.meekoppel_help_label)
         self.meekoppel_whatif_hint_label = QLabel(messages.WORKSPACE_MEEKOPPEL_WHATIF_HINT)
         self.meekoppel_whatif_hint_label.setWordWrap(True)
         self.meekoppel_whatif_hint_label.setStyleSheet("color: #757575;")
-        meekoppel_layout.addWidget(self.meekoppel_whatif_hint_label)
+        meekoppel_content_layout.addWidget(self.meekoppel_whatif_hint_label)
         meekoppel_tb = QHBoxLayout()
         meekoppel_tb.addWidget(QLabel(messages.WORKSPACE_MEEKOPPEL_WINDOW_LABEL))
         self.meekoppel_window_spin = QSpinBox()
@@ -620,10 +628,10 @@ class ResultsWorkspaceWindow(QMainWindow):
         self.meekoppel_apply_button.clicked.connect(self._on_meekoppel_apply)
         meekoppel_tb.addWidget(self.meekoppel_apply_button)
         meekoppel_tb.addStretch(1)
-        meekoppel_layout.addLayout(meekoppel_tb)
+        meekoppel_content_layout.addLayout(meekoppel_tb)
         self.meekoppel_empty_label = QLabel(messages.WORKSPACE_MEEKOPPEL_EMPTY)
         self.meekoppel_empty_label.setStyleSheet("color: #9E9E9E;")
-        meekoppel_layout.addWidget(self.meekoppel_empty_label)
+        meekoppel_content_layout.addWidget(self.meekoppel_empty_label)
         self.meekoppel_table_view = QTableView()
         self.meekoppel_table_view.setAlternatingRowColors(True)
         self.meekoppel_table_view.setSelectionBehavior(QAbstractItemView.SelectRows)
@@ -631,7 +639,8 @@ class ResultsWorkspaceWindow(QMainWindow):
         _apply_workspace_data_table_header_policy(self.meekoppel_table_view.horizontalHeader())
         self._meekoppel_table_model = MeekoppelSuggestionsTableModel(parent=self.meekoppel_table_view)
         self.meekoppel_table_view.setModel(self._meekoppel_table_model)
-        meekoppel_layout.addWidget(self.meekoppel_table_view, stretch=1)
+        meekoppel_content_layout.addWidget(self.meekoppel_table_view, stretch=1)
+        meekoppel_layout.addWidget(self.meekoppel_content)
         self.meekoppel_panel.setVisible(False)
         self._meekoppel_last_anchor: str = "later"
         page_layout.addWidget(self.meekoppel_panel)
@@ -665,12 +674,8 @@ class ResultsWorkspaceWindow(QMainWindow):
         self.lcc_detail_toolbar.setVisible(False)
         page_layout.addWidget(self.lcc_detail_toolbar)
 
-        # Legacy single-slot pane. Sinds issue 08 wordt deze codepath
-        # uitsluitend nog gebruikt vóórdat het eerste scenario-slot gevuld is
-        # (dus puur als empty-state-container); zodra de KPI-tabel een
-        # scenario-run registreert schakelt de view automatisch over op de
-        # split-view. De attribuut-namen blijven bestaan voor tests die de
-        # data-pijplijn van vóór scenario-modus aanroepen.
+        # Single-run pane voor de LCC-weergave.
+        # Attribuutnamen blijven stabiel voor bestaande UI-tests.
         self.lcc_single_slot_pane = QWidget()
         single_layout = QVBoxLayout(self.lcc_single_slot_pane)
         single_layout.setContentsMargins(0, 0, 0, 0)
@@ -980,6 +985,7 @@ class ResultsWorkspaceWindow(QMainWindow):
         if lcc_active:
             self._sync_meekoppel_panel(snapshot)
         fm_active = snapshot.modus == MODE_FM_DETAIL
+        self.batch_faalwijzen_button.setVisible(fm_active)
         self.fm_evident_filter_combo.setVisible(fm_active)
         self.fm_evident_filter_combo.setEnabled(fm_active)
         if hasattr(self, "fm_inspector_container"):
@@ -996,6 +1002,8 @@ class ResultsWorkspaceWindow(QMainWindow):
         if should_refresh_kpi_for_render_depth(split_depth) and hasattr(self, "kpi_table_view"):
             self._refresh_kpi_table_view()
         self._sync_kpi_panel_visibility(snapshot)
+        self._sync_lcc_whatif_panel_visibility(snapshot)
+        self._sync_meekoppel_panel_collapsed(snapshot)
         # Sync scope_id with the orchestrator (clicks set both, but reset paths only update state).
         if snapshot.scope_id != self._pbs_scope_id:
             self._pbs_scope_id = snapshot.scope_id
@@ -1047,22 +1055,22 @@ class ResultsWorkspaceWindow(QMainWindow):
             self._show_run_error(run_result.error)
 
     def _sync_pbs_tree_for_state(self) -> None:
-        project = self._session_core()
+        session = self._project_session()
         run_result = self._state.last_run
-        if project is None:
+        if session is None:
             self._set_pbs_source_model(None, show_totals=False)
             return
         if isinstance(run_result, RunResult) and run_result.status == "done" and run_result.pbs_rows:
             roots = build_pbs_tree(list(run_result.pbs_rows))
             self._set_pbs_source_model(PBSResultsTreeModel(roots), show_totals=True)
             return
-        if project.functies:
-            nav_roots = build_rcm_navigation_tree(project)
+        if wss.has_functies(session):
             self._set_pbs_source_model(
-                RcmNavigationTreeModel(nav_roots, project), show_totals=False
+                wss.build_navigation_tree_model_for_session(session),
+                show_totals=False,
             )
             return
-        roots = build_pbs_structure_tree(project)
+        roots = wss.build_pbs_structure_tree_for_session(session)
         self._set_pbs_source_model(PBSResultsTreeModel(roots, show_totals=False), show_totals=False)
 
     def _pbs_scope_from_tree_index(self, source_model, source_index: QModelIndex) -> str | None:
@@ -1088,12 +1096,6 @@ class ResultsWorkspaceWindow(QMainWindow):
 
     def _project_session(self) -> ProjectSession | None:
         return self._state.project_session
-
-    def _session_core(self):
-        session = self._project_session()
-        if session is None:
-            return None
-        return session.loaded.core()
 
     def _rerender_detail_for_current_scope(
         self,
@@ -1188,7 +1190,7 @@ class ResultsWorkspaceWindow(QMainWindow):
         self._refresh_fm_inspector(str(fm_id) if fm_id is not None else None)
 
     def _commit_active_grid_edits(self) -> bool:
-        host = get_editing_host()
+        host = self._editing_host
         grid_svc = host.grid_service()
         if grid_svc is None or not grid_svc.is_active():
             return True
@@ -1206,15 +1208,16 @@ class ResultsWorkspaceWindow(QMainWindow):
         return True
 
     def _open_batch_faalwijzen_grid(self) -> None:
-        project = self._session_core()
-        if project is None:
+        session = self._project_session()
+        if session is None:
             QMessageBox.information(
                 self,
                 messages.WORKSPACE_MENU_FAALWIJZEN_BATCH,
                 messages.WORKSPACE_FM_INSPECTOR_INPUTS_MISSING,
             )
             return
-        host = get_editing_host()
+        project = wss.editing_project(session)
+        host = self._editing_host
         grid_svc = host.ensure_grid(project)
         prev_save = host.swap_save_handler(self._commit_active_grid_edits)
         dialog = QDialog(self)
@@ -1235,8 +1238,8 @@ class ResultsWorkspaceWindow(QMainWindow):
     def _on_fm_table_double_clicked(self, index: QModelIndex) -> None:
         if self.workspace_state.snapshot().modus != MODE_FM_DETAIL:
             return
-        project = self._session_core()
-        if project is None:
+        session = self._project_session()
+        if session is None:
             QMessageBox.information(
                 self,
                 messages.FM_EDITOR_VALIDATION_TITLE,
@@ -1259,14 +1262,15 @@ class ResultsWorkspaceWindow(QMainWindow):
         if not fm_id:
             return
         fm_key = str(fm_id)
-        if fm_key not in project.faalwijzes:
+        if not wss.fm_exists(session, fm_key):
             QMessageBox.warning(
                 self,
                 messages.FM_EDITOR_VALIDATION_TITLE,
                 messages.WORKSPACE_FM_INSPECTOR_INPUTS_MISSING,
             )
             return
-        host = get_editing_host()
+        project = wss.editing_project(session)
+        host = self._editing_host
         prev_save = host.swap_save_handler(self._commit_active_grid_edits)
         try:
             if resolve_grid_dirty_before_editor(self, host) == "cancel":
@@ -1293,7 +1297,7 @@ class ResultsWorkspaceWindow(QMainWindow):
                 )
             if result.run_result is not None:
                 self._state.set_last_run(result.run_result)
-                self._load_presentation_cache()
+                self._project_total_presentation = self._load_presentation_from_disk()
                 self._render_index.on_workspace_state_reset()
                 self._rerender_detail_for_current_scope()
                 self._refresh_fm_inspector(str(fm_id))
@@ -1301,15 +1305,16 @@ class ResultsWorkspaceWindow(QMainWindow):
             host.set_save_handler(prev_save)
 
     def _open_model_settings(self) -> None:
-        project = self._session_core()
-        if project is None:
+        session = self._project_session()
+        if session is None:
             QMessageBox.information(
                 self,
                 messages.MODEL_SETTINGS_BUTTON_LABEL,
                 messages.MODEL_SETTINGS_NO_PROJECT,
             )
             return
-        host = get_editing_host()
+        project = wss.editing_project(session)
+        host = self._editing_host
         prev_save = host.swap_save_handler(self._commit_active_grid_edits)
         try:
             if resolve_grid_dirty_before_editor(self, host) == "cancel":
@@ -1337,7 +1342,7 @@ class ResultsWorkspaceWindow(QMainWindow):
                 )
             if result.run_result is not None:
                 self._state.set_last_run(result.run_result)
-                self._load_presentation_cache()
+                self._project_total_presentation = self._load_presentation_from_disk()
                 self._render_index.on_workspace_state_reset()
                 self._rerender_detail_for_current_scope()
                 self.validate_summary_label.setText("")
@@ -1365,13 +1370,13 @@ class ResultsWorkspaceWindow(QMainWindow):
             self.fm_inspector_empty_label.setVisible(True)
             self.fm_inspector_panel.setVisible(False)
             return
-        project = self._session_core()
+        session = self._project_session()
         fmr = self._fm_core_result_for_id(fm_id)
-        if project is None or fmr is None:
+        if session is None or fmr is None:
             self.fm_inspector_empty_label.setVisible(True)
             self.fm_inspector_panel.setVisible(False)
             return
-        view = build_fm_verification_view(project, fmr)
+        view = wss.build_fm_verification_for_session(session, fmr)
         self._apply_fm_inspector_view(view)
 
     def _apply_fm_inspector_view(self, view: FMVerificationView) -> None:
@@ -1453,13 +1458,12 @@ class ResultsWorkspaceWindow(QMainWindow):
             self.lcc_empty_state_label.setVisible(True)
             self.lcc_year_summary_label.setText("")
             return
-        project = session.loaded.core()
         run_result = session.run
         assert run_result is not None
         if scope == "detail_only":
             self.lcc_chart_widget.set_selected_year(snapshot.lcc_calendar_year)
             self._sync_lcc_chrome(snapshot)
-            self._render_lcc_year_detail(project, run_result, snapshot, planning_curve=curve)
+            self._render_lcc_year_detail(session, run_result, snapshot, planning_curve=curve)
             return
         buckets = tuple(curve.display_buckets)
         self.lcc_chart_widget.set_buckets(buckets)
@@ -1468,18 +1472,18 @@ class ResultsWorkspaceWindow(QMainWindow):
         self.lcc_table_view.setModel(self._lcc_table_model_legacy)
         self.lcc_empty_state_label.setVisible(False)
         self._sync_lcc_chrome(snapshot)
-        self._render_lcc_year_detail(project, run_result, snapshot, planning_curve=curve)
+        self._render_lcc_year_detail(session, run_result, snapshot, planning_curve=curve)
 
     def _sync_lcc_chrome(self, snapshot: WorkspaceStateSnapshot) -> None:
-        project = self._session_core()
+        session = self._project_session()
         overlay = snapshot.planning_overlay
         active = overlay.active
         year_selected = snapshot.lcc_calendar_year is not None
         self.lcc_whatif_button.setChecked(active)
         self.lcc_reset_overlay_button.setEnabled(active)
-        self.lcc_bulk_rev_passive_button.setEnabled(active and project is not None)
-        self.lcc_cm_preset_button.setEnabled(active and project is not None)
-        if project is not None and overlay.all_rev_passive(project):
+        self.lcc_bulk_rev_passive_button.setEnabled(active and session is not None)
+        self.lcc_cm_preset_button.setEnabled(active and session is not None)
+        if session is not None and wss.overlay_all_rev_passive(session, overlay):
             self.lcc_bulk_rev_passive_button.setText(messages.WORKSPACE_LCC_BULK_REV_ACTIVE)
         else:
             self.lcc_bulk_rev_passive_button.setText(messages.WORKSPACE_LCC_BULK_REV_PASSIVE)
@@ -1634,7 +1638,7 @@ class ResultsWorkspaceWindow(QMainWindow):
 
     def _render_lcc_year_detail(
         self,
-        project,
+        session: ProjectSession,
         run_result: RunResult,
         snapshot: WorkspaceStateSnapshot,
         *,
@@ -1645,8 +1649,8 @@ class ResultsWorkspaceWindow(QMainWindow):
             self.lcc_year_summary_label.setText("")
             self._lcc_detail_model.set_view(None)
             return
-        detail = build_lcc_year_detail(
-            project,
+        detail = wss.build_lcc_year_detail_for_session(
+            session,
             run_result,
             year,
             scope_id=snapshot.scope_id,
@@ -1764,6 +1768,22 @@ class ResultsWorkspaceWindow(QMainWindow):
             return
         self.workspace_state.set_kpi_collapsed_in_lcc(not snapshot.kpi_collapsed_in_lcc)
 
+    def _on_lcc_whatif_collapse_toggled(self) -> None:
+        snapshot = self.workspace_state.snapshot()
+        if snapshot.modus != MODE_LCC:
+            return
+        self.workspace_state.set_lcc_whatif_collapsed_in_lcc(
+            not snapshot.lcc_whatif_collapsed_in_lcc
+        )
+
+    def _on_meekoppel_collapse_toggled(self) -> None:
+        snapshot = self.workspace_state.snapshot()
+        if snapshot.modus != MODE_LCC:
+            return
+        self.workspace_state.set_meekoppel_collapsed_in_lcc(
+            not snapshot.meekoppel_collapsed_in_lcc
+        )
+
     def _sync_kpi_panel_visibility(self, snapshot: WorkspaceStateSnapshot) -> None:
         if not hasattr(self, "kpi_collapse_button"):
             return
@@ -1775,31 +1795,51 @@ class ResultsWorkspaceWindow(QMainWindow):
         self.kpi_collapse_button.setText("▼" if not collapsed else "▶")
         self.kpi_collapse_button.setEnabled(lcc_active)
 
+    def _sync_lcc_whatif_panel_visibility(self, snapshot: WorkspaceStateSnapshot) -> None:
+        if not hasattr(self, "lcc_whatif_collapse_button"):
+            return
+        lcc_active = snapshot.modus == MODE_LCC
+        collapsed = snapshot.lcc_whatif_collapsed_in_lcc if lcc_active else False
+        self.lcc_whatif_collapse_button.setVisible(lcc_active)
+        self.lcc_whatif_bar_title.setVisible(lcc_active)
+        self.lcc_whatif_content.setVisible(lcc_active and not collapsed)
+        self.lcc_whatif_collapse_button.setText("▼" if not collapsed else "▶")
+        self.lcc_whatif_collapse_button.setEnabled(lcc_active)
+
+    def _sync_meekoppel_panel_collapsed(self, snapshot: WorkspaceStateSnapshot) -> None:
+        if not hasattr(self, "meekoppel_collapse_button"):
+            return
+        lcc_active = snapshot.modus == MODE_LCC
+        collapsed = snapshot.meekoppel_collapsed_in_lcc if lcc_active else False
+        self.meekoppel_collapse_button.setVisible(lcc_active)
+        self.meekoppel_content.setVisible(lcc_active and not collapsed)
+        self.meekoppel_collapse_button.setText("▼" if not collapsed else "▶")
+        self.meekoppel_collapse_button.setEnabled(lcc_active)
+
     def _on_lcc_bulk_rev_toggle(self) -> None:
-        project = self._session_core()
-        if project is None:
+        session = self._project_session()
+        if session is None:
             return
         overlay = self.workspace_state.snapshot().planning_overlay
         if not overlay.active:
             overlay = overlay.begin_what_if()
-        if overlay.all_rev_passive(project):
-            overlay = overlay.bulk_all_rev_active(project)
-        else:
-            overlay = overlay.bulk_all_rev_passive(project)
+        overlay = wss.toggle_bulk_rev_overlay(session, overlay)
         self.workspace_state.set_planning_overlay(overlay)
 
     def _on_lcc_cm_policy_preset(self) -> None:
-        project = self._session_core()
-        if project is None:
+        session = self._project_session()
+        if session is None:
             return
         overlay = self.workspace_state.snapshot().planning_overlay
         if not overlay.active:
             overlay = overlay.begin_what_if()
-        self.workspace_state.set_planning_overlay(apply_cm_policy_preset(overlay, project))
+        self.workspace_state.set_planning_overlay(
+            wss.apply_cm_preset_for_session(session, overlay)
+        )
 
     def _on_lcc_shift_selected(self) -> None:
-        project = self._session_core()
-        if project is None:
+        session = self._project_session()
+        if session is None:
             return
         overlay = self.workspace_state.snapshot().planning_overlay
         if not overlay.active:
@@ -1813,8 +1853,8 @@ class ResultsWorkspaceWindow(QMainWindow):
             )
             return
         shift_years = int(self.lcc_shift_spin.value())
-        result = apply_overlay_shift(
-            project, overlay, pm_ids=pm_ids, shift_years=shift_years
+        result = wss.apply_overlay_shift_for_session(
+            session, overlay, pm_ids=pm_ids, shift_years=shift_years
         )
         if result.error:
             QMessageBox.critical(self, messages.LTAP_ERROR_DIALOG_TITLE, result.error)
@@ -1881,10 +1921,10 @@ class ResultsWorkspaceWindow(QMainWindow):
         if self._pbs_scope_id is None:
             self.scope_status_label.setText("Scope: hele project")
             return
-        project = self._session_core()
+        session = self._project_session()
         bouwdeel = ""
-        if project is not None and self._pbs_scope_id in project.pbs_items:
-            bouwdeel = project.pbs_items[self._pbs_scope_id].bouwdeel_naam
+        if session is not None and self._pbs_scope_id is not None:
+            bouwdeel = wss.scope_bouwdeel_naam(session, self._pbs_scope_id)
         self.scope_status_label.setText(
             f"Scope: {self._pbs_scope_id}" + (f" — {bouwdeel}" if bouwdeel else "")
         )
@@ -1915,9 +1955,9 @@ class ResultsWorkspaceWindow(QMainWindow):
             return
 
         default_modeljaar = 2026
-        project = self._session_core()
-        if project is not None:
-            default_modeljaar = int(project.config.modeljaar)
+        session = self._project_session()
+        if session is not None:
+            default_modeljaar = int(session.loaded.modeljaar)
 
         wizard = run_import_wizard(
             ImportDialogInput(path=Path(excel_path), default_modeljaar=default_modeljaar),
@@ -1982,18 +2022,14 @@ class ResultsWorkspaceWindow(QMainWindow):
 
     def _start_analyse(self) -> None:
         path = self.path_input.text().strip()
-        project = self._session_core()
-        if project is None:
+        session = self._project_session()
+        if session is None:
             return
         overlay = self.workspace_state.snapshot().planning_overlay
         path = self.path_input.text().strip()
-        force = bool(
-            project is not None
-            and path
-            and fm_cache_available(project, path)
-        )
+        force = bool(path and wss.fm_cache_available_for_session(session, path))
         if self._run_runner.start(
-            project,
+            wss.editing_project(session),
             path,
             planning_overlay=overlay,
             force_recompute=force,
@@ -2026,19 +2062,23 @@ class ResultsWorkspaceWindow(QMainWindow):
             return
         self._state.set_last_run(result)
         overlay = self.workspace_state.snapshot().planning_overlay
-        plan = ResultsWorkspaceController.plan_after_successful_run(overlay)
+        plan = ResultsWorkspaceController.plan_after_successful_run(
+            overlay,
+            has_presentation_payload=isinstance(presentation, PresentationProjectTotal),
+        )
         if overlay.active:
             self.workspace_state.set_planning_overlay(plan.overlay)
         if plan.had_passive_before_run:
             self._lcc_passive_kept_after_run = True
         if isinstance(presentation, PresentationProjectTotal):
             self._project_total_presentation = presentation
-        else:
-            self._load_presentation_cache()
+        elif plan.load_presentation_from_disk:
+            self._project_total_presentation = self._load_presentation_from_disk()
         if plan.invalidate_render_index:
             self._render_index.on_workspace_state_reset()
         self._last_lcc_render_snapshot = None
-        self._maybe_start_lcc_warmup()
+        if plan.warmup_lcc and self.workspace_state.snapshot().modus == MODE_LCC:
+            self._maybe_start_lcc_warmup()
         self._update_run_button_label()
 
     def _on_presentation_rebuild_state_changed(self, state: str) -> None:
@@ -2056,10 +2096,10 @@ class ResultsWorkspaceWindow(QMainWindow):
     def _refresh_kpi_table_view(self) -> None:
         if not hasattr(self, "kpi_table_view"):
             return
-        project = self._session_core()
+        session = self._project_session()
         scope_id = self.workspace_state.snapshot().scope_id
-        table = build_kpi_table(
-            project=project,
+        table = wss.build_kpi_table_for_session(
+            session,
             run_result=self._state.last_run,
             scope_id=scope_id,
         )
@@ -2069,42 +2109,41 @@ class ResultsWorkspaceWindow(QMainWindow):
     def _update_run_button_label(self) -> None:
         if not hasattr(self, "run_analyse_button"):
             return
-        project = self._session_core()
+        session = self._project_session()
         path = self.path_input.text().strip()
-        if project is not None and path and fm_cache_available(project, path):
+        if session is not None and path and wss.fm_cache_available_for_session(session, path):
             self.run_analyse_button.setText(messages.WORKSPACE_RECOMPUTE_ANALYSE_BUTTON_LABEL)
         else:
             self.run_analyse_button.setText(messages.WORKSPACE_START_ANALYSE_BUTTON_LABEL)
 
-    def _load_presentation_cache(self) -> None:
-        project = self._session_core()
+    def _load_presentation_from_disk(self) -> PresentationProjectTotal | None:
+        session = self._project_session()
         path = self.path_input.text().strip()
-        if project is None or not path:
-            self._project_total_presentation = None
-            return
-        self._project_total_presentation = load_presentation_from_cache(project, path)
+        if session is None or not path:
+            return None
+        return wss.load_presentation_for_session(session, path)
 
     def _maybe_start_presentation_rebuild(self) -> None:
-        project = self._session_core()
+        session = self._project_session()
         path = self.path_input.text().strip()
         run = self._state.last_run
         if (
-            project is None
+            session is None
             or not path
             or not isinstance(run, RunResult)
             or run.status != "done"
-            or not presentation_rebuild_needed_for_startup(project, path)
+            or not wss.presentation_rebuild_needed_for_session(session, path)
             or self._run_runner.busy
             or self._presentation_rebuild_runner.busy
         ):
             return
-        self._presentation_rebuild_runner.start(project, path, run)
+        self._presentation_rebuild_runner.start(wss.editing_project(session), path, run)
 
     def _maybe_start_lcc_warmup(self) -> None:
-        project = self._session_core()
+        session = self._project_session()
         run = self._state.last_run
         if (
-            project is None
+            session is None
             or not isinstance(run, RunResult)
             or run.status != "done"
             or self._run_runner.busy
@@ -2112,18 +2151,44 @@ class ResultsWorkspaceWindow(QMainWindow):
         ):
             return
         snapshot = default_lcc_warmup_snapshot(self.workspace_state.snapshot())
-        self._lcc_warmup_runner.start(project, run, self._render_index, snapshot)
+        self._lcc_warmup_runner.start(
+            wss.editing_project(session), run, self._render_index, snapshot
+        )
 
     def _after_project_validated(self, project: object) -> None:
+        from rcm_desktop.adapter.results_workspace_controller import ResultsWorkspaceController
+
         path = self.path_input.text().strip()
         if project is None or not path or not hasattr(project, "config"):
             return
-        hydrated = hydrate_run_from_cache(project, path)
+        session = self._project_session()
+        hydrated = (
+            wss.hydrate_run_for_session(session, path)
+            if session is not None
+            else None
+        )
         if hydrated is not None:
             self._state.set_last_run(hydrated)
-        self._load_presentation_cache()
+        run = self._state.last_run
+        plan = ResultsWorkspaceController.plan_after_validate(
+            has_hydrated_run=hydrated is not None,
+            has_path=bool(path),
+            has_session=session is not None,
+            run_done=isinstance(run, RunResult) and run.status == "done",
+            presentation_rebuild_needed=(
+                session is not None
+                and bool(path)
+                and wss.presentation_rebuild_needed_for_session(session, path)
+            ),
+            run_runner_busy=self._run_runner.busy,
+            presentation_runner_busy=self._presentation_rebuild_runner.busy,
+        )
+        self._project_total_presentation = (
+            self._load_presentation_from_disk() if plan.load_presentation_from_disk else None
+        )
         self._update_run_button_label()
-        self._maybe_start_presentation_rebuild()
+        if plan.start_presentation_rebuild:
+            self._maybe_start_presentation_rebuild()
 
     def _on_validate_state_changed(self, state: str) -> None:
         if state == "busy":
