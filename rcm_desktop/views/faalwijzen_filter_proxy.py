@@ -16,15 +16,21 @@ class FaalwijzenFilterProxy(QSortFilterProxyModel):
 
     def set_failure_type_filter(self, value: str | None) -> None:
         self._failure_type = value
-        self.invalidateRowsFilter()
+        self._refresh_filter()
 
     def set_nmf_filter(self, nmf_only: bool | None) -> None:
         self._nmf_only = nmf_only
-        self.invalidateRowsFilter()
+        self._refresh_filter()
 
     def set_search_text(self, text: str) -> None:
         self._search = (text or "").strip().lower()
-        self.invalidateRowsFilter()
+        self._refresh_filter()
+
+    def _refresh_filter(self) -> None:
+        # Qt marks invalidateFilter/invalidateRowsFilter as deprecated;
+        # begin/endFilterChange is the supported replacement.
+        self.beginFilterChange()
+        self.endFilterChange()
 
     def source_table_model(self) -> FaalwijzenTableModel | None:
         model = self.sourceModel()
