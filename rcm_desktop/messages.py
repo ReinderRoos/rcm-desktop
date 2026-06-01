@@ -431,7 +431,10 @@ WORKSPACE_MEEKOPPEL_PANEL_HELP = (
 )
 WORKSPACE_MEEKOPPEL_WHATIF_HINT = "Schakel what-if planning in om meekoppelkansen te zien."
 WORKSPACE_MEEKOPPEL_EMPTY = "Geen locatiegroepen voor het gekozen tijdsvenster."
+WORKSPACE_MEEKOPPEL_EMPTY_SCOPE = "Geen meekoppelkansen in de geselecteerde boomtak."
 WORKSPACE_MEEKOPPEL_WINDOW_LABEL = "Tijdsvenster (jaren):"
+WORKSPACE_MEEKOPPEL_ANCHOR_EARLIER = "Bundel naar vroegste"
+WORKSPACE_MEEKOPPEL_ANCHOR_LATER = "Bundel naar laatste"
 WORKSPACE_MEEKOPPEL_PREVIEW = "Preview"
 WORKSPACE_MEEKOPPEL_APPLY = "Toepassen"
 WORKSPACE_MEEKOPPEL_SELECT_ROW = "Selecteer een locatiegroep in de tabel."
@@ -440,21 +443,29 @@ WORKSPACE_MEEKOPPEL_PREVIEW_ANCHOR_EARLIER = "Bundel naar vroegste due-jaar in d
 WORKSPACE_MEEKOPPEL_PREVIEW_ANCHOR_LATER = "Bundel naar laatste due-jaar in de groep"
 WORKSPACE_MEEKOPPEL_PREVIEW_BODY = (
     "Locatie: {location}\n"
-    "PBS-id: {pbs_id}\n"
-    "Doeljaar (eerste uitvoering): {target}\n\n"
-    "{moves}"
+    "Doel: eerste uitvoering jaar {target} (≈ kalender {target_cal})\n\n"
+    "{moves}\n"
+    "{pbs_footnote}"
 )
+WORKSPACE_MEEKOPPEL_PREVIEW_PBS_FOOTNOTE = "PBS-id: {pbs_id}"
 WORKSPACE_MEEKOPPEL_PREVIEW_MOVE_LINE = (
-    "  {pm_id}: jaar {from_year} → {to_year} ({shift:+d} jaar)"
+    "  {task_label}: eerste uitvoering {from_year} → {to_year} jaar "
+    "(≈ kalender {from_cal} → {to_cal}) ({shift:+d} jaar)"
 )
 WORKSPACE_MEEKOPPEL_PREVIEW_NO_MOVES = "Alle REV-taken staan al op het doeljaar."
 WORKSPACE_MEEKOPPEL_PREVIEW_BLOCKED = "Geen shift mogelijk: {reason}"
 WORKSPACE_MEEKOPPEL_HEADER_PATH = "Boompad"
-WORKSPACE_MEEKOPPEL_HEADER_PBS_ID = "PBS-id"
 WORKSPACE_MEEKOPPEL_HEADER_REV_COUNT = "# REV"
-WORKSPACE_MEEKOPPEL_HEADER_DUE_RANGE = "Due-bereik"
-WORKSPACE_MEEKOPPEL_HEADER_SPAN = "Span Δ"
+WORKSPACE_MEEKOPPEL_HEADER_DUE_RANGE = "Eerste uitvoering (jaren)"
+WORKSPACE_MEEKOPPEL_HEADER_SPAN = "Verschil (jaren)"
 WORKSPACE_KPI_COLLAPSE_TOOLTIP = "KPI-paneel in- of uitklappen (alleen Tijdsplot-modus)."
+WORKSPACE_LCC_WHATIF_COLLAPSE_TOOLTIP = (
+    "What-if planning en LCC-filters in- of uitklappen (alleen Tijdsplot-modus)."
+)
+WORKSPACE_MEEKOPPEL_COLLAPSE_TOOLTIP = (
+    "Meekoppelkansen-paneel in- of uitklappen (alleen Tijdsplot-modus)."
+)
+WORKSPACE_LCC_WHATIF_BAR_TITLE = "What-if planning & LCC-filters"
 WORKSPACE_KPI_PANEL_TITLE = "KPI — huidige analyse"
 WORKSPACE_PM_MODE_REDIRECT = (
     "Planning en PM-inzicht zitten nu in de LCC-modus (filters en jaardetail)."

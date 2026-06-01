@@ -89,7 +89,12 @@ from rcm_desktop.adapter.lcc_year_detail_table_model import (
 from rcm_desktop.adapter.lcc_year_table_model import LCCYearTableModel
 from rcm_desktop.adapter.import_flow_service import gate_workbook, persist_wizard_result
 from rcm_desktop.adapter.isograph_open_flow_service import PersistImportSuccess
+from rcm_desktop.adapter.meekoppel_display_service import (
+    due_calendar_year,
+    format_preview_move_line,
+)
 from rcm_desktop.adapter.meekoppel_panel_service import (
+    MeekoppelPreviewGate,
     apply_meekoppel,
     preview_meekoppel,
     sync_meekoppel_panel,
@@ -621,6 +626,15 @@ class ResultsWorkspaceWindow(QMainWindow):
         self.meekoppel_window_spin.setValue(2)
         self.meekoppel_window_spin.valueChanged.connect(self._on_meekoppel_window_changed)
         meekoppel_tb.addWidget(self.meekoppel_window_spin)
+        self.meekoppel_anchor_earlier = QRadioButton(messages.WORKSPACE_MEEKOPPEL_ANCHOR_EARLIER)
+        self.meekoppel_anchor_later = QRadioButton(messages.WORKSPACE_MEEKOPPEL_ANCHOR_LATER)
+        self.meekoppel_anchor_later.setChecked(True)
+        self._meekoppel_anchor_group = QButtonGroup(self)
+        self._meekoppel_anchor_group.addButton(self.meekoppel_anchor_earlier)
+        self._meekoppel_anchor_group.addButton(self.meekoppel_anchor_later)
+        self._meekoppel_anchor_group.buttonClicked.connect(self._on_meekoppel_anchor_changed)
+        meekoppel_tb.addWidget(self.meekoppel_anchor_earlier)
+        meekoppel_tb.addWidget(self.meekoppel_anchor_later)
         self.meekoppel_preview_button = QPushButton(messages.WORKSPACE_MEEKOPPEL_PREVIEW)
         self.meekoppel_preview_button.clicked.connect(self._on_meekoppel_preview)
         meekoppel_tb.addWidget(self.meekoppel_preview_button)
@@ -639,10 +653,13 @@ class ResultsWorkspaceWindow(QMainWindow):
         _apply_workspace_data_table_header_policy(self.meekoppel_table_view.horizontalHeader())
         self._meekoppel_table_model = MeekoppelSuggestionsTableModel(parent=self.meekoppel_table_view)
         self.meekoppel_table_view.setModel(self._meekoppel_table_model)
+        sel = self.meekoppel_table_view.selectionModel()
+        if sel is not None:
+            sel.selectionChanged.connect(self._on_meekoppel_selection_changed)
         meekoppel_content_layout.addWidget(self.meekoppel_table_view, stretch=1)
         meekoppel_layout.addWidget(self.meekoppel_content)
         self.meekoppel_panel.setVisible(False)
-        self._meekoppel_last_anchor: str = "later"
+        self._meekoppel_preview_gate: MeekoppelPreviewGate | None = None
         page_layout.addWidget(self.meekoppel_panel)
 
         self.lcc_year_summary_label = QLabel("")
@@ -1513,19 +1530,70 @@ class ResultsWorkspaceWindow(QMainWindow):
         if snapshot.modus == MODE_LCC:
             self._sync_meekoppel_panel(snapshot)
 
+    def _meekoppel_current_anchor(self) -> str:
+        return "later" if self.meekoppel_anchor_later.isChecked() else "earlier"
+
+    def _selected_meekoppel_pbs_id(self) -> str | None:
+        group = self._selected_meekoppel_group()
+        return group.pbs_id if group is not None else None
+
+    def _clear_meekoppel_preview_gate(self) -> None:
+        self._meekoppel_preview_gate = None
+
     def _sync_meekoppel_panel(self, snapshot: WorkspaceStateSnapshot) -> None:
+        session = self._project_session()
+        selected_pbs_id = self._selected_meekoppel_pbs_id()
         panel = sync_meekoppel_panel(
-            self._project_session(),
+            session,
             snapshot,
             window_years=int(self.meekoppel_window_spin.value()),
+            preview_gate=self._meekoppel_preview_gate,
+            selected_pbs_id=selected_pbs_id,
+            current_anchor=self._meekoppel_current_anchor(),  # type: ignore[arg-type]
         )
         self.meekoppel_whatif_hint_label.setVisible(panel.show_whatif_hint)
         self.meekoppel_window_spin.setEnabled(panel.window_spin_enabled)
+        self.meekoppel_anchor_earlier.setEnabled(panel.window_spin_enabled)
+        self.meekoppel_anchor_later.setEnabled(panel.window_spin_enabled)
         self.meekoppel_table_view.setVisible(panel.table_visible)
         self.meekoppel_preview_button.setEnabled(panel.preview_enabled)
         self.meekoppel_apply_button.setEnabled(panel.apply_enabled)
-        self._meekoppel_table_model.set_rows(panel.rows)
-        self.meekoppel_empty_label.setVisible(panel.show_empty_label)
+        prior_pbs_id = selected_pbs_id
+        project = session.loaded.core() if session is not None else None
+        self._meekoppel_table_model.set_rows(panel.rows, project=project)
+        if prior_pbs_id is not None:
+            selection = self.meekoppel_table_view.selectionModel()
+            blocker = selection.blockSignals(True) if selection is not None else False
+            try:
+                for row, group in enumerate(panel.rows):
+                    if group.pbs_id == prior_pbs_id:
+                        self.meekoppel_table_view.selectRow(row)
+                        break
+            finally:
+                if selection is not None:
+                    selection.blockSignals(blocker)
+        if panel.empty_label_text:
+            self.meekoppel_empty_label.setText(panel.empty_label_text)
+            self.meekoppel_empty_label.setVisible(True)
+        else:
+            self.meekoppel_empty_label.setVisible(False)
+
+    def _on_meekoppel_selection_changed(
+        self, _selected: QItemSelection, _deselected: QItemSelection
+    ) -> None:
+        snapshot = self.workspace_state.snapshot()
+        if snapshot.modus == MODE_LCC:
+            self._sync_meekoppel_panel(snapshot)
+
+    def _on_meekoppel_anchor_changed(self, _button) -> None:
+        snapshot = self.workspace_state.snapshot()
+        if snapshot.modus == MODE_LCC:
+            self._sync_meekoppel_panel(snapshot)
+
+    def _on_meekoppel_window_changed(self, _value: int) -> None:
+        snapshot = self.workspace_state.snapshot()
+        if snapshot.modus == MODE_LCC:
+            self._sync_meekoppel_panel(snapshot)
 
     def _selected_meekoppel_group(self):
         selection = self.meekoppel_table_view.selectionModel()
@@ -1533,30 +1601,6 @@ class ResultsWorkspaceWindow(QMainWindow):
             return None
         row = selection.selectedRows()[0].row()
         return self._meekoppel_table_model.row_at(row)
-
-    def _meekoppel_preview_anchor(self) -> str:
-        dialog = QDialog(self)
-        dialog.setWindowTitle(messages.WORKSPACE_MEEKOPPEL_PREVIEW_TITLE)
-        layout = QVBoxLayout(dialog)
-        earlier = QRadioButton(messages.WORKSPACE_MEEKOPPEL_PREVIEW_ANCHOR_EARLIER)
-        later = QRadioButton(messages.WORKSPACE_MEEKOPPEL_PREVIEW_ANCHOR_LATER)
-        later.setChecked(True)
-        layout.addWidget(earlier)
-        layout.addWidget(later)
-        buttons = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
-        buttons.accepted.connect(dialog.accept)
-        buttons.rejected.connect(dialog.reject)
-        layout.addWidget(buttons)
-        if dialog.exec() != QDialog.DialogCode.Accepted:
-            return ""
-        anchor = "later" if later.isChecked() else "earlier"
-        self._meekoppel_last_anchor = anchor
-        return anchor
-
-    def _on_meekoppel_window_changed(self, _value: int) -> None:
-        snapshot = self.workspace_state.snapshot()
-        if snapshot.modus == MODE_LCC:
-            self._sync_meekoppel_panel(snapshot)
 
     def _on_meekoppel_preview(self) -> None:
         session = self._project_session()
@@ -1573,9 +1617,7 @@ class ResultsWorkspaceWindow(QMainWindow):
                 messages.WORKSPACE_MEEKOPPEL_SELECT_ROW,
             )
             return
-        anchor = self._meekoppel_preview_anchor()
-        if not anchor:
-            return
+        anchor = self._meekoppel_current_anchor()
         prev = preview_meekoppel(
             session, overlay, group, anchor=anchor  # type: ignore[arg-type]
         )
@@ -1586,28 +1628,33 @@ class ResultsWorkspaceWindow(QMainWindow):
                 messages.WORKSPACE_MEEKOPPEL_PREVIEW_BLOCKED.format(reason=prev.blocked_reason),
             )
             return
+        project = session.loaded.core()
+        modeljaar = int(project.config.modeljaar)
         if not prev.moves:
             moves_text = messages.WORKSPACE_MEEKOPPEL_PREVIEW_NO_MOVES
         else:
             moves_text = "\n".join(
-                messages.WORKSPACE_MEEKOPPEL_PREVIEW_MOVE_LINE.format(
-                    pm_id=m.pm_id,
-                    from_year=m.from_year,
-                    to_year=m.to_year,
-                    shift=m.shift_years,
-                )
-                for m in prev.moves
+                format_preview_move_line(project, modeljaar, move) for move in prev.moves
             )
+        pbs_footnote = messages.WORKSPACE_MEEKOPPEL_PREVIEW_PBS_FOOTNOTE.format(
+            pbs_id=prev.pbs_id
+        )
         QMessageBox.information(
             self,
             messages.WORKSPACE_MEEKOPPEL_PREVIEW_TITLE,
             messages.WORKSPACE_MEEKOPPEL_PREVIEW_BODY.format(
                 location=prev.path_label,
-                pbs_id=prev.pbs_id,
                 target=prev.target_year,
+                target_cal=due_calendar_year(modeljaar, prev.target_year),
                 moves=moves_text,
+                pbs_footnote=pbs_footnote,
             ),
         )
+        self._meekoppel_preview_gate = MeekoppelPreviewGate(
+            pbs_id=group.pbs_id,
+            anchor=anchor,  # type: ignore[arg-type]
+        )
+        self._sync_meekoppel_panel(self.workspace_state.snapshot())
 
     def _on_meekoppel_apply(self) -> None:
         session = self._project_session()
@@ -1624,11 +1671,12 @@ class ResultsWorkspaceWindow(QMainWindow):
                 messages.WORKSPACE_MEEKOPPEL_SELECT_ROW,
             )
             return
+        anchor = self._meekoppel_current_anchor()
         result = apply_meekoppel(
             session,
             overlay,
             group,
-            anchor=self._meekoppel_last_anchor,  # type: ignore[arg-type]
+            anchor=anchor,  # type: ignore[arg-type]
         )
         if result.error:
             QMessageBox.critical(self, messages.LTAP_ERROR_DIALOG_TITLE, result.error)
@@ -1736,10 +1784,12 @@ class ResultsWorkspaceWindow(QMainWindow):
             self.workspace_state.set_planning_overlay(overlay.begin_what_if())
         else:
             self._lcc_passive_kept_after_run = False
+            self._clear_meekoppel_preview_gate()
             self.workspace_state.set_planning_overlay(overlay.reset_overlay())
 
     def _on_lcc_reset_overlay(self) -> None:
         self._lcc_passive_kept_after_run = False
+        self._clear_meekoppel_preview_gate()
         self.workspace_state.set_planning_overlay(PlanningOverlayState.inactive())
         self.lcc_whatif_button.setChecked(False)
 
