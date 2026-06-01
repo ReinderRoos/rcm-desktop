@@ -7,6 +7,7 @@ from dataclasses import dataclass
 from rcm_core.models import PMTask, TaskType
 
 from rcm_desktop.adapter.lcc_chart_service import LCCYearBucket
+from rcm_desktop.adapter.pm_task_policy import is_pm_wettelijk
 
 PM_LAYER_TYPES: tuple[str, ...] = ("REV", "IN", "TST", "SVO", "WET")
 
@@ -29,12 +30,8 @@ class LCCTypeFilterSet:
     def all_pm_on(self) -> bool:
         return self.rev and self.in_task and self.tst and self.svo and self.wet
 
-    @staticmethod
-    def _is_wettelijk(task: PMTask) -> bool:
-        return task.is_wettelijk_verplicht or "WET" in (task.taak_omschrijving or "").upper()
-
     def task_matches(self, task: PMTask) -> bool:
-        if self.wet and self._is_wettelijk(task):
+        if self.wet and is_pm_wettelijk(task):
             return True
         if self.rev and task.taak_type == TaskType.REV:
             return True

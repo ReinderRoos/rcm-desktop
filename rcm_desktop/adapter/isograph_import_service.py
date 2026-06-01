@@ -144,6 +144,7 @@ def build_from_sheets(
         pm_effect_links=pm_effect_links,
         import_settings=normalized_settings,
     )
+    _prefill_projectnaam_from_import(project, normalized_settings)
     return ImportBuildResult(
         project=project,
         import_settings=normalized_settings,
@@ -156,6 +157,21 @@ def _hours_to_years(raw: object) -> float | None:
     if raw is None or raw == "":
         return None
     return float(raw) / HOURS_PER_YEAR
+
+
+def _prefill_projectnaam_from_import(
+    project: RCMProject,
+    import_settings: dict[str, Any],
+) -> None:
+    if project.projectnaam.strip():
+        return
+    meta = import_settings.get("isograph_project") or {}
+    desc = str(meta.get("Description") or "").strip()
+    fname = str(meta.get("FileName") or "").strip()
+    if desc:
+        project.projectnaam = desc
+    elif fname:
+        project.projectnaam = Path(fname).stem
 
 
 def _build_config(project_rows: list[dict[str, Any]], *, modeljaar: int) -> RCMConfig:
@@ -232,6 +248,8 @@ def _build_pbs_items(
         parent = str(row.get("Parent") or "").strip() or None
         if parent and parent not in kept_ids:
             parent = None
+        # Isograph Quantity = exemplaren op deze locatie; motor gebruikt het product
+        # langs de parent-keten via PBSItem.effective_multiplicity (geen extra import-logic).
         qty = row.get("Quantity")
         multiplicity = int(qty) if qty not in (None, "") else 1
         desc = str(row.get("Description") or loc_id)
@@ -494,10 +512,12 @@ def _build_pm_tasks(
         cost = float(row.get("OperationalCost") or 0.0)
         desc = str(row.get("Description") or "")
         aw_type = str(row.get("Type") or "")
-        is_wet = (
-            "WET" in aw_type.upper()
-            or "WET" in task_id.upper()
-            or "WET" in desc.upper()
+        from rcm_desktop.adapter.pm_task_policy import is_pm_wettelijk_from_import_fields
+
+        is_wet = is_pm_wettelijk_from_import_fields(
+            aw_type=aw_type,
+            task_id=task_id,
+            description=desc,
         )
         out[pm_id] = PMTask(
             pm_id=pm_id,

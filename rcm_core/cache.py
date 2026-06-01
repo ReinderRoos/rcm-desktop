@@ -33,7 +33,10 @@ if TYPE_CHECKING:
     from rcm_core.models import FMResult, RCMProject
 
 # Handmatig verhogen wanneer analytische uitkomsten kunnen veranderen zonder wijziging aan project-JSON-vorm.
-CACHE_INPUTS_VERSION = 103  # slice 22/24: aging SSOT Φ-segmenten + REV in motor
+CACHE_INPUTS_VERSION = 106  # slice 52: effective_sigma via default_sigma_fraction
+
+# Top-level projectvelden die geen motor/cache-invoer zijn (rapportage-metadata).
+_DIGEST_EXCLUDED_PROJECT_KEYS = frozenset({"projectnaam", "modelleur"})
 
 
 # ---------------------------------------------------------------------------
@@ -51,8 +54,12 @@ def compute_global_digest(project: "RCMProject") -> str:
     """SHA256-hex over canonieke projectinvoer plus cache-inputversie.
 
     Gebruikt ``RCMProject.to_dict()`` met deterministische JSON (sort_keys).
+    ``projectnaam`` en ``modelleur`` zijn rapportage-metadata en worden uitgesloten.
     """
-    canonical = json.dumps(project.to_dict(), sort_keys=True, ensure_ascii=False)
+    canonical_dict = project.to_dict()
+    for key in _DIGEST_EXCLUDED_PROJECT_KEYS:
+        canonical_dict.pop(key, None)
+    canonical = json.dumps(canonical_dict, sort_keys=True, ensure_ascii=False)
     payload = f"{canonical}|CACHE_INPUTS_VERSION={CACHE_INPUTS_VERSION}".encode("utf-8")
     return hashlib.sha256(payload).hexdigest()
 

@@ -95,7 +95,8 @@ def test_pm_display_sequence_is_global_sorted_pm_id():
     seq = build_ltap_pm_display_seq_map(project)
     assert seq["PM-001"] == 1
     assert seq["PM-002"] == 2
-    assert seq["PM-008"] == len(project.pm_tasks)
+    assert max(seq.values()) == len(project.pm_tasks)
+    assert seq["PM-008"] == 8
 
 
 def test_rev_filter_keeps_same_display_sequence_as_full_project():
@@ -114,7 +115,7 @@ def test_fixture_mixed_task_types_get_distinct_compact_labels():
     by_pm = {d.pm_id: d.pm_label for row in view.years for d in row.details}
     assert by_pm["PM-001"] == "PM_SVO_01"
     assert by_pm["PM-002"] == "PM_REV_02"
-    assert by_pm["PM-003"] == "PM_IN_TG_03"
+    assert by_pm["PM-003"] == "PM_IN_WET_TG_03"
     assert by_pm["PM-006"] == "PM_TST_06"
 
 

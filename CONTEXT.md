@@ -65,16 +65,31 @@ Drie lagen om **één faalwijze (FM)** te controleren — van streng naar intera
    vóór je in de UI kijkt.
 
 2. **Resultatenwerkruimte, modus FM-detail** — Standaard interactief pad na slice 34.
-   Selecteer één FM in de tabel; het **inspectorpaneel** toont lifecycle-totalen,
-   jaarreeks uit `horizon_profile` (faalmomenten-proxy, correctief EUR, downtime,
-   verborgen NB), reconcile-status en **FM-invoerhash**. Zie
-   `fm_verification_service` en issues onder
-   `.scratch/rcm-desktop-slice34-fm-verificatie-werkruimte/`.
+   - **Verifiëren (read-only):** selecteer één FM; het **inspectorpaneel** toont
+     lifecycle-totalen, jaarreeks uit `horizon_profile` (faalmomenten-proxy,
+     correctief EUR, downtime, verborgen NB), reconcile-status en **FM-invoerhash**.
+     Zie `fm_verification_service` en
+     `.scratch/rcm-desktop-slice34-fm-verificatie-werkruimte/`.
+   - **Bewerken (slice 44):** **dubbelklik** op een FM-rij opent de modale
+     **faalwijze-editor** (`FmEditorDialog`): basis (faaltype, MTTF, NMF, startleeftijd
+     via PBS-`bouwjaar`), effecten, correctief (CM-split materiaal/arbeid, hersteltijd),
+     preventief (PM-taken, taakgroepen, PM-effectlinks). **OK** valideert via de
+     tabulaire editing-pipeline, werkt het project bij en triggert een
+     **incrementele run** (`full_recompute=False`) — geen volledige herberekening.
+     Waarschuwingen bij gedeeld PBS of gedeelde taakgroep. PRD/issues:
+     `.scratch/rcm-desktop-slice44-fm-bewerken-werkruimte/`.
 
-3. **Legacy ValidateWindow** (`--legacy-validate` / `RCM_LEGACY_VALIDATE=1`) —
-   **Projectcockpit** voor bewerken, valideren, run en LTAP/PM what-if — **niet**
-   aanbevelen voor jaar-voor-jaar FM-spot-check. Layout-cleanup (slice 8) is
-   uitgesteld; FM-inspectie in UI levert slice 34, niet ValidateWindow.
+3. **Batch faalwijzen-grid** (slice 46) — homogene modelfouten (faaltype, NMF, MTTF,
+   …) batch-corrigeren via schema-gedreven grid + `apply_bulk_change`.
+   **ValidateFaalwijzenPanel** wordt gehost in zowel ValidateWindow als
+   resultatenwerkruimte (menuknop). Beide hosts delen dezelfde buffer via
+   **EditingHost** (`EditingSession` + save/commit entry); er is geen aparte
+   globale grid-registry meer. PRD: `.scratch/rcm-desktop-slice46-fm-edit-fase2/`.
+
+4. **Legacy ValidateWindow** (`--legacy-validate` / `RCM_LEGACY_VALIDATE=1`) —
+   **Projectcockpit** voor valideren, run, LTAP/PM what-if en hetzelfde batch-grid.
+   De modale FM-editor blijft het primaire pad voor volledige FM-scope-bewerking
+   (slice 44); ValidateWindow is niet de hoofdroute voor diep FM-editwerk.
 
 Kalenderjaar in de inspector gebruikt dezelfde mapping als LCC/Tijdsplot:
 `modeljaar` + horizonindex. Jaar-faalmomenten in de UI zijn **presentatie-proxy**

@@ -1,38 +1,35 @@
-"""Tabelmodel meekoppelkansen (slice 39)."""
+"""Tabelmodel meekoppelkansen per PBS-locatie (slice 40/41, UX v2)."""
 
 from __future__ import annotations
 
 from PySide6.QtCore import QAbstractTableModel, QModelIndex, Qt
 
-from rcm_desktop import messages
-from rcm_desktop.adapter.meekoppelkansen_discovery_service import MeekoppelSuggestion
-
-_HEADERS = (
-    messages.WORKSPACE_MEEKOPPEL_HEADER_ELEMENT,
-    messages.WORKSPACE_MEEKOPPEL_HEADER_PM_A,
-    messages.WORKSPACE_MEEKOPPEL_HEADER_PM_B,
-    messages.WORKSPACE_MEEKOPPEL_HEADER_JAAR_A,
-    messages.WORKSPACE_MEEKOPPEL_HEADER_JAAR_B,
-    messages.WORKSPACE_MEEKOPPEL_HEADER_DELTA,
-    messages.WORKSPACE_MEEKOPPEL_HEADER_REDEN,
-)
+from rcm_desktop.adapter.meekoppel_panel_service import MeekoppelPanelColumn, MeekoppelPanelRow
 
 
 class MeekoppelSuggestionsTableModel(QAbstractTableModel):
     def __init__(
         self,
-        rows: tuple[MeekoppelSuggestion, ...] = (),
+        rows: tuple[MeekoppelPanelRow, ...] = (),
+        columns: tuple[MeekoppelPanelColumn, ...] = (),
         parent=None,
     ) -> None:
         super().__init__(parent)
         self._rows = rows
+        self._headers = tuple(c.header for c in columns)
 
-    def set_rows(self, rows: tuple[MeekoppelSuggestion, ...]) -> None:
+    def set_panel_rows(
+        self,
+        rows: tuple[MeekoppelPanelRow, ...],
+        *,
+        columns: tuple[MeekoppelPanelColumn, ...],
+    ) -> None:
         self.beginResetModel()
         self._rows = rows
+        self._headers = tuple(c.header for c in columns)
         self.endResetModel()
 
-    def row_at(self, row: int) -> MeekoppelSuggestion | None:
+    def row_at(self, row: int) -> MeekoppelPanelRow | None:
         if row < 0 or row >= len(self._rows):
             return None
         return self._rows[row]
@@ -45,7 +42,7 @@ class MeekoppelSuggestionsTableModel(QAbstractTableModel):
     def columnCount(self, parent: QModelIndex | None = None) -> int:  # noqa: N802
         if parent and parent.isValid():
             return 0
-        return len(_HEADERS)
+        return len(self._headers)
 
     def headerData(  # noqa: N802
         self, section: int, orientation: Qt.Orientation, role: int = Qt.DisplayRole
@@ -53,28 +50,26 @@ class MeekoppelSuggestionsTableModel(QAbstractTableModel):
         if (
             role == Qt.DisplayRole
             and orientation == Qt.Orientation.Horizontal
-            and 0 <= section < len(_HEADERS)
+            and 0 <= section < len(self._headers)
         ):
-            return _HEADERS[section]
+            return self._headers[section]
         return None
 
     def data(self, index: QModelIndex, role: int = Qt.DisplayRole):  # noqa: N802
-        if not index.isValid() or role != Qt.DisplayRole:
+        if not index.isValid():
             return None
         r = self._rows[index.row()]
         col = index.column()
+        if role == Qt.ToolTipRole and col == 0:
+            return r.path_tooltip
+        if role != Qt.DisplayRole:
+            return None
         if col == 0:
-            return r.element_naam
+            return r.path_label
         if col == 1:
-            return r.pm_a
+            return r.rev_count_text
         if col == 2:
-            return r.pm_b
+            return r.due_range_text
         if col == 3:
-            return str(r.jaar_a)
-        if col == 4:
-            return str(r.jaar_b)
-        if col == 5:
-            return str(r.jaar_delta)
-        if col == 6:
-            return r.reden
+            return r.span_text
         return None

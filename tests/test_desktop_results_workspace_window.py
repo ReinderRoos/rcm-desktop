@@ -7,11 +7,12 @@ import pytest
 pytest.importorskip("PySide6")
 
 from PySide6.QtCore import QModelIndex, Qt
-from PySide6.QtWidgets import QApplication, QMessageBox
+from PySide6.QtWidgets import QApplication, QDialog, QMessageBox
 
 from rcm_core.models import FMHorizonProfile, FMResult
 from rcm_core.persistence import load_project
 from rcm_desktop import messages
+from rcm_desktop.adapter.editing_host import get_editing_host, reset_editing_host_for_tests
 from rcm_desktop.adapter.result_view_service import FMResultRow, PBSResultRow
 from rcm_desktop.adapter.results_workspace_state import (
     METRIC_KOSTEN,
@@ -33,6 +34,13 @@ def _ensure_app() -> QApplication:
     if app is None:
         app = QApplication([])
     return app
+
+
+@pytest.fixture(autouse=True)
+def _reset_editing_host_state():
+    reset_editing_host_for_tests()
+    yield
+    reset_editing_host_for_tests()
 
 
 def _three_level_project():
@@ -1289,3 +1297,217 @@ def test_fm_detail_inspector_hidden_in_top10_modus(monkeypatch):
     app.processEvents()
 
     assert not window.fm_inspector_container.isVisible()
+
+
+def _done_run_sample_fm001() -> RunResult:
+    """RunResult met FM-001 zodat FM-detail-tabel en project overeenkomen."""
+    project = _three_level_project()
+    fm_core = (
+        FMResult(
+            fm_id="FM-001",
+            pbs_id="PBS-001-1",
+            p_failure_lifecycle=0.4,
+            expected_failures=4.0,
+            expected_raw_downtime_hr=9.5,
+            expected_detection_delay_hr=0.5,
+            expected_total_downtime_hr=10.0,
+            expected_pm_downtime_hr=0.0,
+            expected_cm_cost_eur=120.0,
+            pm_cost_eur=80.0,
+            total_cost_eur=200.0,
+            risk_contribution=0.2,
+        ),
+    )
+    from rcm_desktop.adapter.run_service import build_run_result
+
+    return build_run_result(project, list(fm_core), summary_prefix="test")
+
+
+def test_fm_double_click_opens_editor_only_in_fm_detail(monkeypatch):
+    """Slice 44 — dubbelklik opent editor alleen in FM-detail."""
+    app = _ensure_app()
+    monkeypatch.setattr(QMessageBox, "critical", lambda *_a, **_k: QMessageBox.Ok)
+    opened: list[str] = []
+
+    class _FakeDialog:
+        DialogCode = QDialog.DialogCode
+
+        def __init__(self, _parent, **kwargs) -> None:
+            self.commit_result = None
+            self._fm_id = kwargs.get("fm_id", "")
+
+        def exec(self):
+            opened.append(self._fm_id)
+            return QDialog.DialogCode.Rejected
+
+    monkeypatch.setattr(
+        "rcm_desktop.views.results_workspace_window.FmEditorDialog",
+        _FakeDialog,
+    )
+    window = ResultsWorkspaceWindow()
+    window.show()
+    project = _three_level_project()
+    window._state.set_last_project(project)
+    window._state.set_last_run(_done_run_sample_fm001())
+    window.modus_buttons["bijdragen"].click()
+    app.processEvents()
+    model = window.fm_table_view.model()
+    idx = model.index(0, 0)
+    window.fm_table_view.doubleClicked.emit(idx)
+    app.processEvents()
+    assert opened == []
+
+    window.modus_buttons["fm_detail"].click()
+    app.processEvents()
+    model = window.fm_table_view.model()
+    assert model is not None and model.rowCount() >= 1
+    window.fm_table_view.selectRow(0)
+    app.processEvents()
+    sel = window.fm_table_view.selectedIndexes()
+    assert sel
+    window.fm_table_view.doubleClicked.emit(sel[0])
+    app.processEvents()
+    assert opened == ["FM-001"]
+
+
+def test_workspace_batch_grid_smoke_filter_and_edit(monkeypatch):
+    app = _ensure_app()
+    monkeypatch.setattr(QMessageBox, "critical", lambda *_a, **_k: QMessageBox.Ok)
+    project = _three_level_project()
+    window = ResultsWorkspaceWindow()
+    window.show()
+    window._state.set_last_project(project)
+    app.processEvents()
+
+    def _fake_exec(dialog: QDialog):
+        from rcm_desktop.views.validate_faalwijzen_panel import ValidateFaalwijzenPanel
+
+        panel = dialog.findChild(ValidateFaalwijzenPanel)
+        assert panel is not None
+        panel._filter_failure.setCurrentIndex(2)  # aging
+        panel._search.setText("FM-001")
+        app.processEvents()
+        host = get_editing_host()
+        svc = host.grid_service()
+        assert svc is not None
+        svc.apply_change("FM-001", "failure_type", "aging")
+        panel.refresh_view()
+        assert panel._proxy.rowCount() >= 1
+        return int(QDialog.DialogCode.Accepted)
+
+    monkeypatch.setattr(QDialog, "exec", _fake_exec)
+    window._open_batch_faalwijzen_grid()
+    app.processEvents()
+
+    host = get_editing_host()
+    svc = host.grid_service()
+    assert svc is not None
+    row = next(r for r in svc.rows() if r.fm_id == "FM-001")
+    assert row.failure_type == "aging"
+
+
+def test_fm_editor_ok_updates_mttf_and_triggers_incremental_run(monkeypatch, tmp_path):
+    """Slice 44 smoke — OK in editor wijzigt MTTF en roept incrementele run aan."""
+    app = _ensure_app()
+    monkeypatch.setattr(QMessageBox, "critical", lambda *_a, **_k: QMessageBox.Ok)
+    from rcm_core.incremental_run import IncrementalRunResult
+    from rcm_desktop.adapter.fm_edit_commit_service import FmEditCommitResult
+    from rcm_desktop.adapter.run_service import RunMetrics, build_run_result
+    from rcm_core.models import FMResult
+
+    project = _three_level_project()
+    path = tmp_path / "proj.rcm.json"
+    path.write_text(
+        Path("tests/fixtures/sample_project.rcm.json").read_text(encoding="utf-8")
+    )
+
+    class _AcceptDialog:
+        DialogCode = QDialog.DialogCode
+
+        def __init__(self, _parent, **kwargs) -> None:
+            self._project = kwargs["project"]
+            self._fm_id = kwargs["fm_id"]
+            self.commit_result = None
+
+        def exec(self):
+            from rcm_desktop.adapter.fm_edit_bundle_service import load_bundle
+            from rcm_desktop.adapter.fm_edit_commit_service import (
+                apply_bundle_scope,
+                commit_edits,
+                create_edit_session,
+            )
+
+            fm_id = self._fm_id
+            if fm_id not in self._project.faalwijzes:
+                fm_id = "FM-001"
+            session = create_edit_session(self._project)
+            bundle = load_bundle(self._project, fm_id)
+            row = dict(bundle.faalwijze_row)
+            row["mttf_jaar"] = 99.0
+            bundle = type(bundle)(
+                fm_id=bundle.fm_id,
+                faalwijze_row=row,
+                pbs_row=bundle.pbs_row,
+                fm_effect_rows=bundle.fm_effect_rows,
+                pm_task_rows=bundle.pm_task_rows,
+                pm_effect_rows=bundle.pm_effect_rows,
+                task_group_rows=bundle.task_group_rows,
+                effect_klasse_rows=bundle.effect_klasse_rows,
+            )
+            apply_bundle_scope(session, bundle)
+
+            mock_fm = FMResult(
+                fm_id=fm_id,
+                pbs_id=row["pbs_id"],
+                p_failure_lifecycle=0.1,
+                expected_failures=1.0,
+                expected_raw_downtime_hr=0.0,
+                expected_detection_delay_hr=0.0,
+                expected_total_downtime_hr=0.0,
+                expected_pm_downtime_hr=0.0,
+                expected_cm_cost_eur=0.0,
+                pm_cost_eur=0.0,
+                total_cost_eur=0.0,
+                risk_contribution=0.0,
+            )
+            monkeypatch.setattr(
+                "rcm_desktop.adapter.fm_edit_commit_service.run_incremental_analysis",
+                lambda *_a, **_k: IncrementalRunResult(
+                    fm_results={fm_id: mock_fm},
+                    pbs_results={},
+                    cache_only=False,
+                    affected_fm_ids=[fm_id],
+                    recalculated_fm_count=1,
+                ),
+            )
+            built = session.build_project()
+            run = build_run_result(built, [mock_fm], summary_prefix="test")
+            self.commit_result = FmEditCommitResult(
+                ok=True,
+                errors=(),
+                affected_fm_ids=(fm_id,),
+                project=built,
+                run_result=run,
+            )
+            return QDialog.DialogCode.Accepted
+
+    monkeypatch.setattr(
+        "rcm_desktop.views.results_workspace_window.FmEditorDialog",
+        _AcceptDialog,
+    )
+    window = ResultsWorkspaceWindow()
+    window.show()
+    window.path_input.setText(str(path))
+    window._state.set_last_project(project, path=str(path))
+    window._state.set_last_run(_done_run_sample_fm001())
+    window.modus_buttons["fm_detail"].click()
+    app.processEvents()
+    window.fm_table_view.selectRow(0)
+    app.processEvents()
+    sel = window.fm_table_view.selectedIndexes()
+    window.fm_table_view.doubleClicked.emit(sel[0])
+    app.processEvents()
+
+    assert window._state.last_project is not None
+    assert window._state.last_project.faalwijzes["FM-001"].mttf_jaar == pytest.approx(99.0)
+    assert window.workspace_state.snapshot().modus == MODE_FM_DETAIL

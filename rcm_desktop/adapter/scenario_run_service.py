@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from rcm_core.models import RCMProject
+from rcm_desktop.adapter.run_policy import SCENARIO_RUN_POLICY
 from rcm_desktop.adapter.run_service import RunResult, run as run_single
 
 
@@ -54,11 +55,12 @@ def _run_scenario(
         )
 
     scenario_project = build_project_for_scenario(project, scenario)
+    opts = SCENARIO_RUN_POLICY.scenario_options()
     rr = run_single(
         scenario_project,
         project_path,
-        full_recompute=False,
-        parallel=True,
+        full_recompute=opts.full_recompute,
+        parallel=opts.parallel,
         scenario_key=scenario,
     )
     if rr.status != "done":

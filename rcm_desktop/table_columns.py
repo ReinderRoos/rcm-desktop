@@ -44,4 +44,5 @@ def clamp_horizontal_section_widths(
     for col, max_w in max_width_by_column.items():
         cap = min(max_w, default_max)
         if header.sectionSize(col) > cap:
+            header.setSectionResizeMode(col, QHeaderView.Interactive)
             header.resizeSection(col, cap)

@@ -9,7 +9,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
-from rcm_core.models import FailureType
+from rcm_core.models import FailureType, TaskType
 
 if TYPE_CHECKING:
     from rcm_core.models import RCMProject
@@ -170,6 +170,32 @@ def _validate_faalwijzes(project: "RCMProject") -> list[ValidationError]:
                 "exponentieel faalmodel vereist sigma=0",
                 fm_id,
             ))
+        if fm.failure_type == FailureType.AGING:
+            if fm.aging_distribution not in ("normal", "truncated_normal_0", "weibull_2p"):
+                errors.append(ValidationError(
+                    "FM_AGING_DISTRIBUTION_INVALID",
+                    f"aging_distribution '{fm.aging_distribution}' is ongeldig",
+                    fm_id,
+                ))
+            if fm.aging_distribution == "weibull_2p" and fm.beta_jaar <= 0:
+                errors.append(ValidationError(
+                    "FM_WEIBULL_BETA_MISSING",
+                    "beta_jaar moet > 0 zijn voor aging_distribution=weibull_2p",
+                    fm_id,
+                ))
+
+        # NMF (niet-merkbaar falen) vereist een detectie-mechanisme (test-taak).
+        if fm.is_evident is False:
+            has_detection_task = any(
+                pm.fm_id == fm_id and pm.taak_type in (TaskType.IN, TaskType.TST)
+                for pm in project.pm_tasks.values()
+            )
+            if not has_detection_task:
+                errors.append(ValidationError(
+                    "FM_NMF_REQUIRES_TEST",
+                    "is_evident=False (niet-merkbaar falen) vereist minimaal één IN- of TST-taak",
+                    fm_id,
+                ))
         if fm.downtime_per_failure.value < 0:
             errors.append(ValidationError(
                 "FM_DOWNTIME_NEGATIVE", f"downtime_per_failure mag niet negatief zijn", fm_id
@@ -290,6 +316,20 @@ def _validate_config(project: "RCMProject") -> list[ValidationError]:
     if cfg.default_sigma_fraction <= 0:
         errors.append(ValidationError(
             "CFG_SIGMA_FRAC", f"default_sigma_fraction moet > 0 zijn", "config"
+        ))
+    valid_aging = {"normal", "truncated_normal_0", "weibull_2p"}
+    dist = getattr(cfg, "default_aging_distribution", "normal") or "normal"
+    if dist not in valid_aging:
+        errors.append(ValidationError(
+            "CFG_AGING_DIST",
+            f"default_aging_distribution ongeldig: {dist!r}",
+            "config",
+        ))
+    if dist == "weibull_2p" and cfg.default_beta_jaar <= 0:
+        errors.append(ValidationError(
+            "CFG_WEIBULL_BETA",
+            "default_beta_jaar moet > 0 zijn bij default_aging_distribution=weibull_2p",
+            "config",
         ))
     return errors
 

@@ -77,16 +77,19 @@ def test_workbook_gate_rejects_missing_must_sheet(tmp_path: Path) -> None:
 def test_persist_import_returns_failure_on_validation_error(
     monkeypatch, tmp_path: Path
 ) -> None:
-    from rcm_core.validators import ValidationError
     import rcm_desktop.adapter.isograph_open_flow_service as flow
+    from rcm_desktop.adapter.validate_service import ValidateResult
 
     wizard = _minimal_wizard_result()
     monkeypatch.setattr(
         flow,
-        "validate_project",
-        lambda _p: [ValidationError("TEST", "bewust ongeldig", "x")],
+        "validate_project_in_memory",
+        lambda _p: ValidateResult(
+            status="invalid",
+            summary="bewust ongeldig",
+            details=[],
+        ),
     )
-    monkeypatch.setattr(flow, "validate_aannamen", lambda _p: [])
 
     outcome = persist_import_wizard_result(wizard, tmp_path / "bad.rcm.json")
 

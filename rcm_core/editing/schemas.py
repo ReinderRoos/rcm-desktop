@@ -2,7 +2,15 @@ from __future__ import annotations
 
 from typing import Any
 
-from rcm_core.models import EffectKlasse, Faalwijze, PBSItem, PMTask
+from rcm_core.models import (
+    EffectKlasse,
+    Faalwijze,
+    FMEffectLink,
+    PBSItem,
+    PMEffectLink,
+    PMTask,
+    TaskGroup,
+)
 
 
 ENTITY_SCHEMAS: dict[str, dict[str, Any]] = {
@@ -41,13 +49,22 @@ ENTITY_SCHEMAS: dict[str, dict[str, Any]] = {
             "functie_id": "str",
             "faalwijze_omschrijving": "str",
             "failure_type": "str",
+            "aging_distribution": "str",
             "mttf_jaar": "float",
             "sigma_jaar": "float",
+            "beta_jaar": "float",
             "repair_quality": "float",
             "is_evident": "bool",
             "p_ongewenste_gebeurtenis": "float",
+            "eindgevolg": "str",
             "cost_cm_eur": "float",
             "library_ref": "str",
+            "notes": "str",
+            "aanname_faalmodel": "str",
+            "aanname_cm_kosten": "str",
+            "aanname_downtime": "str",
+            "aanname_effectklasse": "str",
+            "downtime_per_failure": "dict",
         },
         "fk_rules": {"pbs_id": "pbs", "functie_id": "functies"},
     },
@@ -87,6 +104,55 @@ ENTITY_SCHEMAS: dict[str, dict[str, Any]] = {
             "aanname_gevolg_kosten": "str",
         },
         "fk_rules": {"functie_id": "functies"},
+    },
+    "fm_effect_links": {
+        "title": "FM-effectlinks",
+        "store_key": "fm_effect_links",
+        "class": FMEffectLink,
+        "key_field": "link_id",
+        "required_fields": ["link_id", "fm_id", "klasse_id"],
+        "field_types": {
+            "link_id": "str",
+            "fm_id": "str",
+            "klasse_id": "str",
+            "fractie": "float",
+            "aanname_fractie": "str",
+        },
+        "fk_rules": {"fm_id": "faalwijzes", "klasse_id": "effect_klassen"},
+    },
+    "pm_effect_links": {
+        "title": "PM-effectlinks",
+        "store_key": "pm_effect_links",
+        "class": PMEffectLink,
+        "key_field": "link_id",
+        "required_fields": ["link_id", "pm_id", "klasse_id"],
+        "field_types": {
+            "link_id": "str",
+            "pm_id": "str",
+            "klasse_id": "str",
+            "fractie": "float",
+            "aanname_fractie": "str",
+        },
+        "fk_rules": {"pm_id": "pm_tasks", "klasse_id": "effect_klassen"},
+    },
+    "task_groups": {
+        "title": "Taakgroepen",
+        "store_key": "task_groups",
+        "class": TaskGroup,
+        "key_field": "group_id",
+        "required_fields": ["group_id", "omschrijving", "taak_type", "interval_jaar"],
+        "field_types": {
+            "group_id": "str",
+            "omschrijving": "str",
+            "taak_type": "str",
+            "interval_jaar": "float",
+            "cost_eur": "float",
+            "causes_unavailability": "bool",
+            "unavailability_fraction": "float",
+            "library_ref": "str",
+            "notes": "str",
+        },
+        "fk_rules": {},
     },
 }
 
