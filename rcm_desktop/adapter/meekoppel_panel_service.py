@@ -4,12 +4,15 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from rcm_core.models import RCMProject
+
 from rcm_desktop.adapter.meekoppel_apply_service import (
     MeekoppelAnchor,
     MeekoppelLocationPreview,
     apply_meekoppel_location,
     preview_meekoppel_location,
 )
+from rcm_desktop.adapter.meekoppel_display_service import location_group_tooltip
 from rcm_desktop.adapter.meekoppelkansen_discovery_service import (
     MeekoppelLocationGroup,
     discover_meekoppel_locations,
@@ -30,6 +33,23 @@ class MeekoppelPreviewGate:
 
 
 @dataclass(frozen=True)
+class MeekoppelPanelColumn:
+    header: str
+
+
+@dataclass(frozen=True)
+class MeekoppelPanelRow:
+    """Display-DTO voor één meekoppelkans-rij (view bindt alleen strings)."""
+
+    pbs_id: str
+    path_label: str
+    rev_count_text: str
+    due_range_text: str
+    span_text: str
+    path_tooltip: str
+
+
+@dataclass(frozen=True)
 class MeekoppelPanelView:
     panel_active: bool
     whatif_active: bool
@@ -39,7 +59,33 @@ class MeekoppelPanelView:
     apply_enabled: bool
     show_whatif_hint: bool
     empty_label_text: str | None
-    rows: tuple[MeekoppelLocationGroup, ...]
+    columns: tuple[MeekoppelPanelColumn, ...]
+    rows: tuple[MeekoppelPanelRow, ...]
+
+
+def meekoppel_panel_columns() -> tuple[MeekoppelPanelColumn, ...]:
+    from rcm_desktop import messages
+
+    return (
+        MeekoppelPanelColumn(messages.WORKSPACE_MEEKOPPEL_HEADER_PATH),
+        MeekoppelPanelColumn(messages.WORKSPACE_MEEKOPPEL_HEADER_REV_COUNT),
+        MeekoppelPanelColumn(messages.WORKSPACE_MEEKOPPEL_HEADER_DUE_RANGE),
+        MeekoppelPanelColumn(messages.WORKSPACE_MEEKOPPEL_HEADER_SPAN),
+    )
+
+
+def build_meekoppel_panel_row(
+    project: RCMProject,
+    group: MeekoppelLocationGroup,
+) -> MeekoppelPanelRow:
+    return MeekoppelPanelRow(
+        pbs_id=group.pbs_id,
+        path_label=group.path_label,
+        rev_count_text=str(group.rev_count),
+        due_range_text=group.due_range_label(),
+        span_text=str(group.span_jaar),
+        path_tooltip=location_group_tooltip(project, group),
+    )
 
 
 def _filter_groups_by_scope(
@@ -67,6 +113,20 @@ def _filter_groups_by_scope(
     return (), None
 
 
+def _resolve_location_group(
+    session: ProjectSession,
+    pbs_id: str,
+    *,
+    window_years: int,
+) -> MeekoppelLocationGroup | None:
+    for group in discover_meekoppel_locations(
+        session.loaded.core(), window_years=window_years
+    ):
+        if group.pbs_id == pbs_id:
+            return group
+    return None
+
+
 def sync_meekoppel_panel(
     session: ProjectSession | None,
     snapshot: WorkspaceStateSnapshot,
@@ -76,6 +136,7 @@ def sync_meekoppel_panel(
     selected_pbs_id: str | None = None,
     current_anchor: MeekoppelAnchor = "later",
 ) -> MeekoppelPanelView:
+    columns = meekoppel_panel_columns()
     overlay = snapshot.planning_overlay
     whatif = overlay.active
     if session is None or not whatif:
@@ -88,15 +149,19 @@ def sync_meekoppel_panel(
             apply_enabled=False,
             show_whatif_hint=True,
             empty_label_text=None,
+            columns=columns,
             rows=(),
         )
 
-    all_rows = discover_meekoppel_locations(session.loaded.core(), window_years=window_years)
-    rows, empty_label_text = _filter_groups_by_scope(session, all_rows, snapshot.scope_id)
-    if not rows and empty_label_text is None and not all_rows:
+    project = session.loaded.core()
+    all_rows = discover_meekoppel_locations(project, window_years=window_years)
+    groups, empty_label_text = _filter_groups_by_scope(session, all_rows, snapshot.scope_id)
+    if not groups and empty_label_text is None and not all_rows:
         from rcm_desktop import messages
 
         empty_label_text = messages.WORKSPACE_MEEKOPPEL_EMPTY
+
+    panel_rows = tuple(build_meekoppel_panel_row(project, g) for g in groups)
 
     apply_enabled = (
         preview_gate is not None
@@ -109,22 +174,33 @@ def sync_meekoppel_panel(
         panel_active=True,
         whatif_active=True,
         window_spin_enabled=True,
-        table_visible=bool(rows),
+        table_visible=bool(panel_rows),
         preview_enabled=True,
         apply_enabled=apply_enabled,
         show_whatif_hint=False,
         empty_label_text=empty_label_text,
-        rows=rows,
+        columns=columns,
+        rows=panel_rows,
     )
 
 
 def preview_meekoppel(
     session: ProjectSession,
     overlay: PlanningOverlayState,
-    group: MeekoppelLocationGroup,
+    pbs_id: str,
     *,
     anchor: MeekoppelAnchor,
+    window_years: int,
 ) -> MeekoppelLocationPreview:
+    group = _resolve_location_group(session, pbs_id, window_years=window_years)
+    if group is None:
+        return MeekoppelLocationPreview(
+            pbs_id=pbs_id,
+            path_label="",
+            target_year=0,
+            moves=(),
+            blocked_reason="Onbekende locatie",
+        )
     return preview_meekoppel_location(
         session.loaded.core(), overlay, group, anchor=anchor
     )
@@ -133,10 +209,17 @@ def preview_meekoppel(
 def apply_meekoppel(
     session: ProjectSession,
     overlay: PlanningOverlayState,
-    group: MeekoppelLocationGroup,
+    pbs_id: str,
     *,
     anchor: MeekoppelAnchor,
+    window_years: int,
 ) -> WhatIfActionResult:
+    group = _resolve_location_group(session, pbs_id, window_years=window_years)
+    if group is None:
+        return WhatIfActionResult(
+            overlay=overlay,
+            error="Onbekende meekoppellocatie",
+        )
     return apply_meekoppel_location(
         session.loaded.core(), overlay, group, anchor=anchor
     )

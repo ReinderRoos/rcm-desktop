@@ -40,17 +40,24 @@ def test_meekoppel_table_model_shows_path_and_due_range():
     from rcm_desktop.adapter.meekoppelkansen_discovery_service import (
         discover_meekoppel_locations,
     )
+    from rcm_desktop.adapter.meekoppel_panel_service import (
+        build_meekoppel_panel_row,
+        meekoppel_panel_columns,
+    )
 
     project = _project_with_rev_pair()
     groups = discover_meekoppel_locations(project, window_years=5)
     assert groups
-    model = MeekoppelSuggestionsTableModel(groups, project=project)
+    rows = tuple(build_meekoppel_panel_row(project, g) for g in groups)
+    model = MeekoppelSuggestionsTableModel(
+        rows, columns=meekoppel_panel_columns()
+    )
     assert model.headerData(0, Qt.Orientation.Horizontal) == messages.WORKSPACE_MEEKOPPEL_HEADER_PATH
     assert model.headerData(2, Qt.Orientation.Horizontal) == messages.WORKSPACE_MEEKOPPEL_HEADER_DUE_RANGE
-    assert model.data(model.index(0, 0)) == groups[0].path_label
-    assert model.data(model.index(0, 2)) == groups[0].due_range_label()
+    assert model.data(model.index(0, 0)) == rows[0].path_label
+    assert model.data(model.index(0, 2)) == rows[0].due_range_text
     tip = model.data(model.index(0, 0), Qt.ItemDataRole.ToolTipRole)
-    assert tip is not None
+    assert tip == rows[0].path_tooltip
     assert groups[0].pbs_id in tip
 
 

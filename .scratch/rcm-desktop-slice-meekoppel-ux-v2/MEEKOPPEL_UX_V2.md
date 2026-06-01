@@ -43,11 +43,21 @@
 | 3.3 | Anker wisselen opzelfde rij → Apply uit tot nieuwe preview. |
 | 3.4 | Geen extra apply-bevestiging. |
 
+## Fase 4 — Panel-module (slice 41 PR2)
+
+| # | Besluit |
+|---|---------|
+| 4.1 | `MeekoppelPanelView` bevat **kolom-metadata** (`MeekoppelPanelColumn`) en **display-rijen** (`MeekoppelPanelRow`). |
+| 4.2 | Tooltip, due-bereik en labels worden in **`build_meekoppel_panel_row`** opgebouwd; view bindt alleen strings. |
+| 4.3 | `preview` / `apply` nemen **`pbs_id` + window_years`**; geen `MeekoppelLocationGroup` in de view. |
+| 4.4 | Tabelmodel leest `MeekoppelPanelRow`; geen `RCMProject` meer in het model. |
+
 ## Implementatie-slices
 
 - **A:** `meekoppel_display_service`, `messages`, preview-formattering
 - **B:** tabelmodel, scope-filter in `meekoppel_panel_service`
 - **C:** toolbar radio's, apply-gating, view wiring, tests
+- **D:** `MeekoppelPanelRow` + kolommen; view bind-only; `pbs_id`-API preview/apply
 
 ## Testplan
 

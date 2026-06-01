@@ -9,6 +9,8 @@ from rcm_desktop import messages
 from rcm_desktop.adapter.loaded_project import LoadedProject
 from rcm_desktop.adapter.meekoppel_panel_service import (
     MeekoppelPreviewGate,
+    build_meekoppel_panel_row,
+    meekoppel_panel_columns,
     sync_meekoppel_panel,
 )
 from rcm_desktop.adapter.project_session import ProjectSession
@@ -36,6 +38,31 @@ def _project_with_rev_tasks() -> RCMProject:
     )
 
 
+def test_meekoppel_panel_columns_match_messages() -> None:
+    cols = meekoppel_panel_columns()
+    assert tuple(c.header for c in cols) == (
+        messages.WORKSPACE_MEEKOPPEL_HEADER_PATH,
+        messages.WORKSPACE_MEEKOPPEL_HEADER_REV_COUNT,
+        messages.WORKSPACE_MEEKOPPEL_HEADER_DUE_RANGE,
+        messages.WORKSPACE_MEEKOPPEL_HEADER_SPAN,
+    )
+
+
+def test_build_meekoppel_panel_row_includes_tooltip() -> None:
+    from rcm_desktop.adapter.meekoppelkansen_discovery_service import (
+        discover_meekoppel_locations,
+    )
+
+    project = _project_with_rev_tasks()
+    group = discover_meekoppel_locations(project, window_years=2)[0]
+    row = build_meekoppel_panel_row(project, group)
+    assert row.pbs_id == group.pbs_id
+    assert row.path_label == group.path_label
+    assert row.due_range_text == group.due_range_label()
+    assert "PBS-id:" in row.path_tooltip
+    assert group.pbs_id in row.path_tooltip
+
+
 def test_sync_meekoppel_panel_disabled_without_whatif() -> None:
     project = _project_with_rev_tasks()
     session = ProjectSession.from_parts(LoadedProject.from_core(project))
@@ -46,6 +73,7 @@ def test_sync_meekoppel_panel_disabled_without_whatif() -> None:
     panel = sync_meekoppel_panel(session, snapshot, window_years=2)
     assert panel.preview_enabled is False
     assert panel.rows == ()
+    assert len(panel.columns) == 4
 
 
 def test_sync_meekoppel_panel_apply_requires_preview_gate() -> None:
@@ -94,4 +122,3 @@ def test_sync_meekoppel_panel_scope_filter_empty_message() -> None:
     assert len(panel.rows) == 1
     assert panel.rows[0].pbs_id == "P2"
     assert panel.empty_label_text is None
-

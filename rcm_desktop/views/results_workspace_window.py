@@ -1534,8 +1534,8 @@ class ResultsWorkspaceWindow(QMainWindow):
         return "later" if self.meekoppel_anchor_later.isChecked() else "earlier"
 
     def _selected_meekoppel_pbs_id(self) -> str | None:
-        group = self._selected_meekoppel_group()
-        return group.pbs_id if group is not None else None
+        row = self._selected_meekoppel_row()
+        return row.pbs_id if row is not None else None
 
     def _clear_meekoppel_preview_gate(self) -> None:
         self._meekoppel_preview_gate = None
@@ -1559,14 +1559,15 @@ class ResultsWorkspaceWindow(QMainWindow):
         self.meekoppel_preview_button.setEnabled(panel.preview_enabled)
         self.meekoppel_apply_button.setEnabled(panel.apply_enabled)
         prior_pbs_id = selected_pbs_id
-        project = session.loaded.core() if session is not None else None
-        self._meekoppel_table_model.set_rows(panel.rows, project=project)
+        self._meekoppel_table_model.set_panel_rows(
+            panel.rows, columns=panel.columns
+        )
         if prior_pbs_id is not None:
             selection = self.meekoppel_table_view.selectionModel()
             blocker = selection.blockSignals(True) if selection is not None else False
             try:
-                for row, group in enumerate(panel.rows):
-                    if group.pbs_id == prior_pbs_id:
+                for row, panel_row in enumerate(panel.rows):
+                    if panel_row.pbs_id == prior_pbs_id:
                         self.meekoppel_table_view.selectRow(row)
                         break
             finally:
@@ -1595,7 +1596,7 @@ class ResultsWorkspaceWindow(QMainWindow):
         if snapshot.modus == MODE_LCC:
             self._sync_meekoppel_panel(snapshot)
 
-    def _selected_meekoppel_group(self):
+    def _selected_meekoppel_row(self):
         selection = self.meekoppel_table_view.selectionModel()
         if selection is None or not selection.hasSelection():
             return None
@@ -1609,8 +1610,8 @@ class ResultsWorkspaceWindow(QMainWindow):
         overlay = self.workspace_state.snapshot().planning_overlay
         if not overlay.active:
             return
-        group = self._selected_meekoppel_group()
-        if group is None:
+        pbs_id = self._selected_meekoppel_pbs_id()
+        if pbs_id is None:
             QMessageBox.warning(
                 self,
                 messages.LTAP_ERROR_DIALOG_TITLE,
@@ -1619,7 +1620,11 @@ class ResultsWorkspaceWindow(QMainWindow):
             return
         anchor = self._meekoppel_current_anchor()
         prev = preview_meekoppel(
-            session, overlay, group, anchor=anchor  # type: ignore[arg-type]
+            session,
+            overlay,
+            pbs_id,
+            anchor=anchor,  # type: ignore[arg-type]
+            window_years=int(self.meekoppel_window_spin.value()),
         )
         if prev.blocked_reason:
             QMessageBox.information(
@@ -1651,7 +1656,7 @@ class ResultsWorkspaceWindow(QMainWindow):
             ),
         )
         self._meekoppel_preview_gate = MeekoppelPreviewGate(
-            pbs_id=group.pbs_id,
+            pbs_id=pbs_id,
             anchor=anchor,  # type: ignore[arg-type]
         )
         self._sync_meekoppel_panel(self.workspace_state.snapshot())
@@ -1663,8 +1668,8 @@ class ResultsWorkspaceWindow(QMainWindow):
         overlay = self.workspace_state.snapshot().planning_overlay
         if not overlay.active:
             return
-        group = self._selected_meekoppel_group()
-        if group is None:
+        pbs_id = self._selected_meekoppel_pbs_id()
+        if pbs_id is None:
             QMessageBox.warning(
                 self,
                 messages.LTAP_ERROR_DIALOG_TITLE,
@@ -1675,8 +1680,9 @@ class ResultsWorkspaceWindow(QMainWindow):
         result = apply_meekoppel(
             session,
             overlay,
-            group,
+            pbs_id,
             anchor=anchor,  # type: ignore[arg-type]
+            window_years=int(self.meekoppel_window_spin.value()),
         )
         if result.error:
             QMessageBox.critical(self, messages.LTAP_ERROR_DIALOG_TITLE, result.error)
