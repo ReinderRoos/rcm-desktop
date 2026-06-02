@@ -32,8 +32,8 @@ def _project_with_rev_tasks() -> RCMProject:
         pm_tasks={
             "PM-A": PMTask("PM-A", "FM-1", TaskType.REV, interval_jaar=5.0),
             "PM-B": PMTask("PM-B", "FM-1", TaskType.REV, interval_jaar=6.0),
-            "PM-C": PMTask("PM-C", "FM-2", TaskType.REV, interval_jaar=7.0),
-            "PM-D": PMTask("PM-D", "FM-2", TaskType.REV, interval_jaar=8.0),
+            "PM-C": PMTask("PM-C", "FM-2", TaskType.REV, interval_jaar=6.0),
+            "PM-D": PMTask("PM-D", "FM-2", TaskType.REV, interval_jaar=7.0),
         },
     )
 
@@ -91,11 +91,62 @@ def test_sync_meekoppel_panel_apply_requires_preview_gate() -> None:
         session,
         snapshot,
         window_years=2,
-        preview_gate=MeekoppelPreviewGate(pbs_id="P1", anchor="later"),
-        selected_pbs_id="P1",
+        preview_gate=MeekoppelPreviewGate(pbs_ids=frozenset({"P1"}), anchor="later"),
+        selected_pbs_ids=frozenset({"P1"}),
         current_anchor="later",
     )
     assert gated.apply_enabled is True
+
+
+def test_collect_rev_tasks_for_multi_pbs_selection() -> None:
+    from rcm_desktop.adapter.meekoppelkansen_discovery_service import (
+        collect_rev_tasks_for_pbs_selection,
+    )
+
+    project = _project_with_rev_tasks()
+    tasks = collect_rev_tasks_for_pbs_selection(project, frozenset({"P1", "P2"}))
+    assert len(tasks) == 4
+    assert {t.pm_id for t in tasks} == {"PM-A", "PM-B", "PM-C", "PM-D"}
+
+
+def test_preview_meekoppel_multi_pbs_selection() -> None:
+    from rcm_desktop.adapter.meekoppel_panel_service import preview_meekoppel
+
+    project = _project_with_rev_tasks()
+    session = ProjectSession.from_parts(LoadedProject.from_core(project))
+    ws = ResultsWorkspaceState()
+    ws.set_planning_overlay(ws.snapshot().planning_overlay.begin_what_if())
+    overlay = ws.snapshot().planning_overlay
+
+    prev = preview_meekoppel(
+        session,
+        overlay,
+        frozenset({"P1", "P2"}),
+        anchor="later",
+    )
+    assert prev.blocked_reason is None
+    assert len(prev.moves) == 3
+    assert prev.target_year == 7
+
+
+def test_scope_filter_shows_parent_group_when_only_leaf_in_subtree() -> None:
+    from rcm_desktop.adapter.meekoppelkansen_discovery_service import (
+        discover_meekoppel_locations,
+    )
+
+    project = _project_with_rev_tasks()
+    groups = discover_meekoppel_locations(project, window_years=2)
+    assert len(groups) == 1
+    assert groups[0].pbs_id == "ROOT"
+
+    session = ProjectSession.from_parts(LoadedProject.from_core(project))
+    ws = ResultsWorkspaceState()
+    ws.set_modus(MODE_LCC)
+    ws.set_scope("P1")
+    ws.set_planning_overlay(ws.snapshot().planning_overlay.begin_what_if())
+    panel = sync_meekoppel_panel(session, ws.snapshot(), window_years=2)
+    assert len(panel.rows) == 1
+    assert panel.rows[0].pbs_id == "ROOT"
 
 
 def test_sync_meekoppel_panel_scope_filter_empty_message() -> None:
@@ -108,17 +159,18 @@ def test_sync_meekoppel_panel_scope_filter_empty_message() -> None:
     snapshot = ws.snapshot()
 
     panel = sync_meekoppel_panel(session, snapshot, window_years=2)
-    assert len(panel.rows) == 2
+    assert len(panel.rows) == 1
+    assert panel.rows[0].pbs_id == "ROOT"
 
     ws.set_scope("P1")
     snapshot = ws.snapshot()
     panel = sync_meekoppel_panel(session, snapshot, window_years=2)
     assert len(panel.rows) == 1
-    assert panel.rows[0].pbs_id == "P1"
+    assert panel.rows[0].pbs_id == "ROOT"
 
     ws.set_scope("P2")
     snapshot = ws.snapshot()
     panel = sync_meekoppel_panel(session, snapshot, window_years=2)
     assert len(panel.rows) == 1
-    assert panel.rows[0].pbs_id == "P2"
+    assert panel.rows[0].pbs_id == "ROOT"
     assert panel.empty_label_text is None

@@ -91,14 +91,21 @@ from rcm_desktop.adapter.import_flow_service import gate_workbook, persist_wizar
 from rcm_desktop.adapter.isograph_open_flow_service import PersistImportSuccess
 from rcm_desktop.adapter.meekoppel_display_service import (
     due_calendar_year,
-    format_preview_move_line,
+    format_meekoppel_preview_moves_text,
 )
+from rcm_desktop.adapter.feature_flags import meekoppel_workflow_v2_enabled
 from rcm_desktop.adapter.meekoppel_panel_service import (
     MeekoppelPreviewGate,
     apply_meekoppel,
     preview_meekoppel,
     sync_meekoppel_panel,
 )
+from rcm_desktop.adapter.meekoppel_workflow_service import MeekoppelWorkflowService
+from rcm_desktop.adapter.meekoppelkansen_discovery_service import (
+    MeekoppelLocationGroup,
+    collect_rev_tasks_for_pbs_selection,
+)
+from rcm_desktop.views.meekoppel_preview_dialog import MeekoppelPreviewDialog
 from rcm_desktop.adapter.meekoppel_suggestions_table_model import (
     MeekoppelSuggestionsTableModel,
 )
@@ -619,6 +626,11 @@ class ResultsWorkspaceWindow(QMainWindow):
         self.meekoppel_whatif_hint_label.setWordWrap(True)
         self.meekoppel_whatif_hint_label.setStyleSheet("color: #757575;")
         meekoppel_content_layout.addWidget(self.meekoppel_whatif_hint_label)
+        self.meekoppel_selection_summary_label = QLabel("")
+        self.meekoppel_selection_summary_label.setWordWrap(True)
+        self.meekoppel_selection_summary_label.setStyleSheet("color: #616161;")
+        self.meekoppel_selection_summary_label.setVisible(False)
+        meekoppel_content_layout.addWidget(self.meekoppel_selection_summary_label)
         meekoppel_tb = QHBoxLayout()
         meekoppel_tb.addWidget(QLabel(messages.WORKSPACE_MEEKOPPEL_WINDOW_LABEL))
         self.meekoppel_window_spin = QSpinBox()
@@ -653,13 +665,12 @@ class ResultsWorkspaceWindow(QMainWindow):
         _apply_workspace_data_table_header_policy(self.meekoppel_table_view.horizontalHeader())
         self._meekoppel_table_model = MeekoppelSuggestionsTableModel(parent=self.meekoppel_table_view)
         self.meekoppel_table_view.setModel(self._meekoppel_table_model)
-        sel = self.meekoppel_table_view.selectionModel()
-        if sel is not None:
-            sel.selectionChanged.connect(self._on_meekoppel_selection_changed)
         meekoppel_content_layout.addWidget(self.meekoppel_table_view, stretch=1)
         meekoppel_layout.addWidget(self.meekoppel_content)
         self.meekoppel_panel.setVisible(False)
         self._meekoppel_preview_gate: MeekoppelPreviewGate | None = None
+        self._meekoppel_location_groups: tuple[MeekoppelLocationGroup, ...] = ()
+        self._meekoppel_workflow = MeekoppelWorkflowService()
         page_layout.addWidget(self.meekoppel_panel)
 
         self.lcc_year_summary_label = QLabel("")
@@ -877,7 +888,9 @@ class ResultsWorkspaceWindow(QMainWindow):
         self.resize(1100, 640)
 
     def _wire_pbs_tree_interaction(self) -> None:
-        self.pbs_tree_view.clicked.connect(self._on_pbs_tree_clicked)
+        selection = self.pbs_tree_view.selectionModel()
+        if selection is not None:
+            selection.selectionChanged.connect(self._on_pbs_tree_selection_changed)
 
     def _set_default_fixture_path(self) -> None:
         default_path = resolve_default_fixture_path()
@@ -915,17 +928,45 @@ class ResultsWorkspaceWindow(QMainWindow):
         no_source = self._pbs_source_model is None
         self.pbs_empty_state_label.setVisible(not has_matches and not no_source and self.pbs_proxy.has_needle())
 
-    def _on_pbs_tree_clicked(self, proxy_index: QModelIndex) -> None:
-        if not proxy_index.isValid():
-            return
-        source_index = self.pbs_proxy.mapToSource(proxy_index)
+    def _on_pbs_tree_selection_changed(
+        self, _selected: QItemSelection, _deselected: QItemSelection
+    ) -> None:
         source_model = self._pbs_source_model
         if source_model is None:
             return
-        scope_id = self._pbs_scope_from_tree_index(source_model, source_index)
-        if scope_id is None:
-            return
-        self.set_pbs_scope(scope_id)
+        current = self.pbs_tree_view.currentIndex()
+        if current.isValid():
+            source_index = self.pbs_proxy.mapToSource(current)
+            scope_id = self._pbs_scope_from_tree_index(source_model, source_index)
+            if scope_id is not None:
+                self.set_pbs_scope(scope_id)
+        snapshot = self.workspace_state.snapshot()
+        if snapshot.modus == MODE_LCC:
+            self._clear_meekoppel_preview_gate()
+            self._sync_meekoppel_panel(snapshot)
+
+    def _pbs_selected_ids_from_tree(self) -> frozenset[str]:
+        source_model = self._pbs_source_model
+        if source_model is None:
+            return frozenset()
+        selection = self.pbs_tree_view.selectionModel()
+        if selection is None or not selection.hasSelection():
+            return frozenset()
+        pbs_ids: set[str] = set()
+        for proxy_index in selection.selectedIndexes():
+            if proxy_index.column() != 0:
+                continue
+            source_index = self.pbs_proxy.mapToSource(proxy_index)
+            pbs_id = self._pbs_scope_from_tree_index(source_model, source_index)
+            if pbs_id is not None:
+                pbs_ids.add(pbs_id)
+        return frozenset(pbs_ids)
+
+    def _sync_pbs_tree_selection_mode(self, snapshot: WorkspaceStateSnapshot) -> None:
+        if snapshot.modus == MODE_LCC:
+            self.pbs_tree_view.setSelectionMode(QAbstractItemView.ExtendedSelection)
+        else:
+            self.pbs_tree_view.setSelectionMode(QAbstractItemView.SingleSelection)
 
     def _on_show_whole_project_clicked(self) -> None:
         self.set_pbs_scope(None)
@@ -999,6 +1040,7 @@ class ResultsWorkspaceWindow(QMainWindow):
         self.lcc_show_all_years_button.setVisible(lcc_active)
         self.lcc_year_summary_label.setVisible(lcc_active)
         self.meekoppel_panel.setVisible(lcc_active)
+        self._sync_pbs_tree_selection_mode(snapshot)
         if lcc_active:
             self._sync_meekoppel_panel(snapshot)
         fm_active = snapshot.modus == MODE_FM_DETAIL
@@ -1533,22 +1575,32 @@ class ResultsWorkspaceWindow(QMainWindow):
     def _meekoppel_current_anchor(self) -> str:
         return "later" if self.meekoppel_anchor_later.isChecked() else "earlier"
 
-    def _selected_meekoppel_pbs_id(self) -> str | None:
-        row = self._selected_meekoppel_row()
-        return row.pbs_id if row is not None else None
+    def _selected_meekoppel_pbs_ids(self) -> frozenset[str]:
+        return self._pbs_selected_ids_from_tree()
+
+    def _ensure_whatif_for_meekoppel(self) -> None:
+        overlay = self.workspace_state.snapshot().planning_overlay
+        if overlay.active:
+            return
+        self.workspace_state.set_planning_overlay(overlay.begin_what_if())
+        blocker = self.lcc_whatif_button.blockSignals(True)
+        try:
+            self.lcc_whatif_button.setChecked(True)
+        finally:
+            self.lcc_whatif_button.blockSignals(blocker)
 
     def _clear_meekoppel_preview_gate(self) -> None:
         self._meekoppel_preview_gate = None
 
     def _sync_meekoppel_panel(self, snapshot: WorkspaceStateSnapshot) -> None:
         session = self._project_session()
-        selected_pbs_id = self._selected_meekoppel_pbs_id()
+        selected_pbs_ids = self._selected_meekoppel_pbs_ids()
         panel = sync_meekoppel_panel(
             session,
             snapshot,
             window_years=int(self.meekoppel_window_spin.value()),
             preview_gate=self._meekoppel_preview_gate,
-            selected_pbs_id=selected_pbs_id,
+            selected_pbs_ids=selected_pbs_ids or None,
             current_anchor=self._meekoppel_current_anchor(),  # type: ignore[arg-type]
         )
         self.meekoppel_whatif_hint_label.setVisible(panel.show_whatif_hint)
@@ -1558,33 +1610,20 @@ class ResultsWorkspaceWindow(QMainWindow):
         self.meekoppel_table_view.setVisible(panel.table_visible)
         self.meekoppel_preview_button.setEnabled(panel.preview_enabled)
         self.meekoppel_apply_button.setEnabled(panel.apply_enabled)
-        prior_pbs_id = selected_pbs_id
+        self._meekoppel_location_groups = panel.location_groups
         self._meekoppel_table_model.set_panel_rows(
             panel.rows, columns=panel.columns
         )
-        if prior_pbs_id is not None:
-            selection = self.meekoppel_table_view.selectionModel()
-            blocker = selection.blockSignals(True) if selection is not None else False
-            try:
-                for row, panel_row in enumerate(panel.rows):
-                    if panel_row.pbs_id == prior_pbs_id:
-                        self.meekoppel_table_view.selectRow(row)
-                        break
-            finally:
-                if selection is not None:
-                    selection.blockSignals(blocker)
+        if panel.selection_summary_text:
+            self.meekoppel_selection_summary_label.setText(panel.selection_summary_text)
+            self.meekoppel_selection_summary_label.setVisible(True)
+        else:
+            self.meekoppel_selection_summary_label.setVisible(False)
         if panel.empty_label_text:
             self.meekoppel_empty_label.setText(panel.empty_label_text)
             self.meekoppel_empty_label.setVisible(True)
         else:
             self.meekoppel_empty_label.setVisible(False)
-
-    def _on_meekoppel_selection_changed(
-        self, _selected: QItemSelection, _deselected: QItemSelection
-    ) -> None:
-        snapshot = self.workspace_state.snapshot()
-        if snapshot.modus == MODE_LCC:
-            self._sync_meekoppel_panel(snapshot)
 
     def _on_meekoppel_anchor_changed(self, _button) -> None:
         snapshot = self.workspace_state.snapshot()
@@ -1596,36 +1635,87 @@ class ResultsWorkspaceWindow(QMainWindow):
         if snapshot.modus == MODE_LCC:
             self._sync_meekoppel_panel(snapshot)
 
-    def _selected_meekoppel_row(self):
-        selection = self.meekoppel_table_view.selectionModel()
-        if selection is None or not selection.hasSelection():
+    def _selected_meekoppel_location_group(self) -> MeekoppelLocationGroup | None:
+        sm = self.meekoppel_table_view.selectionModel()
+        if sm is None or not sm.hasSelection():
             return None
-        row = selection.selectedRows()[0].row()
-        return self._meekoppel_table_model.row_at(row)
+        panel_row = self._meekoppel_table_model.row_at(sm.currentIndex().row())
+        if panel_row is None:
+            return None
+        for group in self._meekoppel_location_groups:
+            if group.pbs_id == panel_row.pbs_id:
+                return group
+        return None
 
     def _on_meekoppel_preview(self) -> None:
         session = self._project_session()
         if session is None:
             return
+        self._ensure_whatif_for_meekoppel()
         overlay = self.workspace_state.snapshot().planning_overlay
-        if not overlay.active:
-            return
-        pbs_id = self._selected_meekoppel_pbs_id()
-        if pbs_id is None:
-            QMessageBox.warning(
-                self,
-                messages.LTAP_ERROR_DIALOG_TITLE,
-                messages.WORKSPACE_MEEKOPPEL_SELECT_ROW,
-            )
-            return
+        pbs_ids = self._selected_meekoppel_pbs_ids()
         anchor = self._meekoppel_current_anchor()
-        prev = preview_meekoppel(
-            session,
-            overlay,
-            pbs_id,
-            anchor=anchor,  # type: ignore[arg-type]
-            window_years=int(self.meekoppel_window_spin.value()),
-        )
+        if meekoppel_workflow_v2_enabled():
+            if not pbs_ids:
+                QMessageBox.warning(
+                    self,
+                    messages.LTAP_ERROR_DIALOG_TITLE,
+                    messages.WORKSPACE_MEEKOPPEL_SELECT_PBS,
+                )
+                return
+            dialog = MeekoppelPreviewDialog(
+                self,
+                session=session,
+                overlay=overlay,
+                pbs_ids=pbs_ids,
+                anchor=anchor,  # type: ignore[arg-type]
+                location_group=self._selected_meekoppel_location_group(),
+                workflow=self._meekoppel_workflow,
+            )
+            dialog.exec()
+            result = dialog.result_payload()
+            if result.preview is None:
+                return
+            self._meekoppel_preview_gate = MeekoppelPreviewGate(
+                pbs_ids=pbs_ids,
+                anchor=anchor,  # type: ignore[arg-type]
+            )
+            if result.accepted and result.scope_kind is not None:
+                apply_result = self._meekoppel_workflow.apply(
+                    session=session,
+                    overlay=overlay,
+                    pbs_ids=pbs_ids,
+                    anchor=anchor,  # type: ignore[arg-type]
+                    scope_kind=result.scope_kind,
+                    location_group=self._selected_meekoppel_location_group()
+                    if result.scope_kind == "location_row"
+                    else None,
+                    checked_pm_ids=result.checked_pm_ids,
+                )
+                if apply_result.status == "ok":
+                    self.workspace_state.set_planning_overlay(apply_result.overlay)
+                elif apply_result.user_message:
+                    QMessageBox.critical(
+                        self,
+                        messages.LTAP_ERROR_DIALOG_TITLE,
+                        apply_result.user_message,
+                    )
+            self._sync_meekoppel_panel(self.workspace_state.snapshot())
+            return
+        else:
+            if not pbs_ids:
+                QMessageBox.warning(
+                    self,
+                    messages.LTAP_ERROR_DIALOG_TITLE,
+                    messages.WORKSPACE_MEEKOPPEL_SELECT_PBS,
+                )
+                return
+            prev = preview_meekoppel(
+                session,
+                overlay,
+                pbs_ids,
+                anchor=anchor,  # type: ignore[arg-type]
+            )
         if prev.blocked_reason:
             QMessageBox.information(
                 self,
@@ -1635,12 +1725,14 @@ class ResultsWorkspaceWindow(QMainWindow):
             return
         project = session.loaded.core()
         modeljaar = int(project.config.modeljaar)
-        if not prev.moves:
-            moves_text = messages.WORKSPACE_MEEKOPPEL_PREVIEW_NO_MOVES
-        else:
-            moves_text = "\n".join(
-                format_preview_move_line(project, modeljaar, move) for move in prev.moves
-            )
+        tasks = collect_rev_tasks_for_pbs_selection(project, pbs_ids)
+        moves_text = format_meekoppel_preview_moves_text(
+            project,
+            overlay,
+            modeljaar,
+            prev,
+            tasks,
+        )
         pbs_footnote = messages.WORKSPACE_MEEKOPPEL_PREVIEW_PBS_FOOTNOTE.format(
             pbs_id=prev.pbs_id
         )
@@ -1656,7 +1748,7 @@ class ResultsWorkspaceWindow(QMainWindow):
             ),
         )
         self._meekoppel_preview_gate = MeekoppelPreviewGate(
-            pbs_id=pbs_id,
+            pbs_ids=pbs_ids,
             anchor=anchor,  # type: ignore[arg-type]
         )
         self._sync_meekoppel_panel(self.workspace_state.snapshot())
@@ -1665,29 +1757,51 @@ class ResultsWorkspaceWindow(QMainWindow):
         session = self._project_session()
         if session is None:
             return
+        self._ensure_whatif_for_meekoppel()
         overlay = self.workspace_state.snapshot().planning_overlay
-        if not overlay.active:
-            return
-        pbs_id = self._selected_meekoppel_pbs_id()
-        if pbs_id is None:
-            QMessageBox.warning(
-                self,
-                messages.LTAP_ERROR_DIALOG_TITLE,
-                messages.WORKSPACE_MEEKOPPEL_SELECT_ROW,
-            )
-            return
+        pbs_ids = self._selected_meekoppel_pbs_ids()
         anchor = self._meekoppel_current_anchor()
-        result = apply_meekoppel(
-            session,
-            overlay,
-            pbs_id,
-            anchor=anchor,  # type: ignore[arg-type]
-            window_years=int(self.meekoppel_window_spin.value()),
-        )
-        if result.error:
-            QMessageBox.critical(self, messages.LTAP_ERROR_DIALOG_TITLE, result.error)
-            return
-        self.workspace_state.set_planning_overlay(result.overlay)
+        if meekoppel_workflow_v2_enabled():
+            workflow_result = self._meekoppel_workflow.apply(
+                session=session,
+                overlay=overlay,
+                pbs_ids=pbs_ids,
+                anchor=anchor,  # type: ignore[arg-type]
+                scope_kind="pbs_selection",
+            )
+            if workflow_result.status == "validation":
+                QMessageBox.warning(
+                    self,
+                    messages.LTAP_ERROR_DIALOG_TITLE,
+                    workflow_result.user_message,
+                )
+                return
+            if workflow_result.status != "ok":
+                QMessageBox.critical(
+                    self,
+                    messages.LTAP_ERROR_DIALOG_TITLE,
+                    workflow_result.user_message,
+                )
+                return
+            self.workspace_state.set_planning_overlay(workflow_result.overlay)
+        else:
+            if not pbs_ids:
+                QMessageBox.warning(
+                    self,
+                    messages.LTAP_ERROR_DIALOG_TITLE,
+                    messages.WORKSPACE_MEEKOPPEL_SELECT_PBS,
+                )
+                return
+            result = apply_meekoppel(
+                session,
+                overlay,
+                pbs_ids,
+                anchor=anchor,  # type: ignore[arg-type]
+            )
+            if result.error:
+                QMessageBox.critical(self, messages.LTAP_ERROR_DIALOG_TITLE, result.error)
+                return
+            self.workspace_state.set_planning_overlay(result.overlay)
         self._sync_meekoppel_panel(self.workspace_state.snapshot())
 
     def _render_lcc_year_detail(
@@ -1867,8 +1981,12 @@ class ResultsWorkspaceWindow(QMainWindow):
             return
         lcc_active = snapshot.modus == MODE_LCC
         collapsed = snapshot.meekoppel_collapsed_in_lcc if lcc_active else False
+        content_visible = lcc_active and not collapsed
+        was_visible = self.meekoppel_content.isVisible()
+        if content_visible and not was_visible:
+            self._ensure_whatif_for_meekoppel()
         self.meekoppel_collapse_button.setVisible(lcc_active)
-        self.meekoppel_content.setVisible(lcc_active and not collapsed)
+        self.meekoppel_content.setVisible(content_visible)
         self.meekoppel_collapse_button.setText("▼" if not collapsed else "▶")
         self.meekoppel_collapse_button.setEnabled(lcc_active)
 

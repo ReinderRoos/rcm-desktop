@@ -6,7 +6,10 @@ from dataclasses import replace
 
 from rcm_core.models import RCMProject
 
-from rcm_desktop.adapter.meekoppelkansen_discovery_service import discover_meekoppel_locations
+from rcm_desktop.adapter.meekoppelkansen_discovery_service import (
+    bundling_pbs_id,
+    discover_meekoppel_locations,
+)
 
 
 def _project_two_rev_same_pbs() -> RCMProject:
@@ -168,6 +171,237 @@ def _project_same_element_name_two_pbs() -> RCMProject:
             "bibliotheek": {},
         }
     )
+
+
+def _project_sibling_leaves_under_parent() -> RCMProject:
+    """Twee REV op sibling-leaves met gedeelde parent — één parent-groep."""
+    return RCMProject.from_dict(
+        {
+            "config": {"lifecycle_years": 40.0, "modeljaar": 2026},
+            "pbs_items": {
+                "PARENT": {
+                    "pbs_id": "PARENT",
+                    "object_naam": "",
+                    "element_naam": "Site",
+                    "bouwdeel_naam": "Gebouw",
+                    "component_naam": "",
+                    "multiplicity": 1,
+                    "bouwjaar": 2000,
+                },
+                "LEAF-A": {
+                    "pbs_id": "LEAF-A",
+                    "parent_pbs_id": "PARENT",
+                    "object_naam": "",
+                    "element_naam": "Pomp",
+                    "bouwdeel_naam": "Pomp A",
+                    "component_naam": "",
+                    "multiplicity": 1,
+                    "bouwjaar": 2000,
+                },
+                "LEAF-B": {
+                    "pbs_id": "LEAF-B",
+                    "parent_pbs_id": "PARENT",
+                    "object_naam": "",
+                    "element_naam": "Pomp",
+                    "bouwdeel_naam": "Pomp B",
+                    "component_naam": "",
+                    "multiplicity": 1,
+                    "bouwjaar": 2000,
+                },
+            },
+            "functies": {},
+            "faalwijzes": {
+                "FM-A": {
+                    "fm_id": "FM-A",
+                    "pbs_id": "LEAF-A",
+                    "functie_id": "F1",
+                    "faalwijze_omschrijving": "A",
+                    "failure_type": "random",
+                    "mttf_jaar": 10.0,
+                    "downtime_per_failure": {"value": 1.0, "unit": "uur"},
+                },
+                "FM-B": {
+                    "fm_id": "FM-B",
+                    "pbs_id": "LEAF-B",
+                    "functie_id": "F2",
+                    "faalwijze_omschrijving": "B",
+                    "failure_type": "random",
+                    "mttf_jaar": 10.0,
+                    "downtime_per_failure": {"value": 1.0, "unit": "uur"},
+                },
+            },
+            "pm_tasks": {
+                "PM-A": {
+                    "pm_id": "PM-A",
+                    "fm_id": "FM-A",
+                    "taak_type": "REV",
+                    "interval_jaar": 10.0,
+                },
+                "PM-B": {
+                    "pm_id": "PM-B",
+                    "fm_id": "FM-B",
+                    "taak_type": "REV",
+                    "interval_jaar": 11.0,
+                },
+            },
+            "task_groups": {},
+            "effect_klassen": {},
+            "fm_effect_links": {},
+            "pm_effect_links": {},
+            "bibliotheek": {},
+        }
+    )
+
+
+def test_sibling_leaf_rev_tasks_roll_up_to_parent_bundling_key():
+    rows = discover_meekoppel_locations(
+        _project_sibling_leaves_under_parent(), window_years=2
+    )
+    assert len(rows) == 1
+    group = rows[0]
+    assert group.pbs_id == "PARENT"
+    assert group.path_label == "Gebouw"
+    assert {t.pbs_id for t in group.tasks} == {"LEAF-A", "LEAF-B"}
+    assert {t.pm_id for t in group.tasks} == {"PM-A", "PM-B"}
+
+
+def _project_two_parents_with_rev_pairs() -> RCMProject:
+    """Twee aparte parent-takken — elk met eigen sibling-paar op leaves."""
+    return RCMProject.from_dict(
+        {
+            "config": {"lifecycle_years": 40.0, "modeljaar": 2026},
+            "pbs_items": {
+                "P1": {
+                    "pbs_id": "P1",
+                    "object_naam": "",
+                    "element_naam": "A",
+                    "bouwdeel_naam": "Parent 1",
+                    "component_naam": "",
+                    "multiplicity": 1,
+                    "bouwjaar": 2000,
+                },
+                "P2": {
+                    "pbs_id": "P2",
+                    "object_naam": "",
+                    "element_naam": "B",
+                    "bouwdeel_naam": "Parent 2",
+                    "component_naam": "",
+                    "multiplicity": 1,
+                    "bouwjaar": 2000,
+                },
+                "L1": {
+                    "pbs_id": "L1",
+                    "parent_pbs_id": "P1",
+                    "object_naam": "",
+                    "element_naam": "x",
+                    "bouwdeel_naam": "L1",
+                    "component_naam": "",
+                    "multiplicity": 1,
+                    "bouwjaar": 2000,
+                },
+                "L2": {
+                    "pbs_id": "L2",
+                    "parent_pbs_id": "P2",
+                    "object_naam": "",
+                    "element_naam": "y",
+                    "bouwdeel_naam": "L2",
+                    "component_naam": "",
+                    "multiplicity": 1,
+                    "bouwjaar": 2000,
+                },
+            },
+            "functies": {},
+            "faalwijzes": {
+                "FM-1": {
+                    "fm_id": "FM-1",
+                    "pbs_id": "L1",
+                    "functie_id": "F1",
+                    "faalwijze_omschrijving": "A",
+                    "failure_type": "random",
+                    "mttf_jaar": 10.0,
+                    "downtime_per_failure": {"value": 1.0, "unit": "uur"},
+                },
+                "FM-2": {
+                    "fm_id": "FM-2",
+                    "pbs_id": "L2",
+                    "functie_id": "F2",
+                    "faalwijze_omschrijving": "B",
+                    "failure_type": "random",
+                    "mttf_jaar": 10.0,
+                    "downtime_per_failure": {"value": 1.0, "unit": "uur"},
+                },
+            },
+            "pm_tasks": {
+                "PM-1A": {
+                    "pm_id": "PM-1A",
+                    "fm_id": "FM-1",
+                    "taak_type": "REV",
+                    "interval_jaar": 10.0,
+                },
+                "PM-1B": {
+                    "pm_id": "PM-1B",
+                    "fm_id": "FM-1",
+                    "taak_type": "REV",
+                    "interval_jaar": 11.0,
+                },
+                "PM-2A": {
+                    "pm_id": "PM-2A",
+                    "fm_id": "FM-2",
+                    "taak_type": "REV",
+                    "interval_jaar": 10.0,
+                },
+                "PM-2B": {
+                    "pm_id": "PM-2B",
+                    "fm_id": "FM-2",
+                    "taak_type": "REV",
+                    "interval_jaar": 12.0,
+                },
+            },
+            "task_groups": {},
+            "effect_klassen": {},
+            "fm_effect_links": {},
+            "pm_effect_links": {},
+            "bibliotheek": {},
+        }
+    )
+
+
+def test_different_parents_yield_separate_location_groups():
+    rows = discover_meekoppel_locations(_project_two_parents_with_rev_pairs(), window_years=2)
+    assert len(rows) == 2
+    assert {g.pbs_id for g in rows} == {"P1", "P2"}
+
+
+def test_orphan_parent_pbs_id_falls_back_to_leaf_bundling():
+    project = _project_sibling_leaves_under_parent()
+    project.pbs_items["LEAF-A"] = replace(
+        project.pbs_items["LEAF-A"],
+        parent_pbs_id="MISSING-PARENT",
+    )
+    project.pbs_items["LEAF-B"] = replace(
+        project.pbs_items["LEAF-B"],
+        parent_pbs_id="MISSING-PARENT",
+    )
+    project.pm_tasks["PM-A2"] = replace(
+        project.pm_tasks["PM-A"],
+        pm_id="PM-A2",
+        interval_jaar=11.0,
+    )
+    project.pm_tasks["PM-B2"] = replace(
+        project.pm_tasks["PM-B"],
+        pm_id="PM-B2",
+        interval_jaar=12.0,
+    )
+    rows = discover_meekoppel_locations(project, window_years=2)
+    assert len(rows) == 2
+    assert {g.pbs_id for g in rows} == {"LEAF-A", "LEAF-B"}
+
+
+def test_bundling_pbs_id_returns_parent_when_present():
+    project = _project_sibling_leaves_under_parent()
+    assert bundling_pbs_id(project, "LEAF-A") == "PARENT"
+    assert bundling_pbs_id(project, "LEAF-B") == "PARENT"
+    assert bundling_pbs_id(project, "PARENT") == "PARENT"
 
 
 def test_location_group_discovers_rev_pair_on_same_pbs():

@@ -9,13 +9,17 @@ import pytest
 
 pytest.importorskip("PySide6")
 
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, QModelIndex
 from PySide6.QtWidgets import QApplication, QMessageBox
 
 from rcm_core.persistence import load_project
 from rcm_desktop import messages
+from rcm_desktop.adapter.meekoppel_apply_service import MeekoppelLocationPreview
+from rcm_desktop.adapter.meekoppel_workflow_service import WorkflowResult
 from rcm_desktop.adapter.meekoppel_suggestions_table_model import MeekoppelSuggestionsTableModel
+from rcm_desktop.adapter.planning_overlay_state import PlanningOverlayState
 from rcm_desktop.adapter.run_service import run as run_single
+import rcm_desktop.views.results_workspace_window as workspace_window
 from rcm_desktop.views.results_workspace_window import ResultsWorkspaceWindow
 
 
@@ -66,7 +70,33 @@ def _expand_meekoppel_panel(window: ResultsWorkspaceWindow, app: QApplication) -
     app.processEvents()
 
 
-def test_meekoppel_panel_hidden_until_whatif(monkeypatch):
+def test_meekoppel_panel_auto_enables_whatif_on_expand(monkeypatch):
+    app = _ensure_app()
+    monkeypatch.setattr(QMessageBox, "critical", lambda *_a, **_k: QMessageBox.Ok)
+    monkeypatch.setattr(QMessageBox, "warning", lambda *_a, **_k: QMessageBox.Ok)
+    window = ResultsWorkspaceWindow()
+    window.show()
+    project = _project_with_rev_pair()
+    window._state.set_last_project(project)
+    rr = run_single(
+        project,
+        Path("tests/fixtures/one_fm_planning.rcm.json"),
+        full_recompute=True,
+        parallel=False,
+    )
+    window._state.set_last_run(rr)
+    app.processEvents()
+
+    window.modus_buttons["lcc"].click()
+    app.processEvents()
+    assert window.lcc_whatif_button.isChecked() is False
+    _expand_meekoppel_panel(window, app)
+    assert window.lcc_whatif_button.isChecked() is True
+    assert window.meekoppel_whatif_hint_label.isVisible() is False
+    assert window._meekoppel_table_model.rowCount() >= 1
+
+
+def test_meekoppel_panel_tools_disabled_without_whatif(monkeypatch):
     app = _ensure_app()
     monkeypatch.setattr(QMessageBox, "critical", lambda *_a, **_k: QMessageBox.Ok)
     monkeypatch.setattr(QMessageBox, "warning", lambda *_a, **_k: QMessageBox.Ok)
@@ -86,15 +116,24 @@ def test_meekoppel_panel_hidden_until_whatif(monkeypatch):
     window.modus_buttons["lcc"].click()
     app.processEvents()
     _expand_meekoppel_panel(window, app)
-    assert window.meekoppel_panel.isVisible()
+    window.lcc_whatif_button.setChecked(False)
+    app.processEvents()
+    window._sync_meekoppel_panel(window.workspace_state.snapshot())
     assert window.meekoppel_whatif_hint_label.isVisible()
     assert window.meekoppel_apply_button.isEnabled() is False
 
-    window.lcc_whatif_button.setChecked(True)
+
+def _select_first_pbs_node(window: ResultsWorkspaceWindow, app: QApplication) -> None:
+    from PySide6.QtCore import QItemSelectionModel
+
+    root = window.pbs_proxy.index(0, 0, QModelIndex())
+    if not root.isValid():
+        return
+    selection = window.pbs_tree_view.selectionModel()
+    if selection is None:
+        return
+    selection.select(root, QItemSelectionModel.SelectionFlag.ClearAndSelect)
     app.processEvents()
-    assert window.meekoppel_whatif_hint_label.isVisible() is False
-    assert window.meekoppel_apply_button.isEnabled() is False
-    assert window._meekoppel_table_model.rowCount() >= 1
 
 
 def test_meekoppel_apply_updates_overlay_after_preview(monkeypatch):
@@ -117,15 +156,14 @@ def test_meekoppel_apply_updates_overlay_after_preview(monkeypatch):
     app.processEvents()
 
     window.modus_buttons["lcc"].click()
-    window.lcc_whatif_button.setChecked(True)
     app.processEvents()
     _expand_meekoppel_panel(window, app)
+    assert window.lcc_whatif_button.isChecked() is True
+    _select_first_pbs_node(window, app)
 
     assert window.meekoppel_anchor_later.isChecked()
 
-    if window._meekoppel_table_model.rowCount() > 0:
-        window.meekoppel_table_view.selectRow(0)
-        app.processEvents()
+    if window._pbs_selected_ids_from_tree():
         assert window.meekoppel_apply_button.isEnabled() is False
         window.meekoppel_preview_button.click()
         app.processEvents()
@@ -135,3 +173,89 @@ def test_meekoppel_apply_updates_overlay_after_preview(monkeypatch):
         app.processEvents()
         after = window.workspace_state.snapshot().planning_overlay.change_count()
         assert after >= before
+
+
+def test_meekoppel_preview_uses_workflow_when_flag_enabled(monkeypatch):
+    app = _ensure_app()
+    monkeypatch.setattr(QMessageBox, "critical", lambda *_a, **_k: QMessageBox.Ok)
+    monkeypatch.setattr(QMessageBox, "warning", lambda *_a, **_k: QMessageBox.Ok)
+    monkeypatch.setattr(QMessageBox, "information", lambda *_a, **_k: QMessageBox.Ok)
+    monkeypatch.setattr(workspace_window, "meekoppel_workflow_v2_enabled", lambda: True)
+
+    called = {"preview": 0}
+
+    class _StubWorkflow:
+        def preview(self, **_kwargs):
+            called["preview"] += 1
+            return WorkflowResult(
+                status="validation",
+                user_message=messages.WORKSPACE_MEEKOPPEL_SELECT_PBS,
+                preview_payload=None,
+                telemetry_flags=frozenset({"meekoppel_workflow_v2"}),
+                overlay=PlanningOverlayState.inactive().begin_what_if(),
+            )
+
+    window = ResultsWorkspaceWindow()
+    window._meekoppel_workflow = _StubWorkflow()
+    window.show()
+    project = _project_with_rev_pair()
+    window._state.set_last_project(project)
+    rr = run_single(
+        project,
+        Path("tests/fixtures/one_fm_planning.rcm.json"),
+        full_recompute=True,
+        parallel=False,
+    )
+    window._state.set_last_run(rr)
+    app.processEvents()
+    window.modus_buttons["lcc"].click()
+    app.processEvents()
+    _expand_meekoppel_panel(window, app)
+    _select_first_pbs_node(window, app)
+
+    window.meekoppel_preview_button.click()
+    app.processEvents()
+    assert called["preview"] == 1
+
+
+def test_meekoppel_preview_uses_legacy_when_flag_disabled(monkeypatch):
+    app = _ensure_app()
+    monkeypatch.setattr(QMessageBox, "critical", lambda *_a, **_k: QMessageBox.Ok)
+    monkeypatch.setattr(QMessageBox, "warning", lambda *_a, **_k: QMessageBox.Ok)
+    monkeypatch.setattr(QMessageBox, "information", lambda *_a, **_k: QMessageBox.Ok)
+    monkeypatch.setattr(workspace_window, "meekoppel_workflow_v2_enabled", lambda: False)
+
+    called = {"legacy": 0}
+
+    def _legacy_preview(*_args, **_kwargs):
+        called["legacy"] += 1
+        return MeekoppelLocationPreview(
+            pbs_id="P1",
+            path_label="x",
+            target_year=0,
+            moves=(),
+            blocked_reason=messages.WORKSPACE_MEEKOPPEL_SELECT_MIN_REV,
+        )
+
+    monkeypatch.setattr(workspace_window, "preview_meekoppel", _legacy_preview)
+
+    window = ResultsWorkspaceWindow()
+    window.show()
+    project = _project_with_rev_pair()
+    window._state.set_last_project(project)
+    rr = run_single(
+        project,
+        Path("tests/fixtures/one_fm_planning.rcm.json"),
+        full_recompute=True,
+        parallel=False,
+    )
+    window._state.set_last_run(rr)
+    app.processEvents()
+    window.modus_buttons["lcc"].click()
+    app.processEvents()
+    _expand_meekoppel_panel(window, app)
+    _select_first_pbs_node(window, app)
+
+    window.meekoppel_preview_button.click()
+    app.processEvents()
+    assert called["legacy"] == 1

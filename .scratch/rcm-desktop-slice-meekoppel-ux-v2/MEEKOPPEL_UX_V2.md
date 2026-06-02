@@ -52,7 +52,15 @@
 | 4.3 | `preview` / `apply` nemen **`pbs_id` + window_years`**; geen `MeekoppelLocationGroup` in de view. |
 | 4.4 | Tabelmodel leest `MeekoppelPanelRow`; geen `RCMProject` meer in het model. |
 
-## Implementatie-slices
+## Fase 5 — PBS-multi-select & auto what-if (2026-06-01)
+
+| # | Besluit |
+|---|---------|
+| 5.1 | In LCC-modus: PBS-boom **ExtendedSelection** (Ctrl+klik); preview/apply op **geselecteerde knopen**. |
+| 5.2 | Alle REV-taken onder geselecteerde subtrees worden **samen** gebundeld (dedupe op pm_id). |
+| 5.3 | Tabel blijft discovery-hint; selectie voor bundelen komt uit de **PBS-boom**. |
+| 5.4 | Meekoppel-paneel openen → **what-if automatisch aan** (eenmalig bij expand). |
+
 
 - **A:** `meekoppel_display_service`, `messages`, preview-formattering
 - **B:** tabelmodel, scope-filter in `meekoppel_panel_service`

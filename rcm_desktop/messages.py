@@ -425,11 +425,13 @@ WORKSPACE_LCC_SHIFT_SELECTION_HINT = (
 WORKSPACE_LCC_SELECT_REV_IN_YEAR = "Selecteer REV in dit jaar"
 WORKSPACE_MEEKOPPEL_PANEL_TITLE = "Meekoppelkansen"
 WORKSPACE_MEEKOPPEL_PANEL_HELP = (
-    "Per PBS-locatie in de navigatieboom: REV-taken waarvan de eerste geplande uitvoering "
-    "(due-jaar = levensduur-interval, niet het kalenderjaar in de grafiek) binnen het "
-    "tijdsvenster ligt. Bundel alle REV's op deze locatie naar het vroegste of laatste due-jaar."
+    "Selecteer één of meer onderdelen in de PBS-boom (Ctrl+klik voor meerdere). "
+    "Alle onderliggende REV-taken worden gebundeld naar het vroegste of laatste due-jaar. "
+    "De tabel toont locaties waar REV-taken binnen het tijdsvenster liggen."
 )
-WORKSPACE_MEEKOPPEL_WHATIF_HINT = "Schakel what-if planning in om meekoppelkansen te zien."
+WORKSPACE_MEEKOPPEL_WHATIF_HINT = (
+    "What-if planning wordt automatisch ingeschakeld bij openen van dit paneel."
+)
 WORKSPACE_MEEKOPPEL_EMPTY = "Geen locatiegroepen voor het gekozen tijdsvenster."
 WORKSPACE_MEEKOPPEL_EMPTY_SCOPE = "Geen meekoppelkansen in de geselecteerde boomtak."
 WORKSPACE_MEEKOPPEL_WINDOW_LABEL = "Tijdsvenster (jaren):"
@@ -437,7 +439,22 @@ WORKSPACE_MEEKOPPEL_ANCHOR_EARLIER = "Bundel naar vroegste"
 WORKSPACE_MEEKOPPEL_ANCHOR_LATER = "Bundel naar laatste"
 WORKSPACE_MEEKOPPEL_PREVIEW = "Preview"
 WORKSPACE_MEEKOPPEL_APPLY = "Toepassen"
-WORKSPACE_MEEKOPPEL_SELECT_ROW = "Selecteer een locatiegroep in de tabel."
+WORKSPACE_MEEKOPPEL_SELECT_PBS = (
+    "Selecteer één of meer onderdelen in de PBS-boom om REV-taken te bundelen."
+)
+WORKSPACE_MEEKOPPEL_SELECT_MIN_REV = (
+    "Selecteer onderdelen met minstens twee REV-taken in totaal."
+)
+WORKSPACE_MEEKOPPEL_SELECT_MIN_SHIFTABLE_REV = (
+    "In de selectie zijn minder dan twee verschuifbare REV-taken beschikbaar."
+)
+WORKSPACE_MEEKOPPEL_SELECTION_NONE = (
+    "Selectie: geen REV-taken gevonden onder de gekozen PBS-onderdelen."
+)
+WORKSPACE_MEEKOPPEL_SELECTION_COUNT = (
+    "Selectie bevat {count} REV-taken ({path})."
+)
+WORKSPACE_MEEKOPPEL_SELECT_ROW = WORKSPACE_MEEKOPPEL_SELECT_PBS
 WORKSPACE_MEEKOPPEL_PREVIEW_TITLE = "Preview bundelen"
 WORKSPACE_MEEKOPPEL_PREVIEW_ANCHOR_EARLIER = "Bundel naar vroegste due-jaar in de groep"
 WORKSPACE_MEEKOPPEL_PREVIEW_ANCHOR_LATER = "Bundel naar laatste due-jaar in de groep"
@@ -447,17 +464,51 @@ WORKSPACE_MEEKOPPEL_PREVIEW_BODY = (
     "{moves}\n"
     "{pbs_footnote}"
 )
-WORKSPACE_MEEKOPPEL_PREVIEW_PBS_FOOTNOTE = "PBS-id: {pbs_id}"
+WORKSPACE_MEEKOPPEL_PREVIEW_PBS_FOOTNOTE = "PBS-id's: {pbs_id}"
 WORKSPACE_MEEKOPPEL_PREVIEW_MOVE_LINE = (
     "  {task_label}: eerste uitvoering {from_year} → {to_year} jaar "
     "(≈ kalender {from_cal} → {to_cal}) ({shift:+d} jaar)"
+)
+WORKSPACE_MEEKOPPEL_PREVIEW_UNCHANGED_LINE = (
+    "  {task_label}: blijft op eerste uitvoering {year} jaar (≈ kalender {cal})"
+)
+WORKSPACE_MEEKOPPEL_PREVIEW_SKIPPED_LINE = (
+    "  {task_label}: overgeslagen ({reason})"
 )
 WORKSPACE_MEEKOPPEL_PREVIEW_NO_MOVES = "Alle REV-taken staan al op het doeljaar."
 WORKSPACE_MEEKOPPEL_PREVIEW_BLOCKED = "Geen shift mogelijk: {reason}"
 WORKSPACE_MEEKOPPEL_HEADER_PATH = "Boompad"
 WORKSPACE_MEEKOPPEL_HEADER_REV_COUNT = "# REV"
-WORKSPACE_MEEKOPPEL_HEADER_DUE_RANGE = "Eerste uitvoering (jaren)"
-WORKSPACE_MEEKOPPEL_HEADER_SPAN = "Verschil (jaren)"
+WORKSPACE_MEEKOPPEL_HEADER_DUE_RANGE = "Eerste uitvoering (baseline, jaren)"
+WORKSPACE_MEEKOPPEL_HEADER_SPAN = "Verschil (baseline, jaren)"
+WORKSPACE_MEEKOPPEL_TOOLTIP_TASK_BASELINE = "  • {label} (baseline jaar {baseline})"
+WORKSPACE_MEEKOPPEL_TOOLTIP_TASK_BASELINE_EFFECTIVE = (
+    "  • {label} (baseline jaar {baseline} · effectief jaar {effective})"
+)
+WORKSPACE_MEEKOPPEL_PREVIEW_SCOPE_LINE = "Bundel-scope: {scope_label} ({count} REV)"
+WORKSPACE_MEEKOPPEL_PREVIEW_DETERMINED_BY_ONE = (
+    "Bepaald door: {label} (baseline {baseline}, effectief {effective})"
+)
+WORKSPACE_MEEKOPPEL_PREVIEW_DETERMINED_BY_MANY = (
+    "Bepaald door: {count} taken op effectief jaar {year}"
+)
+WORKSPACE_MEEKOPPEL_PREVIEW_SCOPE_SWITCH_NOTICE = (
+    "Scope gewijzigd: selectie is opnieuw gezet naar alle verschuifbare taken."
+)
+WORKSPACE_MEEKOPPEL_PREVIEW_APPLY_CONFIRM = (
+    "Toepassen op {scope_label}: {count} REV-taken bundelen naar jaar {target} "
+    "(kalenderjaar {target_cal})?"
+)
+WORKSPACE_MEEKOPPEL_PREVIEW_DIALOG_TITLE = "Preview bundelen"
+WORKSPACE_MEEKOPPEL_PREVIEW_COL_SELECT = ""
+WORKSPACE_MEEKOPPEL_PREVIEW_COL_TASK = "Taak"
+WORKSPACE_MEEKOPPEL_PREVIEW_COL_BASELINE = "Baseline"
+WORKSPACE_MEEKOPPEL_PREVIEW_COL_EFFECTIVE = "Effectief"
+WORKSPACE_MEEKOPPEL_PREVIEW_COL_TARGET = "Doel"
+WORKSPACE_MEEKOPPEL_PREVIEW_COL_DELTA = "Δ"
+WORKSPACE_MEEKOPPEL_PREVIEW_COL_STATUS = "Status"
+WORKSPACE_MEEKOPPEL_PREVIEW_SCOPE_ROW = "Locatierij"
+WORKSPACE_MEEKOPPEL_PREVIEW_SCOPE_PBS = "PBS-selectie"
 WORKSPACE_KPI_COLLAPSE_TOOLTIP = "KPI-paneel in- of uitklappen (alleen Tijdsplot-modus)."
 WORKSPACE_LCC_WHATIF_COLLAPSE_TOOLTIP = (
     "What-if planning en LCC-filters in- of uitklappen (alleen Tijdsplot-modus)."
