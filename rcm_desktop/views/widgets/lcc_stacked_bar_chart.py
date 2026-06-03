@@ -22,6 +22,7 @@ class LCCStackedBarChartWidget(QWidget):
         super().__init__(parent)
         self._buckets: tuple[LCCYearBucket, ...] = ()
         self._selected_year: int | None = None
+        self._scale_max: float | None = None
         self.setMinimumHeight(220)
 
     def set_buckets(self, buckets: tuple[LCCYearBucket, ...]) -> None:
@@ -30,6 +31,11 @@ class LCCStackedBarChartWidget(QWidget):
 
     def set_selected_year(self, calendar_year: int | None) -> None:
         self._selected_year = calendar_year
+        self.update()
+
+    def set_scale_max(self, value: float | None) -> None:
+        """Gedeelde Y-schaal voor A/B-vergelijking (slice 56)."""
+        self._scale_max = value
         self.update()
 
     def buckets(self) -> tuple[LCCYearBucket, ...]:
@@ -77,7 +83,12 @@ class LCCStackedBarChartWidget(QWidget):
             painter.end()
             return
 
-        max_value = max((b.correctief_eur + b.preventief_eur) for b in self._buckets)
+        local_max = max((b.correctief_eur + b.preventief_eur) for b in self._buckets)
+        max_value = (
+            self._scale_max
+            if self._scale_max is not None and self._scale_max > 0.0
+            else local_max
+        )
         if max_value <= 0.0:
             painter.setPen(QPen(QColor("#9E9E9E")))
             painter.drawText(rect, Qt.AlignCenter, messages.WORKSPACE_LCC_EMPTY_STATE)

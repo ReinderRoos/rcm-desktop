@@ -11,14 +11,15 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from rcm_desktop.adapter.compare_split_layout_service import (
+    SPLIT_HORIZONTAL,
+    SPLIT_NONE,
+    SPLIT_VERTICAL,
+)
 from rcm_desktop.adapter.scenario_slot_state import (
     ScenarioSlot,
     ScenarioSlotState,
 )
-
-SPLIT_NONE = "none"
-SPLIT_VERTICAL = "vertical"  # legacy: CM boven, PM onder (tijdreeksen)
-SPLIT_HORIZONTAL = "horizontal"  # legacy: CM links, PM rechts (categorie-bijdragen)
 
 
 @dataclass(frozen=True)

@@ -12,7 +12,6 @@ from PySide6.QtWidgets import QApplication, QDialog, QMessageBox
 from rcm_core.models import FMHorizonProfile, FMResult
 from rcm_core.persistence import load_project
 from rcm_desktop import messages
-from rcm_desktop.adapter.editing_host import get_editing_host, reset_editing_host_for_tests
 from rcm_desktop.adapter.result_view_service import FMResultRow, PBSResultRow
 from rcm_desktop.adapter.results_workspace_state import (
     METRIC_KOSTEN,
@@ -34,13 +33,6 @@ def _ensure_app() -> QApplication:
     if app is None:
         app = QApplication([])
     return app
-
-
-@pytest.fixture(autouse=True)
-def _reset_editing_host_state():
-    reset_editing_host_for_tests()
-    yield
-    reset_editing_host_for_tests()
 
 
 def _three_level_project():
@@ -780,6 +772,9 @@ def test_switch_bijdragen_lcc_bijdragen_preserves_metric_and_source(monkeypatch)
 def test_inactive_mode_is_not_computed_until_visible(monkeypatch):
     app = _ensure_app()
     monkeypatch.setattr(QMessageBox, "critical", lambda *_a, **_k: QMessageBox.Ok)
+    import rcm_desktop.adapter.presentation_lazy_service as lazy_svc
+    import rcm_desktop.adapter.workspace_view_service as view_svc
+
     calls = {"lcc": 0, "contrib": 0}
 
     def _count_lcc(*_a, **_k):
@@ -790,14 +785,8 @@ def test_inactive_mode_is_not_computed_until_visible(monkeypatch):
         calls["contrib"] += 1
         return ()
 
-    monkeypatch.setattr(
-        "rcm_desktop.views.results_workspace_window.build_lcc_planning_curve_reconciled",
-        _count_lcc,
-    )
-    monkeypatch.setattr(
-        "rcm_desktop.views.results_workspace_window.build_contribution_rows",
-        _count_contrib,
-    )
+    monkeypatch.setattr(lazy_svc, "materialize_lcc_curve", _count_lcc)
+    monkeypatch.setattr(view_svc, "build_contribution_rows", _count_contrib)
 
     window = ResultsWorkspaceWindow()
     window.show()
@@ -1028,35 +1017,31 @@ def test_pbs_scope_applies_to_bijdragen_single_pane(monkeypatch):
     assert full_rows >= scoped_rows
 
 
+def _lcc_curve_cache_keys(render_index) -> list:
+    return [k for k in render_index._cache if str(k[2]).startswith("lcc_curve|")]
+
+
 def test_lcc_modus_reuses_render_index_without_second_build(monkeypatch):
     """Slice 37 — LCC bouwt via render_index; tweede bezoek hergebruikt cache."""
-    import rcm_desktop.adapter.lcc_planning_service as lcc_planning
-    import rcm_desktop.adapter.presentation_lazy_service as lazy_svc
-
     app = _ensure_app()
     monkeypatch.setattr(QMessageBox, "critical", lambda *_a, **_k: QMessageBox.Ok)
     window = ResultsWorkspaceWindow()
     window.show()
     project = _three_level_project()
     window._state.set_last_project(project)
-    run = _inject_run(window, project)
+    _inject_run(window, project)
     app.processEvents()
 
-    calls = {"n": 0}
-    real = lcc_planning.build_lcc_planning_curve_reconciled
-
-    def counting(*args, **kwargs):
-        calls["n"] += 1
-        return real(*args, **kwargs)
-
-    monkeypatch.setattr(lazy_svc, "build_lcc_planning_curve_reconciled", counting)
     window.workspace_state.set_modus(MODE_LCC)
     app.processEvents()
-    window.workspace_state.set_modus(MODE_BIJDRAGEN)
+    after_first_lcc = len(_lcc_curve_cache_keys(window._render_index))
+    assert after_first_lcc >= 1
+
+    window.workspace_state.set_modus(MODE_FM_DETAIL)
     app.processEvents()
     window.workspace_state.set_modus(MODE_LCC)
     app.processEvents()
-    assert calls["n"] == 1
+    assert len(_lcc_curve_cache_keys(window._render_index)) == after_first_lcc
 
 
 def test_validate_hydrates_run_from_cache_without_runner(monkeypatch, tmp_path):
@@ -1387,7 +1372,7 @@ def test_workspace_batch_grid_smoke_filter_and_edit(monkeypatch):
         panel._filter_failure.setCurrentIndex(2)  # aging
         panel._search.setText("FM-001")
         app.processEvents()
-        host = get_editing_host()
+        host = window._editing_host
         svc = host.grid_service()
         assert svc is not None
         svc.apply_change("FM-001", "failure_type", "aging")
@@ -1399,7 +1384,7 @@ def test_workspace_batch_grid_smoke_filter_and_edit(monkeypatch):
     window._open_batch_faalwijzen_grid()
     app.processEvents()
 
-    host = get_editing_host()
+    host = window._editing_host
     svc = host.grid_service()
     assert svc is not None
     row = next(r for r in svc.rows() if r.fm_id == "FM-001")

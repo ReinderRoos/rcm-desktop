@@ -7,56 +7,7 @@ from rcm_desktop.adapter.results_workspace_state import MODE_BIJDRAGEN, MODE_LCC
 from rcm_desktop.adapter.run_service import RunResult
 from rcm_desktop.adapter.workspace_presentation_cache import WorkspacePresentationCache
 from rcm_desktop.adapter.workspace_render_index import SLOT_CURRENT, WorkspaceRenderIndex
-from rcm_desktop.adapter.lcc_planning_service import (
-    build_lcc_planning_curve_reconciled as _REAL_BUILD_LCC_PLANNING_CURVE_RECONCILED,
-)
-
-
-def build_lcc_planning_curve_reconciled(
-    project: RCMProject,
-    run: RunResult,
-    *,
-    scope_id: str | None,
-    overlay,
-    type_filters,
-    **kwargs,
-) -> object:
-    """Dispatcher for the LCC planning-curve builder (test-seams).
-
-    - If `rcm_desktop.views.results_workspace_window.build_lcc_planning_curve_reconciled`
-      is monkeypatched (test-seam #1), call that patched function.
-    - Otherwise fall back to the canonical domain implementation
-      (`rcm_desktop.adapter.lcc_planning_service.build_lcc_planning_curve_reconciled`).
-
-    Tests are allowed to monkeypatch *this* symbol as well (test-seam #2),
-    replacing the dispatcher entirely.
-    """
-
-    try:
-        from rcm_desktop.views import results_workspace_window as rww
-
-        view_builder = getattr(rww, "build_lcc_planning_curve_reconciled", None)
-        if view_builder is not None and view_builder is not _REAL_BUILD_LCC_PLANNING_CURVE_RECONCILED:
-            return view_builder(
-                project,
-                run,
-                scope_id=scope_id,
-                overlay=overlay,
-                type_filters=type_filters,
-                **kwargs,
-            )
-    except Exception:
-        # If the view module is not importable, just fall back.
-        pass
-
-    return _REAL_BUILD_LCC_PLANNING_CURVE_RECONCILED(
-        project,
-        run,
-        scope_id=scope_id,
-        overlay=overlay,
-        type_filters=type_filters,
-        **kwargs,
-    )
+from rcm_desktop.adapter.lcc_presentatie_service import materialize_lcc_curve
 
 
 def default_lcc_warmup_snapshot(snapshot: WorkspaceStateSnapshot) -> WorkspaceStateSnapshot:
@@ -80,23 +31,18 @@ def warm_lcc_render_index(
     cache_modus_key: str,
     overlay,
     type_filters,
+    slot: str = SLOT_CURRENT,
 ) -> object:
-    """Lazy LCC warmup via module-level ``build_lcc_planning_curve_reconciled`` (test-seam)."""
-    # Test seam: `tests/test_desktop_results_workspace_window.py` monkeypatches
-    # `rcm_desktop.views.results_workspace_window.build_lcc_planning_curve_reconciled`.
-    # We resolve that symbol at call-time to avoid import-time cycles and so
-    # the monkeypatch remains effective.
-    return render_index.get_or_build(
-        SLOT_CURRENT,
-        scope_id,
-        cache_modus_key,
-        lambda: build_lcc_planning_curve_reconciled(
-            project,
-            run,
-            scope_id=scope_id,
-            overlay=overlay,
-            type_filters=type_filters,
-        ),
+    """Lazy LCC warmup — delegeert naar ``materialize_lcc_curve``."""
+    return materialize_lcc_curve(
+        render_index,
+        project=project,
+        run=run,
+        scope_id=scope_id,
+        cache_modus_key=cache_modus_key,
+        overlay=overlay,
+        type_filters=type_filters,
+        slot=slot,
     )
 
 

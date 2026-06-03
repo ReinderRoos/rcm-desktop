@@ -6,7 +6,7 @@ from dataclasses import dataclass, replace
 
 from rcm_core.models import RCMProject
 
-from rcm_desktop.adapter.lcc_planning_service import build_lcc_planning_curve_reconciled
+from rcm_desktop.adapter.lcc_presentatie_service import materialize_lcc_curve
 from rcm_desktop.adapter.lcc_type_filter import LCCTypeFilterSet
 from rcm_desktop.adapter.planning_overlay_state import PlanningOverlayState
 from rcm_desktop.adapter.presentation_cache_service import presentation_modus_needs_rebuild
@@ -68,18 +68,17 @@ class WorkspacePresentationCache:
         cache_modus_key: str,
         overlay: PlanningOverlayState,
         type_filters: LCCTypeFilterSet,
+        slot: str = SLOT_CURRENT,
     ) -> object:
-        return render_index.get_or_build(
-            SLOT_CURRENT,
-            scope_id,
-            cache_modus_key,
-            lambda: build_lcc_planning_curve_reconciled(
-                project,
-                run,
-                scope_id=scope_id,
-                overlay=overlay,
-                type_filters=type_filters,
-            ),
+        return materialize_lcc_curve(
+            render_index,
+            project=project,
+            run=run,
+            scope_id=scope_id,
+            cache_modus_key=cache_modus_key,
+            overlay=overlay,
+            type_filters=type_filters,
+            slot=slot,
         )
 
     @staticmethod

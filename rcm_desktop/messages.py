@@ -370,6 +370,30 @@ WORKSPACE_RUN_OTHER_SCENARIO_PLACEHOLDER = (
 WORKSPACE_SCENARIO_CM_TITLE = "CM-scenario"
 WORKSPACE_SCENARIO_PM_TITLE = "PM-scenario"
 
+# A/B-scenariovergelijking (slice 56).
+WORKSPACE_COMPARE_SCENARIO_LABEL = "Scenario"
+WORKSPACE_COMPARE_SCENARIO_PROJECT = "Project"
+WORKSPACE_COMPARE_SCENARIO_CM = "CM"
+WORKSPACE_COMPARE_SCENARIO_PM = "PM"
+WORKSPACE_RUN_SLOT_A_BUTTON_LABEL = "Run → A"
+WORKSPACE_RUN_SLOT_B_BUTTON_LABEL = "Run → B"
+WORKSPACE_RUN_SLOT_A_BUTTON_TOOLTIP = (
+    "Voer analyse uit en bevries resultaat in slot A (referentie)."
+)
+WORKSPACE_RUN_SLOT_B_BUTTON_TOOLTIP = (
+    "Voer analyse uit en bevries resultaat in slot B (variant)."
+)
+WORKSPACE_COMPARE_TOGGLE_LABEL = "Vergelijk A ↔ B"
+WORKSPACE_COMPARE_TOGGLE_TOOLTIP = (
+    "Toon Top 10 en Tijdsplot naast elkaar voor gevulde slots. "
+    "Geen dubbele run verplicht — gebruik Zet als A/B na validate."
+)
+WORKSPACE_SEED_SLOT_A_BUTTON_LABEL = "Zet huidige run als A"
+WORKSPACE_SEED_SLOT_B_BUTTON_LABEL = "Zet huidige run als B"
+WORKSPACE_CLEAR_COMPARE_BUTTON_LABEL = "Wis vergelijking"
+WORKSPACE_COMPARE_SLOT_PLACEHOLDER = "Nog geen run — gebruik Run → {slot}"
+WORKSPACE_COMPARE_SLOT_HEADER = "{label}"
+
 # LCC-planning (slice 28).
 WORKSPACE_LCC_FILTER_CM = "CM"
 WORKSPACE_LCC_FILTER_REV = "REV"
@@ -509,6 +533,15 @@ WORKSPACE_MEEKOPPEL_PREVIEW_COL_DELTA = "Δ"
 WORKSPACE_MEEKOPPEL_PREVIEW_COL_STATUS = "Status"
 WORKSPACE_MEEKOPPEL_PREVIEW_SCOPE_ROW = "Locatierij"
 WORKSPACE_MEEKOPPEL_PREVIEW_SCOPE_PBS = "PBS-selectie"
+WORKSPACE_MEEKOPPEL_PREVIEW_SELECT_ALL_VISIBLE = "Selecteer zichtbaar"
+WORKSPACE_MEEKOPPEL_PREVIEW_DESELECT_ALL_VISIBLE = "Deselecteer zichtbaar"
+WORKSPACE_MEEKOPPEL_PREVIEW_FILTER_SHIFTING = "Alleen verschuivende taken"
+WORKSPACE_MEEKOPPEL_PREVIEW_FILTER_ALL = "Alle taken"
+WORKSPACE_MEEKOPPEL_PREVIEW_FILTER_PLACEHOLDER = "Filter op taak of PM-id…"
+WORKSPACE_MEEKOPPEL_PREVIEW_SELECTION_SUMMARY = (
+    "Geselecteerd: {selected} · Zichtbaar: {visible} · "
+    "Verborgen geselecteerd: {hidden} · Niet selecteerbaar: {non_selectable}"
+)
 WORKSPACE_KPI_COLLAPSE_TOOLTIP = "KPI-paneel in- of uitklappen (alleen Tijdsplot-modus)."
 WORKSPACE_LCC_WHATIF_COLLAPSE_TOOLTIP = (
     "What-if planning en LCC-filters in- of uitklappen (alleen Tijdsplot-modus)."
@@ -689,6 +722,51 @@ MODEL_SETTINGS_RERUN_REQUIRED = "Herbereken vereist — modelinstellingen zijn g
 MODEL_SETTINGS_VALIDATION_TITLE = "Modelinstellingen niet opgeslagen"
 MODEL_SETTINGS_COMMIT_FAILED = "Opslaan mislukt: {detail}"
 MODEL_SETTINGS_NO_PROJECT = "Laad eerst een project voordat je modelinstellingen opent."
+
+# Rapportage (slice 57)
+REPORT_GENERATE_BUTTON_LABEL = "Rapport genereren…"
+REPORT_GENERATE_BUTTON_TOOLTIP = (
+    "Standaard projectbreed rapport (Word, optioneel PDF). "
+    "Werkruimte-filters en taaktype-filters worden niet overgenomen."
+)
+REPORT_INELIGIBLE_NO_RUN = (
+    "Geen voltooide analyse-run beschikbaar. Start Run → A of een analyse-run."
+)
+REPORT_DIALOG_TITLE = "Rapport genereren"
+REPORT_DIALOG_OUTPUT_PATH = "Outputbestand (.docx)"
+REPORT_DIALOG_GENERATE_PDF = "Ook PDF genereren"
+REPORT_DIALOG_NB_THRESHOLD = "Drempel niet-beschikbaarheid (% van scope)"
+REPORT_DIALOG_COST_THRESHOLD = "Drempel kosten (% van scope)"
+REPORT_DIALOG_INCLUDE_BELOW = "Neem functies onder drempel ook op"
+REPORT_DIALOG_PBS_DEEPDIVE = "Beperk tot geselecteerd PBS-onderdeel"
+REPORT_DIALOG_PREVIEW = "Voorvertoning"
+REPORT_DIALOG_PREVIEW_TEMPLATE = (
+    "Modus: {mode} — NB-functies: {nb_pages}, kosten-functies: {cost_pages}"
+)
+REPORT_GENERATION_BUSY = "Rapport wordt gegenereerd…"
+REPORT_GENERATION_FAILED_TITLE = "Rapport mislukt"
+REPORT_PDF_FAILED_TITLE = "PDF-conversie mislukt"
+REPORT_PDF_FAILED_BODY = (
+    "Het Word-document is wel opgeslagen:\n{docx_path}\n\n{detail}"
+)
+REPORT_SECTION_COVER = "Voorblad"
+REPORT_SECTION_KPI = "KPI's"
+REPORT_SECTION_PROJECT_NB = "Project — niet-beschikbaarheid"
+REPORT_SECTION_PROJECT_LCC = "Project — lifecycle kosten"
+REPORT_SECTION_APPENDIX = "Appendix"
+REPORT_COVER_SCENARIO_SINGLE = "Enkele analyse"
+REPORT_COVER_SCENARIO_COMPARE = "Vergelijking A ↔ B"
+REPORT_KPI_CONTEXT_TEMPLATE = "LCC-periode: {lifecycle_years} jaar — modeljaar: {modeljaar}"
+REPORT_APPENDIX_NB_PROXY = WORKSPACE_UNAVAILABILITY_PROXY_DISCLAIMER
+REPORT_APPENDIX_BELOW_THRESHOLD = (
+    "{nb_count} NB-functie(s) en {cost_count} kosten-functie(s) onder drempel weggelaten."
+)
+REPORT_APPENDIX_NB_OVER_100 = (
+    "Som van functie-NB kan >100% zijn wanneer functies parallel uitvallen."
+)
+REPORT_NARRATIVE_SCENARIO_MISMATCH = (
+    "Let op: scenario A en B gebruiken verschillende scenario-keys; vergelijk interpretatie voorzichtig."
+)
 
 
 def status_label(status: str) -> str:

@@ -213,7 +213,12 @@ def commit_model_settings(
                 path_obj,
                 full_recompute=False,
             )
-            run_result = build_run_result(incremental)
+            run_result = build_run_result(
+                built,
+                list(incremental.fm_results.values()),
+                pbs_results=incremental.pbs_results,
+                summary_prefix="Modelinstellingen opgeslagen",
+            )
         except Exception:
             return ModelSettingsCommitResult(
                 ok=False,

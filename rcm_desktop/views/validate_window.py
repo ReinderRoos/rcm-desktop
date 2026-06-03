@@ -40,7 +40,7 @@ from rcm_desktop.adapter.faalwijzen_edit_service import (
     FaalwijzenEditService,
     FaalwijzenMaterializeBlockedError,
 )
-from rcm_desktop.adapter.editing_host import get_editing_host
+from rcm_desktop.adapter.editing_host import EditingHost
 from rcm_desktop.views.validate_faalwijzen_panel import ValidateFaalwijzenPanel
 from rcm_desktop.adapter.compare_runner import CompareRunner
 from rcm_desktop.adapter.fm_results_table_model import (
@@ -102,6 +102,7 @@ class ValidateWindow(QMainWindow):
         self._panel_visibility: dict[str, bool] = {}
         self._active_result_panel = "fm"
         self._manual_result_override = False
+        self._editing_host = EditingHost()
 
         self.path_input = QLineEdit()
         self.path_input.setPlaceholderText("Pad naar projectbestand (*.rcm.json)")
@@ -507,7 +508,7 @@ class ValidateWindow(QMainWindow):
             self._faalwijzen_panel.detach()
         self._set_panel_visible("faalwijzen", False)
         self._faalwijzen_edit.clear()
-        host = get_editing_host()
+        host = self._editing_host
         host.attach_grid(None)
         host.set_save_handler(None)
         self._clear_ltap_view()
@@ -523,7 +524,7 @@ class ValidateWindow(QMainWindow):
             self._faalwijzen_edit.bind_changed(self._on_faalwijzen_edit_changed)
             if self._faalwijzen_panel is not None:
                 self._faalwijzen_panel.attach(self._faalwijzen_edit, project)
-            host = get_editing_host()
+            host = self._editing_host
             host.attach_grid(self._faalwijzen_edit)
             host.set_save_handler(self._save_current)
             self._set_panel_visible("faalwijzen", True)

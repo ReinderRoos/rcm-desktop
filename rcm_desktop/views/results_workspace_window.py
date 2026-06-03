@@ -22,9 +22,10 @@ from PySide6.QtCore import (
     QModelIndex,
     QSortFilterProxyModel,
     Qt,
+    QUrl,
     Signal,
 )
-from PySide6.QtGui import QCloseEvent, QColor
+from PySide6.QtGui import QCloseEvent, QColor, QDesktopServices
 from PySide6.QtWidgets import (
     QAbstractItemView,
     QButtonGroup,
@@ -60,6 +61,29 @@ from rcm_desktop.adapter.presentation_lazy_service import (
     warm_lcc_render_index,
 )
 from rcm_desktop.adapter.presentation_rebuild_runner import PresentationRebuildRunner
+from rcm_desktop.adapter.compare_run_config import CompareRunConfig
+from rcm_desktop.adapter.compare_run_runner import CompareRunRunner
+from rcm_desktop.adapter.compare_run_service import CompareRunOutcome
+from rcm_desktop.adapter.compare_slot_label import build_compare_slot_label
+from rcm_desktop.adapter.compare_slot_state import (
+    COMPARE_SLOT_A,
+    COMPARE_SLOT_B,
+    CompareSlotState,
+)
+from rcm_desktop.adapter.compare_split_layout_service import compute_compare_split_layout
+from rcm_desktop.adapter.compare_view_service import (
+    build_bijdragen_compare_panels,
+    build_lcc_compare_panels,
+)
+from rcm_desktop.adapter.compare_presentation_policy import (
+    resolve_shared_calendar_year,
+    shared_lcc_y_max,
+)
+from rcm_desktop.adapter.compare_workspace_controller import CompareWorkspaceController
+from rcm_desktop.adapter.report_eligibility_service import assess_report_workspace
+from rcm_desktop.adapter.report_generation_service import ReportGenerationOutcome
+from rcm_desktop.adapter.project_path_resolution_service import resolve_project_file_path
+from rcm_desktop.adapter.report_runner import ReportRunner
 from rcm_desktop.adapter.run_runner import PHASE_MOTOR, PHASE_PRESENTATION, RunRunner
 from rcm_desktop.adapter.contribution_table_model import ContributionTableModel
 from rcm_desktop.adapter.contribution_chart_service import build_contribution_rows
@@ -106,6 +130,7 @@ from rcm_desktop.adapter.meekoppelkansen_discovery_service import (
     collect_rev_tasks_for_pbs_selection,
 )
 from rcm_desktop.views.meekoppel_preview_dialog import MeekoppelPreviewDialog
+from rcm_desktop.views.report_generation_dialog import ReportGenerationDialog
 from rcm_desktop.adapter.meekoppel_suggestions_table_model import (
     MeekoppelSuggestionsTableModel,
 )
@@ -121,6 +146,11 @@ from rcm_desktop.views.grid_dirty_guard import resolve_grid_dirty_before_editor
 from rcm_desktop.views.model_settings_dialog import ModelSettingsDialog
 from rcm_desktop.views.validate_faalwijzen_panel import ValidateFaalwijzenPanel
 from rcm_desktop.views.import_wizard_dialog import ImportDialogInput, run_import_wizard
+from rcm_desktop.views.compare_slot_column import (
+    build_bijdragen_compare_column,
+    build_lcc_compare_column,
+    set_compare_placeholder,
+)
 from rcm_desktop.views.widgets.contribution_bar_chart import ContributionBarChartWidget
 from rcm_desktop.views.widgets.lcc_stacked_bar_chart import LCCStackedBarChartWidget
 from rcm_desktop.adapter.preview_service import build as build_project_preview
@@ -229,6 +259,17 @@ class ResultsWorkspaceWindow(QMainWindow):
         self._suppress_path_change = False
         self._project_total_presentation: PresentationProjectTotal | None = None
         self._render_index = WorkspaceRenderIndex()
+        self._compare_slots = CompareSlotState()
+        self._compare_slots.subscribe(self._on_compare_slots_changed)
+        self._compare_run_runner = CompareRunRunner()
+        self._compare_run_runner.state_changed.connect(self._on_compare_run_state_changed)
+        self._compare_run_runner.slot_result_ready.connect(
+            self._on_compare_slot_result_ready
+        )
+        self._report_runner = ReportRunner()
+        self._report_runner.state_changed.connect(self._on_report_runner_state_changed)
+        self._report_runner.finished.connect(self._on_report_generation_finished)
+        self._report_runner.failed.connect(self._on_report_generation_failed)
         self._editing_host = editing_host if editing_host is not None else EditingHost()
 
         self.workspace_state = ResultsWorkspaceState()
@@ -264,12 +305,44 @@ class ResultsWorkspaceWindow(QMainWindow):
         self.run_analyse_button.setToolTip(messages.WORKSPACE_START_ANALYSE_BUTTON_TOOLTIP)
         self.run_analyse_button.setEnabled(False)
         self.run_analyse_button.clicked.connect(self._start_analyse)
+        self.run_analyse_button.setVisible(False)
+        self.compare_scenario_combo = QComboBox()
+        self.compare_scenario_combo.addItem(
+            messages.WORKSPACE_COMPARE_SCENARIO_PROJECT, None
+        )
+        self.compare_scenario_combo.addItem(
+            messages.WORKSPACE_COMPARE_SCENARIO_CM, "cm"
+        )
+        self.compare_scenario_combo.addItem(
+            messages.WORKSPACE_COMPARE_SCENARIO_PM, "pm"
+        )
+        self.run_slot_a_button = QPushButton(messages.WORKSPACE_RUN_SLOT_A_BUTTON_LABEL)
+        self.run_slot_a_button.setToolTip(messages.WORKSPACE_RUN_SLOT_A_BUTTON_TOOLTIP)
+        self.run_slot_a_button.clicked.connect(self._start_run_slot_a)
+        self.run_slot_b_button = QPushButton(messages.WORKSPACE_RUN_SLOT_B_BUTTON_LABEL)
+        self.run_slot_b_button.setToolTip(messages.WORKSPACE_RUN_SLOT_B_BUTTON_TOOLTIP)
+        self.run_slot_b_button.clicked.connect(self._start_run_slot_b)
+        self.compare_toggle_button = QToolButton()
+        self.compare_toggle_button.setText(messages.WORKSPACE_COMPARE_TOGGLE_LABEL)
+        self.compare_toggle_button.setToolTip(messages.WORKSPACE_COMPARE_TOGGLE_TOOLTIP)
+        self.compare_toggle_button.setCheckable(True)
+        self.compare_toggle_button.toggled.connect(self._on_compare_toggle)
+        self.seed_slot_a_button = QPushButton(messages.WORKSPACE_SEED_SLOT_A_BUTTON_LABEL)
+        self.seed_slot_a_button.clicked.connect(self._seed_current_run_as_a)
+        self.seed_slot_b_button = QPushButton(messages.WORKSPACE_SEED_SLOT_B_BUTTON_LABEL)
+        self.seed_slot_b_button.clicked.connect(self._seed_current_run_as_b)
+        self.clear_compare_button = QPushButton(messages.WORKSPACE_CLEAR_COMPARE_BUTTON_LABEL)
+        self.clear_compare_button.clicked.connect(self._clear_compare_slots)
         self.batch_faalwijzen_button = QPushButton(messages.WORKSPACE_MENU_FAALWIJZEN_BATCH)
         self.batch_faalwijzen_button.setToolTip(messages.WORKSPACE_MENU_FAALWIJZEN_BATCH)
         self.batch_faalwijzen_button.clicked.connect(self._open_batch_faalwijzen_grid)
         self.model_settings_button = QPushButton(messages.MODEL_SETTINGS_BUTTON_LABEL)
         self.model_settings_button.setToolTip(messages.MODEL_SETTINGS_BUTTON_LABEL)
         self.model_settings_button.clicked.connect(self._open_model_settings)
+        self.generate_report_button = QPushButton(messages.REPORT_GENERATE_BUTTON_LABEL)
+        self.generate_report_button.setToolTip(messages.REPORT_GENERATE_BUTTON_TOOLTIP)
+        self.generate_report_button.setEnabled(False)
+        self.generate_report_button.clicked.connect(self._open_report_generation)
 
         self.pbs_toggle_button = QToolButton()
         self.pbs_toggle_button.setText(messages.WORKSPACE_PBS_TOGGLE_LABEL)
@@ -535,6 +608,15 @@ class ResultsWorkspaceWindow(QMainWindow):
         _apply_workspace_data_table_header_policy(self.bijdragen_table_view.horizontalHeader())
         single_layout.addWidget(self.bijdragen_table_view, stretch=1)
         page_layout.addWidget(self.bijdragen_single_slot_pane, stretch=1)
+        self.bijdragen_compare_pane = QWidget()
+        compare_layout = QHBoxLayout(self.bijdragen_compare_pane)
+        compare_layout.setContentsMargins(0, 0, 0, 0)
+        self._bijdragen_compare_col_a = build_bijdragen_compare_column(self.bijdragen_compare_pane)
+        self._bijdragen_compare_col_b = build_bijdragen_compare_column(self.bijdragen_compare_pane)
+        compare_layout.addWidget(self._bijdragen_compare_col_a["host"], stretch=1)
+        compare_layout.addWidget(self._bijdragen_compare_col_b["host"], stretch=1)
+        self.bijdragen_compare_pane.setVisible(False)
+        page_layout.addWidget(self.bijdragen_compare_pane, stretch=1)
         return page
 
     def _build_lcc_page(self) -> QWidget:
@@ -724,6 +806,17 @@ class ResultsWorkspaceWindow(QMainWindow):
         self.lcc_detail_table_view.setSelectionMode(QAbstractItemView.ExtendedSelection)
         self.lcc_detail_table_view.clicked.connect(self._on_lcc_detail_cell_clicked)
         page_layout.addWidget(self.lcc_single_slot_pane, stretch=1)
+        self.lcc_compare_pane = QWidget()
+        lcc_compare_layout = QVBoxLayout(self.lcc_compare_pane)
+        lcc_compare_layout.setContentsMargins(0, 0, 0, 0)
+        self._lcc_compare_col_a = build_lcc_compare_column(self.lcc_compare_pane)
+        self._lcc_compare_col_b = build_lcc_compare_column(self.lcc_compare_pane)
+        self._lcc_compare_col_a["chart"].year_clicked.connect(self._on_lcc_year_clicked)
+        self._lcc_compare_col_b["chart"].year_clicked.connect(self._on_lcc_year_clicked)
+        lcc_compare_layout.addWidget(self._lcc_compare_col_a["host"], stretch=1)
+        lcc_compare_layout.addWidget(self._lcc_compare_col_b["host"], stretch=1)
+        self.lcc_compare_pane.setVisible(False)
+        page_layout.addWidget(self.lcc_compare_pane, stretch=1)
         return page
 
     def _build_fm_detail_page(self) -> QWidget:
@@ -820,6 +913,14 @@ class ResultsWorkspaceWindow(QMainWindow):
             self.validate_button,
             self.batch_faalwijzen_button,
             self.model_settings_button,
+            self.generate_report_button,
+            self.compare_scenario_combo,
+            self.run_slot_a_button,
+            self.run_slot_b_button,
+            self.seed_slot_a_button,
+            self.seed_slot_b_button,
+            self.compare_toggle_button,
+            self.clear_compare_button,
             self.run_analyse_button,
         ):
             toolbar_row.addWidget(w)
@@ -1053,6 +1154,11 @@ class ResultsWorkspaceWindow(QMainWindow):
                 self._refresh_fm_inspector(None)
         if lcc_active:
             self._sync_lcc_filter_checks(snapshot.lcc_filters)
+        if hasattr(self, "compare_toggle_button"):
+            if self.compare_toggle_button.isChecked() != snapshot.compare_mode:
+                blocker = self.compare_toggle_button.blockSignals(True)
+                self.compare_toggle_button.setChecked(snapshot.compare_mode)
+                self.compare_toggle_button.blockSignals(blocker)
         # KPI-tabel hangt af van actieve scope; refresh bij scope-wissel.
         split_depth = workspace_detail_split_render_depth(
             self._last_workspace_snapshot_for_split_depth,
@@ -1083,6 +1189,7 @@ class ResultsWorkspaceWindow(QMainWindow):
         if project is None:
             self._set_pbs_source_model(None, show_totals=False)
             self._pbs_scope_id = None
+            self._clear_compare_slots()
             self._clear_detail_zone()
             self._project_total_presentation = None
             self._last_workspace_snapshot_for_split_depth = None
@@ -1097,6 +1204,7 @@ class ResultsWorkspaceWindow(QMainWindow):
         self._pbs_scope_id = None
         self._last_workspace_snapshot_for_split_depth = None
         self._render_index.on_workspace_state_reset()
+        self._clear_compare_slots()
         if not self._state.take_preserve_workspace_ui():
             self.workspace_state.reset_for_new_project()
         self._seed_planning_overlay_from_import(project)
@@ -1104,12 +1212,14 @@ class ResultsWorkspaceWindow(QMainWindow):
         self._rerender_detail_for_current_scope()
         self._refresh_kpi_table_view()
         self._update_run_buttons_enabled()
+        self._update_report_button_enabled()
         self._update_scope_status_label()
 
     def _on_state_run_changed(self, run_result: object) -> None:
         self._sync_pbs_tree_for_state()
         self._rerender_detail_for_current_scope()
         self._refresh_kpi_table_view()
+        self._update_report_button_enabled()
         if isinstance(run_result, RunResult) and run_result.error is not None:
             self._show_run_error(run_result.error)
 
@@ -1164,8 +1274,35 @@ class ResultsWorkspaceWindow(QMainWindow):
         session = self._project_session()
         snapshot = self.workspace_state.snapshot()
 
-        if session is None or not session.has_completed_run():
+        if session is None:
             self._clear_detail_zone()
+            return
+        compare_view = snapshot.compare_mode and snapshot.modus in (
+            MODE_BIJDRAGEN,
+            MODE_LCC,
+        )
+        has_compare_data = self._compare_slots.has(COMPARE_SLOT_A) or self._compare_slots.has(
+            COMPARE_SLOT_B
+        )
+        if not session.has_completed_run() and not (compare_view and has_compare_data):
+            self._clear_detail_zone()
+            return
+        if compare_view and not has_compare_data:
+            self._sync_compare_pane_visibility(
+                compare_mode=True, modus=snapshot.modus
+            )
+            if snapshot.modus == MODE_BIJDRAGEN:
+                pairs = (
+                    (self._bijdragen_compare_col_a, COMPARE_SLOT_A),
+                    (self._bijdragen_compare_col_b, COMPARE_SLOT_B),
+                )
+            else:
+                pairs = (
+                    (self._lcc_compare_col_a, COMPARE_SLOT_A),
+                    (self._lcc_compare_col_b, COMPARE_SLOT_B),
+                )
+            for col, slot in pairs:
+                set_compare_placeholder(col, slot_key=slot)
             return
 
         required = required_detail_builders(snapshot, split_render_depth)
@@ -1178,23 +1315,35 @@ class ResultsWorkspaceWindow(QMainWindow):
             if fm_view is not None:
                 self._render_fm_rows(fm_view.fm_rows)
         elif modus == MODE_BIJDRAGEN and MODE_BIJDRAGEN in required:
-            bijdragen_view = build_bijdragen_view(
-                session,
-                snapshot,
-                render_index=self._render_index,
-                project_total_presentation=self._project_total_presentation,
+            layout = compute_compare_split_layout(
+                compare_mode=snapshot.compare_mode, modus=modus
             )
-            if bijdragen_view is not None:
-                self._bind_bijdragen_view(bijdragen_view, snapshot)
+            if layout.compare_mode:
+                self._render_bijdragen_compare(session, snapshot)
+            else:
+                bijdragen_view = build_bijdragen_view(
+                    session,
+                    snapshot,
+                    render_index=self._render_index,
+                    project_total_presentation=self._project_total_presentation,
+                )
+                if bijdragen_view is not None:
+                    self._bind_bijdragen_view(bijdragen_view, snapshot)
         elif modus == MODE_LCC and MODE_LCC in required:
-            lcc_view = build_lcc_view(
-                session,
-                snapshot,
-                render_index=self._render_index,
-                prev_snapshot=self._last_lcc_render_snapshot,
+            layout = compute_compare_split_layout(
+                compare_mode=snapshot.compare_mode, modus=modus
             )
-            if lcc_view is not None:
-                self._render_lcc_view(session, lcc_view, snapshot)
+            if layout.compare_mode:
+                self._render_lcc_compare(session, snapshot)
+            else:
+                lcc_view = build_lcc_view(
+                    session,
+                    snapshot,
+                    render_index=self._render_index,
+                    prev_snapshot=self._last_lcc_render_snapshot,
+                )
+                if lcc_view is not None:
+                    self._render_lcc_view(session, lcc_view, snapshot)
 
     def _selected_fm_id_from_table(self) -> str | None:
         model = self.fm_table_view.model()
@@ -1506,6 +1655,7 @@ class ResultsWorkspaceWindow(QMainWindow):
         snapshot: WorkspaceStateSnapshot,
     ) -> None:
         """LCC-planning met type-filters, overlay en jaardetail (slice 28)."""
+        self._sync_compare_pane_visibility(compare_mode=False, modus=MODE_LCC)
         scope = lcc_view.render_scope
         curve = lcc_view.curve
         self._last_lcc_render_snapshot = snapshot
@@ -2070,6 +2220,9 @@ class ResultsWorkspaceWindow(QMainWindow):
         bijdragen_view,
         snapshot: WorkspaceStateSnapshot,
     ) -> None:
+        self._sync_compare_pane_visibility(
+            compare_mode=False, modus=MODE_BIJDRAGEN
+        )
         rows = bijdragen_view.contribution_rows
         self.bijdragen_chart_widget.set_rows(rows)
         table_model = ContributionTableModel(
@@ -2090,6 +2243,7 @@ class ResultsWorkspaceWindow(QMainWindow):
         self.lcc_chart_widget.set_buckets(())
         self.lcc_table_view.setModel(None)
         self.lcc_empty_state_label.setVisible(True)
+        self._sync_compare_pane_visibility(compare_mode=False, modus=MODE_BIJDRAGEN)
 
     def _update_scope_status_label(self) -> None:
         if self._pbs_scope_id is None:
@@ -2170,6 +2324,7 @@ class ResultsWorkspaceWindow(QMainWindow):
         self._state.set_last_project(outcome.project)
         self._state.set_last_preview(build_project_preview(outcome.project))
         self._project_total_presentation = None
+        self._clear_compare_slots()
         self._after_project_validated(outcome.project)
         self.validate_summary_label.setText(
             messages.ISOGRAPH_IMPORT_SAVE_SUCCESS.format(path=outcome.save_path)
@@ -2182,6 +2337,7 @@ class ResultsWorkspaceWindow(QMainWindow):
         self._state.set_last_project(None)
         self._state.set_last_result(None)
         self._project_total_presentation = None
+        self._clear_compare_slots()
         self._clear_validate_status_strip()
         self._update_run_button_label()
 
@@ -2193,6 +2349,223 @@ class ResultsWorkspaceWindow(QMainWindow):
         self.validate_summary_label.clear()
         if self._runner.start(path):
             self.validate_button.setEnabled(False)
+
+    def _compare_run_config(self) -> CompareRunConfig:
+        snapshot = self.workspace_state.snapshot()
+        scenario_key = self.compare_scenario_combo.currentData()
+        return CompareRunConfig(
+            scenario_key=scenario_key,
+            planning_overlay=snapshot.planning_overlay,
+            force_recompute=True,
+        )
+
+    def _start_run_slot_a(self) -> None:
+        self._start_run_slot(COMPARE_SLOT_A)
+
+    def _start_run_slot_b(self) -> None:
+        self._start_run_slot(COMPARE_SLOT_B)
+
+    def _start_run_slot(self, slot_key: str) -> None:
+        session = self._project_session()
+        if session is None:
+            return
+        path = self.path_input.text().strip()
+        if self._compare_run_runner.start(
+            wss.editing_project(session),
+            path,
+            slot_key,
+            self._compare_run_config(),
+        ):
+            self._update_run_buttons_enabled()
+
+    def _on_compare_run_state_changed(self, _state: str) -> None:
+        self._update_run_buttons_enabled()
+
+    def _on_compare_slot_result_ready(self, slot_key: str, outcome: object) -> None:
+        if not isinstance(outcome, CompareRunOutcome):
+            return
+        previous = self._compare_slots.get(slot_key)
+        if outcome.status != "done":
+            QMessageBox.critical(
+                self,
+                messages.RUN_ERROR_DIALOG_TITLE,
+                outcome.summary,
+            )
+            if CompareWorkspaceController.should_keep_previous_slot_on_error(
+                slot_key, outcome, previous=previous
+            ):
+                return
+            return
+        plan = CompareWorkspaceController.plan_after_slot_run(
+            slot_key, outcome, previous_snapshot=previous
+        )
+        if plan is None:
+            return
+        run_result = CompareWorkspaceController.apply_slot_run(self._compare_slots, plan)
+        self._render_index.on_slot_updated(plan.render_slot_key)
+        self._state.set_last_run(run_result)
+        if plan.snapshot.presentation is not None:
+            self._project_total_presentation = plan.snapshot.presentation
+        self._rerender_detail_for_current_scope()
+
+    def _on_compare_slots_changed(self) -> None:
+        self._rerender_detail_for_current_scope()
+
+    def _on_compare_toggle(self, checked: bool) -> None:
+        self.workspace_state.set_compare_mode(checked)
+
+    def _clear_compare_slots(self) -> None:
+        self._compare_slots.clear_all()
+        if self.workspace_state.snapshot().compare_mode:
+            self.workspace_state.set_compare_mode(False)
+        if hasattr(self, "compare_toggle_button"):
+            self.compare_toggle_button.setChecked(False)
+
+    def _seed_current_run_as_a(self) -> None:
+        self._seed_current_run(COMPARE_SLOT_A)
+
+    def _seed_current_run_as_b(self) -> None:
+        self._seed_current_run(COMPARE_SLOT_B)
+
+    def _seed_current_run(self, slot_key: str) -> None:
+        run = self._state.last_run
+        if run is None or run.status != "done":
+            QMessageBox.warning(
+                self,
+                messages.ERROR_DIALOG_TITLE,
+                messages.WORKSPACE_COMPARE_SLOT_PLACEHOLDER.format(slot=slot_key),
+            )
+            return
+        snapshot = self.workspace_state.snapshot()
+        scenario_key = self.compare_scenario_combo.currentData()
+        label = build_compare_slot_label(
+            slot_key,
+            scenario_key=scenario_key,
+            overlay=snapshot.planning_overlay,
+        )
+        self._compare_slots.seed_from_last_run(
+            slot_key,
+            run_result=run,
+            presentation=self._project_total_presentation,
+            scenario_key=scenario_key,
+            overlay_at_run=snapshot.planning_overlay,
+            label=label,
+        )
+        self._state.set_last_run(run)
+
+    def _sync_compare_pane_visibility(self, *, compare_mode: bool, modus: str) -> None:
+        bijdragen_compare = compare_mode and modus == MODE_BIJDRAGEN
+        lcc_compare = compare_mode and modus == MODE_LCC
+        if hasattr(self, "bijdragen_single_slot_pane"):
+            self.bijdragen_single_slot_pane.setVisible(not bijdragen_compare)
+            self.bijdragen_compare_pane.setVisible(bijdragen_compare)
+            self.bijdragen_chart_label.setVisible(not bijdragen_compare)
+        if hasattr(self, "lcc_single_slot_pane"):
+            self.lcc_single_slot_pane.setVisible(not lcc_compare)
+            self.lcc_compare_pane.setVisible(lcc_compare)
+            if not lcc_compare:
+                self.lcc_empty_state_label.setVisible(True)
+
+    def _bind_bijdragen_column(
+        self,
+        column: dict,
+        bijdragen_view,
+        snapshot: WorkspaceStateSnapshot,
+    ) -> None:
+        rows = bijdragen_view.contribution_rows
+        column["chart"].set_rows(rows)
+        table_model = ContributionTableModel(
+            rows,
+            metric=snapshot.metric,
+            presentation=snapshot.contribution_presentation,
+        )
+        column["table"].setModel(table_model)
+        column["placeholder"].setVisible(len(rows) == 0)
+        column["chart"].setVisible(len(rows) > 0)
+        column["table"].setVisible(len(rows) > 0)
+
+    def _render_bijdragen_compare(
+        self,
+        session: ProjectSession,
+        snapshot: WorkspaceStateSnapshot,
+    ) -> None:
+        self._sync_compare_pane_visibility(compare_mode=True, modus=MODE_BIJDRAGEN)
+        panels = build_bijdragen_compare_panels(
+            session,
+            snapshot,
+            slots=self._compare_slots,
+            render_index=self._render_index,
+            project_total_presentation=self._project_total_presentation,
+        )
+        columns = {
+            COMPARE_SLOT_A: self._bijdragen_compare_col_a,
+            COMPARE_SLOT_B: self._bijdragen_compare_col_b,
+        }
+        for panel in panels:
+            col = columns[panel.slot_key]
+            col["header"].setText(
+                messages.WORKSPACE_COMPARE_SLOT_HEADER.format(label=panel.label)
+            )
+            if not panel.filled or panel.bijdragen is None:
+                set_compare_placeholder(col, slot_key=panel.slot_key)
+                continue
+            col["placeholder"].setVisible(False)
+            self._bind_bijdragen_column(col, panel.bijdragen, snapshot)
+
+    def _render_lcc_compare(
+        self,
+        session: ProjectSession,
+        snapshot: WorkspaceStateSnapshot,
+    ) -> None:
+        self._sync_compare_pane_visibility(compare_mode=True, modus=MODE_LCC)
+        panels = build_lcc_compare_panels(
+            session,
+            snapshot,
+            slots=self._compare_slots,
+            render_index=self._render_index,
+            prev_snapshot=self._last_lcc_render_snapshot,
+        )
+        columns = {
+            COMPARE_SLOT_A: self._lcc_compare_col_a,
+            COMPARE_SLOT_B: self._lcc_compare_col_b,
+        }
+        buckets_by_slot: dict[str, tuple] = {}
+        for panel in panels:
+            col = columns[panel.slot_key]
+            col["header"].setText(
+                messages.WORKSPACE_COMPARE_SLOT_HEADER.format(label=panel.label)
+            )
+            if not panel.filled or panel.lcc is None or panel.lcc.curve is None:
+                set_compare_placeholder(col, slot_key=panel.slot_key)
+                col["chart"].set_buckets(())
+                col["chart"].set_scale_max(None)
+                continue
+            buckets = tuple(panel.lcc.curve.display_buckets)
+            buckets_by_slot[panel.slot_key] = buckets
+            col["placeholder"].setVisible(False)
+            col["chart"].setVisible(True)
+            col["table"].setVisible(True)
+        y_max = 0.0
+        if buckets_by_slot:
+            y_max = shared_lcc_y_max(
+                buckets_by_slot.get(COMPARE_SLOT_A, ()),
+                buckets_by_slot.get(COMPARE_SLOT_B, ()),
+            )
+        shared_year = resolve_shared_calendar_year(
+            workspace_year=snapshot.lcc_calendar_year,
+            chart_a_year=None,
+            chart_b_year=None,
+        )
+        for panel in panels:
+            if not panel.filled or panel.lcc is None or panel.lcc.curve is None:
+                continue
+            col = columns[panel.slot_key]
+            buckets = tuple(panel.lcc.curve.display_buckets)
+            col["chart"].set_scale_max(y_max if y_max > 0 else None)
+            col["chart"].set_buckets(buckets)
+            col["chart"].set_selected_year(shared_year)
+            col["table"].setModel(LCCYearTableModel(buckets))
+        self._last_lcc_render_snapshot = snapshot
 
     def _start_analyse(self) -> None:
         path = self.path_input.text().strip()
@@ -2292,10 +2665,15 @@ class ResultsWorkspaceWindow(QMainWindow):
 
     def _load_presentation_from_disk(self) -> PresentationProjectTotal | None:
         session = self._project_session()
-        path = self.path_input.text().strip()
-        if session is None or not path:
+        if session is None:
             return None
-        return wss.load_presentation_for_session(session, path)
+        resolved = resolve_project_file_path(
+            session_path=session.path,
+            path_text=self.path_input.text(),
+        )
+        if resolved.file_path is None:
+            return None
+        return wss.load_presentation_for_session(session, str(resolved.file_path))
 
     def _maybe_start_presentation_rebuild(self) -> None:
         session = self._project_session()
@@ -2383,15 +2761,112 @@ class ResultsWorkspaceWindow(QMainWindow):
         self._project_total_presentation = None
         self._after_project_validated(project)
 
+    def _update_report_button_enabled(self) -> None:
+        if not hasattr(self, "generate_report_button"):
+            return
+        assessment = assess_report_workspace(
+            last_run=self._state.last_run,
+            compare_slots=self._compare_slots,
+            live_overlay=self.workspace_state.snapshot().planning_overlay,
+        )
+        busy = getattr(self, "_report_runner", None) is not None and self._report_runner.busy
+        self.generate_report_button.setEnabled(assessment.eligible and not busy)
+
+    def _open_report_generation(self) -> None:
+        session = self._project_session()
+        if session is None:
+            return
+        resolved = resolve_project_file_path(
+            session_path=session.path,
+            path_text=self.path_input.text(),
+        )
+        if resolved.file_path is None:
+            QMessageBox.information(
+                self,
+                messages.REPORT_DIALOG_TITLE,
+                messages.ERROR_EMPTY_PATH,
+            )
+            return
+        project = session.loaded.core()
+        project_path = resolved.file_path
+        default_path = resolved.default_report_output_path(project)
+        if default_path is None:
+            return
+        dialog = ReportGenerationDialog(
+            self,
+            project=project,
+            project_path=project_path,
+            last_run=self._state.last_run,
+            compare_slots=self._compare_slots,
+            live_overlay=self.workspace_state.snapshot().planning_overlay,
+            default_output_path=default_path,
+            scope_id=self.workspace_state.snapshot().scope_id,
+        )
+        if dialog.exec() != QDialog.DialogCode.Accepted:
+            return
+        options = dialog.options()
+        bundle = dialog.bundle()
+        if options is None or bundle is None:
+            return
+        started = self._report_runner.start(
+            project,
+            bundle,
+            options,
+            project_path=project_path,
+        )
+        if not started:
+            QMessageBox.warning(
+                self,
+                messages.REPORT_GENERATION_FAILED_TITLE,
+                messages.REPORT_GENERATION_BUSY,
+            )
+
+    def _on_report_runner_state_changed(self, state: str) -> None:
+        if state == "busy":
+            self.generate_report_button.setEnabled(False)
+        else:
+            self._update_report_button_enabled()
+
+    def _on_report_generation_finished(self, outcome: object) -> None:
+        if not isinstance(outcome, ReportGenerationOutcome):
+            return
+        QDesktopServices.openUrl(QUrl.fromLocalFile(str(outcome.docx_path)))
+        if outcome.pdf_error:
+            QMessageBox.warning(
+                self,
+                messages.REPORT_PDF_FAILED_TITLE,
+                messages.REPORT_PDF_FAILED_BODY.format(
+                    docx_path=outcome.docx_path,
+                    detail=outcome.pdf_error,
+                ),
+            )
+
+    def _on_report_generation_failed(self, detail: str) -> None:
+        QMessageBox.critical(self, messages.REPORT_GENERATION_FAILED_TITLE, detail)
+
     def _update_run_buttons_enabled(self) -> None:
         validation_ok = (
             self._state.last_result is not None
             and self._state.last_result.status in {"valid", "valid_with_warnings"}
         )
-        busy = self._run_runner.busy or self._presentation_rebuild_runner.busy
+        busy = (
+            self._run_runner.busy
+            or self._presentation_rebuild_runner.busy
+            or self._compare_run_runner.busy
+            or self._report_runner.busy
+        )
         can_run = validation_ok and self._project_session() is not None and not busy
         if hasattr(self, "run_analyse_button"):
             self.run_analyse_button.setEnabled(can_run)
+        for btn in (
+            getattr(self, "run_slot_a_button", None),
+            getattr(self, "run_slot_b_button", None),
+            getattr(self, "seed_slot_a_button", None),
+            getattr(self, "seed_slot_b_button", None),
+        ):
+            if btn is not None:
+                btn.setEnabled(can_run)
+        self._update_report_button_enabled()
 
     def _clear_validate_status_strip(self) -> None:
         if not hasattr(self, "validate_status_label"):

@@ -10,6 +10,7 @@ from rcm_desktop.adapter.results_workspace_controller import ResultsWorkspaceCon
 from rcm_desktop.adapter.run_policy import DEFAULT_RUN_POLICY, RunUserIntent
 from rcm_desktop.adapter.run_service import build_run_result
 from rcm_desktop.adapter.workspace_presentation_cache import WorkspacePresentationCache
+from pathlib import Path
 
 
 def _project() -> RCMProject:
@@ -82,6 +83,19 @@ def test_results_workspace_controller_passive_flag():
     from rcm_desktop.adapter.planning_overlay_state import PlanningOverlayState
 
     overlay = PlanningOverlayState.inactive().begin_what_if().set_passive("PM-1", passive=True)
-    plan = ResultsWorkspaceController.plan_after_successful_run(overlay)
+    plan = ResultsWorkspaceController.plan_after_successful_run(
+        overlay,
+        has_presentation_payload=False,
+    )
     assert plan.had_passive_before_run is True
     assert plan.invalidate_render_index is True
+
+
+def test_presentation_adapters_do_not_import_results_workspace_view() -> None:
+    root = Path(__file__).resolve().parent.parent
+    for rel in (
+        "rcm_desktop/adapter/presentation_lazy_service.py",
+        "rcm_desktop/adapter/workspace_view_service.py",
+    ):
+        source = (root / rel).read_text(encoding="utf-8")
+        assert "from rcm_desktop.views import results_workspace_window" not in source

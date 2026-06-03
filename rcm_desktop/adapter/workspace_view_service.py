@@ -3,8 +3,6 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Callable
-
 from rcm_desktop.adapter.contribution_chart_service import ContributionRow, build_contribution_rows
 from rcm_desktop.adapter.fm_evident_filter import filter_fm_rows_by_evident
 from rcm_desktop.adapter.lcc_render_cache_service import build_lcc_curve_cache_key
@@ -107,7 +105,7 @@ def build_bijdragen_view(
         slot,
         snapshot.scope_id,
         cache_modus,
-        lambda: _build_contribution_rows_via_test_seam(
+        lambda: build_contribution_rows(
             project,
             run,
             source=snapshot.source,
@@ -124,46 +122,13 @@ def build_bijdragen_view(
     )
 
 
-def _build_contribution_rows_via_test_seam(
-    project,
-    run,
-    *,
-    source,
-    metric,
-    top_n,
-    scope_id,
-    presentation,
-):
-    try:
-        from rcm_desktop.views import results_workspace_window as rww
-
-        return rww.build_contribution_rows(
-            project,
-            run,
-            source=source,
-            metric=metric,
-            top_n=top_n,
-            scope_id=scope_id,
-            presentation=presentation,
-        )
-    except Exception:
-        return build_contribution_rows(
-            project,
-            run,
-            source=source,
-            metric=metric,
-            top_n=top_n,
-            scope_id=scope_id,
-            presentation=presentation,
-        )
-
-
 def build_lcc_view(
     session: ProjectSession,
     snapshot: WorkspaceStateSnapshot,
     *,
     render_index: WorkspaceRenderIndex,
     prev_snapshot: WorkspaceStateSnapshot | None,
+    slot: str = SLOT_CURRENT,
 ) -> LCCView | None:
     if not session.has_completed_run():
         return None
@@ -176,4 +141,5 @@ def build_lcc_view(
         snapshot,
         render_index=render_index,
         prev_snapshot=prev_snapshot,
+        slot=slot,
     )

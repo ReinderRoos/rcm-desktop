@@ -12,6 +12,7 @@ from PySide6.QtWidgets import (
     QHBoxLayout,
     QHeaderView,
     QLabel,
+    QLineEdit,
     QMessageBox,
     QPushButton,
     QTableWidget,
@@ -24,6 +25,10 @@ from rcm_desktop import messages
 from rcm_desktop.adapter.meekoppel_apply_service import MeekoppelAnchor, MeekoppelLocationPreview
 from rcm_desktop.adapter.meekoppel_bundle_insight_service import BundleScopeKind
 from rcm_desktop.adapter.meekoppel_display_service import due_calendar_year
+from rcm_desktop.adapter.meekoppel_preview_selection_service import (
+    MeekoppelPreviewSelectionModel,
+    is_shiftable,
+)
 from rcm_desktop.adapter.meekoppelkansen_discovery_service import MeekoppelLocationGroup
 from rcm_desktop.adapter.meekoppel_workflow_service import MeekoppelWorkflowService
 from rcm_desktop.adapter.planning_overlay_state import PlanningOverlayState
@@ -61,7 +66,9 @@ class MeekoppelPreviewDialog(QDialog):
             "location_row" if location_group is not None else "pbs_selection"
         )
         self._preview: MeekoppelLocationPreview | None = None
+        self._selection: MeekoppelPreviewSelectionModel | None = None
         self._checked_pm_ids: frozenset[str] = frozenset()
+        self._syncing_checks = False
 
         self.setWindowTitle(messages.WORKSPACE_MEEKOPPEL_PREVIEW_DIALOG_TITLE)
         layout = QVBoxLayout(self)
@@ -83,6 +90,37 @@ class MeekoppelPreviewDialog(QDialog):
         self._determined_label = QLabel("")
         self._determined_label.setWordWrap(True)
         layout.addWidget(self._determined_label)
+
+        self._selection_summary_label = QLabel("")
+        self._selection_summary_label.setWordWrap(True)
+        layout.addWidget(self._selection_summary_label)
+
+        filter_row = QHBoxLayout()
+        self._filter_field = QLineEdit()
+        self._filter_field.setPlaceholderText(
+            messages.WORKSPACE_MEEKOPPEL_PREVIEW_FILTER_PLACEHOLDER
+        )
+        self._filter_field.textChanged.connect(self._on_row_filter_changed)
+        self._filter_shift_button = QPushButton(
+            messages.WORKSPACE_MEEKOPPEL_PREVIEW_FILTER_SHIFTING
+        )
+        self._filter_shift_button.setCheckable(True)
+        self._filter_shift_button.toggled.connect(self._on_shifting_filter_toggled)
+        filter_row.addWidget(self._filter_field, stretch=1)
+        filter_row.addWidget(self._filter_shift_button)
+        layout.addLayout(filter_row)
+
+        bulk_row = QHBoxLayout()
+        select_all_btn = QPushButton(messages.WORKSPACE_MEEKOPPEL_PREVIEW_SELECT_ALL_VISIBLE)
+        select_all_btn.clicked.connect(self._on_select_all_visible)
+        deselect_all_btn = QPushButton(
+            messages.WORKSPACE_MEEKOPPEL_PREVIEW_DESELECT_ALL_VISIBLE
+        )
+        deselect_all_btn.clicked.connect(self._on_deselect_all_visible)
+        bulk_row.addWidget(select_all_btn)
+        bulk_row.addWidget(deselect_all_btn)
+        bulk_row.addStretch(1)
+        layout.addLayout(bulk_row)
 
         self._table = QTableWidget(0, 7, self)
         self._table.setHorizontalHeaderLabels(
@@ -156,12 +194,25 @@ class MeekoppelPreviewDialog(QDialog):
         if insight is not None:
             self._scope_label.setText(insight.summary_lines[0])
             self._determined_label.setText(insight.summary_lines[1])
-            self._populate_table(insight)
+            self._selection = MeekoppelPreviewSelectionModel.from_task_rows(
+                insight.task_rows
+            )
+            self._refresh_table()
         else:
             self._scope_label.setText(self._preview.path_label)
             self._determined_label.setText("")
+            self._selection = None
             self._populate_legacy()
         if notify_scope_switch:
+            self._filter_field.blockSignals(True)
+            self._filter_field.clear()
+            self._filter_field.blockSignals(False)
+            self._filter_shift_button.blockSignals(True)
+            self._filter_shift_button.setChecked(False)
+            self._filter_shift_button.setText(
+                messages.WORKSPACE_MEEKOPPEL_PREVIEW_FILTER_SHIFTING
+            )
+            self._filter_shift_button.blockSignals(False)
             QMessageBox.information(
                 self,
                 messages.WORKSPACE_MEEKOPPEL_PREVIEW_DIALOG_TITLE,
@@ -169,62 +220,103 @@ class MeekoppelPreviewDialog(QDialog):
             )
         self._update_apply_enabled()
 
-    def _populate_table(self, insight) -> None:
-        rows = insight.task_rows
+    def _refresh_table(self) -> None:
+        if self._selection is None:
+            return
+        self._syncing_checks = True
+        try:
+            self._populate_table(self._selection.visible_rows())
+            self._selection_summary_label.setText(self._selection.summary_line())
+        finally:
+            self._syncing_checks = False
+        self._update_apply_enabled()
+
+    def _populate_table(self, rows) -> None:
         self._table.setRowCount(len(rows))
-        shiftable_pm: list[str] = []
         for i, row in enumerate(rows):
             cb = QCheckBox()
-            enabled = row.blocked_reason is None and row.delta_years != 0
-            cb.setEnabled(enabled)
-            cb.setChecked(enabled)
-            if enabled:
-                shiftable_pm.append(row.pm_id)
-            cb.stateChanged.connect(self._update_apply_enabled)
+            shiftable = is_shiftable(row)
+            cb.setEnabled(shiftable)
+            cb.setChecked(self._selection is not None and self._selection.is_checked(row.pm_id))
+            cb.stateChanged.connect(
+                lambda _state, pm_id=row.pm_id: self._on_row_check_changed(pm_id)
+            )
             self._table.setCellWidget(i, 0, cb)
             self._set_item(i, 1, row.task_label, row.is_target_driver)
-            self._set_item(i, 2, str(row.baseline_year))
-            self._set_item(i, 3, str(row.effective_year))
-            self._set_item(i, 4, str(row.target_year))
-            self._set_item(i, 5, str(row.delta_years))
+            self._set_item(i, 2, str(row.baseline_year), False)
+            self._set_item(i, 3, str(row.effective_year), False)
+            self._set_item(i, 4, str(row.target_year), False)
+            self._set_item(i, 5, str(row.delta_years), False)
             status = row.blocked_reason or (
                 messages.WORKSPACE_MEEKOPPEL_PREVIEW_NO_MOVES
                 if row.delta_years == 0
                 else ""
             )
-            self._set_item(i, 6, status)
-        self._checked_pm_ids = frozenset(shiftable_pm)
+            self._set_item(i, 6, status, False)
 
     def _populate_legacy(self) -> None:
         assert self._preview is not None
         self._table.setRowCount(0)
+        self._selection_summary_label.setText("")
 
-    def _set_item(self, row: int, col: int, text: str, highlight: bool) -> None:
+    def _set_item(self, row: int, col: int, text: str, highlight: bool = False) -> None:
         item = QTableWidgetItem(text)
         item.setFlags(item.flags() & ~Qt.ItemFlag.ItemIsEditable)
         if highlight:
             item.setBackground(Qt.GlobalColor.lightGray)
         self._table.setItem(row, col, item)
 
-    def _selected_shiftable_pm_ids(self) -> frozenset[str]:
-        ids: list[str] = []
-        insight = self._preview.bundle_insight if self._preview else None
-        if insight is None:
-            return frozenset()
-        for i, row in enumerate(insight.task_rows):
-            widget = self._table.cellWidget(i, 0)
-            if not isinstance(widget, QCheckBox) or not widget.isChecked():
-                continue
-            if row.blocked_reason is None and row.delta_years != 0:
-                ids.append(row.pm_id)
-        return frozenset(ids)
+    def _on_row_check_changed(self, pm_id: str) -> None:
+        if self._syncing_checks or self._selection is None:
+            return
+        widget = self.sender()
+        if not isinstance(widget, QCheckBox):
+            return
+        self._selection = self._selection.set_checked(pm_id, widget.isChecked())
+        self._selection_summary_label.setText(self._selection.summary_line())
+        self._update_apply_enabled()
+
+    def _on_row_filter_changed(self, text: str) -> None:
+        if self._selection is None:
+            return
+        self._selection = self._selection.with_row_filter(text)
+        self._refresh_table()
+
+    def _on_shifting_filter_toggled(self, checked: bool) -> None:
+        if self._selection is None:
+            return
+        self._selection = self._selection.with_visibility_filter(
+            "shifting_only" if checked else "all"
+        )
+        self._filter_shift_button.setText(
+            messages.WORKSPACE_MEEKOPPEL_PREVIEW_FILTER_ALL
+            if checked
+            else messages.WORKSPACE_MEEKOPPEL_PREVIEW_FILTER_SHIFTING
+        )
+        self._refresh_table()
+
+    def _on_select_all_visible(self) -> None:
+        if self._selection is None:
+            return
+        self._selection = self._selection.bulk_select_visible()
+        self._refresh_table()
+
+    def _on_deselect_all_visible(self) -> None:
+        if self._selection is None:
+            return
+        self._selection = self._selection.bulk_deselect_visible()
+        self._refresh_table()
 
     def _update_apply_enabled(self) -> None:
-        selected = self._selected_shiftable_pm_ids()
-        self._apply_button.setEnabled(len(selected) >= 2)
+        if self._selection is None:
+            self._apply_button.setEnabled(False)
+            return
+        self._apply_button.setEnabled(self._selection.apply_enabled())
 
     def _on_apply(self) -> None:
-        selected = self._selected_shiftable_pm_ids()
+        if self._selection is None:
+            return
+        selected = self._selection.apply_eligible_pm_ids()
         if len(selected) < 2:
             return
         assert self._preview is not None

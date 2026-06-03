@@ -22,3 +22,13 @@ def test_issue07_compare_runner_stays_in_legacy_validate_window_only() -> None:
     validate_source = VALIDATE_WINDOW.read_text(encoding="utf-8")
     assert "CompareRunner" not in workspace_source
     assert "CompareRunner" in validate_source
+
+
+def test_issue07_workspace_has_slice56_ab_compare_path() -> None:
+    """Slice 56 issue 06 — nieuw A/B-pad in werkruimte, geen legacy compare-runner."""
+    workspace_source = WORKSPACE_WINDOW.read_text(encoding="utf-8")
+    assert "CompareSlotState" in workspace_source
+    assert "CompareRunRunner" in workspace_source
+    assert "CompareRunConfig" in workspace_source
+    assert "compare_mode" in workspace_source
+    assert "CompareRunner" not in workspace_source

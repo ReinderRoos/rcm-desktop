@@ -23,6 +23,9 @@ python -m rcm_core.cli run     tests\fixtures\awzi_haarlem_waarderpolder_demo.rc
 # tests:
 python -m pytest
 
+# optioneel: PDF-export uit werkruimte-rapport vereist LibreOffice (soffice op PATH,
+# standaard Windows-installatie onder Program Files, of env LIBREOFFICE_PROGRAM)
+
 # Qt-desktop:
 python -m rcm_desktop.main
 ```

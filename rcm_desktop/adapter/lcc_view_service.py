@@ -12,7 +12,7 @@ from rcm_desktop.adapter.lcc_render_cache_service import build_lcc_curve_cache_k
 from rcm_desktop.adapter.presentation_lazy_service import warm_lcc_render_index
 from rcm_desktop.adapter.results_workspace_state import WorkspaceStateSnapshot
 from rcm_desktop.adapter.run_service import RunResult
-from rcm_desktop.adapter.workspace_render_index import WorkspaceRenderIndex
+from rcm_desktop.adapter.workspace_render_index import SLOT_CURRENT, WorkspaceRenderIndex
 
 
 @dataclass(frozen=True)
@@ -28,6 +28,7 @@ def build_lcc_view(
     *,
     render_index: WorkspaceRenderIndex,
     prev_snapshot: WorkspaceStateSnapshot | None,
+    slot: str = SLOT_CURRENT,
 ) -> LCCView:
     """Bouw LCC-curve + render-scope via render-index (één adapter-seam)."""
     scope = lcc_render_scope(prev_snapshot, snapshot)
@@ -40,6 +41,7 @@ def build_lcc_view(
         cache_modus_key=cache_modus,
         overlay=snapshot.planning_overlay,
         type_filters=snapshot.lcc_filters,
+        slot=slot,
     )
     planning_curve = curve if isinstance(curve, LCCPlanningCurve) else None
     return LCCView(curve=planning_curve, render_scope=scope)

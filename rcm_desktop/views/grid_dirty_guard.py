@@ -7,9 +7,8 @@ from typing import Literal
 from PySide6.QtWidgets import QMessageBox, QWidget
 
 from rcm_desktop import messages
+from rcm_desktop.adapter.dirty_guard_policy import resolve_dirty_choice
 from rcm_desktop.adapter.editing_host import EditingHost, get_editing_host
-from rcm_desktop.adapter.faalwijzen_edit_service import FaalwijzenEditService
-
 GridDirtyResolution = Literal["proceed", "cancel"]
 
 
@@ -33,22 +32,18 @@ def resolve_grid_dirty_before_editor(
 
     clicked = box.clickedButton()
     if clicked is cancel_btn:
+        outcome = resolve_dirty_choice(editing_host, "cancel")
+    elif clicked is discard_btn:
+        outcome = resolve_dirty_choice(editing_host, "discard")
+    elif clicked is save_btn:
+        outcome = resolve_dirty_choice(editing_host, "save")
+    else:
+        outcome = "cancel"
+    if outcome == "warn_save_failed":
+        QMessageBox.warning(
+            parent,
+            messages.GRID_DIRTY_GUARD_TITLE,
+            messages.FAALWIJZEN_BULK_FAILED.format(detail="Grid opslaan mislukt."),
+        )
         return "cancel"
-    if clicked is discard_btn:
-        _discard_grid(editing_host.grid_service())
-        return "proceed"
-    if clicked is save_btn:
-        if not editing_host.invoke_grid_save():
-            QMessageBox.warning(
-                parent,
-                messages.GRID_DIRTY_GUARD_TITLE,
-                messages.FAALWIJZEN_BULK_FAILED.format(detail="Grid opslaan mislukt."),
-            )
-            return "cancel"
-        return "proceed"
-    return "cancel"
-
-
-def _discard_grid(svc: FaalwijzenEditService | None) -> None:
-    if svc is not None:
-        svc.discard_changes()
+    return "proceed" if outcome == "proceed" else "cancel"

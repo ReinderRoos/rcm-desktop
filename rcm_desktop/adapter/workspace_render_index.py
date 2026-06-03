@@ -10,6 +10,8 @@ from typing import TypeVar
 from rcm_desktop.adapter.ltap_view_cache import invalidate_ltap_view_cache
 
 SLOT_CURRENT = "CURRENT"
+SLOT_A = "A"
+SLOT_B = "B"
 SLOT_CM = "CM"
 SLOT_PM = "PM"
 

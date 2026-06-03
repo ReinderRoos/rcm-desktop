@@ -5,6 +5,7 @@ from __future__ import annotations
 import copy
 import sys
 from pathlib import Path
+from unittest.mock import MagicMock
 
 import pytest
 
@@ -12,6 +13,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from rcm_core.cache import compute_global_digest
 from rcm_core.config import RCMConfig
+from rcm_core.incremental_run import IncrementalRunResult
 from rcm_core.models import FailureType, Faalwijze, Functie, PBSItem, RCMProject
 from rcm_core.persistence import load_project, save_project
 from rcm_desktop.adapter.isograph_import_service import build_from_sheets
@@ -127,6 +129,45 @@ class TestModelSettingsService:
         assert not result.requires_rerun
         restored = load_project(path)
         assert restored.projectnaam == "Rapportage"
+
+    def test_commit_with_direct_rerun_returns_run_result(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        project = _minimal_project()
+        baseline = build_draft(project)
+        draft = type(baseline)(**{**baseline.__dict__, "lifecycle_years": 60.0})
+        path = tmp_path / "proj.rcm.json"
+        save_project(project, path)
+
+        mock_inc = MagicMock(
+            return_value=IncrementalRunResult(
+                fm_results={},
+                pbs_results={},
+                cache_only=False,
+                affected_fm_ids=["FM-A"],
+                recalculated_fm_count=1,
+            )
+        )
+        monkeypatch.setattr(
+            "rcm_desktop.adapter.model_settings_service.run_incremental_analysis",
+            mock_inc,
+        )
+
+        result = commit_model_settings(
+            project,
+            draft,
+            baseline=baseline,
+            project_path=path,
+            save_to_disk=True,
+            run_after_commit=True,
+        )
+
+        assert result.ok
+        assert result.project is not None
+        assert result.requires_rerun
+        assert result.run_result is not None
+        assert result.run_result.status == "done"
+        mock_inc.assert_called_once()
 
 
 class TestApplyDefaultAging:
