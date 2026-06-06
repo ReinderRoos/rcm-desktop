@@ -1,0 +1,445 @@
+"""Qt-vrije orchestratie voor resultatenwerkruimte snapshot-ticks (slice 61).
+
+``plan_ui_sync`` — toolbar-zichtbaarheid, modus-sync, compare-chrome, collapse.
+``plan_render`` / ``plan_workspace_tick`` — detail-presentatie zonder Qt.
+"""
+from __future__ import annotations
+
+from dataclasses import dataclass
+from typing import Literal
+
+from rcm_desktop.adapter.compare_split_layout_service import compute_compare_split_layout
+from rcm_desktop.adapter.compare_slot_state import (
+    COMPARE_SLOT_A,
+    COMPARE_SLOT_B,
+    CompareSlotState,
+)
+from rcm_desktop.adapter.compare_view_service import (
+    ComparePanel,
+    build_bijdragen_compare_panels,
+    build_lcc_compare_panels,
+)
+from rcm_desktop.adapter.lcc_type_filter import LCCTypeFilterSet
+from rcm_desktop.adapter.lcc_view_service import LCCView
+from rcm_desktop.adapter.presentation_cache_service import PresentationProjectTotal
+from rcm_desktop.adapter.project_session import ProjectSession
+from rcm_desktop.adapter.results_workspace_state import (
+    METRIC_FAALMOMENTEN,
+    METRIC_NIET_BESCHIKBAARHEID,
+    MODE_BIJDRAGEN,
+    MODE_FM_DETAIL,
+    MODE_LCC,
+    ContributionYearChoice,
+    WorkspaceStateSnapshot,
+)
+from rcm_desktop.adapter.workspace_detail_render_scope import (
+    RenderSplitDepth,
+    required_detail_builders,
+    should_refresh_kpi_for_render_depth,
+    workspace_detail_split_render_depth,
+)
+from rcm_desktop.adapter.workspace_render_index import WorkspaceRenderIndex
+from rcm_desktop.adapter.workspace_view_service import (
+    BijdragenView,
+    FMDetailView,
+    build_bijdragen_view,
+    build_fm_detail_view,
+    build_lcc_view,
+)
+
+RenderKind = Literal[
+    "empty",
+    "compare_placeholder",
+    "fm",
+    "bijdragen",
+    "lcc",
+    "bijdragen_compare",
+    "lcc_compare",
+]
+
+_COLLAPSE_EXPANDED = "▼"
+_COLLAPSE_COLLAPSED = "▶"
+
+
+@dataclass(frozen=True)
+class BijdragenToolbarPlan:
+    top10_subbar_visible: bool
+    horizon_lifecycle_visible: bool
+    horizon_per_year_visible: bool
+    year_combo_visible: bool
+    nb_hours_visible: bool
+    nb_percent_visible: bool
+    horizon_lifecycle_checked: bool
+    horizon_per_year_checked: bool
+    nb_hours_checked: bool
+    nb_percent_checked: bool
+    year_choice: ContributionYearChoice
+
+
+@dataclass(frozen=True)
+class LccToolbarVisibilityPlan:
+    filter_bar_visible: bool
+    show_all_years_visible: bool
+    year_summary_label_visible: bool
+    meekoppel_panel_visible: bool
+    lcc_filters: LCCTypeFilterSet
+
+
+@dataclass(frozen=True)
+class FmToolbarPlan:
+    batch_faalwijzen_visible: bool
+    new_fm_visible: bool
+    fm_evident_filter_visible: bool
+    fm_inspector_visible: bool
+    clear_fm_inspector: bool
+
+
+@dataclass(frozen=True)
+class CompareChromePlan:
+    compare_mode_checked: bool
+    bijdragen_single_visible: bool
+    bijdragen_compare_visible: bool
+    bijdragen_chart_label_visible: bool
+    lcc_single_visible: bool
+    lcc_compare_visible: bool
+    lcc_empty_state_visible: bool
+
+
+@dataclass(frozen=True)
+class CollapsePanelPlan:
+    chrome_visible: bool
+    content_visible: bool
+    collapse_glyph: str
+    chrome_enabled: bool
+
+
+@dataclass(frozen=True)
+class MeekoppelCollapsePlan:
+    chrome_visible: bool
+    content_visible: bool
+    collapse_glyph: str
+    chrome_enabled: bool
+    ensure_whatif_if_expanding: bool
+
+
+@dataclass(frozen=True)
+class CollapsePanelsPlan:
+    kpi: CollapsePanelPlan | None
+    lcc_whatif: CollapsePanelPlan | None
+    meekoppel: MeekoppelCollapsePlan | None
+
+
+@dataclass(frozen=True)
+class WorkspaceUiSyncPlan:
+    detail_page_modus: str
+    modus_button: str
+    source_toggle: str
+    metric: str
+    bijdragen: BijdragenToolbarPlan | None
+    lcc_toolbar: LccToolbarVisibilityPlan | None
+    fm_toolbar: FmToolbarPlan | None
+    compare: CompareChromePlan
+    collapse: CollapsePanelsPlan
+    refresh_kpi: bool
+    pbs_tree_extended_selection: bool
+    scope_id: str | None
+
+
+@dataclass(frozen=True)
+class WorkspaceRenderContext:
+    session: ProjectSession | None
+    compare_slots: CompareSlotState
+    project_total_presentation: PresentationProjectTotal | None
+    render_index: WorkspaceRenderIndex
+    prev_lcc_snapshot: WorkspaceStateSnapshot | None
+
+
+@dataclass(frozen=True)
+class RenderPlan:
+    kind: RenderKind
+    fm: FMDetailView | None = None
+    bijdragen: BijdragenView | None = None
+    lcc: LCCView | None = None
+    compare_panels: tuple[ComparePanel, ...] | None = None
+
+
+@dataclass(frozen=True)
+class WorkspaceTickPlan:
+    ui_sync: WorkspaceUiSyncPlan
+    render: RenderPlan
+    split_depth: RenderSplitDepth
+
+
+def plan_compare_chrome(snapshot: WorkspaceStateSnapshot) -> CompareChromePlan:
+    """Publieke planner voor compare-pane-zichtbaarheid (ui_sync + render-only ticks)."""
+    return _plan_compare_chrome(snapshot)
+
+
+def _plan_bijdragen_toolbar(
+    snapshot: WorkspaceStateSnapshot,
+) -> BijdragenToolbarPlan | None:
+    if snapshot.modus != MODE_BIJDRAGEN:
+        return None
+    pres = snapshot.contribution_presentation
+    horizon_metric = snapshot.metric in (
+        METRIC_FAALMOMENTEN,
+        METRIC_NIET_BESCHIKBAARHEID,
+    )
+    year_combo_visible = horizon_metric and pres.horizon == "per_year"
+    nb_visible = snapshot.metric == METRIC_NIET_BESCHIKBAARHEID
+    return BijdragenToolbarPlan(
+        top10_subbar_visible=True,
+        horizon_lifecycle_visible=horizon_metric,
+        horizon_per_year_visible=horizon_metric,
+        year_combo_visible=year_combo_visible,
+        nb_hours_visible=nb_visible,
+        nb_percent_visible=nb_visible,
+        horizon_lifecycle_checked=pres.horizon == "lifecycle",
+        horizon_per_year_checked=pres.horizon == "per_year",
+        nb_hours_checked=pres.unavailability_display == "hours",
+        nb_percent_checked=pres.unavailability_display == "percent",
+        year_choice=pres.year_choice,
+    )
+
+
+def _plan_lcc_toolbar(snapshot: WorkspaceStateSnapshot) -> LccToolbarVisibilityPlan:
+    return LccToolbarVisibilityPlan(
+        filter_bar_visible=True,
+        show_all_years_visible=True,
+        year_summary_label_visible=True,
+        meekoppel_panel_visible=True,
+        lcc_filters=snapshot.lcc_filters,
+    )
+
+
+def _plan_fm_toolbar(_snapshot: WorkspaceStateSnapshot) -> FmToolbarPlan:
+    return FmToolbarPlan(
+        batch_faalwijzen_visible=True,
+        new_fm_visible=True,
+        fm_evident_filter_visible=True,
+        fm_inspector_visible=True,
+        clear_fm_inspector=False,
+    )
+
+
+def _plan_compare_chrome(snapshot: WorkspaceStateSnapshot) -> CompareChromePlan:
+    bijdragen_compare = snapshot.compare_mode and snapshot.modus == MODE_BIJDRAGEN
+    lcc_compare = snapshot.compare_mode and snapshot.modus == MODE_LCC
+    return CompareChromePlan(
+        compare_mode_checked=snapshot.compare_mode,
+        bijdragen_single_visible=not bijdragen_compare,
+        bijdragen_compare_visible=bijdragen_compare,
+        bijdragen_chart_label_visible=not bijdragen_compare,
+        lcc_single_visible=not lcc_compare,
+        lcc_compare_visible=lcc_compare,
+        lcc_empty_state_visible=not lcc_compare,
+    )
+
+
+def _collapse_glyph(collapsed: bool) -> str:
+    return _COLLAPSE_COLLAPSED if collapsed else _COLLAPSE_EXPANDED
+
+
+def _plan_kpi_collapse(snapshot: WorkspaceStateSnapshot) -> CollapsePanelPlan | None:
+    if snapshot.modus != MODE_LCC:
+        return None
+    collapsed = snapshot.kpi_collapsed_in_lcc
+    return CollapsePanelPlan(
+        chrome_visible=True,
+        content_visible=not collapsed,
+        collapse_glyph=_collapse_glyph(collapsed),
+        chrome_enabled=True,
+    )
+
+
+def _plan_lcc_whatif_collapse(
+    snapshot: WorkspaceStateSnapshot,
+) -> CollapsePanelPlan | None:
+    if snapshot.modus != MODE_LCC:
+        return None
+    collapsed = snapshot.lcc_whatif_collapsed_in_lcc
+    return CollapsePanelPlan(
+        chrome_visible=True,
+        content_visible=not collapsed,
+        collapse_glyph=_collapse_glyph(collapsed),
+        chrome_enabled=True,
+    )
+
+
+def _meekoppel_ensure_whatif(
+    previous: WorkspaceStateSnapshot | None,
+    current: WorkspaceStateSnapshot,
+) -> bool:
+    if current.modus != MODE_LCC or current.meekoppel_collapsed_in_lcc:
+        return False
+    if previous is None:
+        return True
+    if previous.modus != MODE_LCC:
+        return True
+    return previous.meekoppel_collapsed_in_lcc and not current.meekoppel_collapsed_in_lcc
+
+
+def _plan_meekoppel_collapse(
+    previous: WorkspaceStateSnapshot | None,
+    snapshot: WorkspaceStateSnapshot,
+) -> MeekoppelCollapsePlan | None:
+    if snapshot.modus != MODE_LCC:
+        return None
+    collapsed = snapshot.meekoppel_collapsed_in_lcc
+    content_visible = not collapsed
+    return MeekoppelCollapsePlan(
+        chrome_visible=True,
+        content_visible=content_visible,
+        collapse_glyph=_collapse_glyph(collapsed),
+        chrome_enabled=True,
+        ensure_whatif_if_expanding=_meekoppel_ensure_whatif(previous, snapshot),
+    )
+
+
+def _plan_collapse_panels(
+    previous: WorkspaceStateSnapshot | None,
+    snapshot: WorkspaceStateSnapshot,
+) -> CollapsePanelsPlan:
+    return CollapsePanelsPlan(
+        kpi=_plan_kpi_collapse(snapshot),
+        lcc_whatif=_plan_lcc_whatif_collapse(snapshot),
+        meekoppel=_plan_meekoppel_collapse(previous, snapshot),
+    )
+
+
+def _inactive_fm_toolbar() -> FmToolbarPlan:
+    return FmToolbarPlan(
+        batch_faalwijzen_visible=False,
+        new_fm_visible=False,
+        fm_evident_filter_visible=False,
+        fm_inspector_visible=False,
+        clear_fm_inspector=True,
+    )
+
+
+class ResultsWorkspaceOrchestrator:
+    """Adapter-orchestrator voor workspace snapshot → UI-sync- en render-plannen."""
+
+    @staticmethod
+    def plan_ui_sync(
+        previous: WorkspaceStateSnapshot | None,
+        current: WorkspaceStateSnapshot,
+    ) -> WorkspaceUiSyncPlan:
+        split_depth = workspace_detail_split_render_depth(previous, current)
+        fm_toolbar = (
+            _plan_fm_toolbar(current)
+            if current.modus == MODE_FM_DETAIL
+            else _inactive_fm_toolbar()
+        )
+        return WorkspaceUiSyncPlan(
+            detail_page_modus=current.modus,
+            modus_button=current.modus,
+            source_toggle=current.source,
+            metric=current.metric,
+            bijdragen=_plan_bijdragen_toolbar(current),
+            lcc_toolbar=(
+                _plan_lcc_toolbar(current) if current.modus == MODE_LCC else None
+            ),
+            fm_toolbar=fm_toolbar,
+            compare=plan_compare_chrome(current),
+            collapse=_plan_collapse_panels(previous, current),
+            refresh_kpi=should_refresh_kpi_for_render_depth(split_depth),
+            pbs_tree_extended_selection=current.modus == MODE_LCC,
+            scope_id=current.scope_id,
+        )
+
+    @staticmethod
+    def plan_render(
+        current: WorkspaceStateSnapshot,
+        ctx: WorkspaceRenderContext,
+        *,
+        split_depth: RenderSplitDepth = "active_modus_only",
+    ) -> RenderPlan:
+        session = ctx.session
+        if session is None:
+            return RenderPlan(kind="empty")
+
+        compare_view = current.compare_mode and current.modus in (
+            MODE_BIJDRAGEN,
+            MODE_LCC,
+        )
+        has_compare_data = ctx.compare_slots.has(COMPARE_SLOT_A) or ctx.compare_slots.has(
+            COMPARE_SLOT_B
+        )
+        if not session.has_completed_run() and not (compare_view and has_compare_data):
+            return RenderPlan(kind="empty")
+        if compare_view and not has_compare_data:
+            return RenderPlan(kind="compare_placeholder")
+
+        depth = split_depth
+        if depth == "all_splits":
+            ctx.render_index.on_workspace_state_reset()
+
+        required = required_detail_builders(current, depth)
+        modus = current.modus
+
+        if modus == MODE_FM_DETAIL and MODE_FM_DETAIL in required:
+            return RenderPlan(kind="fm", fm=build_fm_detail_view(session, current))
+
+        if modus == MODE_BIJDRAGEN and MODE_BIJDRAGEN in required:
+            layout = compute_compare_split_layout(
+                compare_mode=current.compare_mode, modus=modus
+            )
+            if layout.compare_mode:
+                panels = build_bijdragen_compare_panels(
+                    session,
+                    current,
+                    slots=ctx.compare_slots,
+                    render_index=ctx.render_index,
+                    project_total_presentation=ctx.project_total_presentation,
+                )
+                return RenderPlan(kind="bijdragen_compare", compare_panels=panels)
+            return RenderPlan(
+                kind="bijdragen",
+                bijdragen=build_bijdragen_view(
+                    session,
+                    current,
+                    render_index=ctx.render_index,
+                    project_total_presentation=ctx.project_total_presentation,
+                ),
+            )
+
+        if modus == MODE_LCC and MODE_LCC in required:
+            layout = compute_compare_split_layout(
+                compare_mode=current.compare_mode, modus=modus
+            )
+            if layout.compare_mode:
+                panels = build_lcc_compare_panels(
+                    session,
+                    current,
+                    slots=ctx.compare_slots,
+                    render_index=ctx.render_index,
+                    prev_snapshot=ctx.prev_lcc_snapshot,
+                )
+                return RenderPlan(kind="lcc_compare", compare_panels=panels)
+            return RenderPlan(
+                kind="lcc",
+                lcc=build_lcc_view(
+                    session,
+                    current,
+                    render_index=ctx.render_index,
+                    prev_snapshot=ctx.prev_lcc_snapshot,
+                ),
+            )
+
+        return RenderPlan(kind="empty")
+
+    @staticmethod
+    def plan_workspace_tick(
+        previous: WorkspaceStateSnapshot | None,
+        current: WorkspaceStateSnapshot,
+        ctx: WorkspaceRenderContext,
+    ) -> WorkspaceTickPlan:
+        split_depth = workspace_detail_split_render_depth(previous, current)
+        return WorkspaceTickPlan(
+            ui_sync=ResultsWorkspaceOrchestrator.plan_ui_sync(previous, current),
+            render=ResultsWorkspaceOrchestrator.plan_render(
+                current, ctx, split_depth=split_depth
+            ),
+            split_depth=split_depth,
+        )

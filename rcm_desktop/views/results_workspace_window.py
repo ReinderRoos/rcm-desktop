@@ -70,11 +70,7 @@ from rcm_desktop.adapter.compare_slot_state import (
     COMPARE_SLOT_B,
     CompareSlotState,
 )
-from rcm_desktop.adapter.compare_split_layout_service import compute_compare_split_layout
-from rcm_desktop.adapter.compare_view_service import (
-    build_bijdragen_compare_panels,
-    build_lcc_compare_panels,
-)
+from rcm_desktop.adapter.compare_view_service import ComparePanel
 from rcm_desktop.adapter.compare_presentation_policy import (
     resolve_shared_calendar_year,
     shared_lcc_y_max,
@@ -98,11 +94,6 @@ from rcm_desktop.adapter.fm_verification_year_table_model import (
 )
 from rcm_desktop.formatting import format_eur, format_float, format_int
 from rcm_desktop.adapter.project_session import ProjectSession
-from rcm_desktop.adapter.workspace_view_service import (
-    build_bijdragen_view,
-    build_fm_detail_view,
-    build_lcc_view,
-)
 from rcm_desktop.adapter.lcc_planning_service import build_lcc_planning_curve_reconciled
 from rcm_desktop.adapter.lcc_detail_selection import rev_row_indices
 from rcm_desktop.adapter.lcc_type_filter import LCCTypeFilterSet
@@ -158,6 +149,20 @@ from rcm_desktop.adapter.project_paths import resolve_default_fixture_path
 from rcm_desktop.adapter.result_view_service import (
     build_pbs_tree,
 )
+from rcm_desktop.adapter.results_workspace_orchestrator import (
+    BijdragenToolbarPlan,
+    CollapsePanelPlan,
+    CollapsePanelsPlan,
+    CompareChromePlan,
+    FmToolbarPlan,
+    LccToolbarVisibilityPlan,
+    MeekoppelCollapsePlan,
+    RenderPlan,
+    ResultsWorkspaceOrchestrator,
+    WorkspaceRenderContext,
+    WorkspaceUiSyncPlan,
+    plan_compare_chrome,
+)
 from rcm_desktop.adapter.results_workspace_state import (
     ALL_METRICS,
     METRIC_FAALMOMENTEN,
@@ -178,12 +183,7 @@ from rcm_desktop.adapter.validate_service import (
     UserFacingError,
     ValidateResult,
 )
-from rcm_desktop.adapter.workspace_detail_render_scope import (
-    RenderSplitDepth,
-    required_detail_builders,
-    should_refresh_kpi_for_render_depth,
-    workspace_detail_split_render_depth,
-)
+from rcm_desktop.adapter.workspace_detail_render_scope import RenderSplitDepth
 from rcm_desktop.adapter.workspace_render_index import WorkspaceRenderIndex
 from rcm_desktop.app_state import AppState
 from rcm_desktop.table_ui_constants import PBS_FILTER_MAX_EXPAND_NODES
@@ -327,10 +327,6 @@ class ResultsWorkspaceWindow(QMainWindow):
         self.compare_toggle_button.setToolTip(messages.WORKSPACE_COMPARE_TOGGLE_TOOLTIP)
         self.compare_toggle_button.setCheckable(True)
         self.compare_toggle_button.toggled.connect(self._on_compare_toggle)
-        self.seed_slot_a_button = QPushButton(messages.WORKSPACE_SEED_SLOT_A_BUTTON_LABEL)
-        self.seed_slot_a_button.clicked.connect(self._seed_current_run_as_a)
-        self.seed_slot_b_button = QPushButton(messages.WORKSPACE_SEED_SLOT_B_BUTTON_LABEL)
-        self.seed_slot_b_button.clicked.connect(self._seed_current_run_as_b)
         self.clear_compare_button = QPushButton(messages.WORKSPACE_CLEAR_COMPARE_BUTTON_LABEL)
         self.clear_compare_button.clicked.connect(self._clear_compare_slots)
         self.batch_faalwijzen_button = QPushButton(messages.WORKSPACE_MENU_FAALWIJZEN_BATCH)
@@ -828,6 +824,13 @@ class ResultsWorkspaceWindow(QMainWindow):
         table_host = QWidget()
         table_layout = QVBoxLayout(table_host)
         table_layout.setContentsMargins(0, 0, 0, 0)
+        fm_toolbar = QHBoxLayout()
+        self.new_fm_button = QPushButton(messages.FM_EDITOR_NEW_FM)
+        self.new_fm_button.setToolTip(messages.FM_EDITOR_NEW_FM_TOOLTIP)
+        self.new_fm_button.clicked.connect(self._on_new_fm_clicked)
+        fm_toolbar.addWidget(self.new_fm_button)
+        fm_toolbar.addStretch(1)
+        table_layout.addLayout(fm_toolbar)
         self.fm_table_view = QTableView()
         self.fm_table_view.setSortingEnabled(True)
         self.fm_table_view.setAlternatingRowColors(True)
@@ -917,8 +920,6 @@ class ResultsWorkspaceWindow(QMainWindow):
             self.compare_scenario_combo,
             self.run_slot_a_button,
             self.run_slot_b_button,
-            self.seed_slot_a_button,
-            self.seed_slot_b_button,
             self.compare_toggle_button,
             self.clear_compare_button,
             self.run_analyse_button,
@@ -1041,6 +1042,7 @@ class ResultsWorkspaceWindow(QMainWindow):
             scope_id = self._pbs_scope_from_tree_index(source_model, source_index)
             if scope_id is not None:
                 self.set_pbs_scope(scope_id)
+        self._sync_new_fm_button_enabled()
         snapshot = self.workspace_state.snapshot()
         if snapshot.modus == MODE_LCC:
             self._clear_meekoppel_preview_gate()
@@ -1063,12 +1065,6 @@ class ResultsWorkspaceWindow(QMainWindow):
                 pbs_ids.add(pbs_id)
         return frozenset(pbs_ids)
 
-    def _sync_pbs_tree_selection_mode(self, snapshot: WorkspaceStateSnapshot) -> None:
-        if snapshot.modus == MODE_LCC:
-            self.pbs_tree_view.setSelectionMode(QAbstractItemView.ExtendedSelection)
-        else:
-            self.pbs_tree_view.setSelectionMode(QAbstractItemView.SingleSelection)
-
     def _on_show_whole_project_clicked(self) -> None:
         self.set_pbs_scope(None)
 
@@ -1079,102 +1075,322 @@ class ResultsWorkspaceWindow(QMainWindow):
         self._update_scope_status_label()
 
     def _on_workspace_state_changed(self, snapshot: WorkspaceStateSnapshot) -> None:
-        page = self._detail_pages.get(snapshot.modus, self.bijdragen_page)
+        previous = self._last_workspace_snapshot_for_split_depth
+        tick = ResultsWorkspaceOrchestrator.plan_workspace_tick(
+            previous,
+            snapshot,
+            self._render_context(),
+        )
+        self._apply_ui_sync(tick.ui_sync, snapshot)
+        self._apply_render_plan(tick.render, snapshot)
+        self._last_workspace_snapshot_for_split_depth = snapshot
+
+    def _render_context(self) -> WorkspaceRenderContext:
+        return WorkspaceRenderContext(
+            session=self._project_session(),
+            compare_slots=self._compare_slots,
+            project_total_presentation=self._project_total_presentation,
+            render_index=self._render_index,
+            prev_lcc_snapshot=self._last_lcc_render_snapshot,
+        )
+
+    def _rerender_detail_for_current_scope(
+        self,
+        *,
+        split_render_depth: RenderSplitDepth = "active_modus_only",
+    ) -> None:
+        snapshot = self.workspace_state.snapshot()
+        plan = ResultsWorkspaceOrchestrator.plan_render(
+            snapshot,
+            self._render_context(),
+            split_depth=split_render_depth,
+        )
+        self._apply_render_plan(plan, snapshot)
+
+    def _apply_render_plan(
+        self,
+        plan: RenderPlan,
+        snapshot: WorkspaceStateSnapshot,
+    ) -> None:
+        if plan.kind == "empty":
+            self._clear_detail_zone()
+            return
+        if plan.kind == "compare_placeholder":
+            self._apply_compare_chrome(plan_compare_chrome(snapshot))
+            if snapshot.modus == MODE_BIJDRAGEN:
+                pairs = (
+                    (self._bijdragen_compare_col_a, COMPARE_SLOT_A),
+                    (self._bijdragen_compare_col_b, COMPARE_SLOT_B),
+                )
+            else:
+                pairs = (
+                    (self._lcc_compare_col_a, COMPARE_SLOT_A),
+                    (self._lcc_compare_col_b, COMPARE_SLOT_B),
+                )
+            for col, slot in pairs:
+                set_compare_placeholder(col, slot_key=slot)
+            return
+        if plan.kind == "fm":
+            if plan.fm is not None:
+                self._render_fm_rows(plan.fm.fm_rows)
+            return
+        if plan.kind == "bijdragen":
+            self._apply_compare_chrome(plan_compare_chrome(snapshot))
+            if plan.bijdragen is not None:
+                self._bind_bijdragen_view(plan.bijdragen, snapshot)
+            return
+        if plan.kind == "lcc":
+            self._apply_compare_chrome(plan_compare_chrome(snapshot))
+            session = self._project_session()
+            if session is not None and plan.lcc is not None:
+                self._render_lcc_view(session, plan.lcc, snapshot)
+            return
+        if plan.kind == "bijdragen_compare":
+            self._apply_compare_chrome(plan_compare_chrome(snapshot))
+            self._apply_bijdragen_compare_panels(plan.compare_panels or (), snapshot)
+            return
+        if plan.kind == "lcc_compare":
+            self._apply_compare_chrome(plan_compare_chrome(snapshot))
+            self._apply_lcc_compare_panels(plan.compare_panels or (), snapshot)
+            return
+
+    def _apply_bijdragen_compare_panels(
+        self,
+        panels: tuple[ComparePanel, ...],
+        snapshot: WorkspaceStateSnapshot,
+    ) -> None:
+        columns = {
+            COMPARE_SLOT_A: self._bijdragen_compare_col_a,
+            COMPARE_SLOT_B: self._bijdragen_compare_col_b,
+        }
+        for panel in panels:
+            col = columns[panel.slot_key]
+            col["header"].setText(
+                messages.WORKSPACE_COMPARE_SLOT_HEADER.format(label=panel.label)
+            )
+            if not panel.filled or panel.bijdragen is None:
+                set_compare_placeholder(col, slot_key=panel.slot_key)
+                continue
+            col["placeholder"].setVisible(False)
+            self._bind_bijdragen_column(col, panel.bijdragen, snapshot)
+
+    def _apply_lcc_compare_panels(
+        self,
+        panels: tuple[ComparePanel, ...],
+        snapshot: WorkspaceStateSnapshot,
+    ) -> None:
+        columns = {
+            COMPARE_SLOT_A: self._lcc_compare_col_a,
+            COMPARE_SLOT_B: self._lcc_compare_col_b,
+        }
+        buckets_by_slot: dict[str, tuple] = {}
+        for panel in panels:
+            col = columns[panel.slot_key]
+            col["header"].setText(
+                messages.WORKSPACE_COMPARE_SLOT_HEADER.format(label=panel.label)
+            )
+            if not panel.filled or panel.lcc is None or panel.lcc.curve is None:
+                set_compare_placeholder(col, slot_key=panel.slot_key)
+                col["chart"].set_buckets(())
+                col["chart"].set_scale_max(None)
+                continue
+            buckets = tuple(panel.lcc.curve.display_buckets)
+            buckets_by_slot[panel.slot_key] = buckets
+            col["placeholder"].setVisible(False)
+            col["chart"].setVisible(True)
+            col["table"].setVisible(True)
+        y_max = 0.0
+        if buckets_by_slot:
+            y_max = shared_lcc_y_max(
+                buckets_by_slot.get(COMPARE_SLOT_A, ()),
+                buckets_by_slot.get(COMPARE_SLOT_B, ()),
+            )
+        shared_year = resolve_shared_calendar_year(
+            workspace_year=snapshot.lcc_calendar_year,
+            chart_a_year=None,
+            chart_b_year=None,
+        )
+        for panel in panels:
+            if not panel.filled or panel.lcc is None or panel.lcc.curve is None:
+                continue
+            col = columns[panel.slot_key]
+            buckets = tuple(panel.lcc.curve.display_buckets)
+            col["chart"].set_scale_max(y_max if y_max > 0 else None)
+            col["chart"].set_buckets(buckets)
+            col["chart"].set_selected_year(shared_year)
+            col["table"].setModel(LCCYearTableModel(buckets))
+        self._last_lcc_render_snapshot = snapshot
+
+    def _apply_ui_sync(
+        self,
+        plan: WorkspaceUiSyncPlan,
+        snapshot: WorkspaceStateSnapshot,
+    ) -> None:
+        page = self._detail_pages.get(plan.detail_page_modus, self.bijdragen_page)
         if self.detail_stack.currentWidget() is not page:
             self.detail_stack.setCurrentWidget(page)
-        target_button = self.modus_buttons.get(snapshot.modus)
+        target_button = self.modus_buttons.get(plan.modus_button)
         if target_button is not None and not target_button.isChecked():
             target_button.setChecked(True)
-        # Source toggle reflects current modus' sticky source.
-        if snapshot.source == SOURCE_PBS and not self.source_toggle_pbs_button.isChecked():
+        if plan.source_toggle == SOURCE_PBS and not self.source_toggle_pbs_button.isChecked():
             self.source_toggle_pbs_button.setChecked(True)
         elif (
-            snapshot.source == SOURCE_FAALWIJZE
+            plan.source_toggle == SOURCE_FAALWIJZE
             and not self.source_toggle_faalwijze_button.isChecked()
         ):
             self.source_toggle_faalwijze_button.setChecked(True)
-        # Metric combo reflects sticky metric.
-        idx = self.metric_combo.findData(snapshot.metric)
+        idx = self.metric_combo.findData(plan.metric)
         if idx >= 0 and idx != self.metric_combo.currentIndex():
             blocker = self.metric_combo.blockSignals(True)
             self.metric_combo.setCurrentIndex(idx)
             self.metric_combo.blockSignals(blocker)
-        bijdragen_active = snapshot.modus == MODE_BIJDRAGEN
-        self.top10_subbar.setVisible(bijdragen_active)
-        pres = snapshot.contribution_presentation
-        horizon_metric = snapshot.metric in (
-            METRIC_FAALMOMENTEN,
-            METRIC_NIET_BESCHIKBAARHEID,
-        )
-        self.horizon_lifecycle_button.setVisible(bijdragen_active and horizon_metric)
-        self.horizon_per_year_button.setVisible(bijdragen_active and horizon_metric)
-        year_combo_visible = (
-            bijdragen_active and horizon_metric and pres.horizon == "per_year"
-        )
-        self.contribution_year_combo.setVisible(year_combo_visible)
-        nb_toggle_visible = (
-            bijdragen_active and snapshot.metric == METRIC_NIET_BESCHIKBAARHEID
-        )
-        self.nb_hours_button.setVisible(nb_toggle_visible)
-        self.nb_percent_button.setVisible(nb_toggle_visible)
-        if bijdragen_active and horizon_metric:
-            if pres.horizon == "lifecycle":
-                if not self.horizon_lifecycle_button.isChecked():
-                    self.horizon_lifecycle_button.setChecked(True)
-            elif not self.horizon_per_year_button.isChecked():
+        self._apply_bijdragen_toolbar(plan.bijdragen)
+        self._apply_lcc_toolbar(plan.lcc_toolbar, snapshot)
+        self._apply_fm_toolbar(plan.fm_toolbar)
+        self._apply_compare_chrome(plan.compare)
+        if plan.pbs_tree_extended_selection:
+            self.pbs_tree_view.setSelectionMode(QAbstractItemView.ExtendedSelection)
+        else:
+            self.pbs_tree_view.setSelectionMode(QAbstractItemView.SingleSelection)
+        if plan.refresh_kpi and hasattr(self, "kpi_table_view"):
+            self._refresh_kpi_table_view()
+        self._apply_collapse_panels(plan.collapse)
+        if plan.scope_id != self._pbs_scope_id:
+            self._pbs_scope_id = plan.scope_id
+            self._update_scope_status_label()
+
+    def _apply_bijdragen_toolbar(self, toolbar: BijdragenToolbarPlan | None) -> None:
+        if toolbar is None:
+            self.top10_subbar.setVisible(False)
+            self.horizon_lifecycle_button.setVisible(False)
+            self.horizon_per_year_button.setVisible(False)
+            self.contribution_year_combo.setVisible(False)
+            self.nb_hours_button.setVisible(False)
+            self.nb_percent_button.setVisible(False)
+            return
+        self.top10_subbar.setVisible(toolbar.top10_subbar_visible)
+        self.horizon_lifecycle_button.setVisible(toolbar.horizon_lifecycle_visible)
+        self.horizon_per_year_button.setVisible(toolbar.horizon_per_year_visible)
+        self.contribution_year_combo.setVisible(toolbar.year_combo_visible)
+        self.nb_hours_button.setVisible(toolbar.nb_hours_visible)
+        self.nb_percent_button.setVisible(toolbar.nb_percent_visible)
+        if toolbar.horizon_lifecycle_visible:
+            if toolbar.horizon_lifecycle_checked and not self.horizon_lifecycle_button.isChecked():
+                self.horizon_lifecycle_button.setChecked(True)
+            elif toolbar.horizon_per_year_checked and not self.horizon_per_year_button.isChecked():
                 self.horizon_per_year_button.setChecked(True)
-        if nb_toggle_visible:
-            if pres.unavailability_display == "hours":
-                if not self.nb_hours_button.isChecked():
-                    self.nb_hours_button.setChecked(True)
-            elif not self.nb_percent_button.isChecked():
+        if toolbar.nb_hours_visible:
+            if toolbar.nb_hours_checked and not self.nb_hours_button.isChecked():
+                self.nb_hours_button.setChecked(True)
+            elif toolbar.nb_percent_checked and not self.nb_percent_button.isChecked():
                 self.nb_percent_button.setChecked(True)
-        if year_combo_visible:
-            year_data = pres.year_choice
-            idx = self.contribution_year_combo.findData(year_data)
+        if toolbar.year_combo_visible:
+            idx = self.contribution_year_combo.findData(toolbar.year_choice)
             if idx >= 0 and idx != self.contribution_year_combo.currentIndex():
                 blocker = self.contribution_year_combo.blockSignals(True)
                 self.contribution_year_combo.setCurrentIndex(idx)
                 self.contribution_year_combo.blockSignals(blocker)
-        lcc_active = snapshot.modus == MODE_LCC
-        self.lcc_filter_bar.setVisible(lcc_active)
-        self.lcc_show_all_years_button.setVisible(lcc_active)
-        self.lcc_year_summary_label.setVisible(lcc_active)
-        self.meekoppel_panel.setVisible(lcc_active)
-        self._sync_pbs_tree_selection_mode(snapshot)
-        if lcc_active:
-            self._sync_meekoppel_panel(snapshot)
-        fm_active = snapshot.modus == MODE_FM_DETAIL
-        self.batch_faalwijzen_button.setVisible(fm_active)
-        self.fm_evident_filter_combo.setVisible(fm_active)
-        self.fm_evident_filter_combo.setEnabled(fm_active)
+
+    def _apply_lcc_toolbar(
+        self,
+        toolbar: LccToolbarVisibilityPlan | None,
+        snapshot: WorkspaceStateSnapshot,
+    ) -> None:
+        if toolbar is None:
+            self.lcc_filter_bar.setVisible(False)
+            self.lcc_show_all_years_button.setVisible(False)
+            self.lcc_year_summary_label.setVisible(False)
+            self.meekoppel_panel.setVisible(False)
+            return
+        self.lcc_filter_bar.setVisible(toolbar.filter_bar_visible)
+        self.lcc_show_all_years_button.setVisible(toolbar.show_all_years_visible)
+        self.lcc_year_summary_label.setVisible(toolbar.year_summary_label_visible)
+        self.meekoppel_panel.setVisible(toolbar.meekoppel_panel_visible)
+        self._sync_lcc_filter_checks(toolbar.lcc_filters)
+        self._sync_meekoppel_panel(snapshot)
+
+    def _apply_fm_toolbar(self, toolbar: FmToolbarPlan) -> None:
+        self.batch_faalwijzen_button.setVisible(toolbar.batch_faalwijzen_visible)
+        if hasattr(self, "new_fm_button"):
+            self.new_fm_button.setVisible(toolbar.new_fm_visible)
+            if toolbar.new_fm_visible:
+                self._sync_new_fm_button_enabled()
+        self.fm_evident_filter_combo.setVisible(toolbar.fm_evident_filter_visible)
+        self.fm_evident_filter_combo.setEnabled(toolbar.fm_evident_filter_visible)
         if hasattr(self, "fm_inspector_container"):
-            self.fm_inspector_container.setVisible(fm_active)
-            if not fm_active:
+            self.fm_inspector_container.setVisible(toolbar.fm_inspector_visible)
+            if toolbar.clear_fm_inspector:
                 self._refresh_fm_inspector(None)
-        if lcc_active:
-            self._sync_lcc_filter_checks(snapshot.lcc_filters)
+
+    def _apply_compare_chrome(self, compare: CompareChromePlan) -> None:
         if hasattr(self, "compare_toggle_button"):
-            if self.compare_toggle_button.isChecked() != snapshot.compare_mode:
+            if self.compare_toggle_button.isChecked() != compare.compare_mode_checked:
                 blocker = self.compare_toggle_button.blockSignals(True)
-                self.compare_toggle_button.setChecked(snapshot.compare_mode)
+                self.compare_toggle_button.setChecked(compare.compare_mode_checked)
                 self.compare_toggle_button.blockSignals(blocker)
-        # KPI-tabel hangt af van actieve scope; refresh bij scope-wissel.
-        split_depth = workspace_detail_split_render_depth(
-            self._last_workspace_snapshot_for_split_depth,
-            snapshot,
+        if hasattr(self, "bijdragen_single_slot_pane"):
+            self.bijdragen_single_slot_pane.setVisible(compare.bijdragen_single_visible)
+            self.bijdragen_compare_pane.setVisible(compare.bijdragen_compare_visible)
+            self.bijdragen_chart_label.setVisible(compare.bijdragen_chart_label_visible)
+        if hasattr(self, "lcc_single_slot_pane"):
+            self.lcc_single_slot_pane.setVisible(compare.lcc_single_visible)
+            self.lcc_compare_pane.setVisible(compare.lcc_compare_visible)
+            if compare.lcc_empty_state_visible:
+                self.lcc_empty_state_label.setVisible(True)
+
+    def _apply_collapse_panels(self, collapse: CollapsePanelsPlan) -> None:
+        self._apply_collapse_panel(
+            collapse.kpi,
+            chrome_button=getattr(self, "kpi_collapse_button", None),
+            title=getattr(self, "kpi_panel_title", None),
+            content=getattr(self, "kpi_table_view", None),
         )
-        if should_refresh_kpi_for_render_depth(split_depth) and hasattr(self, "kpi_table_view"):
-            self._refresh_kpi_table_view()
-        self._sync_kpi_panel_visibility(snapshot)
-        self._sync_lcc_whatif_panel_visibility(snapshot)
-        self._sync_meekoppel_panel_collapsed(snapshot)
-        # Sync scope_id with the orchestrator (clicks set both, but reset paths only update state).
-        if snapshot.scope_id != self._pbs_scope_id:
-            self._pbs_scope_id = snapshot.scope_id
-            self._update_scope_status_label()
-        self._rerender_detail_for_current_scope(split_render_depth=split_depth)
-        self._last_workspace_snapshot_for_split_depth = snapshot
+        self._apply_collapse_panel(
+            collapse.lcc_whatif,
+            chrome_button=getattr(self, "lcc_whatif_collapse_button", None),
+            title=getattr(self, "lcc_whatif_bar_title", None),
+            content=getattr(self, "lcc_whatif_content", None),
+        )
+        self._apply_meekoppel_collapse(collapse.meekoppel)
+
+    @staticmethod
+    def _apply_collapse_panel(
+        panel: CollapsePanelPlan | None,
+        *,
+        chrome_button,
+        title,
+        content,
+    ) -> None:
+        if chrome_button is None:
+            return
+        if panel is None:
+            chrome_button.setVisible(False)
+            if title is not None:
+                title.setVisible(False)
+            if content is not None:
+                content.setVisible(True)
+            return
+        chrome_button.setVisible(panel.chrome_visible)
+        if title is not None:
+            title.setVisible(panel.chrome_visible)
+        if content is not None:
+            content.setVisible(panel.content_visible)
+        chrome_button.setText(panel.collapse_glyph)
+        chrome_button.setEnabled(panel.chrome_enabled)
+
+    def _apply_meekoppel_collapse(self, panel: MeekoppelCollapsePlan | None) -> None:
+        if not hasattr(self, "meekoppel_collapse_button"):
+            return
+        if panel is None:
+            self.meekoppel_collapse_button.setVisible(False)
+            self.meekoppel_content.setVisible(False)
+            return
+        if panel.ensure_whatif_if_expanding:
+            self._ensure_whatif_for_meekoppel()
+        self.meekoppel_collapse_button.setVisible(panel.chrome_visible)
+        self.meekoppel_content.setVisible(panel.content_visible)
+        self.meekoppel_collapse_button.setText(panel.collapse_glyph)
+        self.meekoppel_collapse_button.setEnabled(panel.chrome_enabled)
 
     def _seed_planning_overlay_from_import(self, project: object) -> None:
         import_settings = getattr(project, "import_settings", None)
@@ -1265,85 +1481,6 @@ class ResultsWorkspaceWindow(QMainWindow):
 
     def _project_session(self) -> ProjectSession | None:
         return self._state.project_session
-
-    def _rerender_detail_for_current_scope(
-        self,
-        *,
-        split_render_depth: RenderSplitDepth = "all_splits",
-    ) -> None:
-        session = self._project_session()
-        snapshot = self.workspace_state.snapshot()
-
-        if session is None:
-            self._clear_detail_zone()
-            return
-        compare_view = snapshot.compare_mode and snapshot.modus in (
-            MODE_BIJDRAGEN,
-            MODE_LCC,
-        )
-        has_compare_data = self._compare_slots.has(COMPARE_SLOT_A) or self._compare_slots.has(
-            COMPARE_SLOT_B
-        )
-        if not session.has_completed_run() and not (compare_view and has_compare_data):
-            self._clear_detail_zone()
-            return
-        if compare_view and not has_compare_data:
-            self._sync_compare_pane_visibility(
-                compare_mode=True, modus=snapshot.modus
-            )
-            if snapshot.modus == MODE_BIJDRAGEN:
-                pairs = (
-                    (self._bijdragen_compare_col_a, COMPARE_SLOT_A),
-                    (self._bijdragen_compare_col_b, COMPARE_SLOT_B),
-                )
-            else:
-                pairs = (
-                    (self._lcc_compare_col_a, COMPARE_SLOT_A),
-                    (self._lcc_compare_col_b, COMPARE_SLOT_B),
-                )
-            for col, slot in pairs:
-                set_compare_placeholder(col, slot_key=slot)
-            return
-
-        required = required_detail_builders(snapshot, split_render_depth)
-        if split_render_depth == "all_splits":
-            self._render_index.on_workspace_state_reset()
-
-        modus = snapshot.modus
-        if modus == MODE_FM_DETAIL and MODE_FM_DETAIL in required:
-            fm_view = build_fm_detail_view(session, snapshot)
-            if fm_view is not None:
-                self._render_fm_rows(fm_view.fm_rows)
-        elif modus == MODE_BIJDRAGEN and MODE_BIJDRAGEN in required:
-            layout = compute_compare_split_layout(
-                compare_mode=snapshot.compare_mode, modus=modus
-            )
-            if layout.compare_mode:
-                self._render_bijdragen_compare(session, snapshot)
-            else:
-                bijdragen_view = build_bijdragen_view(
-                    session,
-                    snapshot,
-                    render_index=self._render_index,
-                    project_total_presentation=self._project_total_presentation,
-                )
-                if bijdragen_view is not None:
-                    self._bind_bijdragen_view(bijdragen_view, snapshot)
-        elif modus == MODE_LCC and MODE_LCC in required:
-            layout = compute_compare_split_layout(
-                compare_mode=snapshot.compare_mode, modus=modus
-            )
-            if layout.compare_mode:
-                self._render_lcc_compare(session, snapshot)
-            else:
-                lcc_view = build_lcc_view(
-                    session,
-                    snapshot,
-                    render_index=self._render_index,
-                    prev_snapshot=self._last_lcc_render_snapshot,
-                )
-                if lcc_view is not None:
-                    self._render_lcc_view(session, lcc_view, snapshot)
 
     def _selected_fm_id_from_table(self) -> str | None:
         model = self.fm_table_view.model()
@@ -1512,6 +1649,103 @@ class ResultsWorkspaceWindow(QMainWindow):
         finally:
             host.set_save_handler(prev_save)
 
+    def _selected_leaf_pbs_id_for_create(self) -> str | None:
+        pbs_ids = self._pbs_selected_ids_from_tree()
+        if len(pbs_ids) != 1:
+            return None
+        pbs_id = next(iter(pbs_ids))
+        session = self._project_session()
+        if session is None:
+            return None
+        project = wss.editing_project(session)
+        from rcm_desktop.adapter.fm_create_service import is_leaf_pbs
+
+        if not is_leaf_pbs(project, pbs_id):
+            return None
+        return pbs_id
+
+    def _sync_new_fm_button_enabled(self) -> None:
+        if not hasattr(self, "new_fm_button"):
+            return
+        leaf = self._selected_leaf_pbs_id_for_create()
+        has_project = self._project_session() is not None
+        self.new_fm_button.setEnabled(has_project and leaf is not None)
+
+    def _on_new_fm_clicked(self) -> None:
+        if self.workspace_state.snapshot().modus != MODE_FM_DETAIL:
+            return
+        session = self._project_session()
+        if session is None:
+            QMessageBox.information(
+                self,
+                messages.FM_EDITOR_VALIDATION_TITLE,
+                messages.FM_EDITOR_NO_PROJECT,
+            )
+            return
+        pbs_id = self._selected_leaf_pbs_id_for_create()
+        if pbs_id is None:
+            QMessageBox.information(
+                self,
+                messages.FM_EDITOR_VALIDATION_TITLE,
+                messages.FM_EDITOR_NEW_FM_NO_LEAF_PBS,
+            )
+            return
+        project = wss.editing_project(session)
+        host = self._editing_host
+        prev_save = host.swap_save_handler(self._commit_active_grid_edits)
+        try:
+            if resolve_grid_dirty_before_editor(self, host) == "cancel":
+                return
+            path = self.path_input.text().strip() or None
+            grid_svc = host.grid_service()
+            shared_session = None
+            if grid_svc is not None and grid_svc.is_active():
+                shared_session = grid_svc.editing_session
+            dialog = FmEditorDialog(
+                self,
+                project=project,
+                create_pbs_id=pbs_id,
+                project_path=path,
+                save_to_disk=bool(path),
+                editing_session=shared_session,
+            )
+            if dialog.exec() != QDialog.DialogCode.Accepted or dialog.commit_result is None:
+                return
+            result = dialog.commit_result
+            new_fm_id = dialog._fm_id
+            if result.project is not None:
+                self._state.set_last_project(
+                    result.project, path=path, preserve_workspace_ui=True
+                )
+            if result.run_result is not None:
+                self._state.set_last_run(result.run_result)
+                self._project_total_presentation = self._load_presentation_from_disk()
+                self._render_index.on_workspace_state_reset()
+                self._rerender_detail_for_current_scope()
+                self._select_fm_in_table(new_fm_id)
+                self._refresh_fm_inspector(new_fm_id)
+        finally:
+            host.set_save_handler(prev_save)
+
+    def _select_fm_in_table(self, fm_id: str) -> None:
+        model = self.fm_table_view.model()
+        if model is None:
+            return
+        src_model = model.sourceModel() if model is self._fm_table_proxy else model
+        if src_model is None:
+            return
+        target = str(fm_id)
+        for row in range(src_model.rowCount()):
+            idx = src_model.index(row, 0)
+            if str(src_model.data(idx, RAW_ROLE) or "") == target:
+                proxy_idx = (
+                    self._fm_table_proxy.mapFromSource(idx)
+                    if model is self._fm_table_proxy
+                    else idx
+                )
+                self.fm_table_view.selectRow(proxy_idx.row())
+                break
+
     def _open_model_settings(self) -> None:
         session = self._project_session()
         if session is None:
@@ -1655,7 +1889,6 @@ class ResultsWorkspaceWindow(QMainWindow):
         snapshot: WorkspaceStateSnapshot,
     ) -> None:
         """LCC-planning met type-filters, overlay en jaardetail (slice 28)."""
-        self._sync_compare_pane_visibility(compare_mode=False, modus=MODE_LCC)
         scope = lcc_view.render_scope
         curve = lcc_view.curve
         self._last_lcc_render_snapshot = snapshot
@@ -2104,42 +2337,6 @@ class ResultsWorkspaceWindow(QMainWindow):
             not snapshot.meekoppel_collapsed_in_lcc
         )
 
-    def _sync_kpi_panel_visibility(self, snapshot: WorkspaceStateSnapshot) -> None:
-        if not hasattr(self, "kpi_collapse_button"):
-            return
-        lcc_active = snapshot.modus == MODE_LCC
-        self.kpi_collapse_button.setVisible(lcc_active)
-        self.kpi_panel_title.setVisible(lcc_active)
-        collapsed = snapshot.kpi_collapsed_in_lcc if lcc_active else False
-        self.kpi_table_view.setVisible(not collapsed)
-        self.kpi_collapse_button.setText("▼" if not collapsed else "▶")
-        self.kpi_collapse_button.setEnabled(lcc_active)
-
-    def _sync_lcc_whatif_panel_visibility(self, snapshot: WorkspaceStateSnapshot) -> None:
-        if not hasattr(self, "lcc_whatif_collapse_button"):
-            return
-        lcc_active = snapshot.modus == MODE_LCC
-        collapsed = snapshot.lcc_whatif_collapsed_in_lcc if lcc_active else False
-        self.lcc_whatif_collapse_button.setVisible(lcc_active)
-        self.lcc_whatif_bar_title.setVisible(lcc_active)
-        self.lcc_whatif_content.setVisible(lcc_active and not collapsed)
-        self.lcc_whatif_collapse_button.setText("▼" if not collapsed else "▶")
-        self.lcc_whatif_collapse_button.setEnabled(lcc_active)
-
-    def _sync_meekoppel_panel_collapsed(self, snapshot: WorkspaceStateSnapshot) -> None:
-        if not hasattr(self, "meekoppel_collapse_button"):
-            return
-        lcc_active = snapshot.modus == MODE_LCC
-        collapsed = snapshot.meekoppel_collapsed_in_lcc if lcc_active else False
-        content_visible = lcc_active and not collapsed
-        was_visible = self.meekoppel_content.isVisible()
-        if content_visible and not was_visible:
-            self._ensure_whatif_for_meekoppel()
-        self.meekoppel_collapse_button.setVisible(lcc_active)
-        self.meekoppel_content.setVisible(content_visible)
-        self.meekoppel_collapse_button.setText("▼" if not collapsed else "▶")
-        self.meekoppel_collapse_button.setEnabled(lcc_active)
-
     def _on_lcc_bulk_rev_toggle(self) -> None:
         session = self._project_session()
         if session is None:
@@ -2220,9 +2417,6 @@ class ResultsWorkspaceWindow(QMainWindow):
         bijdragen_view,
         snapshot: WorkspaceStateSnapshot,
     ) -> None:
-        self._sync_compare_pane_visibility(
-            compare_mode=False, modus=MODE_BIJDRAGEN
-        )
         rows = bijdragen_view.contribution_rows
         self.bijdragen_chart_widget.set_rows(rows)
         table_model = ContributionTableModel(
@@ -2243,7 +2437,7 @@ class ResultsWorkspaceWindow(QMainWindow):
         self.lcc_chart_widget.set_buckets(())
         self.lcc_table_view.setModel(None)
         self.lcc_empty_state_label.setVisible(True)
-        self._sync_compare_pane_visibility(compare_mode=False, modus=MODE_BIJDRAGEN)
+        self._apply_compare_chrome(plan_compare_chrome(ResultsWorkspaceState().snapshot()))
 
     def _update_scope_status_label(self) -> None:
         if self._pbs_scope_id is None:
@@ -2421,20 +2615,15 @@ class ResultsWorkspaceWindow(QMainWindow):
         if hasattr(self, "compare_toggle_button"):
             self.compare_toggle_button.setChecked(False)
 
-    def _seed_current_run_as_a(self) -> None:
-        self._seed_current_run(COMPARE_SLOT_A)
+    def _maybe_auto_seed_baseline_slot_a(self) -> None:
+        """Vul slot A na eerste geslaagde run als baseline (slice 60)."""
+        if self._compare_slots.has(COMPARE_SLOT_A):
+            return
+        self._seed_last_run_into_slot(COMPARE_SLOT_A)
 
-    def _seed_current_run_as_b(self) -> None:
-        self._seed_current_run(COMPARE_SLOT_B)
-
-    def _seed_current_run(self, slot_key: str) -> None:
+    def _seed_last_run_into_slot(self, slot_key: str) -> None:
         run = self._state.last_run
         if run is None or run.status != "done":
-            QMessageBox.warning(
-                self,
-                messages.ERROR_DIALOG_TITLE,
-                messages.WORKSPACE_COMPARE_SLOT_PLACEHOLDER.format(slot=slot_key),
-            )
             return
         snapshot = self.workspace_state.snapshot()
         scenario_key = self.compare_scenario_combo.currentData()
@@ -2451,20 +2640,6 @@ class ResultsWorkspaceWindow(QMainWindow):
             overlay_at_run=snapshot.planning_overlay,
             label=label,
         )
-        self._state.set_last_run(run)
-
-    def _sync_compare_pane_visibility(self, *, compare_mode: bool, modus: str) -> None:
-        bijdragen_compare = compare_mode and modus == MODE_BIJDRAGEN
-        lcc_compare = compare_mode and modus == MODE_LCC
-        if hasattr(self, "bijdragen_single_slot_pane"):
-            self.bijdragen_single_slot_pane.setVisible(not bijdragen_compare)
-            self.bijdragen_compare_pane.setVisible(bijdragen_compare)
-            self.bijdragen_chart_label.setVisible(not bijdragen_compare)
-        if hasattr(self, "lcc_single_slot_pane"):
-            self.lcc_single_slot_pane.setVisible(not lcc_compare)
-            self.lcc_compare_pane.setVisible(lcc_compare)
-            if not lcc_compare:
-                self.lcc_empty_state_label.setVisible(True)
 
     def _bind_bijdragen_column(
         self,
@@ -2483,89 +2658,6 @@ class ResultsWorkspaceWindow(QMainWindow):
         column["placeholder"].setVisible(len(rows) == 0)
         column["chart"].setVisible(len(rows) > 0)
         column["table"].setVisible(len(rows) > 0)
-
-    def _render_bijdragen_compare(
-        self,
-        session: ProjectSession,
-        snapshot: WorkspaceStateSnapshot,
-    ) -> None:
-        self._sync_compare_pane_visibility(compare_mode=True, modus=MODE_BIJDRAGEN)
-        panels = build_bijdragen_compare_panels(
-            session,
-            snapshot,
-            slots=self._compare_slots,
-            render_index=self._render_index,
-            project_total_presentation=self._project_total_presentation,
-        )
-        columns = {
-            COMPARE_SLOT_A: self._bijdragen_compare_col_a,
-            COMPARE_SLOT_B: self._bijdragen_compare_col_b,
-        }
-        for panel in panels:
-            col = columns[panel.slot_key]
-            col["header"].setText(
-                messages.WORKSPACE_COMPARE_SLOT_HEADER.format(label=panel.label)
-            )
-            if not panel.filled or panel.bijdragen is None:
-                set_compare_placeholder(col, slot_key=panel.slot_key)
-                continue
-            col["placeholder"].setVisible(False)
-            self._bind_bijdragen_column(col, panel.bijdragen, snapshot)
-
-    def _render_lcc_compare(
-        self,
-        session: ProjectSession,
-        snapshot: WorkspaceStateSnapshot,
-    ) -> None:
-        self._sync_compare_pane_visibility(compare_mode=True, modus=MODE_LCC)
-        panels = build_lcc_compare_panels(
-            session,
-            snapshot,
-            slots=self._compare_slots,
-            render_index=self._render_index,
-            prev_snapshot=self._last_lcc_render_snapshot,
-        )
-        columns = {
-            COMPARE_SLOT_A: self._lcc_compare_col_a,
-            COMPARE_SLOT_B: self._lcc_compare_col_b,
-        }
-        buckets_by_slot: dict[str, tuple] = {}
-        for panel in panels:
-            col = columns[panel.slot_key]
-            col["header"].setText(
-                messages.WORKSPACE_COMPARE_SLOT_HEADER.format(label=panel.label)
-            )
-            if not panel.filled or panel.lcc is None or panel.lcc.curve is None:
-                set_compare_placeholder(col, slot_key=panel.slot_key)
-                col["chart"].set_buckets(())
-                col["chart"].set_scale_max(None)
-                continue
-            buckets = tuple(panel.lcc.curve.display_buckets)
-            buckets_by_slot[panel.slot_key] = buckets
-            col["placeholder"].setVisible(False)
-            col["chart"].setVisible(True)
-            col["table"].setVisible(True)
-        y_max = 0.0
-        if buckets_by_slot:
-            y_max = shared_lcc_y_max(
-                buckets_by_slot.get(COMPARE_SLOT_A, ()),
-                buckets_by_slot.get(COMPARE_SLOT_B, ()),
-            )
-        shared_year = resolve_shared_calendar_year(
-            workspace_year=snapshot.lcc_calendar_year,
-            chart_a_year=None,
-            chart_b_year=None,
-        )
-        for panel in panels:
-            if not panel.filled or panel.lcc is None or panel.lcc.curve is None:
-                continue
-            col = columns[panel.slot_key]
-            buckets = tuple(panel.lcc.curve.display_buckets)
-            col["chart"].set_scale_max(y_max if y_max > 0 else None)
-            col["chart"].set_buckets(buckets)
-            col["chart"].set_selected_year(shared_year)
-            col["table"].setModel(LCCYearTableModel(buckets))
-        self._last_lcc_render_snapshot = snapshot
 
     def _start_analyse(self) -> None:
         path = self.path_input.text().strip()
@@ -2626,6 +2718,7 @@ class ResultsWorkspaceWindow(QMainWindow):
         self._last_lcc_render_snapshot = None
         if plan.warmup_lcc and self.workspace_state.snapshot().modus == MODE_LCC:
             self._maybe_start_lcc_warmup()
+        self._maybe_auto_seed_baseline_slot_a()
         self._update_run_button_label()
 
     def _on_presentation_rebuild_state_changed(self, state: str) -> None:
@@ -2738,6 +2831,7 @@ class ResultsWorkspaceWindow(QMainWindow):
         self._project_total_presentation = (
             self._load_presentation_from_disk() if plan.load_presentation_from_disk else None
         )
+        self._maybe_auto_seed_baseline_slot_a()
         self._update_run_button_label()
         if plan.start_presentation_rebuild:
             self._maybe_start_presentation_rebuild()
@@ -2861,8 +2955,6 @@ class ResultsWorkspaceWindow(QMainWindow):
         for btn in (
             getattr(self, "run_slot_a_button", None),
             getattr(self, "run_slot_b_button", None),
-            getattr(self, "seed_slot_a_button", None),
-            getattr(self, "seed_slot_b_button", None),
         ):
             if btn is not None:
                 btn.setEnabled(can_run)

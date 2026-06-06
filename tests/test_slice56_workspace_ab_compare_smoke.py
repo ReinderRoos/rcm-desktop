@@ -22,7 +22,7 @@ from tests.test_desktop_results_workspace_window import (
 )
 
 
-def test_slice56_toolbar_exposes_run_ab_seed_and_compare_toggle(monkeypatch) -> None:
+def test_slice56_toolbar_exposes_run_ab_and_compare_toggle(monkeypatch) -> None:
     app = _ensure_app()
     monkeypatch.setattr(QMessageBox, "critical", lambda *_a, **_k: QMessageBox.Ok)
     window = ResultsWorkspaceWindow()
@@ -34,21 +34,22 @@ def test_slice56_toolbar_exposes_run_ab_seed_and_compare_toggle(monkeypatch) -> 
     assert window.compare_toggle_button.text() == messages.WORKSPACE_COMPARE_TOGGLE_LABEL
     assert window.compare_toggle_button.isChecked() is False
     assert window.workspace_state.snapshot().compare_mode is False
+    source = Path(__file__).resolve().parent.parent.joinpath(
+        "rcm_desktop", "views", "results_workspace_window.py"
+    ).read_text(encoding="utf-8")
+    assert "seed_slot_a_button" not in source
+    assert "WORKSPACE_SEED_SLOT_A_BUTTON_LABEL" not in source
 
 
-def test_slice56_seed_slot_a_with_compare_off_keeps_single_run_pane(monkeypatch) -> None:
-    """Single-run UX blijft actief wanneer vergelijk-toggle uit staat."""
+def test_slice56_auto_seed_baseline_slot_a_keeps_single_run_pane(monkeypatch) -> None:
+    """Na eerste run vult slot A automatisch; single-run UX blijft zonder compare-toggle."""
     app = _ensure_app()
     monkeypatch.setattr(QMessageBox, "critical", lambda *_a, **_k: QMessageBox.Ok)
-    monkeypatch.setattr(QMessageBox, "warning", lambda *_a, **_k: QMessageBox.Ok)
     window = ResultsWorkspaceWindow()
     window.show()
     project = _three_level_project()
     window._state.set_last_project(project)
     _inject_run(window, project)
-    app.processEvents()
-
-    window._seed_current_run_as_a()
     app.processEvents()
 
     assert window.compare_toggle_button.isChecked() is False
@@ -59,6 +60,21 @@ def test_slice56_seed_slot_a_with_compare_off_keeps_single_run_pane(monkeypatch)
     assert len(window.bijdragen_chart_widget.rows()) > 0
 
 
+def test_slice56_auto_seed_skips_when_slot_a_already_filled(monkeypatch) -> None:
+    app = _ensure_app()
+    monkeypatch.setattr(QMessageBox, "critical", lambda *_a, **_k: QMessageBox.Ok)
+    window = ResultsWorkspaceWindow()
+    window.show()
+    project = _three_level_project()
+    window._state.set_last_project(project)
+    _inject_run(window, project)
+    first_label = window._compare_slots.get(COMPARE_SLOT_A).label
+    _inject_run(window, project)
+    app.processEvents()
+
+    assert window._compare_slots.get(COMPARE_SLOT_A).label == first_label
+
+
 def test_slice56_compare_toggle_on_shows_placeholders_for_empty_slots(monkeypatch) -> None:
     app = _ensure_app()
     monkeypatch.setattr(QMessageBox, "critical", lambda *_a, **_k: QMessageBox.Ok)
@@ -67,6 +83,7 @@ def test_slice56_compare_toggle_on_shows_placeholders_for_empty_slots(monkeypatc
     project = _three_level_project()
     window._state.set_last_project(project)
     _inject_run(window, project)
+    window._compare_slots.clear(COMPARE_SLOT_A)
     app.processEvents()
 
     window.compare_toggle_button.setChecked(True)
@@ -103,13 +120,11 @@ def test_slice56_compare_toggle_on_lcc_modus_shows_stacked_compare_pane(monkeypa
 def test_slice56_clear_compare_resets_toggle_and_slots(monkeypatch) -> None:
     app = _ensure_app()
     monkeypatch.setattr(QMessageBox, "critical", lambda *_a, **_k: QMessageBox.Ok)
-    monkeypatch.setattr(QMessageBox, "warning", lambda *_a, **_k: QMessageBox.Ok)
     window = ResultsWorkspaceWindow()
     window.show()
     project = _three_level_project()
     window._state.set_last_project(project)
     _inject_run(window, project)
-    window._seed_current_run_as_a()
     window.compare_toggle_button.setChecked(True)
     app.processEvents()
 
