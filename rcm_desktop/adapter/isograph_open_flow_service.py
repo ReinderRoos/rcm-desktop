@@ -8,10 +8,11 @@ from pathlib import Path
 from rcm_core.import_settings_contract import merge_import_settings
 from rcm_core.isograph_export_contract import MUST_V1_SHEET_HEADERS, load_workbook_headers
 from rcm_core.models import RCMProject
-from rcm_core.validators import ValidationError, validate_aannamen, validate_project
+
 from rcm_desktop.adapter.isograph_import_wizard_service import ImportWizardResult
 from rcm_desktop.adapter.save_service import save_project_atomically
-from rcm_desktop.adapter.validate_service import DetailItem, UserFacingError, ValidateResult
+from rcm_desktop.adapter.validate_service import UserFacingError, ValidateResult
+from rcm_desktop.adapter.validation_orchestrator import validate_in_memory
 
 
 @dataclass(frozen=True)
@@ -70,28 +71,7 @@ def check_workbook_importable(path: Path) -> UserFacingError | None:
 
 
 def validate_project_in_memory(project: RCMProject) -> ValidateResult:
-    """Zelfde statussen als validate_service.run, zonder bestand te laden."""
-    errors = validate_project(project)
-    if errors:
-        return ValidateResult(
-            status="invalid",
-            summary=f"Validatie mislukt met {len(errors)} fout(en).",
-            details=_to_details(errors, severity="error"),
-        )
-
-    warnings = validate_aannamen(project)
-    if warnings:
-        return ValidateResult(
-            status="valid_with_warnings",
-            summary=f"Structuur geldig met {len(warnings)} waarschuwing(en).",
-            details=_to_details(warnings, severity="warning"),
-        )
-
-    return ValidateResult(
-        status="valid",
-        summary="Project is geldig.",
-        details=[],
-    )
+    return validate_in_memory(project)
 
 
 def _attach_import_settings(project: RCMProject, import_settings: dict) -> None:
@@ -123,15 +103,3 @@ def persist_import_wizard_result(
         validate_result=validate_result,
         project=project,
     )
-
-
-def _to_details(items: list[ValidationError], severity: str) -> list[DetailItem]:
-    return [
-        DetailItem(
-            severity=severity,
-            code=item.code,
-            message=item.message,
-            context=item.context,
-        )
-        for item in items
-    ]

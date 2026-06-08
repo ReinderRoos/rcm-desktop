@@ -19,6 +19,8 @@ class RCMConfig:
     # Verouderingsstandaarden (kunnen per faalwijze worden overschreven)
     default_mttf_multiplier: float = 1.25   # MTTF = 1,25 × ontwerpleeftijd (OLD)
     default_sigma_fraction: float = 0.15    # sigma = 0,15 × MTTF
+    default_aging_distribution: str = "normal"
+    default_beta_jaar: float = 0.0
 
     def to_dict(self) -> dict:
         return {
@@ -28,6 +30,8 @@ class RCMConfig:
             "monte_carlo_seed": self.monte_carlo_seed,
             "default_mttf_multiplier": self.default_mttf_multiplier,
             "default_sigma_fraction": self.default_sigma_fraction,
+            "default_aging_distribution": self.default_aging_distribution,
+            "default_beta_jaar": self.default_beta_jaar,
         }
 
     @classmethod

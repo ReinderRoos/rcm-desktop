@@ -1,10 +1,12 @@
 """Background LCC curve warmup in render index (slice 38)."""
+
 from __future__ import annotations
 
-from PySide6.QtCore import QObject, QThread, Signal, Slot
+from PySide6.QtCore import QObject, Signal, Slot
 
 from rcm_desktop.adapter.lcc_render_cache_service import build_lcc_curve_cache_key
 from rcm_desktop.adapter.presentation_lazy_service import warm_lcc_render_index
+from rcm_desktop.adapter.qt.background_runner import BackgroundRunner
 from rcm_desktop.adapter.results_workspace_state import WorkspaceStateSnapshot
 from rcm_desktop.adapter.run_service import RunResult
 from rcm_desktop.adapter.workspace_render_index import WorkspaceRenderIndex
@@ -48,13 +50,11 @@ class LCCWarmupRunner(QObject):
 
     def __init__(self) -> None:
         super().__init__()
-        self._thread: QThread | None = None
-        self._worker: _LCCWarmupWorker | None = None
-        self._busy = False
+        self._background = BackgroundRunner(self, self.state_changed.emit)
 
     @property
     def busy(self) -> bool:
-        return self._busy
+        return self._background.busy
 
     def start(
         self,
@@ -63,33 +63,13 @@ class LCCWarmupRunner(QObject):
         render_index: WorkspaceRenderIndex,
         snapshot: WorkspaceStateSnapshot,
     ) -> bool:
-        if self._busy:
+        if self._background.busy:
             return False
         if not isinstance(run, RunResult) or run.status != "done":
             return False
-        self._busy = True
-        self.state_changed.emit("busy")
-        self._thread = QThread()
-        self._worker = _LCCWarmupWorker(project, run, render_index, snapshot)
-        self._worker.moveToThread(self._thread)
-        self._thread.started.connect(self._worker.run)
-        self._worker.finished.connect(self._thread.quit)
-        self._worker.finished.connect(self._on_worker_finished)
-        self._thread.finished.connect(self._cleanup)
-        self._thread.start()
-        return True
+        worker = _LCCWarmupWorker(project, run, render_index, snapshot)
+        return self._background.start(worker, on_finished=self._on_worker_finished)
 
     @Slot()
     def _on_worker_finished(self) -> None:
         self.state_changed.emit("done")
-
-    @Slot()
-    def _cleanup(self) -> None:
-        if self._worker is not None:
-            self._worker.deleteLater()
-            self._worker = None
-        if self._thread is not None:
-            self._thread.deleteLater()
-            self._thread = None
-        self._busy = False
-        self.state_changed.emit("idle")

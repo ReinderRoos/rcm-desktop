@@ -20,7 +20,13 @@ from rcm_core.config import RCMConfig
 
 class FailureType(str, Enum):
     RANDOM = "random"  # willekeurig falen: exponentiaalverdeling, constante hazard
-    AGING  = "aging"   # verouderingsfalen: normaalverdeling rond MTTF
+    AGING  = "aging"   # verouderingsfalen: distributiegedreven rond MTTF
+
+
+class AgingDistribution(str, Enum):
+    NORMAL = "normal"
+    TRUNCATED_NORMAL_0 = "truncated_normal_0"
+    WEIBULL_2P = "weibull_2p"
 
 
 class TaskType(str, Enum):
@@ -38,7 +44,7 @@ class TaskType(str, Enum):
 class BibliotheekItem:
     """Herbruikbare referentie-aanname (bibliotheekgegeven).
 
-    Categorieën: "faalmodel" | "cm_kosten" | "pm_kosten" |
+    Categorieën: "faalmodel" | "aging_defaults" | "cm_kosten" | "pm_kosten" |
                  "leeftijd" | "multipliciteit" | "effectklasse"
     """
     bibliotheek_id: str       # bijv. "FC02", "FE13", "BIB-001"
@@ -185,6 +191,8 @@ class Faalwijze:
     failure_type: FailureType = FailureType.RANDOM
     mttf_jaar: float = 0.0              # Mean Time To Failure in jaren
     sigma_jaar: float = 0.0             # standaarddeviatie; 0 → 0,15 × MTTF
+    aging_distribution: AgingDistribution = AgingDistribution.NORMAL
+    beta_jaar: float = 0.0
     repair_quality: float = 1.0         # 0=as-good-as-old, 1=as-good-as-new
     is_evident: bool = True             # False = niet-merkbaar falen
     p_ongewenste_gebeurtenis: float = 1.0  # fractie dat falen tot ongewenste gebeurtenis leidt
@@ -199,12 +207,11 @@ class Faalwijze:
     aanname_downtime: str = ""          # motivatie downtime_per_failure waarde (bijv. "2 werkdagen: vervanging + kraanwachttijd")
     aanname_effectklasse: str = ""      # motivatie effectklasstoekenning (bijv. "niet merkbaar → VGM-5")
 
-    @property
-    def effective_sigma(self) -> float:
-        """Gebruik opgegeven sigma; bij 0 de standaard 15% van MTTF."""
+    def effective_sigma(self, default_sigma_fraction: float = 0.15) -> float:
+        """Gebruik opgegeven sigma; bij 0 de project-default fractie × MTTF."""
         if self.sigma_jaar > 0:
             return self.sigma_jaar
-        return 0.15 * self.mttf_jaar
+        return default_sigma_fraction * self.mttf_jaar
 
     def effective_aanname_faalmodel(self, project: "RCMProject") -> str:
         """Retourneert de faalmodel-aanname; valt terug op bibliotheekitem als aanname leeg is."""
@@ -225,6 +232,8 @@ class Faalwijze:
             "failure_type": self.failure_type.value,
             "mttf_jaar": self.mttf_jaar,
             "sigma_jaar": self.sigma_jaar,
+            "aging_distribution": self.aging_distribution.value,
+            "beta_jaar": self.beta_jaar,
             "repair_quality": self.repair_quality,
             "is_evident": self.is_evident,
             "p_ongewenste_gebeurtenis": self.p_ongewenste_gebeurtenis,
@@ -243,6 +252,9 @@ class Faalwijze:
         d = dict(d)
         if "failure_type" in d:
             d["failure_type"] = FailureType(d["failure_type"])
+        if "aging_distribution" not in d:
+            d["aging_distribution"] = AgingDistribution.NORMAL.value
+        d["aging_distribution"] = AgingDistribution(d["aging_distribution"])
         if "downtime_per_failure" in d and isinstance(d["downtime_per_failure"], dict):
             d["downtime_per_failure"] = TimeDuration.from_dict(d["downtime_per_failure"])
         known = {f for f in cls.__dataclass_fields__}
@@ -581,6 +593,8 @@ class PBSResult:
 @dataclass
 class RCMProject:
     config: RCMConfig = field(default_factory=RCMConfig)
+    projectnaam: str = ""
+    modelleur: str = ""
     pbs_items: dict[str, PBSItem] = field(default_factory=dict)
     functies: dict[str, Functie] = field(default_factory=dict)
     faalwijzes: dict[str, Faalwijze] = field(default_factory=dict)
@@ -654,7 +668,7 @@ class RCMProject:
                     bibliotheek_id=fm_id_bib,
                     categorie="faalmodel",
                     omschrijving=omschrijving,
-                    waarde=f"MTTF={fm.mttf_jaar:.1f} jr, σ={fm.effective_sigma:.1f} jr",
+                    waarde=f"MTTF={fm.mttf_jaar:.1f} jr, σ={fm.effective_sigma(self.config.default_sigma_fraction):.1f} jr",
                     bron=fm.aanname_faalmodel,
                     toelichting=fm.notes,
                 )
@@ -684,7 +698,7 @@ class RCMProject:
                     bibliotheek_id=bibliotheek_id,
                     categorie="faalmodel",
                     omschrijving=omschrijving,
-                    waarde=f"MTTF={fm.mttf_jaar:.1f} jr, σ={fm.effective_sigma:.1f} jr",
+                    waarde=f"MTTF={fm.mttf_jaar:.1f} jr, σ={fm.effective_sigma(self.config.default_sigma_fraction):.1f} jr",
                     bron="",
                     toelichting=fm.notes,
                 )
@@ -764,6 +778,8 @@ class RCMProject:
     def to_dict(self) -> dict:
         out: dict[str, Any] = {
             "config": self.config.to_dict(),
+            "projectnaam": self.projectnaam,
+            "modelleur": self.modelleur,
             "pbs_items": {k: v.to_dict() for k, v in self.pbs_items.items()},
             "functies": {k: v.to_dict() for k, v in self.functies.items()},
             "faalwijzes": {k: v.to_dict() for k, v in self.faalwijzes.items()},
@@ -806,6 +822,8 @@ class RCMProject:
         )
         return cls(
             config=config,
+            projectnaam=str(d.get("projectnaam") or ""),
+            modelleur=str(d.get("modelleur") or ""),
             pbs_items=pbs_items,
             functies=functies,
             faalwijzes=faalwijzes,

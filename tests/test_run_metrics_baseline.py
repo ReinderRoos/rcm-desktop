@@ -14,8 +14,10 @@ import pytest
 from rcm_core.distributions import expected_failures_lifecycle
 from rcm_core.engine import compute_detection_delay_hr, compute_pm_totals, run_analytical
 from rcm_core.models import RCMProject
+
 from rcm_desktop.adapter.isograph_import_service import build_from_sheets
 from rcm_desktop.adapter.run_service import run as run_single
+from tests.helpers.lcc_cm_shape import characterize_cm_year_shape
 
 HAARLEM = Path(__file__).resolve().parent / "fixtures" / "awzi_haarlem_waarderpolder_demo.rcm.json"
 HOURS_PER_YEAR = 8760.0
@@ -62,9 +64,10 @@ def test_haarlem_run_metrics_match_post_aging_ssot_baseline(
     zie ``test_haarlem_aging_without_rev_matches_pre_ssot_total``.
     """
     m = _project_metrics(haarlem_project)
-    assert m["total_cost_eur"] == pytest.approx(30_561_392.19, rel=1e-4)
-    assert m["total_downtime_hr"] == pytest.approx(445_942.14, rel=1e-3)
-    assert m["unavailability_pct"] == pytest.approx(84.84, rel=1e-2)
+    # Post slice-42: alle random-FM's → aging (121 aging, 0 random).
+    assert m["total_cost_eur"] == pytest.approx(23_283_737.99, rel=1e-4)
+    assert m["total_downtime_hr"] == pytest.approx(152_275.02, rel=1e-3)
+    assert m["unavailability_pct"] == pytest.approx(28.97, rel=1e-2)
 
 
 def test_haarlem_aging_without_rev_matches_pre_ssot_total(
@@ -85,8 +88,10 @@ def test_haarlem_aging_without_rev_matches_pre_ssot_total(
                 haarlem_project.config.lifecycle_years,
                 fm.failure_type.value,
                 fm.mttf_jaar,
-                fm.effective_sigma,
+                fm.effective_sigma(haarlem_project.config.default_sigma_fraction),
                 fm.repair_quality,
+                aging_distribution=fm.aging_distribution.value,
+                beta_jaar=fm.beta_jaar,
                 rev_schedule=(),
             )
             * mult
@@ -105,16 +110,19 @@ def test_haarlem_aging_without_rev_matches_pre_ssot_total(
         )
         total_pm += pm_cost
 
-    assert total_cm_no_rev + total_pm == pytest.approx(47_782_827.67, rel=1e-4)
+    # Na slice-42 fixture-flip (volledig aging-portfolio); niet vergelijkbaar met pre-flip 47,8M.
+    assert total_cm_no_rev + total_pm == pytest.approx(40_984_978.26, rel=1e-4)
 
 
-def test_parallel_fm_pass_inflates_task_group_costs(haarlem_project: RCMProject) -> None:
-    """Documenteert bekende parallel-bug: gedeelde taakgroep-PM dubbel geteld."""
-    seq, _ = run_analytical(haarlem_project, parallel=False)
-    par, _ = run_analytical(haarlem_project, parallel=True)
-    seq_cost = sum(r.total_cost_eur for r in seq.values())
-    par_cost = sum(r.total_cost_eur for r in par.values())
-    assert par_cost > seq_cost * 1.5
+def test_haarlem_lcc_cm_characterization_h3(haarlem_project: RCMProject) -> None:
+    """Slice 42 D2 — portfolio CM-jaarprofiel niet-vlak, aging-dominant, DS-4b (chart-scale)."""
+    fm_results, _ = run_analytical(haarlem_project, parallel=False)
+    shape = characterize_cm_year_shape(haarlem_project, fm_results)
+    assert shape.reconciles
+    assert shape.used_legacy is False
+    assert shape.aging_cm_share >= 0.90
+    assert shape.cv > 0.10
+    assert shape.max_mean_ratio > 1.3
 
 
 def test_haarlem_kpi_run_service_matches_engine(haarlem_project: RCMProject) -> None:

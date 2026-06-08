@@ -22,6 +22,34 @@ if TYPE_CHECKING:
 RevSchedule = tuple[tuple[float, float], ...]
 
 
+def _weibull_eta_from_mttf_beta(mttf: float, beta: float) -> float:
+    if mttf <= 0.0 or beta <= 0.0:
+        return 0.0
+    return float(mttf) / float(math.gamma(1.0 + (1.0 / float(beta))))
+
+
+def _weibull_cdf(age: float, *, mttf: float, beta: float) -> float:
+    if age <= 0.0:
+        return 0.0
+    eta = _weibull_eta_from_mttf_beta(mttf, beta)
+    if eta <= 0.0:
+        return 0.0
+    return 1.0 - math.exp(-((float(age) / eta) ** float(beta)))
+
+
+def _truncated_normal_0_cdf(age: float, *, mttf: float, sigma: float) -> float:
+    if sigma <= 0.0:
+        return 0.0
+    if age <= 0.0:
+        return 0.0
+    f_age = float(normal_cdf(float(age), float(mttf), float(sigma)))
+    f_zero = float(normal_cdf(0.0, float(mttf), float(sigma)))
+    denom = 1.0 - f_zero
+    if denom <= 1e-12:
+        return 0.0
+    return max(0.0, min(1.0, (f_age - f_zero) / denom))
+
+
 # ---------------------------------------------------------------------------
 # Faalkansberekeningen
 # ---------------------------------------------------------------------------
@@ -32,6 +60,8 @@ def p_failure_by_age(
     failure_type: str,
     mttf: float,
     sigma: float,
+    aging_distribution: str = "normal",
+    beta_jaar: float = 0.0,
 ) -> float:
     """P(asset heeft gefaald vóór leeftijd t) — cumulatieve faalkans.
 
@@ -43,8 +73,13 @@ def p_failure_by_age(
     if failure_type == "random":
         return 1.0 - math.exp(-t / mttf)
     elif failure_type == "aging":
+        dist = str(aging_distribution or "normal")
+        if dist == "weibull_2p":
+            return _weibull_cdf(t, mttf=mttf, beta=beta_jaar)
         if sigma <= 0:
             return 0.0
+        if dist == "truncated_normal_0":
+            return _truncated_normal_0_cdf(t, mttf=mttf, sigma=sigma)
         return float(stats.norm.cdf(t, loc=mttf, scale=sigma))
     else:
         raise ValueError(f"Onbekend failure_type: {failure_type!r}")
@@ -69,6 +104,8 @@ def expected_failures_lifecycle(
     mttf: float,
     sigma: float,
     repair_quality: float,
+    aging_distribution: str = "normal",
+    beta_jaar: float = 0.0,
     rev_schedule: RevSchedule = (),
 ) -> float:
     """Verwacht aantal falingen gedurende de modelleerperiode.
@@ -90,12 +127,22 @@ def expected_failures_lifecycle(
     if failure_type == "random":
         return remaining / mttf
 
+    if str(aging_distribution or "normal") == "weibull_2p":
+        f_start = _weibull_cdf(current_age, mttf=mttf, beta=beta_jaar)
+        f_end = _weibull_cdf(lifecycle_years, mttf=mttf, beta=beta_jaar)
+        survival_start = 1.0 - f_start
+        if survival_start <= 1e-10:
+            return 0.0
+        return max(0.0, (f_end - f_start) / survival_start)
+
     total, _ = expected_aging_lifecycle_faalmomenten_ssot(
         current_age=current_age,
         lifecycle_years=lifecycle_years,
         mttf=mttf,
         sigma=sigma,
         repair_quality=repair_quality,
+        aging_distribution=aging_distribution,
+        beta_jaar=beta_jaar,
         num_buckets=0,
         rev_schedule=rev_schedule,
     )
@@ -112,6 +159,8 @@ def sample_time_to_failure(
     mttf: float,
     sigma: float,
     rng: np.random.Generator,
+    aging_distribution: str = "normal",
+    beta_jaar: float = 0.0,
 ) -> float:
     """Trek één steekproef van de tijd-tot-falen.
 
@@ -124,8 +173,32 @@ def sample_time_to_failure(
         return float(rng.exponential(scale=mttf))
 
     elif failure_type == "aging":
+        dist = str(aging_distribution or "normal")
+        if dist == "weibull_2p":
+            eta = _weibull_eta_from_mttf_beta(mttf, beta_jaar)
+            if eta <= 0.0:
+                return current_age
+            f_current = _weibull_cdf(current_age, mttf=mttf, beta=beta_jaar)
+            survival = 1.0 - f_current
+            if survival < 1e-10:
+                return current_age
+            u = rng.uniform(0.0, 1.0)
+            p = f_current + u * survival
+            p = min(p, 1.0 - 1e-12)
+            return float(eta * ((-math.log(1.0 - p)) ** (1.0 / float(beta_jaar))))
         if sigma <= 0:
             sigma = 0.15 * mttf
+        if dist == "truncated_normal_0":
+            f_current = _truncated_normal_0_cdf(current_age, mttf=mttf, sigma=sigma)
+            survival = 1.0 - f_current
+            if survival < 1e-10:
+                return current_age
+            u = rng.uniform(0.0, 1.0)
+            p = f_current + u * survival
+            p = min(p, 1.0 - 1e-12)
+            phi0 = float(normal_cdf(0.0, mttf, sigma))
+            p_untruncated = phi0 + p * (1.0 - phi0)
+            return float(stats.norm.ppf(p_untruncated, loc=mttf, scale=sigma))
         f_current = stats.norm.cdf(current_age, loc=mttf, scale=sigma)
         survival = 1.0 - f_current
         if survival < 1e-10:
@@ -170,6 +243,8 @@ def _conditional_failures_with_rev_segments(
     rem_clock: float,
     mttf: float,
     sigma: float,
+    aging_distribution: str = "normal",
+    beta_jaar: float = 0.0,
     rev_schedule: RevSchedule,
 ) -> float:
     """Verwachte faalmomenten tot studie-einde met REV op kalendergrenzen."""
@@ -177,14 +252,24 @@ def _conditional_failures_with_rev_segments(
         return 0.0
 
     clock_end = clock_start + rem_clock
-    f_at_start = float(normal_cdf(effective_age, mttf, sigma))
+    if str(aging_distribution or "normal") == "weibull_2p":
+        f_at_start = _weibull_cdf(effective_age, mttf=mttf, beta=beta_jaar)
+    elif str(aging_distribution or "normal") == "truncated_normal_0":
+        f_at_start = _truncated_normal_0_cdf(effective_age, mttf=mttf, sigma=sigma)
+    else:
+        f_at_start = float(normal_cdf(effective_age, mttf, sigma))
     survival = 1.0 - f_at_start
     if survival < 1e-10:
         return 0.0
 
     if not rev_schedule:
         age_end = effective_age + rem_clock
-        f_end = float(normal_cdf(age_end, mttf, sigma))
+        if str(aging_distribution or "normal") == "weibull_2p":
+            f_end = _weibull_cdf(age_end, mttf=mttf, beta=beta_jaar)
+        elif str(aging_distribution or "normal") == "truncated_normal_0":
+            f_end = _truncated_normal_0_cdf(age_end, mttf=mttf, sigma=sigma)
+        else:
+            f_end = float(normal_cdf(age_end, mttf, sigma))
         return (f_end - f_at_start) / survival
 
     events: list[tuple[float, float]] = []
@@ -221,8 +306,15 @@ def _conditional_failures_with_rev_segments(
         if b1 <= b0 + 1e-15:
             continue
         age_end = age + (b1 - b0)
-        f_lo = float(normal_cdf(age, mttf, sigma))
-        f_hi = float(normal_cdf(age_end, mttf, sigma))
+        if str(aging_distribution or "normal") == "weibull_2p":
+            f_lo = _weibull_cdf(age, mttf=mttf, beta=beta_jaar)
+            f_hi = _weibull_cdf(age_end, mttf=mttf, beta=beta_jaar)
+        elif str(aging_distribution or "normal") == "truncated_normal_0":
+            f_lo = _truncated_normal_0_cdf(age, mttf=mttf, sigma=sigma)
+            f_hi = _truncated_normal_0_cdf(age_end, mttf=mttf, sigma=sigma)
+        else:
+            f_lo = float(normal_cdf(age, mttf, sigma))
+            f_hi = float(normal_cdf(age_end, mttf, sigma))
         total += (f_hi - f_lo) / survival
         age = age_end
         if rev_idx < len(grouped) and abs(b1 - grouped[rev_idx][0]) < 1e-9:
@@ -277,6 +369,8 @@ def expected_aging_lifecycle_faalmomenten_ssot(
     lifecycle_years: float,
     mttf: float,
     sigma: float,
+    aging_distribution: str = "normal",
+    beta_jaar: float = 0.0,
     repair_quality: float,
     num_buckets: int,
     rev_schedule: RevSchedule = (),
@@ -315,7 +409,12 @@ def expected_aging_lifecycle_faalmomenten_ssot(
 
         age_at_lifecycle_end = effective_age + rem_clock
 
-        f_current = float(normal_cdf(effective_age, mttf, sig))
+        if str(aging_distribution or "normal") == "weibull_2p":
+            f_current = _weibull_cdf(effective_age, mttf=mttf, beta=beta_jaar)
+        elif str(aging_distribution or "normal") == "truncated_normal_0":
+            f_current = _truncated_normal_0_cdf(effective_age, mttf=mttf, sigma=sig)
+        else:
+            f_current = float(normal_cdf(effective_age, mttf, sig))
         survival_at_age = 1.0 - f_current
 
         if survival_at_age < 1e-10:
@@ -327,6 +426,8 @@ def expected_aging_lifecycle_faalmomenten_ssot(
             rem_clock=rem_clock,
             mttf=mttf,
             sigma=sig,
+            aging_distribution=aging_distribution,
+            beta_jaar=beta_jaar,
             rev_schedule=rev_schedule,
         )
 
@@ -338,7 +439,12 @@ def expected_aging_lifecycle_faalmomenten_ssot(
         if num_buckets > 0:
             a0 = float(effective_age)
             a1 = float(age_at_lifecycle_end)
-            f_end = float(normal_cdf(a1, mttf, sig))
+            if str(aging_distribution or "normal") == "weibull_2p":
+                f_end = _weibull_cdf(a1, mttf=mttf, beta=beta_jaar)
+            elif str(aging_distribution or "normal") == "truncated_normal_0":
+                f_end = _truncated_normal_0_cdf(a1, mttf=mttf, sigma=sig)
+            else:
+                f_end = float(normal_cdf(a1, mttf, sig))
             denom = f_end - f_current
             cal_window_lo = float(clock_time)
             cal_window_hi = float(clock_time) + rem_clock
@@ -358,8 +464,15 @@ def expected_aging_lifecycle_faalmomenten_ssot(
                     age_lo = max(a0, age_lo)
                     age_hi = min(a1, age_hi)
                     if age_hi > age_lo:
-                        phi_lo = float(normal_cdf(age_lo, mttf, sig))
-                        phi_hi = float(normal_cdf(age_hi, mttf, sig))
+                        if str(aging_distribution or "normal") == "weibull_2p":
+                            phi_lo = _weibull_cdf(age_lo, mttf=mttf, beta=beta_jaar)
+                            phi_hi = _weibull_cdf(age_hi, mttf=mttf, beta=beta_jaar)
+                        elif str(aging_distribution or "normal") == "truncated_normal_0":
+                            phi_lo = _truncated_normal_0_cdf(age_lo, mttf=mttf, sigma=sig)
+                            phi_hi = _truncated_normal_0_cdf(age_hi, mttf=mttf, sigma=sig)
+                        else:
+                            phi_lo = float(normal_cdf(age_lo, mttf, sig))
+                            phi_hi = float(normal_cdf(age_hi, mttf, sig))
                         slices[h] = max(0.0, phi_hi - phi_lo)
                 tail = max(0.0, denom - float(sum(slices)))
                 if tail > 1e-18:
@@ -380,9 +493,16 @@ def expected_aging_lifecycle_faalmomenten_ssot(
             else:
                 buckets[0] += p_fails_before_end
 
-        expected_failure_age = truncated_normal_conditional_mean(
-            effective_age, age_at_lifecycle_end, mttf, sig
-        )
+        if str(aging_distribution or "normal") == "weibull_2p":
+            f_lo = _weibull_cdf(effective_age, mttf=mttf, beta=beta_jaar)
+            f_hi = _weibull_cdf(age_at_lifecycle_end, mttf=mttf, beta=beta_jaar)
+            p_mid = min(1.0 - 1e-12, max(0.0, 0.5 * (f_lo + f_hi)))
+            eta = _weibull_eta_from_mttf_beta(mttf, beta_jaar)
+            expected_failure_age = float(eta * ((-math.log(1.0 - p_mid)) ** (1.0 / float(beta_jaar))))
+        else:
+            expected_failure_age = truncated_normal_conditional_mean(
+                effective_age, age_at_lifecycle_end, mttf, sig
+            )
         time_to_failure = expected_failure_age - effective_age
         clock_time += time_to_failure
         effective_age = rejuvenate_age(expected_failure_age, repair_quality)

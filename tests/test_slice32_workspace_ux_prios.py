@@ -168,12 +168,7 @@ def test_kpi_collapse_hides_table_in_lcc_modus(monkeypatch):
     window.workspace_state.set_modus(MODE_LCC)
     app.processEvents()
 
-    assert window.kpi_table_view.isVisible() is True
     assert window.kpi_collapse_button.isVisible() is True
-
-    window.kpi_collapse_button.click()
-    app.processEvents()
-
     assert window.workspace_state.snapshot().kpi_collapsed_in_lcc is True
     assert window.kpi_table_view.isVisible() is False
     assert window.kpi_collapse_button.text() == "▶"
@@ -181,8 +176,15 @@ def test_kpi_collapse_hides_table_in_lcc_modus(monkeypatch):
     window.kpi_collapse_button.click()
     app.processEvents()
 
+    assert window.workspace_state.snapshot().kpi_collapsed_in_lcc is False
     assert window.kpi_table_view.isVisible() is True
     assert window.kpi_collapse_button.text() == "▼"
+
+    window.kpi_collapse_button.click()
+    app.processEvents()
+
+    assert window.kpi_table_view.isVisible() is False
+    assert window.kpi_collapse_button.text() == "▶"
 
 
 def test_kpi_placeholder_not_visible_after_layout(monkeypatch):

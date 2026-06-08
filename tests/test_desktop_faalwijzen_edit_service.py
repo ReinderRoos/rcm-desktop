@@ -104,6 +104,16 @@ def test_materialize_returns_new_project_with_updates(sample_project):
     assert built.faalwijzes["FM-001"].mttf_jaar == pytest.approx(99.0)
 
 
+def test_materialize_for_save_matches_run_after_valid_edit(sample_project):
+    svc = FaalwijzenEditService()
+    svc.init(sample_project)
+    svc.apply_change("FM-001", "mttf_jaar", "42")
+    from_run = svc.materialize_for_run()
+    from_save = svc.materialize_for_save()
+    assert from_save.faalwijzes["FM-001"].mttf_jaar == pytest.approx(42.0)
+    assert from_save.faalwijzes["FM-001"].mttf_jaar == from_run.faalwijzes["FM-001"].mttf_jaar
+
+
 def test_materialize_blocked_when_errors_remain(sample_project):
     svc = FaalwijzenEditService()
     svc.init(sample_project)
@@ -113,6 +123,14 @@ def test_materialize_blocked_when_errors_remain(sample_project):
     with pytest.raises(FaalwijzenMaterializeBlockedError):
         svc.materialize_for_run()
     assert sample_project.faalwijzes["FM-001"].mttf_jaar == original_mttf
+
+
+def test_materialize_for_save_blocked_when_errors_remain(sample_project):
+    svc = FaalwijzenEditService()
+    svc.init(sample_project)
+    svc.apply_change("FM-001", "mttf_jaar", "0")
+    with pytest.raises(FaalwijzenMaterializeBlockedError):
+        svc.materialize_for_save()
 
 
 def test_reset_restores_original_state(sample_project):
@@ -155,6 +173,45 @@ def test_dirty_tracks_baseline_deviation(sample_project):
     assert svc.is_dirty() is True
     svc.apply_change("FM-001", "mttf_jaar", "15")
     assert svc.is_dirty() is False
+
+
+def test_apply_bulk_change_failure_type_on_two_fms(sample_project):
+    svc = FaalwijzenEditService()
+    svc.init(sample_project)
+    result = svc.apply_bulk_change(["FM-001", "FM-002"], "failure_type", "aging")
+    assert result.ok is True
+    assert result.applied_count == 2
+    for fm_id in ("FM-001", "FM-002"):
+        row = next(r for r in svc.rows() if r.fm_id == fm_id)
+        assert row.failure_type == "aging"
+
+
+def test_apply_bulk_change_blocked_on_invalid_mttf(sample_project):
+    svc = FaalwijzenEditService()
+    svc.init(sample_project)
+    before = next(r for r in svc.rows() if r.fm_id == "FM-001").mttf_jaar
+    result = svc.apply_bulk_change(["FM-001"], "mttf_jaar", "0")
+    assert result.ok is False
+    assert result.applied_count == 0
+    after = next(r for r in svc.rows() if r.fm_id == "FM-001").mttf_jaar
+    assert after == before
+
+
+def test_apply_bulk_change_is_evident_nmf(sample_project):
+    svc = FaalwijzenEditService()
+    svc.init(sample_project)
+    result = svc.apply_bulk_change(["FM-003"], "is_evident", False)
+    assert result.ok is True
+    row = next(r for r in svc.rows() if r.fm_id == "FM-003")
+    assert row.is_evident is False
+
+
+def test_editable_includes_failure_type_and_nmf(sample_project):
+    svc = FaalwijzenEditService()
+    svc.init(sample_project)
+    row = svc.rows()[0]
+    assert row.editable("failure_type") is True
+    assert row.editable("is_evident") is True
 
 
 def test_mark_saved_resets_dirty_baseline(sample_project):

@@ -10,9 +10,9 @@ pytest.importorskip("PySide6")
 
 from PySide6.QtWidgets import QApplication
 
-from rcm_desktop.adapter.isograph_import_dialog import (
+from rcm_desktop.views.import_wizard_dialog import (
     ImportDialogInput,
-    IsographImportWizardDialog,
+    ImportWizardDialog,
     run_import_wizard,
 )
 from rcm_desktop.adapter.isograph_import_service import build_from_sheets
@@ -81,11 +81,11 @@ def test_wizard_dialog_sets_bouwjaar_after_conflict_choice(
         return build_from_sheets(_conflict_sheets(), modeljaar=modeljaar)
 
     monkeypatch.setattr(
-        "rcm_desktop.adapter.isograph_import_dialog.preview_import",
+        "rcm_desktop.views.import_wizard_dialog.preview_import",
         fake_preview,
     )
 
-    dialog = IsographImportWizardDialog(
+    dialog = ImportWizardDialog(
         ImportDialogInput(path=xlsx, default_modeljaar=2026)
     )
     dialog._modeljaar_spin.setValue(2027)

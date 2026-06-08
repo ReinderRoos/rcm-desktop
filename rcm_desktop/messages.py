@@ -208,10 +208,32 @@ PBS_RESULTS_HEADER_COST_TOTAL_EUR = "Totale kosten (EUR, totaal)"
 FAALWIJZEN_EDIT_GROUP_TITLE = "Faalwijzen bewerken"
 FAALWIJZEN_EDIT_HEADER_FM_ID = "FM-id"
 FAALWIJZEN_EDIT_HEADER_PBS_ID = "PBS-id"
+FAALWIJZEN_EDIT_HEADER_FAILURE_TYPE = "Faaltype"
+FAALWIJZEN_EDIT_HEADER_NMF = "NMF"
+FAALWIJZEN_EDIT_HEADER_REPAIR_QUALITY = "Repair quality"
+FAALWIJZEN_FAILURE_RANDOM = "Exponentieel (random)"
+FAALWIJZEN_FAILURE_AGING = "Veroudering (aging)"
+FAALWIJZEN_NMF_JA = "Ja"
+FAALWIJZEN_NMF_NEE = "Nee"
+FAALWIJZEN_FILTER_FAILURE_TYPE = "Faaltype"
+FAALWIJZEN_FILTER_NMF = "NMF"
+FAALWIJZEN_FILTER_ALL = "Alle"
+FAALWIJZEN_SEARCH_PLACEHOLDER = "Zoek op FM-id of omschrijving…"
+FAALWIJZEN_BULK_APPLY_SELECTION = "Pas toe op selectie…"
+FAALWIJZEN_BULK_APPLY_VISIBLE = "Pas toe op zichtbare rijen…"
+FAALWIJZEN_BULK_DIALOG_TITLE = "Bulk-wijziging"
+FAALWIJZEN_BULK_FIELD_LABEL = "Veld"
+FAALWIJZEN_BULK_VALUE_LABEL = "Nieuwe waarde"
+FAALWIJZEN_BULK_FAILED = "Bulk-wijziging mislukt:\n{detail}"
+FAALWIJZEN_BULK_LARGE_WARNING = (
+    "Je past deze wijziging toe op {count} rijen. Doorgaan?"
+)
 FAALWIJZEN_EDIT_HEADER_OMSCHRIJVING = "Faalwijze (omschrijving)"
 FAALWIJZEN_EDIT_HEADER_FUNCTIE = "Functie-id"
 FAALWIJZEN_EDIT_HEADER_MTTF = "MTTF (jaar)"
 FAALWIJZEN_EDIT_HEADER_SIGMA = "Sigma (jaar)"
+FAALWIJZEN_EDIT_HEADER_AGING_DISTRIBUTION = "Aging-verdeling"
+FAALWIJZEN_EDIT_HEADER_BETA = "Beta (jaar)"
 FAALWIJZEN_EDIT_HEADER_COST_CM = "CM-kosten (EUR)"
 FAALWIJZEN_EDIT_HEADER_P_EVENT = "P (ongewenste gebeurtenis)"
 WORKSPACE_WINDOW_TITLE = "RCM2 desktop — resultatenwerkruimte"
@@ -348,6 +370,30 @@ WORKSPACE_RUN_OTHER_SCENARIO_PLACEHOLDER = (
 WORKSPACE_SCENARIO_CM_TITLE = "CM-scenario"
 WORKSPACE_SCENARIO_PM_TITLE = "PM-scenario"
 
+# A/B-scenariovergelijking (slice 56).
+WORKSPACE_COMPARE_SCENARIO_LABEL = "Scenario"
+WORKSPACE_COMPARE_SCENARIO_PROJECT = "Project"
+WORKSPACE_COMPARE_SCENARIO_CM = "CM"
+WORKSPACE_COMPARE_SCENARIO_PM = "PM"
+WORKSPACE_RUN_SLOT_A_BUTTON_LABEL = "Run → A"
+WORKSPACE_RUN_SLOT_B_BUTTON_LABEL = "Run → B"
+WORKSPACE_RUN_SLOT_A_BUTTON_TOOLTIP = (
+    "Voer analyse uit en bevries resultaat in slot A (referentie)."
+)
+WORKSPACE_RUN_SLOT_B_BUTTON_TOOLTIP = (
+    "Voer analyse uit en bevries resultaat in slot B (variant)."
+)
+WORKSPACE_COMPARE_TOGGLE_LABEL = "Vergelijk A ↔ B"
+WORKSPACE_COMPARE_TOGGLE_TOOLTIP = (
+    "Toon Top 10 en Tijdsplot naast elkaar voor gevulde slots. "
+    "Geen dubbele run verplicht — gebruik Zet als A/B na validate."
+)
+WORKSPACE_SEED_SLOT_A_BUTTON_LABEL = "Zet huidige run als A"
+WORKSPACE_SEED_SLOT_B_BUTTON_LABEL = "Zet huidige run als B"
+WORKSPACE_CLEAR_COMPARE_BUTTON_LABEL = "Wis vergelijking"
+WORKSPACE_COMPARE_SLOT_PLACEHOLDER = "Nog geen run — gebruik Run → {slot}"
+WORKSPACE_COMPARE_SLOT_HEADER = "{label}"
+
 # LCC-planning (slice 28).
 WORKSPACE_LCC_FILTER_CM = "CM"
 WORKSPACE_LCC_FILTER_REV = "REV"
@@ -402,28 +448,108 @@ WORKSPACE_LCC_SHIFT_SELECTION_HINT = (
 )
 WORKSPACE_LCC_SELECT_REV_IN_YEAR = "Selecteer REV in dit jaar"
 WORKSPACE_MEEKOPPEL_PANEL_TITLE = "Meekoppelkansen"
-WORKSPACE_MEEKOPPEL_WHATIF_HINT = "Schakel what-if planning in om meekoppelkansen te zien."
-WORKSPACE_MEEKOPPEL_EMPTY = "Geen meekoppelkansen voor het gekozen tijdsvenster."
+WORKSPACE_MEEKOPPEL_PANEL_HELP = (
+    "Selecteer één of meer onderdelen in de PBS-boom (Ctrl+klik voor meerdere). "
+    "Alle onderliggende REV-taken worden gebundeld naar het vroegste of laatste due-jaar. "
+    "De tabel toont locaties waar REV-taken binnen het tijdsvenster liggen."
+)
+WORKSPACE_MEEKOPPEL_WHATIF_HINT = (
+    "What-if planning wordt automatisch ingeschakeld bij openen van dit paneel."
+)
+WORKSPACE_MEEKOPPEL_EMPTY = "Geen locatiegroepen voor het gekozen tijdsvenster."
+WORKSPACE_MEEKOPPEL_EMPTY_SCOPE = "Geen meekoppelkansen in de geselecteerde boomtak."
 WORKSPACE_MEEKOPPEL_WINDOW_LABEL = "Tijdsvenster (jaren):"
+WORKSPACE_MEEKOPPEL_ANCHOR_EARLIER = "Bundel naar vroegste"
+WORKSPACE_MEEKOPPEL_ANCHOR_LATER = "Bundel naar laatste"
 WORKSPACE_MEEKOPPEL_PREVIEW = "Preview"
 WORKSPACE_MEEKOPPEL_APPLY = "Toepassen"
-WORKSPACE_MEEKOPPEL_SELECT_ROW = "Selecteer een suggestie in de tabel."
-WORKSPACE_MEEKOPPEL_PREVIEW_TITLE = "Preview meekoppelen"
-WORKSPACE_MEEKOPPEL_PREVIEW_ANCHOR_EARLIER = "Anker: vroegste due-jaar"
-WORKSPACE_MEEKOPPEL_PREVIEW_ANCHOR_LATER = "Anker: laatste due-jaar"
-WORKSPACE_MEEKOPPEL_PREVIEW_BODY = (
-    "PM {shifted}: jaar {from_year} → {to_year} (verschuiving {shift} jaar).\n"
-    "Paar: {pm_a} / {pm_b}."
+WORKSPACE_MEEKOPPEL_SELECT_PBS = (
+    "Selecteer één of meer onderdelen in de PBS-boom om REV-taken te bundelen."
 )
+WORKSPACE_MEEKOPPEL_SELECT_MIN_REV = (
+    "Selecteer onderdelen met minstens twee REV-taken in totaal."
+)
+WORKSPACE_MEEKOPPEL_SELECT_MIN_SHIFTABLE_REV = (
+    "In de selectie zijn minder dan twee verschuifbare REV-taken beschikbaar."
+)
+WORKSPACE_MEEKOPPEL_SELECTION_NONE = (
+    "Selectie: geen REV-taken gevonden onder de gekozen PBS-onderdelen."
+)
+WORKSPACE_MEEKOPPEL_SELECTION_COUNT = (
+    "Selectie bevat {count} REV-taken ({path})."
+)
+WORKSPACE_MEEKOPPEL_SELECT_ROW = WORKSPACE_MEEKOPPEL_SELECT_PBS
+WORKSPACE_MEEKOPPEL_PREVIEW_TITLE = "Preview bundelen"
+WORKSPACE_MEEKOPPEL_PREVIEW_ANCHOR_EARLIER = "Bundel naar vroegste due-jaar in de groep"
+WORKSPACE_MEEKOPPEL_PREVIEW_ANCHOR_LATER = "Bundel naar laatste due-jaar in de groep"
+WORKSPACE_MEEKOPPEL_PREVIEW_BODY = (
+    "Locatie: {location}\n"
+    "Doel: eerste uitvoering jaar {target} (≈ kalender {target_cal})\n\n"
+    "{moves}\n"
+    "{pbs_footnote}"
+)
+WORKSPACE_MEEKOPPEL_PREVIEW_PBS_FOOTNOTE = "PBS-id's: {pbs_id}"
+WORKSPACE_MEEKOPPEL_PREVIEW_MOVE_LINE = (
+    "  {task_label}: eerste uitvoering {from_year} → {to_year} jaar "
+    "(≈ kalender {from_cal} → {to_cal}) ({shift:+d} jaar)"
+)
+WORKSPACE_MEEKOPPEL_PREVIEW_UNCHANGED_LINE = (
+    "  {task_label}: blijft op eerste uitvoering {year} jaar (≈ kalender {cal})"
+)
+WORKSPACE_MEEKOPPEL_PREVIEW_SKIPPED_LINE = (
+    "  {task_label}: overgeslagen ({reason})"
+)
+WORKSPACE_MEEKOPPEL_PREVIEW_NO_MOVES = "Alle REV-taken staan al op het doeljaar."
 WORKSPACE_MEEKOPPEL_PREVIEW_BLOCKED = "Geen shift mogelijk: {reason}"
-WORKSPACE_MEEKOPPEL_HEADER_ELEMENT = "Element"
-WORKSPACE_MEEKOPPEL_HEADER_PM_A = "PM A"
-WORKSPACE_MEEKOPPEL_HEADER_PM_B = "PM B"
-WORKSPACE_MEEKOPPEL_HEADER_JAAR_A = "Jaar A"
-WORKSPACE_MEEKOPPEL_HEADER_JAAR_B = "Jaar B"
-WORKSPACE_MEEKOPPEL_HEADER_DELTA = "Δ"
-WORKSPACE_MEEKOPPEL_HEADER_REDEN = "Reden"
+WORKSPACE_MEEKOPPEL_HEADER_PATH = "Boompad"
+WORKSPACE_MEEKOPPEL_HEADER_REV_COUNT = "# REV"
+WORKSPACE_MEEKOPPEL_HEADER_DUE_RANGE = "Eerste uitvoering (baseline, jaren)"
+WORKSPACE_MEEKOPPEL_HEADER_SPAN = "Verschil (baseline, jaren)"
+WORKSPACE_MEEKOPPEL_TOOLTIP_TASK_BASELINE = "  • {label} (baseline jaar {baseline})"
+WORKSPACE_MEEKOPPEL_TOOLTIP_TASK_BASELINE_EFFECTIVE = (
+    "  • {label} (baseline jaar {baseline} · effectief jaar {effective})"
+)
+WORKSPACE_MEEKOPPEL_PREVIEW_SCOPE_LINE = "Bundel-scope: {scope_label} ({count} REV)"
+WORKSPACE_MEEKOPPEL_PREVIEW_DETERMINED_BY_ONE = (
+    "Bepaald door: {label} (baseline {baseline}, effectief {effective})"
+)
+WORKSPACE_MEEKOPPEL_PREVIEW_DETERMINED_BY_MANY = (
+    "Bepaald door: {count} taken op effectief jaar {year}"
+)
+WORKSPACE_MEEKOPPEL_PREVIEW_SCOPE_SWITCH_NOTICE = (
+    "Scope gewijzigd: selectie is opnieuw gezet naar alle verschuifbare taken."
+)
+WORKSPACE_MEEKOPPEL_PREVIEW_APPLY_CONFIRM = (
+    "Toepassen op {scope_label}: {count} REV-taken bundelen naar jaar {target} "
+    "(kalenderjaar {target_cal})?"
+)
+WORKSPACE_MEEKOPPEL_PREVIEW_DIALOG_TITLE = "Preview bundelen"
+WORKSPACE_MEEKOPPEL_PREVIEW_COL_SELECT = ""
+WORKSPACE_MEEKOPPEL_PREVIEW_COL_TASK = "Taak"
+WORKSPACE_MEEKOPPEL_PREVIEW_COL_BASELINE = "Baseline"
+WORKSPACE_MEEKOPPEL_PREVIEW_COL_EFFECTIVE = "Effectief"
+WORKSPACE_MEEKOPPEL_PREVIEW_COL_TARGET = "Doel"
+WORKSPACE_MEEKOPPEL_PREVIEW_COL_DELTA = "Δ"
+WORKSPACE_MEEKOPPEL_PREVIEW_COL_STATUS = "Status"
+WORKSPACE_MEEKOPPEL_PREVIEW_SCOPE_ROW = "Locatierij"
+WORKSPACE_MEEKOPPEL_PREVIEW_SCOPE_PBS = "PBS-selectie"
+WORKSPACE_MEEKOPPEL_PREVIEW_SELECT_ALL_VISIBLE = "Selecteer zichtbaar"
+WORKSPACE_MEEKOPPEL_PREVIEW_DESELECT_ALL_VISIBLE = "Deselecteer zichtbaar"
+WORKSPACE_MEEKOPPEL_PREVIEW_FILTER_SHIFTING = "Alleen verschuivende taken"
+WORKSPACE_MEEKOPPEL_PREVIEW_FILTER_ALL = "Alle taken"
+WORKSPACE_MEEKOPPEL_PREVIEW_FILTER_PLACEHOLDER = "Filter op taak of PM-id…"
+WORKSPACE_MEEKOPPEL_PREVIEW_SELECTION_SUMMARY = (
+    "Geselecteerd: {selected} · Zichtbaar: {visible} · "
+    "Verborgen geselecteerd: {hidden} · Niet selecteerbaar: {non_selectable}"
+)
 WORKSPACE_KPI_COLLAPSE_TOOLTIP = "KPI-paneel in- of uitklappen (alleen Tijdsplot-modus)."
+WORKSPACE_LCC_WHATIF_COLLAPSE_TOOLTIP = (
+    "What-if planning en LCC-filters in- of uitklappen (alleen Tijdsplot-modus)."
+)
+WORKSPACE_MEEKOPPEL_COLLAPSE_TOOLTIP = (
+    "Meekoppelkansen-paneel in- of uitklappen (alleen Tijdsplot-modus)."
+)
+WORKSPACE_LCC_WHATIF_BAR_TITLE = "What-if planning & LCC-filters"
 WORKSPACE_KPI_PANEL_TITLE = "KPI — huidige analyse"
 WORKSPACE_PM_MODE_REDIRECT = (
     "Planning en PM-inzicht zitten nu in de LCC-modus (filters en jaardetail)."
@@ -502,6 +628,145 @@ ISOGRAPH_IMPORT_VALIDATION_FAILED = (
     "Het geïmporteerde project is structureel ongeldig en is niet opgeslagen."
 )
 ISOGRAPH_IMPORT_SAVE_SUCCESS = "RCM-Cost export opgeslagen als {path}."
+
+FM_EDITOR_TITLE = "Faalwijze bewerken — {fm_id}"
+FM_EDITOR_TAB_BASIS = "Basis"
+FM_EDITOR_TAB_EFFECTEN = "Effecten"
+FM_EDITOR_TAB_CORRECTIEF = "Correctief"
+FM_EDITOR_TAB_PREVENTIEF = "Preventief"
+FM_EDITOR_FAILURE_TYPE = "Faaltype"
+FM_EDITOR_MTTF = "MTTF (jaar)"
+FM_EDITOR_SIGMA = "Sigma (jaar)"
+FM_EDITOR_AGING_DISTRIBUTION = "Aging-verdeling"
+FM_EDITOR_BETA = "Beta (Weibull)"
+FM_EDITOR_NMF = "Niet-merkbaar falen (NMF)"
+FM_EDITOR_OMSCHRIJVING = "Faalscenario"
+FM_EDITOR_FUNCTIE = "Functie"
+FM_EDITOR_REPAIR_QUALITY = "Herstelkwaliteit (0–1)"
+FM_EDITOR_BOUWJAAR = "Startleeftijd (bouwjaar PBS)"
+FM_EDITOR_PBS_SHARED_WARN = (
+    "Let op: dit PBS-item ({pbs_id}) is gekoppeld aan {count} faalwijzen."
+)
+FM_EDITOR_CM_MATERIAAL = "CM materiaalkosten (EUR)"
+FM_EDITOR_CM_ARBEID = "CM arbeid/engineering (EUR)"
+FM_EDITOR_DOWNTIME_HOURS = "Hersteltijd per falen (uur)"
+FM_EDITOR_NOTES = "Scenario-notities"
+FM_EDITOR_AANNAME_CM = "Aanname CM-kosten"
+FM_EDITOR_AANNAME_DOWNTIME = "Aanname downtime"
+FM_EDITOR_VALIDATION_TITLE = "Bewerken niet opgeslagen"
+FM_EDITOR_COMMIT_FAILED = "Opslaan mislukt: {detail}"
+FM_EDITOR_COMMIT_BUSY = "Faalwijze opslaan en herberekenen…"
+GRID_DIRTY_GUARD_TITLE = "Ongeslagen grid-wijzigingen"
+GRID_DIRTY_GUARD_TEXT = (
+    "Het faalwijzen-grid heeft onopgeslagen wijzigingen. Wat wilt u doen?"
+)
+GRID_DIRTY_SAVE = "Grid opslaan"
+GRID_DIRTY_DISCARD = "Grid verwerpen"
+GRID_DIRTY_CANCEL_EDITOR = "Editor annuleren"
+WORKSPACE_MENU_FAALWIJZEN_BATCH = "Faalwijzen batch-bewerken"
+FM_EDITOR_FM_LINKS = "Effect bij falen"
+FM_EDITOR_PM_LINKS = "Effect bij PM-taken"
+FM_EDITOR_EFFECT_KLASSEN = "Gekoppelde effectklassen"
+FM_EDITOR_ADD_ROW = "Rij toevoegen"
+FM_EDITOR_REMOVE_ROW = "Rij verwijderen"
+FM_EDITOR_PM_TASKS = "PM-taken"
+FM_EDITOR_TASK_GROUP = "Taakgroep (gedeeld)"
+FM_EDITOR_TASK_GROUP_SHARED_WARN = (
+    "Taakgroep {group_id} wordt ook door andere faalwijzen gebruikt."
+)
+FM_EDITOR_TASK_GROUP_NONE = "(geen)"
+FM_EDITOR_WARN_AGING_WITHOUT_REV = (
+    "Faaltype is veroudering (aging), maar er is geen REV-taak op deze faalwijze. "
+    "Overweeg een REV-taak toe te voegen."
+)
+FM_EDITOR_WARN_REV_WITHOUT_AGING = (
+    "Er is een REV-taak, maar het faaltype is geen veroudering (aging). "
+    "Controleer of faaltype en REV-taken bij elkaar passen."
+)
+FM_EDITOR_WARN_PM_BUNDLE_SUGGEST = (
+    "PM-taak {pm_id}: dezelfde maatregel komt op {count} ander(e) component(en) voor "
+    "zonder taakgroep — overweeg een gedeelde taakgroep."
+)
+FM_EDITOR_NO_PROJECT = "Laad eerst een project voordat je een faalwijze bewerkt."
+
+MODEL_SETTINGS_BUTTON_LABEL = "Modelinstellingen"
+MODEL_SETTINGS_SECTION_PROJECT = "Project"
+MODEL_SETTINGS_SECTION_HORIZON = "Horizon & tijd"
+MODEL_SETTINGS_SECTION_AGING = "Veroudering (defaults)"
+MODEL_SETTINGS_SECTION_FAILPARAMS = "Standaard faalparameters"
+MODEL_SETTINGS_SECTION_MONTE_CARLO = "Monte Carlo"
+MODEL_SETTINGS_PROJECTNAAM = "Projectnaam"
+MODEL_SETTINGS_MODELLEUR = "Modelleur"
+MODEL_SETTINGS_LIFECYCLE = "LCC-periode (jaar)"
+MODEL_SETTINGS_MODELJAAR = "Modeljaar"
+MODEL_SETTINGS_BUCKET_INTERVAL = "Bucket-interval"
+MODEL_SETTINGS_BUCKET_INTERVAL_VALUE = "1 kalenderjaar (vast)"
+MODEL_SETTINGS_DEFAULT_MTTF_MULTIPLIER = "MTTF-multiplier (× ontwerpleeftijd)"
+MODEL_SETTINGS_DEFAULT_MTTF_MULTIPLIER_TTIP = (
+    "Beïnvloedt vooral standaard-MTTF op PBS-niveau; bestaande faalwijze-MTTF's worden niet retroactief gewijzigd."
+)
+MODEL_SETTINGS_DEFAULT_SIGMA_FRACTION = "Sigma-fractie (× MTTF bij σ=0)"
+MODEL_SETTINGS_DEFAULT_AGING_DISTRIBUTION = "Default verouderingsdistributie"
+MODEL_SETTINGS_DEFAULT_BETA = "Default beta (Weibull)"
+MODEL_SETTINGS_APPLY_AGING = "Toepassen op alle aging-faalwijzen"
+MODEL_SETTINGS_APPLY_AGING_CONFIRM = (
+    "{count} aging-faalwijzen krijgen {dist}."
+    + "{beta_line} Doorgaan?"
+)
+MODEL_SETTINGS_APPLY_AGING_BETA_LINE = " Beta={beta:.2f}."
+MODEL_SETTINGS_MONTE_CARLO_N = "Aantal simulaties"
+MODEL_SETTINGS_MONTE_CARLO_SEED = "Random seed"
+MODEL_SETTINGS_MONTE_CARLO_DISABLED_TTIP = "Monte Carlo nog niet actief in desktop."
+MODEL_SETTINGS_RERUN_CHECKBOX = "Direct herberekenen"
+MODEL_SETTINGS_RERUN_REQUIRED = "Herbereken vereist — modelinstellingen zijn gewijzigd."
+MODEL_SETTINGS_VALIDATION_TITLE = "Modelinstellingen niet opgeslagen"
+MODEL_SETTINGS_COMMIT_FAILED = "Opslaan mislukt: {detail}"
+MODEL_SETTINGS_NO_PROJECT = "Laad eerst een project voordat je modelinstellingen opent."
+
+# Rapportage (slice 57)
+REPORT_GENERATE_BUTTON_LABEL = "Rapport genereren…"
+REPORT_GENERATE_BUTTON_TOOLTIP = (
+    "Standaard projectbreed rapport (Word, optioneel PDF). "
+    "Werkruimte-filters en taaktype-filters worden niet overgenomen."
+)
+REPORT_INELIGIBLE_NO_RUN = (
+    "Geen voltooide analyse-run beschikbaar. Start Run → A of een analyse-run."
+)
+REPORT_DIALOG_TITLE = "Rapport genereren"
+REPORT_DIALOG_OUTPUT_PATH = "Outputbestand (.docx)"
+REPORT_DIALOG_GENERATE_PDF = "Ook PDF genereren"
+REPORT_DIALOG_NB_THRESHOLD = "Drempel niet-beschikbaarheid (% van scope)"
+REPORT_DIALOG_COST_THRESHOLD = "Drempel kosten (% van scope)"
+REPORT_DIALOG_INCLUDE_BELOW = "Neem functies onder drempel ook op"
+REPORT_DIALOG_PBS_DEEPDIVE = "Beperk tot geselecteerd PBS-onderdeel"
+REPORT_DIALOG_PREVIEW = "Voorvertoning"
+REPORT_DIALOG_PREVIEW_TEMPLATE = (
+    "Modus: {mode} — NB-functies: {nb_pages}, kosten-functies: {cost_pages}"
+)
+REPORT_GENERATION_BUSY = "Rapport wordt gegenereerd…"
+REPORT_GENERATION_FAILED_TITLE = "Rapport mislukt"
+REPORT_PDF_FAILED_TITLE = "PDF-conversie mislukt"
+REPORT_PDF_FAILED_BODY = (
+    "Het Word-document is wel opgeslagen:\n{docx_path}\n\n{detail}"
+)
+REPORT_SECTION_COVER = "Voorblad"
+REPORT_SECTION_KPI = "KPI's"
+REPORT_SECTION_PROJECT_NB = "Project — niet-beschikbaarheid"
+REPORT_SECTION_PROJECT_LCC = "Project — lifecycle kosten"
+REPORT_SECTION_APPENDIX = "Appendix"
+REPORT_COVER_SCENARIO_SINGLE = "Enkele analyse"
+REPORT_COVER_SCENARIO_COMPARE = "Vergelijking A ↔ B"
+REPORT_KPI_CONTEXT_TEMPLATE = "LCC-periode: {lifecycle_years} jaar — modeljaar: {modeljaar}"
+REPORT_APPENDIX_NB_PROXY = WORKSPACE_UNAVAILABILITY_PROXY_DISCLAIMER
+REPORT_APPENDIX_BELOW_THRESHOLD = (
+    "{nb_count} NB-functie(s) en {cost_count} kosten-functie(s) onder drempel weggelaten."
+)
+REPORT_APPENDIX_NB_OVER_100 = (
+    "Som van functie-NB kan >100% zijn wanneer functies parallel uitvallen."
+)
+REPORT_NARRATIVE_SCENARIO_MISMATCH = (
+    "Let op: scenario A en B gebruiken verschillende scenario-keys; vergelijk interpretatie voorzichtig."
+)
 
 
 def status_label(status: str) -> str:

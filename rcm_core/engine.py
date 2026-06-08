@@ -6,6 +6,7 @@ Geen I/O, geen UI-objecten.
 """
 from __future__ import annotations
 from concurrent.futures import ProcessPoolExecutor, as_completed
+from dataclasses import replace
 from typing import Optional
 
 from rcm_core.config import RCMConfig
@@ -21,7 +22,7 @@ from rcm_core.distributions import (
     expected_failures_lifecycle,
     p_failure_by_age,
 )
-from rcm_core.lcc_profile import build_fm_horizon_profile
+from rcm_core.lcc_profile import build_fm_horizon_profile, compute_fm_faalmomenten_per_bucket
 
 
 # ---------------------------------------------------------------------------
@@ -114,6 +115,47 @@ def compute_pm_totals(
     return total_cost, total_downtime_hr, pm_effect_bijdragen
 
 
+def _effect_bijdragen_per_jaar(
+    *,
+    faalmomenten: list[float],
+    fm_effect_links: list[FMEffectLink] | None,
+    pm_tasks: list[PMTask],
+    pm_effect_links: list[PMEffectLink] | None,
+    lifecycle_years: float,
+) -> dict[str, list[float]]:
+    """Jaarlijkse effectbijdragen; som per klasse ≈ lifecycle-totaal op FMResult."""
+    num = len(faalmomenten)
+    if num <= 0:
+        return {}
+
+    out: dict[str, list[float]] = {}
+
+    def _add(klasse_id: str, h: int, delta: float) -> None:
+        if klasse_id not in out:
+            out[klasse_id] = [0.0] * num
+        out[klasse_id][h] += delta
+
+    for link in fm_effect_links or []:
+        for h, moment in enumerate(faalmomenten):
+            _add(link.klasse_id, h, float(moment) * float(link.fractie))
+
+    links_by_pm: dict[str, list[PMEffectLink]] = {}
+    for link in pm_effect_links or []:
+        links_by_pm.setdefault(link.pm_id, []).append(link)
+
+    for task in pm_tasks:
+        for link in links_by_pm.get(task.pm_id, []):
+            executions = (
+                lifecycle_years / task.interval_jaar if task.interval_jaar > 0 else 0.0
+            )
+            lifecycle_bijdrage = task.duration.to_hours() * link.fractie * executions
+            per_bucket = lifecycle_bijdrage / num if num > 0 else 0.0
+            for h in range(num):
+                _add(link.klasse_id, h, per_bucket)
+
+    return out
+
+
 # ---------------------------------------------------------------------------
 # Berekening per faalwijze
 # ---------------------------------------------------------------------------
@@ -152,7 +194,9 @@ def compute_fm_result(
         lifecycle_years=lifecycle,
         failure_type=fm.failure_type.value,
         mttf=fm.mttf_jaar,
-        sigma=fm.effective_sigma,
+        sigma=fm.effective_sigma(config.default_sigma_fraction),
+        aging_distribution=fm.aging_distribution.value,
+        beta_jaar=fm.beta_jaar,
         repair_quality=fm.repair_quality,
         rev_schedule=rev_schedule,
     )
@@ -163,7 +207,9 @@ def compute_fm_result(
         t=lifecycle - current_age,
         failure_type=fm.failure_type.value,
         mttf=fm.mttf_jaar,
-        sigma=fm.effective_sigma,
+        sigma=fm.effective_sigma(config.default_sigma_fraction),
+        aging_distribution=fm.aging_distribution.value,
+        beta_jaar=fm.beta_jaar,
     )
 
     # Downtime door correctief onderhoud
@@ -202,6 +248,21 @@ def compute_fm_result(
             combined_effect_bijdragen.get(klasse_id, 0.0) + uren
         )
 
+    faalmomenten = compute_fm_faalmomenten_per_bucket(
+        config=config,
+        fm=fm,
+        pbs=pbs,
+        pm_tasks=pm_tasks,
+        all_pbs=all_pbs,
+    )
+    effect_per_jaar = _effect_bijdragen_per_jaar(
+        faalmomenten=faalmomenten,
+        fm_effect_links=fm_effect_links,
+        pm_tasks=pm_tasks,
+        pm_effect_links=pm_effect_links,
+        lifecycle_years=lifecycle,
+    )
+
     horizon_profile = build_fm_horizon_profile(
         config=config,
         fm=fm,
@@ -225,6 +286,7 @@ def compute_fm_result(
         total_cost_eur=expected_cm_cost + pm_cost,
         risk_contribution=risk_contribution,
         effect_bijdragen=combined_effect_bijdragen,
+        effect_bijdragen_per_jaar=effect_per_jaar,
         horizon_profile=horizon_profile,
     )
 
@@ -302,6 +364,61 @@ def _compute_fm_result_worker(args: tuple) -> FMResult:
     )
 
 
+def deduplicate_parallel_fm_pm_costs(
+    project: RCMProject,
+    fm_results: dict[str, FMResult],
+    *,
+    fm_ids: Optional[list[str]] = None,
+) -> dict[str, FMResult]:
+    """Herbereken PM-velden met project-brede taakgroepdeduplicatie.
+
+    Gebruik na parallelle worker-pool: zelfde FM-volgorde en ``compute_pm_totals``
+    als het sequentiële pad. CM, faalmomenten en horizon_profile blijven uit workers.
+    """
+    target_ids = fm_ids if fm_ids is not None else list(project.faalwijzes.keys())
+    order = [fid for fid in target_ids if fid in fm_results]
+    counted_groups: set[str] = set()
+    lifecycle = project.config.lifecycle_years
+    updated = dict(fm_results)
+
+    for fm_id in order:
+        fm = project.faalwijzes.get(fm_id)
+        if fm is None:
+            continue
+        prev = updated[fm_id]
+        pm_tasks = project.get_pm_tasks_for_fm(fm_id)
+        pm_effect_links = [
+            link
+            for pm in pm_tasks
+            for link in project.get_pm_effect_links_for_pm(pm.pm_id)
+        ]
+        pm_cost, pm_downtime_hr, pm_effect_bijdragen = compute_pm_totals(
+            pm_tasks,
+            project.task_groups,
+            lifecycle,
+            counted_groups,
+            pm_effect_links=pm_effect_links,
+        )
+        fm_effect_bijdragen: dict[str, float] = {}
+        for link in project.get_fm_effect_links_for_fm(fm_id):
+            fm_effect_bijdragen[link.klasse_id] = (
+                prev.expected_failures * link.fractie
+            )
+        combined_effect_bijdragen = dict(fm_effect_bijdragen)
+        for klasse_id, uren in pm_effect_bijdragen.items():
+            combined_effect_bijdragen[klasse_id] = (
+                combined_effect_bijdragen.get(klasse_id, 0.0) + uren
+            )
+        updated[fm_id] = replace(
+            prev,
+            pm_cost_eur=pm_cost,
+            expected_pm_downtime_hr=pm_downtime_hr,
+            total_cost_eur=prev.expected_cm_cost_eur + pm_cost,
+            effect_bijdragen=combined_effect_bijdragen,
+        )
+    return updated
+
+
 def compute_all_fm_results(
     project: RCMProject,
     fm_ids: Optional[list[str]] = None,
@@ -310,11 +427,11 @@ def compute_all_fm_results(
     """Bereken FMResult voor alle (of geselecteerde) faalwijzen.
 
     fm_ids=None → bereken alle faalwijzen.
-    parallel=True → gebruik ProcessPoolExecutor voor snelheid.
+    parallel=True → gebruik ProcessPoolExecutor voor snelheid (≥8 FM's).
 
-    Taakgroep-deduplicatie werkt alleen correct in sequentiële modus.
-    Bij parallelle uitvoering worden groepskosten mogelijk dubbel geteld;
-    de deduplicatie vindt dan plaats in compute_pbs_results.
+    Taakgroep-PM wordt in sequentiële modus per FM gededupliceerd via een gedeelde
+    ``counted_group_ids``. Bij parallelle pool volgt een post-pass
+    (``deduplicate_parallel_fm_pm_costs``) met dezelfde volgorde en semantiek.
     """
     target_ids = fm_ids if fm_ids is not None else list(project.faalwijzes.keys())
     fms_to_calc = [project.faalwijzes[fid] for fid in target_ids if fid in project.faalwijzes]
@@ -341,7 +458,7 @@ def compute_all_fm_results(
             )
         return results
 
-    # Parallel — kosten worden per FM berekend (taakgroep-deduplicatie later)
+    # Parallel — workers zonder gedeelde groep-set; post-pass dedupliceert PM
     all_pbs_dicts = {k: v.to_dict() for k, v in project.pbs_items.items()}
     work_items = []
     for fm in fms_to_calc:
@@ -374,7 +491,9 @@ def compute_all_fm_results(
         for future in as_completed(future_to_fm):
             fm_id = future_to_fm[future]
             results[fm_id] = future.result()
-    return results
+    return deduplicate_parallel_fm_pm_costs(
+        project, results, fm_ids=target_ids
+    )
 
 
 def compute_pbs_results(

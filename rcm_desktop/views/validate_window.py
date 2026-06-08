@@ -39,12 +39,9 @@ from rcm_desktop import messages
 from rcm_desktop.adapter.faalwijzen_edit_service import (
     FaalwijzenEditService,
     FaalwijzenMaterializeBlockedError,
-    SLICE_FIELD_KEYS,
 )
-from rcm_desktop.adapter.faalwijzen_table_model import (
-    FaalwijzenFkDelegate,
-    FaalwijzenTableModel,
-)
+from rcm_desktop.adapter.editing_host import EditingHost
+from rcm_desktop.views.validate_faalwijzen_panel import ValidateFaalwijzenPanel
 from rcm_desktop.adapter.compare_runner import CompareRunner
 from rcm_desktop.adapter.fm_results_table_model import (
     FMResultsSortProxy,
@@ -90,7 +87,7 @@ class ValidateWindow(QMainWindow):
         self._state.run_changed.connect(self._render_run_result)
 
         self._faalwijzen_edit = FaalwijzenEditService()
-        self._faalwijzen_model: FaalwijzenTableModel | None = None
+        self._faalwijzen_panel: ValidateFaalwijzenPanel | None = None
         self._active_project_path: Path | None = None
         self._loaded_path_mtime_ns: int | None = None
         self._suppress_path_change = False
@@ -105,6 +102,7 @@ class ValidateWindow(QMainWindow):
         self._panel_visibility: dict[str, bool] = {}
         self._active_result_panel = "fm"
         self._manual_result_override = False
+        self._editing_host = EditingHost()
 
         self.path_input = QLineEdit()
         self.path_input.setPlaceholderText("Pad naar projectbestand (*.rcm.json)")
@@ -223,13 +221,8 @@ class ValidateWindow(QMainWindow):
         strip_layout.addWidget(self.strip_right_column)
 
         self.preview_group.setVisible(False)
-        self.faalwijzen_group = QGroupBox(messages.FAALWIJZEN_EDIT_GROUP_TITLE)
-        faal_layout = QVBoxLayout(self.faalwijzen_group)
-        self.faalwijzen_table = QTableView()
-        self.faalwijzen_table.setSortingEnabled(False)
-        self.faalwijzen_table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
-        faal_layout.addWidget(self.faalwijzen_table)
-        self.faalwijzen_group.setVisible(False)
+        self._faalwijzen_panel = ValidateFaalwijzenPanel()
+        self._faalwijzen_panel.setVisible(False)
         self.result_table_group = QGroupBox(messages.FM_RESULTS_GROUP_TITLE)
         result_table_layout = QVBoxLayout(self.result_table_group)
         self.result_table = QTableView()
@@ -374,7 +367,7 @@ class ValidateWindow(QMainWindow):
         outer.addLayout(row)
         outer.addWidget(self.idle_banner)
         outer.addWidget(self.preview_group)
-        outer.addWidget(self.faalwijzen_group)
+        outer.addWidget(self._faalwijzen_panel)
         outer.addWidget(self.compare_group)
         outer.addWidget(self.core_splitter)
         outer.addWidget(self.details_toggle)
@@ -387,7 +380,7 @@ class ValidateWindow(QMainWindow):
     def _init_panel_registry(self) -> None:
         self._panel_widgets = {
             "preview": self.preview_group,
-            "faalwijzen": self.faalwijzen_group,
+            "faalwijzen": self._faalwijzen_panel,
             "compare": self.compare_group,
             "result_stack": self.result_stack_group,
             "ltap": self.ltap_group,
@@ -511,10 +504,13 @@ class ValidateWindow(QMainWindow):
 
     def _tear_down_faalwijzen_panel(self) -> None:
         self._faalwijzen_edit.bind_changed(None)
-        self._faalwijzen_model = None
-        self.faalwijzen_table.setModel(None)
+        if self._faalwijzen_panel is not None:
+            self._faalwijzen_panel.detach()
         self._set_panel_visible("faalwijzen", False)
         self._faalwijzen_edit.clear()
+        host = self._editing_host
+        host.attach_grid(None)
+        host.set_save_handler(None)
         self._clear_ltap_view()
 
     def _sync_faalwijzen_panel(self) -> None:
@@ -526,13 +522,11 @@ class ValidateWindow(QMainWindow):
         if validation_ok and project is not None:
             self._faalwijzen_edit.reset(project)
             self._faalwijzen_edit.bind_changed(self._on_faalwijzen_edit_changed)
-            self._faalwijzen_model = FaalwijzenTableModel(self._faalwijzen_edit, project, parent=self)
-            self.faalwijzen_table.setModel(self._faalwijzen_model)
-            functie_col = SLICE_FIELD_KEYS.index("functie_id")
-            self.faalwijzen_table.setItemDelegateForColumn(
-                functie_col,
-                FaalwijzenFkDelegate(project, self.faalwijzen_table),
-            )
+            if self._faalwijzen_panel is not None:
+                self._faalwijzen_panel.attach(self._faalwijzen_edit, project)
+            host = self._editing_host
+            host.attach_grid(self._faalwijzen_edit)
+            host.set_save_handler(self._save_current)
             self._set_panel_visible("faalwijzen", True)
             self._sync_dirty_ui()
         else:
@@ -540,8 +534,8 @@ class ValidateWindow(QMainWindow):
             self._sync_dirty_ui()
 
     def _on_faalwijzen_edit_changed(self) -> None:
-        if self._faalwijzen_model is not None:
-            self._faalwijzen_model.emit_grid_refresh()
+        if self._faalwijzen_panel is not None:
+            self._faalwijzen_panel.refresh_view()
         self._update_run_button_enabled()
         self._sync_dirty_ui()
 

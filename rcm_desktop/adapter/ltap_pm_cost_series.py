@@ -7,7 +7,7 @@ from rcm_core.lcc_profile import ltap_horizon_bucket_count
 from rcm_core.models import RCMProject
 
 from rcm_desktop.adapter.lcc_type_filter import LCCTypeFilterSet
-from rcm_desktop.adapter.ltap_service import _executions_by_year
+from rcm_desktop.adapter.ltap_execution_schedule import ltap_executions_by_year as _executions_by_year
 
 
 def build_ltap_pm_cost_series(
@@ -50,3 +50,15 @@ def build_ltap_pm_cost_series(
                 filtered[year] += cost
 
     return tuple(raw), tuple(filtered)
+
+
+def pm_eur_per_bucket_scaled(project: RCMProject, target_pm_total: float) -> list[float]:
+    """Schaal LTAP PM-verdeling naar lifecycle-PM-totaal."""
+    raw, _ = build_ltap_pm_cost_series(project)
+    if not raw:
+        return []
+    s = float(sum(raw))
+    if s <= 1e-15:
+        return [0.0] * len(raw)
+    scale = float(target_pm_total) / s
+    return [float(r) * scale for r in raw]

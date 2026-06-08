@@ -87,6 +87,40 @@ def _fm_horizon_context(
     return current_age, lifecycle_end, eff_mult
 
 
+def compute_fm_faalmomenten_per_bucket(
+    *,
+    config,
+    fm: Faalwijze,
+    pbs: PBSItem,
+    pm_tasks: list[PMTask],
+    all_pbs: dict[str, PBSItem] | None = None,
+) -> list[float]:
+    """Verwachte faalmomenten per horizonbucket (zelfde SSOT als LCC/NMF)."""
+    pbs_map = all_pbs if all_pbs is not None else {pbs.pbs_id: pbs}
+    num = ltap_horizon_bucket_count(float(config.lifecycle_years))
+    current_age, lifecycle_end, mult = _fm_horizon_context(config, fm.pbs_id, pbs_map)
+    if fm.failure_type.value == "random":
+        return expected_faalmomenten_per_bucket_random(
+            current_age=current_age,
+            lifecycle_end_age=lifecycle_end,
+            mttf=float(fm.mttf_jaar),
+            multiplicity=mult,
+            num_buckets=num,
+        )
+    _, moments_u = expected_aging_lifecycle_faalmomenten_ssot(
+        current_age=current_age,
+        lifecycle_years=lifecycle_end,
+        mttf=float(fm.mttf_jaar),
+        sigma=float(fm.effective_sigma(config.default_sigma_fraction)),
+        aging_distribution=fm.aging_distribution.value,
+        beta_jaar=float(fm.beta_jaar),
+        repair_quality=float(fm.repair_quality),
+        num_buckets=num,
+        rev_schedule=build_rev_schedule(pm_tasks),
+    )
+    return [float(m) * mult for m in moments_u]
+
+
 def build_fm_horizon_profile(
     *,
     config,
@@ -97,28 +131,14 @@ def build_fm_horizon_profile(
     hidden_nb_per_failure_hr: float | None = None,
 ) -> FMHorizonProfile:
     """Bouw NMF-horizonprofiel voor één FM (slice 27 SSOT, slice 36 run-koppeling)."""
-    pbs_map = all_pbs if all_pbs is not None else {pbs.pbs_id: pbs}
     num = ltap_horizon_bucket_count(float(config.lifecycle_years))
-    current_age, lifecycle_end, mult = _fm_horizon_context(config, fm.pbs_id, pbs_map)
-    if fm.failure_type.value == "random":
-        moments = expected_faalmomenten_per_bucket_random(
-            current_age=current_age,
-            lifecycle_end_age=lifecycle_end,
-            mttf=float(fm.mttf_jaar),
-            multiplicity=mult,
-            num_buckets=num,
-        )
-    else:
-        _, moments_u = expected_aging_lifecycle_faalmomenten_ssot(
-            current_age=current_age,
-            lifecycle_years=lifecycle_end,
-            mttf=float(fm.mttf_jaar),
-            sigma=float(fm.effective_sigma),
-            repair_quality=float(fm.repair_quality),
-            num_buckets=num,
-            rev_schedule=build_rev_schedule(pm_tasks),
-        )
-        moments = [float(m) * mult for m in moments_u]
+    moments = compute_fm_faalmomenten_per_bucket(
+        config=config,
+        fm=fm,
+        pbs=pbs,
+        pm_tasks=pm_tasks,
+        all_pbs=all_pbs,
+    )
     test_intervals = [
         float(t.interval_jaar)
         for t in pm_tasks
@@ -167,7 +187,9 @@ def _legacy_cm_eur_per_fm(
             current_age=current_age,
             lifecycle_years=lifecycle_end,
             mttf=float(fm.mttf_jaar),
-            sigma=float(fm.effective_sigma),
+            sigma=float(fm.effective_sigma(config.default_sigma_fraction)),
+            aging_distribution=fm.aging_distribution.value,
+            beta_jaar=float(fm.beta_jaar),
             repair_quality=float(fm.repair_quality),
             num_buckets=num,
             rev_schedule=build_rev_schedule(pm_for_fm),

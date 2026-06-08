@@ -45,11 +45,15 @@ class TestPBSItem:
 class TestFaalwijze:
     def test_effective_sigma_default(self):
         fm = Faalwijze("FM-001", "PBS-001", "FUNC-001", "Corrosie", mttf_jaar=50.0, sigma_jaar=0.0)
-        assert abs(fm.effective_sigma - 7.5) < 1e-10  # 0,15 × 50
+        assert abs(fm.effective_sigma() - 7.5) < 1e-10  # 0,15 × 50
 
     def test_effective_sigma_explicit(self):
         fm = Faalwijze("FM-001", "PBS-001", "FUNC-001", "Corrosie", mttf_jaar=50.0, sigma_jaar=5.0)
-        assert fm.effective_sigma == 5.0
+        assert fm.effective_sigma() == 5.0
+
+    def test_effective_sigma_respects_config_fraction(self):
+        fm = Faalwijze("FM-001", "PBS-001", "FUNC-001", "Corrosie", mttf_jaar=50.0, sigma_jaar=0.0)
+        assert abs(fm.effective_sigma(0.20) - 10.0) < 1e-10
 
     def test_roundtrip_dict(self):
         fm = Faalwijze(

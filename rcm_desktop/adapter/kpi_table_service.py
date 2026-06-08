@@ -27,6 +27,11 @@ KPI_KEY_PM_TASKS_ACTIVE = "pm_tasks_active"
 CURRENT_ANALYSIS_KEY = "current"
 CURRENT_ANALYSIS_LABEL = "Huidige analyse"
 
+KPI_DELTA_KEY = "delta"
+KPI_DELTA_LABEL = "Δ (abs.)"
+
+_DELTA_KEYS = frozenset({KPI_KEY_UNAVAILABILITY_PCT, KPI_KEY_LIFECYCLE_COSTS_EUR})
+
 _HOURS_PER_YEAR = 8760.0
 
 
@@ -94,6 +99,68 @@ def build_kpi_table(
         scenario_keys=(CURRENT_ANALYSIS_KEY,),
         scenario_labels=(CURRENT_ANALYSIS_LABEL,),
         rows=rows,
+    )
+
+
+def build_kpi_compare_table(
+    *,
+    project: RCMProject | None,
+    scenarios: tuple[tuple[str, str, RunResult], ...],
+    scope_id: str | None,
+) -> KPITable:
+    """KPI-tabel voor rapport of compare met optionele Δ-kolom."""
+    if not scenarios:
+        return build_kpi_table(project=project, run_result=None, scope_id=scope_id)
+
+    subtree: frozenset[str] | None
+    if scope_id is not None and project is not None and scope_id in project.pbs_items:
+        subtree = _collect_subtree_ids(project, scope_id)
+    else:
+        subtree = None
+
+    aggregates = [
+        _aggregate_run(run, project=project, subtree=subtree) for _key, _label, run in scenarios
+    ]
+    keys = tuple(key for key, _label, _run in scenarios)
+    labels = tuple(label for _key, label, _run in scenarios)
+    scenario_keys: tuple[str, ...]
+    scenario_labels: tuple[str, ...]
+    if len(scenarios) >= 2:
+        scenario_keys = keys + (KPI_DELTA_KEY,)
+        scenario_labels = labels + (KPI_DELTA_LABEL,)
+    else:
+        scenario_keys = keys
+        scenario_labels = labels
+
+    row_defs = (
+        (KPI_KEY_LIFECYCLE_FAILURES, "Lifecycle faalmomenten", _format_failures),
+        (KPI_KEY_UNAVAILABILITY_PCT, "Niet-beschikbaarheid (%)", _format_pct),
+        (KPI_KEY_LIFECYCLE_COSTS_EUR, "Lifecycle kosten (EUR)", _format_eur),
+        (KPI_KEY_PM_TASKS_ACTIVE, "PM-taken actief", _format_int),
+    )
+    rows: list[KPIRow] = []
+    for row_key, row_label, formatter in row_defs:
+        cells: list[KPICell] = []
+        for agg in aggregates:
+            value = agg.get(row_key)
+            if value is None:
+                cells.append(KPICell(raw=None, display=EM_DASH))
+            else:
+                cells.append(KPICell(raw=value, display=formatter(value)))
+        if len(scenarios) >= 2 and row_key in _DELTA_KEYS:
+            left = aggregates[0].get(row_key)
+            right = aggregates[1].get(row_key)
+            if left is None or right is None:
+                cells.append(KPICell(raw=None, display=EM_DASH))
+            else:
+                delta = float(right) - float(left)
+                cells.append(KPICell(raw=delta, display=formatter(delta)))
+        rows.append(KPIRow(key=row_key, label=row_label, cells=tuple(cells)))
+
+    return KPITable(
+        scenario_keys=scenario_keys,
+        scenario_labels=scenario_labels,
+        rows=tuple(rows),
     )
 
 

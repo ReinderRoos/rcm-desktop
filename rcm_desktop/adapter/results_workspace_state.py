@@ -194,6 +194,12 @@ class WorkspaceStateSnapshot:
 
     kpi_collapsed_in_lcc: bool = False
 
+    meekoppel_collapsed_in_lcc: bool = False
+
+    lcc_whatif_collapsed_in_lcc: bool = False
+
+    compare_mode: bool = False
+
 
 
 
@@ -223,6 +229,10 @@ _DEFAULT_SNAPSHOT = WorkspaceStateSnapshot(
     fm_evident_filter="all",
 
     kpi_collapsed_in_lcc=False,
+
+    meekoppel_collapsed_in_lcc=False,
+
+    lcc_whatif_collapsed_in_lcc=False,
 
 )
 
@@ -306,7 +316,17 @@ class ResultsWorkspaceState:
 
         sticky_source = self._source_by_modus.get(modus, SOURCE_PBS)
 
-        self._snapshot = replace(self._snapshot, modus=modus, source=sticky_source)
+        if modus == MODE_LCC:
+            self._snapshot = replace(
+                self._snapshot,
+                modus=modus,
+                source=sticky_source,
+                kpi_collapsed_in_lcc=True,
+                meekoppel_collapsed_in_lcc=True,
+                lcc_whatif_collapsed_in_lcc=True,
+            )
+        else:
+            self._snapshot = replace(self._snapshot, modus=modus, source=sticky_source)
 
         self._emit()
 
@@ -489,6 +509,42 @@ class ResultsWorkspaceState:
             return
 
         self._snapshot = replace(self._snapshot, kpi_collapsed_in_lcc=collapsed)
+
+        self._emit()
+
+
+
+    def set_meekoppel_collapsed_in_lcc(self, collapsed: bool) -> None:
+
+        if collapsed == self._snapshot.meekoppel_collapsed_in_lcc:
+
+            return
+
+        self._snapshot = replace(self._snapshot, meekoppel_collapsed_in_lcc=collapsed)
+
+        self._emit()
+
+
+
+    def set_lcc_whatif_collapsed_in_lcc(self, collapsed: bool) -> None:
+
+        if collapsed == self._snapshot.lcc_whatif_collapsed_in_lcc:
+
+            return
+
+        self._snapshot = replace(self._snapshot, lcc_whatif_collapsed_in_lcc=collapsed)
+
+        self._emit()
+
+
+
+    def set_compare_mode(self, enabled: bool) -> None:
+
+        if enabled == self._snapshot.compare_mode:
+
+            return
+
+        self._snapshot = replace(self._snapshot, compare_mode=enabled)
 
         self._emit()
 

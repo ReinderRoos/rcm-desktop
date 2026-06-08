@@ -91,7 +91,7 @@ class TestPersistence:
         project = load_project(fixture)
         assert len(project.pbs_items) == 4  # PBS-000 t/m PBS-003
         assert len(project.faalwijzes) == 6
-        assert len(project.pm_tasks) == 8
+        assert len(project.pm_tasks) == 9
         assert len(project.task_groups) == 1
         assert len(project.effect_klassen) == 4   # EK-SYS-01 t/m EK-SYS-04
         assert len(project.fm_effect_links) == 10  # meerdere FMs → zelfde systeem-EK
