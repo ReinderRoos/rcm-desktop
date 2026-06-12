@@ -21,6 +21,7 @@ from rcm_desktop.adapter.planning_overlay_state import PlanningOverlayState
 from rcm_desktop.adapter.run_service import run as run_single
 import rcm_desktop.views.results_workspace_window as workspace_window
 from rcm_desktop.views.results_workspace_window import ResultsWorkspaceWindow
+from tests.workspace_test_helpers import switch_workspace_modus
 
 
 def _ensure_app() -> QApplication:
@@ -66,11 +67,13 @@ def test_meekoppel_table_model_shows_path_and_due_range():
 
 
 def _expand_meekoppel_panel(window: ResultsWorkspaceWindow, app: QApplication) -> None:
+    window.workspace_state.set_lcc_whatif_collapsed_in_lcc(False)
+    window.lcc_whatif_button.setChecked(True)
     window.workspace_state.set_meekoppel_collapsed_in_lcc(False)
     app.processEvents()
 
 
-def test_meekoppel_panel_auto_enables_whatif_on_expand(monkeypatch):
+def test_meekoppel_panel_visible_after_whatif_enabled(monkeypatch):
     app = _ensure_app()
     monkeypatch.setattr(QMessageBox, "critical", lambda *_a, **_k: QMessageBox.Ok)
     monkeypatch.setattr(QMessageBox, "warning", lambda *_a, **_k: QMessageBox.Ok)
@@ -87,16 +90,18 @@ def test_meekoppel_panel_auto_enables_whatif_on_expand(monkeypatch):
     window._state.set_last_run(rr)
     app.processEvents()
 
-    window.modus_buttons["lcc"].click()
+    switch_workspace_modus(window, "lcc", app)
     app.processEvents()
-    assert window.lcc_whatif_button.isChecked() is False
+    assert window.meekoppel_panel.isVisible() is False
+    window.lcc_whatif_button.setChecked(True)
+    app.processEvents()
+    assert window.meekoppel_panel.isVisible() is True
     _expand_meekoppel_panel(window, app)
-    assert window.lcc_whatif_button.isChecked() is True
     assert window.meekoppel_whatif_hint_label.isVisible() is False
     assert window._meekoppel_table_model.rowCount() >= 1
 
 
-def test_meekoppel_panel_tools_disabled_without_whatif(monkeypatch):
+def test_meekoppel_panel_hidden_without_whatif(monkeypatch):
     app = _ensure_app()
     monkeypatch.setattr(QMessageBox, "critical", lambda *_a, **_k: QMessageBox.Ok)
     monkeypatch.setattr(QMessageBox, "warning", lambda *_a, **_k: QMessageBox.Ok)
@@ -113,14 +118,13 @@ def test_meekoppel_panel_tools_disabled_without_whatif(monkeypatch):
     window._state.set_last_run(rr)
     app.processEvents()
 
-    window.modus_buttons["lcc"].click()
+    switch_workspace_modus(window, "lcc", app)
     app.processEvents()
-    _expand_meekoppel_panel(window, app)
+    window.lcc_whatif_button.setChecked(True)
+    app.processEvents()
     window.lcc_whatif_button.setChecked(False)
     app.processEvents()
-    window._sync_meekoppel_panel(window.workspace_state.snapshot())
-    assert window.meekoppel_whatif_hint_label.isVisible()
-    assert window.meekoppel_apply_button.isEnabled() is False
+    assert window.meekoppel_panel.isVisible() is False
 
 
 def _select_first_pbs_node(window: ResultsWorkspaceWindow, app: QApplication) -> None:
@@ -155,7 +159,7 @@ def test_meekoppel_apply_updates_overlay_after_preview(monkeypatch):
     window._state.set_last_run(rr)
     app.processEvents()
 
-    window.modus_buttons["lcc"].click()
+    switch_workspace_modus(window, "lcc", app)
     app.processEvents()
     _expand_meekoppel_panel(window, app)
     assert window.lcc_whatif_button.isChecked() is True
@@ -208,7 +212,7 @@ def test_meekoppel_preview_uses_workflow_when_flag_enabled(monkeypatch):
     )
     window._state.set_last_run(rr)
     app.processEvents()
-    window.modus_buttons["lcc"].click()
+    switch_workspace_modus(window, "lcc", app)
     app.processEvents()
     _expand_meekoppel_panel(window, app)
     _select_first_pbs_node(window, app)
@@ -251,7 +255,7 @@ def test_meekoppel_preview_uses_legacy_when_flag_disabled(monkeypatch):
     )
     window._state.set_last_run(rr)
     app.processEvents()
-    window.modus_buttons["lcc"].click()
+    switch_workspace_modus(window, "lcc", app)
     app.processEvents()
     _expand_meekoppel_panel(window, app)
     _select_first_pbs_node(window, app)

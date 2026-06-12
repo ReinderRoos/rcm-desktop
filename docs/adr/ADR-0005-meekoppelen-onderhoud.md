@@ -39,9 +39,16 @@ RCM1 toonde **meekoppelkansen**: REV-taken op hetzelfde PBS-element met due-jare
 
 - Alleen `TaskType.REV`; `interval_jaar > 0`; FM/PBS aanwezig.
 - Due-jaar = `int(round(interval_jaar))`.
-- Groep per **`pbs_id`** (faalwijze-PBS-knoop): ≥ 2 REV op dezelfde locatie en `max(due) − min(due) ≤ N` (default **N = 2**).
+- **Bundelsleutel (slice 55):** `parent_pbs_id(fm.pbs_id)` indien die parent in `pbs_items` staat; anders `fm.pbs_id` (leaf-fallback). Groep als ≥ 2 REV op dezelfde bundelsleutel en `max(due) − min(due) ≤ N` (default **N = 2**).
+- **`MeekoppelLocationGroup.pbs_id`** en locatielabel: boompad naar de **bundelsleutel** (parent of leaf-fallback).
+- **`MeekoppelRevTask.pbs_id`:** blijft **leaf** (`fm.pbs_id`) voor traceerbaarheid in preview/apply/audit.
+- Paneel-scope: toon groep als minstens één groeps-REV-leaf onder PBS-selectie/subboom valt (leaf-dekking).
 - Locatielabel: boompad via `parent_pbs_id`; segment = `bouwdeel_naam` of fallback `pbs_id`.
 - **Geen** groepering op globale `element_naam` (RCM1-parity verlaten vanwege import-collisies).
+
+### Discovery (2b, slice 40 — superseded door slice 55)
+
+- Leaf-groepering op raw `fm.pbs_id` — vervangen door parent-rollup (slice 55); zie bovenstaande bundelsleutel.
 
 ### Discovery (2a, historisch)
 

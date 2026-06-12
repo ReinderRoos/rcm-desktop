@@ -172,6 +172,101 @@ def _build_task_rows(
     return tuple(sorted(rows, key=sort_key))
 
 
+def recompute_task_rows_for_selection(
+    *,
+    all_rows: tuple[MeekoppelPreviewTaskRow, ...],
+    checked_pm_ids: frozenset[str],
+    anchor: MeekoppelAnchor,
+) -> tuple[MeekoppelPreviewTaskRow, ...]:
+    """Herbereken doeljaar en delta op de aangevinkte subset (slice 54 issue 05)."""
+    checked_shiftable = tuple(
+        row
+        for row in all_rows
+        if row.pm_id in checked_pm_ids and row.blocked_reason is None
+    )
+    if len(checked_shiftable) < 2:
+        target = 0
+    else:
+        effective_years = [row.effective_year for row in checked_shiftable]
+        target = min(effective_years) if anchor == "earlier" else max(effective_years)
+
+    out: list[MeekoppelPreviewTaskRow] = []
+    for row in all_rows:
+        if row.blocked_reason is not None or row.pm_id not in checked_pm_ids:
+            out.append(
+                MeekoppelPreviewTaskRow(
+                    pm_id=row.pm_id,
+                    task_label=row.task_label,
+                    baseline_year=row.baseline_year,
+                    effective_year=row.effective_year,
+                    target_year=target,
+                    delta_years=0,
+                    is_target_driver=False,
+                    blocked_reason=row.blocked_reason,
+                )
+            )
+            continue
+        delta = int(target - row.effective_year) if target > 0 else 0
+        out.append(
+            MeekoppelPreviewTaskRow(
+                pm_id=row.pm_id,
+                task_label=row.task_label,
+                baseline_year=row.baseline_year,
+                effective_year=row.effective_year,
+                target_year=target,
+                delta_years=delta,
+                is_target_driver=target > 0 and row.effective_year == target,
+                blocked_reason=None,
+            )
+        )
+
+    def sort_key(row: MeekoppelPreviewTaskRow) -> tuple:
+        return (
+            0 if row.is_target_driver else 1,
+            -abs(row.delta_years),
+            row.task_label,
+        )
+
+    return tuple(sorted(out, key=sort_key))
+
+
+def live_determined_by_line(
+    rows: tuple[MeekoppelPreviewTaskRow, ...],
+    checked_pm_ids: frozenset[str],
+) -> str:
+    checked = tuple(
+        row for row in rows if row.pm_id in checked_pm_ids and row.blocked_reason is None
+    )
+    if len(checked) < 2 or checked[0].target_year <= 0:
+        return _determined_by_line((), 0)
+    target = checked[0].target_year
+    drivers = tuple(
+        MeekoppelTargetDriver(
+            pm_id=row.pm_id,
+            task_label=row.task_label,
+            baseline_year=row.baseline_year,
+            effective_year=row.effective_year,
+        )
+        for row in checked
+        if row.effective_year == target
+    )
+    return _determined_by_line(drivers, target)
+
+
+def live_target_year(
+    rows: tuple[MeekoppelPreviewTaskRow, ...],
+    checked_pm_ids: frozenset[str],
+) -> int:
+    checked = [
+        row
+        for row in rows
+        if row.pm_id in checked_pm_ids and row.blocked_reason is None
+    ]
+    if len(checked) < 2:
+        return 0
+    return checked[0].target_year
+
+
 def build_bundle_insight(
     project: RCMProject,
     overlay: PlanningOverlayState,

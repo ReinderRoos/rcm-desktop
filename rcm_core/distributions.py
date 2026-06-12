@@ -224,6 +224,14 @@ def rejuvenate_age(age: float, effect_fraction: float) -> float:
     return age * (1.0 - effect_fraction)
 
 
+def _rev_aging_effect_fraction(task: "PMTask") -> float:
+    """REV-effect als fractie; None/null → 100% (slice-24 default)."""
+    raw = getattr(task, "aging_effect_pct", None)
+    if raw is None:
+        return 1.0
+    return float(raw) / 100.0
+
+
 def build_rev_schedule(pm_tasks: list["PMTask"]) -> RevSchedule:
     """(interval_jaar, effect_fraction) voor REV-taken, gesorteerd op interval."""
     from rcm_core.models import TaskType
@@ -231,7 +239,7 @@ def build_rev_schedule(pm_tasks: list["PMTask"]) -> RevSchedule:
     entries: list[tuple[float, float]] = []
     for task in pm_tasks:
         if task.taak_type == TaskType.REV and float(task.interval_jaar) > 0:
-            effect = float(getattr(task, "aging_effect_pct", 100.0)) / 100.0
+            effect = _rev_aging_effect_fraction(task)
             entries.append((float(task.interval_jaar), effect))
     return tuple(sorted(entries, key=lambda item: item[0]))
 
@@ -315,7 +323,9 @@ def _conditional_failures_with_rev_segments(
         else:
             f_lo = float(normal_cdf(age, mttf, sigma))
             f_hi = float(normal_cdf(age_end, mttf, sigma))
-        total += (f_hi - f_lo) / survival
+        survival_seg = 1.0 - f_lo
+        if survival_seg >= 1e-10:
+            total += (f_hi - f_lo) / survival_seg
         age = age_end
         if rev_idx < len(grouped) and abs(b1 - grouped[rev_idx][0]) < 1e-9:
             for effect in grouped[rev_idx][1]:

@@ -20,6 +20,7 @@ class ModelSettingsDraft:
     modelleur: str
     lifecycle_years: float
     modeljaar: int
+    aw_mc_lifecycle_horizon: bool
     default_mttf_multiplier: float
     default_sigma_fraction: float
     default_aging_distribution: str
@@ -50,6 +51,7 @@ def build_draft(project: RCMProject) -> ModelSettingsDraft:
         modelleur=project.modelleur,
         lifecycle_years=float(cfg.lifecycle_years),
         modeljaar=int(cfg.modeljaar),
+        aw_mc_lifecycle_horizon=bool(cfg.aw_mc_lifecycle_horizon),
         default_mttf_multiplier=float(cfg.default_mttf_multiplier),
         default_sigma_fraction=float(cfg.default_sigma_fraction),
         default_aging_distribution=str(cfg.default_aging_distribution or "normal"),
@@ -89,6 +91,7 @@ def compute_requires_rerun(
     motor_fields = (
         "lifecycle_years",
         "modeljaar",
+        "aw_mc_lifecycle_horizon",
         "default_mttf_multiplier",
         "default_sigma_fraction",
         "default_aging_distribution",
@@ -106,6 +109,7 @@ def apply_draft_to_project(project: RCMProject, draft: ModelSettingsDraft) -> RC
     updated.modelleur = draft.modelleur
     updated.config.lifecycle_years = float(draft.lifecycle_years)
     updated.config.modeljaar = int(draft.modeljaar)
+    updated.config.aw_mc_lifecycle_horizon = bool(draft.aw_mc_lifecycle_horizon)
     updated.config.default_mttf_multiplier = float(draft.default_mttf_multiplier)
     updated.config.default_sigma_fraction = float(draft.default_sigma_fraction)
     updated.config.default_aging_distribution = draft.default_aging_distribution

@@ -4,6 +4,7 @@ from PySide6.QtCore import QObject, Signal, Slot
 
 from rcm_desktop.adapter import preview_service
 from rcm_desktop.adapter import validate_service
+from rcm_desktop.adapter.validate_service import DetailItem, UserFacingError, ValidateResult
 from rcm_desktop.adapter.qt.background_runner import BackgroundRunner
 
 
@@ -16,7 +17,26 @@ class _ValidateWorker(QObject):
 
     @Slot()
     def run(self) -> None:
-        result, project = validate_service.run(self._project_path)
+        try:
+            result, project = validate_service.run(self._project_path)
+        except Exception as exc:
+            result = ValidateResult(
+                status="error",
+                summary="Onverwachte fout tijdens valideren.",
+                details=[
+                    DetailItem(
+                        severity="error",
+                        code="VALIDATE_UNEXPECTED",
+                        message=str(exc),
+                    )
+                ],
+                error=UserFacingError(
+                    code="UNEXPECTED_ERROR",
+                    message="Er ging iets mis tijdens valideren.",
+                ),
+            )
+            self.finished.emit(result, None, None)
+            return
         preview = None
         if result.status in {"valid", "valid_with_warnings"} and project is not None:
             preview = preview_service.build(project)

@@ -83,20 +83,22 @@ def _run_for(project: RCMProject, fm_results: list[FMResult]) -> RunResult:
 
 def test_workspace_mode_labels_renamed():
     assert messages.WORKSPACE_MODE_BIJDRAGEN == "Top 10"
-    assert messages.WORKSPACE_MODE_LCC == "Tijdsplot"
+    assert messages.WORKSPACE_MODE_LCC == "LCC-plot"
     assert messages.WORKSPACE_SOURCE_TOGGLE_PBS == "Component"
 
 
-def test_workspace_window_shows_renamed_modus_buttons(monkeypatch):
+def test_workspace_window_shows_view_dropdown_labels(monkeypatch):
     app = _ensure_app()
     monkeypatch.setattr(QMessageBox, "critical", lambda *_a, **_k: QMessageBox.Ok)
     window = ResultsWorkspaceWindow()
     window.show()
     app.processEvents()
 
-    assert window.modus_buttons[MODE_BIJDRAGEN].text() == "Top 10"
-    assert window.modus_buttons[MODE_LCC].text() == "Tijdsplot"
-    assert window.source_toggle_pbs_button.text() == "Component"
+    combo = window._workspace_navigation.view_combo
+    labels = [combo.itemText(i) for i in range(combo.count())]
+    assert labels[0] == "Top 10"
+    assert labels[1] == messages.WORKSPACE_VIEW_LCC_PLOT
+    assert not hasattr(window, "source_toggle_pbs_button")
 
 
 # --- Prio 2: faalwijze label + component ---
@@ -168,23 +170,24 @@ def test_kpi_collapse_hides_table_in_lcc_modus(monkeypatch):
     window.workspace_state.set_modus(MODE_LCC)
     app.processEvents()
 
-    assert window.kpi_collapse_button.isVisible() is True
+    kpi_action = window._workspace_menu.actions_by_id["view.kpi_overview_visible"]
+    assert kpi_action.isVisible() is True
     assert window.workspace_state.snapshot().kpi_collapsed_in_lcc is True
     assert window.kpi_table_view.isVisible() is False
-    assert window.kpi_collapse_button.text() == "▶"
+    assert kpi_action.isChecked() is False
 
-    window.kpi_collapse_button.click()
+    kpi_action.setChecked(True)
     app.processEvents()
 
     assert window.workspace_state.snapshot().kpi_collapsed_in_lcc is False
     assert window.kpi_table_view.isVisible() is True
-    assert window.kpi_collapse_button.text() == "▼"
+    assert kpi_action.isChecked() is True
 
-    window.kpi_collapse_button.click()
+    kpi_action.setChecked(False)
     app.processEvents()
 
     assert window.kpi_table_view.isVisible() is False
-    assert window.kpi_collapse_button.text() == "▶"
+    assert kpi_action.isChecked() is False
 
 
 def test_kpi_placeholder_not_visible_after_layout(monkeypatch):

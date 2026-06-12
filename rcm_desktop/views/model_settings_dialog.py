@@ -104,9 +104,14 @@ class ModelSettingsDialog(QDialog):
         interval_label.setEnabled(False)
         form.addRow(messages.MODEL_SETTINGS_LIFECYCLE, self._lifecycle)
         form.addRow(messages.MODEL_SETTINGS_MODELJAAR, self._modeljaar)
+        self._aw_mc_horizon = QCheckBox(messages.MODEL_SETTINGS_AW_MC_HORIZON)
+        self._aw_mc_horizon.setToolTip(messages.MODEL_SETTINGS_AW_MC_HORIZON_TTIP)
+        self._aw_mc_horizon.setChecked(bool(cfg.aw_mc_lifecycle_horizon))
+        form.addRow(self._aw_mc_horizon)
         form.addRow(messages.MODEL_SETTINGS_BUCKET_INTERVAL, interval_label)
         self._lifecycle.valueChanged.connect(self._sync_rerun_enabled)
         self._modeljaar.valueChanged.connect(self._sync_rerun_enabled)
+        self._aw_mc_horizon.toggled.connect(self._sync_rerun_enabled)
         return box
 
     def _build_aging_section(self) -> QGroupBox:
@@ -184,6 +189,7 @@ class ModelSettingsDialog(QDialog):
             modelleur=self._modelleur.text().strip(),
             lifecycle_years=float(self._lifecycle.value()),
             modeljaar=int(self._modeljaar.value()),
+            aw_mc_lifecycle_horizon=self._aw_mc_horizon.isChecked(),
             default_mttf_multiplier=float(self._mttf_multiplier.value()),
             default_sigma_fraction=float(self._sigma_fraction.value()),
             default_aging_distribution=str(self._aging_distribution.currentData()),

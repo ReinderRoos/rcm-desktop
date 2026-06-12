@@ -1,8 +1,29 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from collections.abc import Sequence
+from dataclasses import dataclass, replace
 
+from rcm_core.effect_impact_service import (
+    EffectNbFilterSet,
+    EffectPresentation,
+    nb_scalar_for_fm,
+)
 from rcm_core.models import FMResult, PBSResult, RCMProject
+
+if False:  # typing-only import cycle guard
+    from rcm_desktop.adapter.results_workspace_state import ContributionPresentation
+
+#: FM-detail-tabel rekent in levensduur-uren (consistent met de kolomsemantiek).
+_FM_DETAIL_NB_PRESENTATION = EffectPresentation(
+    horizon="lifecycle", unavailability_display="hours"
+)
+
+
+@dataclass(frozen=True)
+class FMRfTooltipEntry:
+    klasse_id: str
+    effect_omschrijving: str
+    fractie: float
 
 
 @dataclass(frozen=True)
@@ -14,6 +35,9 @@ class FMResultRow:
     expected_failures: float
     expected_total_downtime_hr: float
     total_cost_eur: float
+    is_nmf: bool = False
+    rf: float = 0.0
+    rf_tooltip_entries: tuple[FMRfTooltipEntry, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -30,6 +54,7 @@ class PBSResultRow:
     total_downtime_hr_total: float
     total_cost_eur_total: float
     unavailability_pct_total: float
+    effect_bijdragen: tuple[tuple[str, float], ...] = ()
 
 
 def build_rows(project: RCMProject, fm_results: list[FMResult]) -> list[FMResultRow]:
@@ -37,6 +62,7 @@ def build_rows(project: RCMProject, fm_results: list[FMResult]) -> list[FMResult
     for fm_result in fm_results:
         fm = project.faalwijzes.get(fm_result.fm_id)
         pbs_item = project.pbs_items.get(fm_result.pbs_id)
+        is_nmf = bool(fm is not None and not fm.is_evident)
         rows.append(
             FMResultRow(
                 fm_id=fm_result.fm_id,
@@ -46,9 +72,146 @@ def build_rows(project: RCMProject, fm_results: list[FMResult]) -> list[FMResult
                 expected_failures=fm_result.expected_failures,
                 expected_total_downtime_hr=fm_result.expected_total_downtime_hr,
                 total_cost_eur=fm_result.total_cost_eur,
+                is_nmf=is_nmf,
             )
         )
     return rows
+
+
+def _rf_link_entries(
+    project: RCMProject,
+    fm_id: str,
+) -> tuple[FMRfTooltipEntry, ...]:
+    entries: list[FMRfTooltipEntry] = []
+    for link in project.get_fm_effect_links_for_fm(fm_id):
+        ek = project.effect_klassen.get(link.klasse_id)
+        omsch = ek.omschrijving if ek is not None else link.klasse_id
+        entries.append(
+            FMRfTooltipEntry(
+                klasse_id=link.klasse_id,
+                effect_omschrijving=omsch,
+                fractie=float(link.fractie),
+            )
+        )
+    entries.sort(key=lambda e: (-e.fractie, e.klasse_id))
+    return tuple(entries)
+
+
+def _resolve_rf_for_fm(
+    project: RCMProject,
+    fm_id: str,
+    nb_filter: EffectNbFilterSet,
+) -> tuple[float, tuple[FMRfTooltipEntry, ...]]:
+    all_entries = _rf_link_entries(project, fm_id)
+    if not all_entries:
+        return 0.0, ()
+
+    selected = nb_filter.selected_klasse_ids
+    if len(selected) == 1:
+        klasse_id = next(iter(selected))
+        for entry in all_entries:
+            if entry.klasse_id == klasse_id:
+                return entry.fractie, ()
+        return 0.0, ()
+
+    if selected:
+        scoped = tuple(e for e in all_entries if e.klasse_id in selected)
+    else:
+        scoped = all_entries
+    if not scoped:
+        return 0.0, ()
+    return scoped[0].fractie, scoped
+
+
+def enrich_fm_rows_with_nmf_rf(
+    project: RCMProject,
+    *,
+    out: Sequence[FMResultRow],
+    nb_filter: EffectNbFilterSet | None,
+) -> tuple[FMResultRow, ...]:
+    filt = nb_filter or EffectNbFilterSet()
+    enriched: list[FMResultRow] = []
+    for row in out:
+        rf, tooltip = _resolve_rf_for_fm(project, row.fm_id, filt)
+        enriched.append(replace(row, rf=rf, rf_tooltip_entries=tooltip))
+    return tuple(enriched)
+
+
+def apply_presentation_scale_to_fm_rows(
+    project: RCMProject,
+    fm_results: Sequence[FMResult],
+    rows: Sequence[FMResultRow],
+    *,
+    presentation: "ContributionPresentation",
+    nb_filter: EffectNbFilterSet | None,
+) -> tuple[FMResultRow, ...]:
+    from rcm_desktop.adapter.contribution_horizon_value_service import (
+        contribution_value_for_fm,
+        effect_presentation_for_contribution,
+        kosten_scalar_for_fm,
+    )
+    from rcm_desktop.adapter.results_workspace_state import METRIC_FAALMOMENTEN
+
+    filt = nb_filter or EffectNbFilterSet()
+    effect_pres = effect_presentation_for_contribution(project, presentation)
+    fmr_by_id = {fmr.fm_id: fmr for fmr in fm_results}
+    out: list[FMResultRow] = []
+    for row in rows:
+        fmr = fmr_by_id.get(row.fm_id)
+        if fmr is None:
+            out.append(row)
+            continue
+        failures = contribution_value_for_fm(
+            project, fmr, metric=METRIC_FAALMOMENTEN, presentation=presentation
+        )
+        downtime = nb_scalar_for_fm(
+            project, fmr, nb_filter=filt, presentation=effect_pres
+        )
+        cost = kosten_scalar_for_fm(project, fmr, presentation)
+        out.append(
+            replace(
+                row,
+                expected_failures=failures,
+                expected_total_downtime_hr=downtime,
+                total_cost_eur=cost,
+            )
+        )
+    return tuple(out)
+
+
+def apply_nb_filter_to_fm_rows(
+    project: RCMProject,
+    fm_results: Sequence[FMResult],
+    rows: Sequence[FMResultRow],
+    nb_filter: EffectNbFilterSet | None,
+) -> tuple[FMResultRow, ...]:
+    """Vervang de downtime-kolom door de NB-gefilterde waarde (render-tijd).
+
+    Lege filter (``is_all()``) short-circuit: de rijen blijven exact gelijk aan
+    ``build_rows`` (geen recompute). Bij een gevulde filter wordt
+    ``expected_total_downtime_hr`` per rij vervangen door
+    ``nb_scalar_for_fm(...)`` (levensduur/uren) — dezelfde NB-bucketreeks-spine
+    als Top 10/Tijdsplot (ADR-0010). Andere velden (faalmomenten, kosten)
+    blijven ongewijzigd; de filter raakt alleen NB.
+    """
+    filt = nb_filter or EffectNbFilterSet()
+    if filt.is_all():
+        return tuple(rows)
+    fmr_by_id = {fmr.fm_id: fmr for fmr in fm_results}
+    out: list[FMResultRow] = []
+    for row in rows:
+        fmr = fmr_by_id.get(row.fm_id)
+        if fmr is None:
+            out.append(row)
+            continue
+        filtered = nb_scalar_for_fm(
+            project,
+            fmr,
+            nb_filter=filt,
+            presentation=_FM_DETAIL_NB_PRESENTATION,
+        )
+        out.append(replace(row, expected_total_downtime_hr=filtered))
+    return tuple(out)
 
 
 def build_pbs_rows(project: RCMProject, pbs_results: dict[str, PBSResult]) -> list[PBSResultRow]:
@@ -60,7 +223,7 @@ def build_pbs_rows(project: RCMProject, pbs_results: dict[str, PBSResult]) -> li
         parent_id = item.parent_pbs_id if item.parent_pbs_id in project.pbs_items else None
         children.setdefault(parent_id or "", []).append(pbs_id)
     for ids in children.values():
-        ids.sort()
+        ids.sort(key=lambda pid: (project.pbs_items[pid].volgorde, pid))
 
     lifecycle_hours = float(project.config.lifecycle_years) * 8760.0
     def _self_values(pbs_id: str) -> tuple[float, float, float]:
@@ -102,6 +265,13 @@ def build_pbs_rows(project: RCMProject, pbs_results: dict[str, PBSResult]) -> li
 
         next_path = path + (pbs_id,)
 
+        pbs_result = pbs_results.get(pbs_id)
+        effect_bijdragen: tuple[tuple[str, float], ...] = ()
+        if pbs_result is not None and pbs_result.effect_bijdragen:
+            effect_bijdragen = tuple(
+                sorted((str(k), float(v)) for k, v in pbs_result.effect_bijdragen.items())
+            )
+
         row = PBSResultRow(
             pbs_id=pbs_id,
             bouwdeel_naam=project.pbs_items[pbs_id].bouwdeel_naam,
@@ -117,6 +287,7 @@ def build_pbs_rows(project: RCMProject, pbs_results: dict[str, PBSResult]) -> li
             unavailability_pct_total=(
                 0.0 if lifecycle_hours <= 0.0 else (total_downtime_hr_total / lifecycle_hours) * 100.0
             ),
+            effect_bijdragen=effect_bijdragen,
         )
         rows.append(row)
 
@@ -195,7 +366,7 @@ def build_pbs_structure_tree(project: RCMProject) -> tuple[PBSTreeNode, ...]:
             parent_key = parent
         children.setdefault(parent_key, []).append(pbs_id)
     for child_ids in children.values():
-        child_ids.sort()
+        child_ids.sort(key=lambda pid: (project.pbs_items[pid].volgorde, pid))
 
     emitted: set[str] = set()
     rows: list[PBSResultRow] = []

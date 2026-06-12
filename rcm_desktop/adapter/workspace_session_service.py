@@ -93,8 +93,10 @@ def build_kpi_table_for_session(
 def build_fm_verification_for_session(
     session: ProjectSession,
     fmr: object,
+    *,
+    nb_filter: object | None = None,
 ) -> FMVerificationView:
-    return build_fm_verification_view(session.loaded.core(), fmr)
+    return build_fm_verification_view(session.loaded.core(), fmr, nb_filter=nb_filter)
 
 
 def build_lcc_year_detail_for_session(

@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from pathlib import Path
 
+from rcm_core.cm_overlay import aw_disabled_pm_ids, materialize_cm_overlay_project
 from rcm_core.engine import compute_pbs_results
 from rcm_core.incremental_run import run_incremental_analysis
 from rcm_core.models import FMResult, PBSResult, RCMProject
@@ -64,6 +65,21 @@ def build_run_result(
     )
 
 
+def _resolve_run_project(
+    project: RCMProject,
+    planning_overlay: PlanningOverlayState | None,
+) -> RCMProject:
+    """Materialiseer disabled PM's: what-if overlay wanneer actief, anders AW-import CM-overlay."""
+    if planning_overlay is not None and planning_overlay.active:
+        if planning_overlay.disabled_pm_ids:
+            return materialize_project_for_overlay(project, planning_overlay)
+        return project
+    disabled = aw_disabled_pm_ids(project)
+    if disabled:
+        return materialize_cm_overlay_project(project)
+    return project
+
+
 def hydrate_run_from_cache(project: RCMProject, project_path: str | Path) -> RunResult | None:
     from rcm_core.cache import find_affected_fms, load_cache_snapshot
 
@@ -101,13 +117,7 @@ def run(
             fm_core_results=tuple(),
         )
 
-    run_project = project
-    if (
-        planning_overlay is not None
-        and planning_overlay.active
-        and planning_overlay.disabled_pm_ids
-    ):
-        run_project = materialize_project_for_overlay(project, planning_overlay)
+    run_project = _resolve_run_project(project, planning_overlay)
 
     try:
         result = run_incremental_analysis(

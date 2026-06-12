@@ -5,7 +5,7 @@ Dataklassen voor de fysiek-functionele decompositie (PBS), faalwijzen,
 preventief onderhoud, taakgroepen en berekeningsresultaten.
 """
 from __future__ import annotations
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from enum import Enum
 from typing import Any, Optional
 
@@ -53,9 +53,10 @@ class BibliotheekItem:
     waarde: str               # de aangenomen waarde (bijv. "MTTF=125 jr, OLD=100 jr")
     bron: str = ""            # bronverwijzing (rapport, norm, inspectie)
     toelichting: str = ""     # verdere toelichting / voorbehouden
+    provenance: list[dict[str, str]] = field(default_factory=list)
 
     def to_dict(self) -> dict:
-        return {
+        out = {
             "bibliotheek_id": self.bibliotheek_id,
             "categorie": self.categorie,
             "omschrijving": self.omschrijving,
@@ -63,6 +64,9 @@ class BibliotheekItem:
             "bron": self.bron,
             "toelichting": self.toelichting,
         }
+        if self.provenance:
+            out["provenance"] = list(self.provenance)
+        return out
 
     @classmethod
     def from_dict(cls, d: dict) -> "BibliotheekItem":
@@ -90,6 +94,7 @@ class PBSItem:
     aanname_multipliciteit: str = ""    # motivatie multipliciteit (bijv. "2x achterloops + 2 onderloops = 4")
 
     parent_pbs_id: Optional[str] = None  # FK → PBSItem (bovenliggende laag, optioneel)
+    volgorde: int = 0  # presentatieveld: sibling-volgorde (niet in cache-vingerafdruk)
 
     def current_age(self, modeljaar: int) -> float:
         """Leeftijd op modeljaar = modeljaar − bouwjaar.
@@ -136,6 +141,7 @@ class PBSItem:
             "ontwerpleeftijd_jaar": self.ontwerpleeftijd_jaar,
             "bouwjaar": self.bouwjaar,
             "parent_pbs_id": self.parent_pbs_id,
+            "volgorde": self.volgorde,
             "library_ref": self.library_ref,
             "notes": self.notes,
             "aanname_leeftijd": self.aanname_leeftijd,
@@ -146,6 +152,30 @@ class PBSItem:
     def from_dict(cls, d: dict) -> "PBSItem":
         known = {f for f in cls.__dataclass_fields__}
         return cls(**{k: v for k, v in d.items() if k in known})
+
+
+def _migrate_pbs_volgorde_from_raw(
+    raw_items: dict[str, dict],
+    items: dict[str, PBSItem],
+) -> dict[str, PBSItem]:
+    """Ontbrekend ``volgorde`` → index in leesvolgorde per sibling-groep."""
+    by_parent: dict[str | None, list[tuple[str, dict]]] = {}
+    for pid, raw in raw_items.items():
+        if pid not in items:
+            continue
+        parent = raw.get("parent_pbs_id")
+        if not isinstance(parent, str) or parent not in items:
+            parent_key: str | None = None
+        else:
+            parent_key = parent
+        by_parent.setdefault(parent_key, []).append((pid, raw))
+    out = dict(items)
+    for siblings in by_parent.values():
+        if not any("volgorde" not in raw for _, raw in siblings):
+            continue
+        for idx, (pid, _) in enumerate(siblings):
+            out[pid] = replace(out[pid], volgorde=idx)
+    return out
 
 
 # ---------------------------------------------------------------------------
@@ -330,10 +360,14 @@ class PMTask:
             d["taak_type"] = TaskType(d["taak_type"])
         if "duration" in d and isinstance(d["duration"], dict):
             d["duration"] = TimeDuration.from_dict(d["duration"])
-        if "aging_effect_pct" not in d:
-            tt = d.get("taak_type")
-            if tt == TaskType.REV or tt == TaskType.REV.value or tt == "REV":
-                d["aging_effect_pct"] = 100.0
+        tt = d.get("taak_type")
+        is_rev = tt == TaskType.REV or tt == TaskType.REV.value or tt == "REV"
+        if d.get("aging_effect_pct") is None:
+            d["aging_effect_pct"] = 100.0 if is_rev else 0.0
+        elif "aging_effect_pct" not in d and is_rev:
+            d["aging_effect_pct"] = 100.0
+        if d.get("unavailability_fraction") is None:
+            d["unavailability_fraction"] = 0.0
         known = {f for f in cls.__dataclass_fields__}
         return cls(**{k: v for k, v in d.items() if k in known})
 
@@ -378,6 +412,8 @@ class TaskGroup:
             d["taak_type"] = TaskType(d["taak_type"])
         if "duration" in d and isinstance(d["duration"], dict):
             d["duration"] = TimeDuration.from_dict(d["duration"])
+        if d.get("unavailability_fraction") is None:
+            d["unavailability_fraction"] = 0.0
         known = {f for f in cls.__dataclass_fields__}
         return cls(**{k: v for k, v in d.items() if k in known})
 
@@ -399,6 +435,7 @@ class EffectKlasse:
     omschrijving: str
     functie_id: str            # FK → Functie
     categorie: str = ""        # bijv. "beschikbaarheid", "veiligheid", "RI&E-I"
+    aw_effect_type: str = ""   # ruwe AW RcmEffects.Type (slice 70)
     notes: str = ""
     cost_gevolg_eur: float = 0.0        # kosten gevolgschade per faalgebeurtenis (euro)
     aanname_gevolg_kosten: str = ""     # motivatie gevolgschadekosten
@@ -409,6 +446,7 @@ class EffectKlasse:
             "omschrijving": self.omschrijving,
             "functie_id": self.functie_id,
             "categorie": self.categorie,
+            "aw_effect_type": self.aw_effect_type,
             "notes": self.notes,
             "cost_gevolg_eur": self.cost_gevolg_eur,
             "aanname_gevolg_kosten": self.aanname_gevolg_kosten,
@@ -417,7 +455,35 @@ class EffectKlasse:
     @classmethod
     def from_dict(cls, d: dict) -> "EffectKlasse":
         known = {f for f in cls.__dataclass_fields__}
-        return cls(**{k: v for k, v in d.items() if k in known})
+        ek = cls(**{k: v for k, v in d.items() if k in known})
+        ek._normalize_legacy_categorie()
+        return ek
+
+    def _normalize_legacy_categorie(self) -> None:
+        """Migreer pre-slice-70 bestanden waar ``categorie`` het rauwe AW-type bevat."""
+        from rcm_core.effect_taxonomy import (
+            CATEGORIE_BESCHIKBAARHEID,
+            CATEGORIE_KOSTEN,
+            CATEGORIE_OVERIG,
+            CATEGORIE_VEILIGHEID,
+            map_aw_effect_type,
+        )
+
+        genormaliseerd = {
+            CATEGORIE_BESCHIKBAARHEID,
+            CATEGORIE_VEILIGHEID,
+            CATEGORIE_KOSTEN,
+            CATEGORIE_OVERIG,
+        }
+        if self.categorie in genormaliseerd:
+            return
+        if self.categorie.lower() in genormaliseerd:
+            self.categorie = self.categorie.lower()
+            return
+        raw = self.categorie
+        if not self.aw_effect_type:
+            self.aw_effect_type = raw
+        self.categorie, _ = map_aw_effect_type(raw)
 
 
 @dataclass
@@ -515,10 +581,16 @@ class FMResult:
     pm_cost_eur: float                  # totale PM-kosten over lifecycle
     total_cost_eur: float               # CM + PM
     risk_contribution: float            # expected_failures × p_ongewenste_gebeurtenis
+    # Deprecated mixed CM+PM per klasse; UI gebruikt fm_/pm_effect_bijdragen (slice 70).
     effect_bijdragen: dict[str, float] = field(default_factory=dict)
-    # klasse_id → expected_failures × fractie (per FMEffectLink)
+    fm_effect_bijdragen: dict[str, float] = field(default_factory=dict)
+    # klasse_id → expected_failures × fractie (incidenten-equivalent)
+    pm_effect_bijdragen: dict[str, float] = field(default_factory=dict)
+    # klasse_id → duration × RF × executions (uren)
     horizon_profile: FMHorizonProfile | None = None
     effect_bijdragen_per_jaar: dict[str, list[float]] = field(default_factory=dict)
+    fm_effect_bijdragen_per_jaar: dict[str, list[float]] = field(default_factory=dict)
+    pm_effect_bijdragen_per_jaar: dict[str, list[float]] = field(default_factory=dict)
 
     def to_dict(self) -> dict:
         out = {
@@ -535,7 +607,11 @@ class FMResult:
             "total_cost_eur": self.total_cost_eur,
             "risk_contribution": self.risk_contribution,
             "effect_bijdragen": self.effect_bijdragen,
+            "fm_effect_bijdragen": self.fm_effect_bijdragen,
+            "pm_effect_bijdragen": self.pm_effect_bijdragen,
             "effect_bijdragen_per_jaar": self.effect_bijdragen_per_jaar,
+            "fm_effect_bijdragen_per_jaar": self.fm_effect_bijdragen_per_jaar,
+            "pm_effect_bijdragen_per_jaar": self.pm_effect_bijdragen_per_jaar,
         }
         if self.horizon_profile is not None:
             out["horizon_profile"] = self.horizon_profile.to_dict()
@@ -799,7 +875,9 @@ class RCMProject:
     @classmethod
     def from_dict(cls, d: dict) -> "RCMProject":
         config = RCMConfig.from_dict(d.get("config", {}))
-        pbs_items = {k: PBSItem.from_dict(v) for k, v in d.get("pbs_items", {}).items()}
+        raw_pbs = d.get("pbs_items", {})
+        pbs_items = {k: PBSItem.from_dict(v) for k, v in raw_pbs.items()}
+        pbs_items = _migrate_pbs_volgorde_from_raw(raw_pbs, pbs_items)
         functies = {k: Functie.from_dict(v) for k, v in d.get("functies", {}).items()}
         faalwijzes = {k: Faalwijze.from_dict(v) for k, v in d.get("faalwijzes", {}).items()}
         pm_tasks = {k: PMTask.from_dict(v) for k, v in d.get("pm_tasks", {}).items()}

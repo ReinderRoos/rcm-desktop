@@ -173,11 +173,18 @@ bediend via één menu-item in het Analyse-menu (F7). Geen knop per grid;
 alle aangekoppelde entiteiten-grids verversen mee.
 
 **Nette afsluitprocedure**
-Het gecontroleerde sluiten van de tool: vóór teardown wordt (1) een **dirty
-batch-grid** afgehandeld met opslaan/verwerpen/annuleren, en (2) bij een lopende
-achtergrondrun een **bevestiging met annuleren-en-wachten** getoond, zodat geen
-onopgeslagen modelwijziging of half-afgemaakte run verloren gaat. Annuleren
-houdt het venster open.
+Het gecontroleerde sluiten van de tool: vóór teardown wordt (1) bij
+**onopgeslagen invoerwijzigingen** in de bewerkingsbuffer (alle Input-tabellen,
+niet alleen faalwijzen) een keuze gevraagd: opslaan, verwerpen of annuleren, en
+(2) bij een lopende achtergrondrun een **bevestiging met annuleren-en-wachten**
+getoond, zodat geen onopgeslagen modelwijziging of half-afgemaakte run verloren
+gaat. Annuleren houdt het venster open.
+
+**Onopgeslagen invoerwijzigingen**
+Wijzigingen in de **bewerkingsbuffer** die nog niet zijn gecommit naar het
+canonieke project (of weggeschreven naar schijf). Geldt buffer-breed over alle
+entiteiten in de tabulaire editing-pipeline, niet per Input-view apart.
+_Vermijd_: grid dirty, batch-grid dirty (te smal — impliceert alleen faalwijzen)
 
 ## FM-verificatie & spot-check
 

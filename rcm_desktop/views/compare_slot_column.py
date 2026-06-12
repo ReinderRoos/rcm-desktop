@@ -19,18 +19,14 @@ def build_bijdragen_compare_column(parent: QWidget | None = None) -> dict[str, Q
     placeholder.setStyleSheet("color: #9E9E9E;")
     placeholder.setWordWrap(True)
     chart = ContributionBarChartWidget(host)
-    table = QTableView(host)
-    table.setAlternatingRowColors(True)
     layout.addWidget(header)
     layout.addWidget(placeholder)
-    layout.addWidget(chart, stretch=2)
-    layout.addWidget(table, stretch=1)
+    layout.addWidget(chart, stretch=1)
     return {
         "host": host,
         "header": header,
         "placeholder": placeholder,
         "chart": chart,
-        "table": table,
     }
 
 
@@ -65,4 +61,5 @@ def set_compare_placeholder(column: dict[str, QWidget], *, slot_key: str) -> Non
     )
     column["placeholder"].setVisible(True)
     column["chart"].setVisible(False)
-    column["table"].setVisible(False)
+    if "table" in column:
+        column["table"].setVisible(False)

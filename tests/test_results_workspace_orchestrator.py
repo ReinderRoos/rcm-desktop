@@ -51,14 +51,32 @@ def test_modus_switch_bijdragen_to_lcc_toolbar_visibility() -> None:
     assert plan.bijdragen is None
     assert plan.lcc_toolbar is not None
     assert plan.lcc_toolbar.filter_bar_visible is True
-    assert plan.lcc_toolbar.meekoppel_panel_visible is True
+    assert plan.lcc_toolbar.pm_type_filters_visible is False  # default metric NB
+    assert plan.lcc_toolbar.effect_nb_filter_visible is True
+    assert plan.lcc_toolbar.meekoppel_panel_visible is False  # what-if inactive
     assert plan.fm_toolbar is not None
     assert plan.fm_toolbar.batch_faalwijzen_visible is False
     assert plan.fm_toolbar.clear_fm_inspector is True
     assert plan.pbs_tree_extended_selection is True
     assert plan.collapse.kpi is not None
     assert plan.collapse.lcc_whatif is not None
-    assert plan.collapse.meekoppel is not None
+    assert plan.collapse.meekoppel is None  # what-if inactive
+
+
+def test_lcc_toolbar_pm_filter_visible_only_for_kosten_metric() -> None:
+    nb = _snap(modus=MODE_LCC, metric=METRIC_NIET_BESCHIKBAARHEID)
+    plan_nb = ResultsWorkspaceOrchestrator.plan_ui_sync(None, nb)
+    assert plan_nb.lcc_toolbar is not None
+    assert plan_nb.lcc_toolbar.filter_bar_visible is True
+    assert plan_nb.lcc_toolbar.pm_type_filters_visible is False
+    assert plan_nb.lcc_toolbar.effect_nb_filter_visible is True
+
+    kosten = _snap(modus=MODE_LCC, metric=METRIC_KOSTEN)
+    plan_k = ResultsWorkspaceOrchestrator.plan_ui_sync(None, kosten)
+    assert plan_k.lcc_toolbar is not None
+    assert plan_k.lcc_toolbar.filter_bar_visible is True
+    assert plan_k.lcc_toolbar.pm_type_filters_visible is True
+    assert plan_k.lcc_toolbar.effect_nb_filter_visible is False
 
 
 def test_modus_switch_lcc_to_fm_detail() -> None:
@@ -71,7 +89,15 @@ def test_modus_switch_lcc_to_fm_detail() -> None:
     assert plan.fm_toolbar.new_fm_visible is True
     assert plan.fm_toolbar.clear_fm_inspector is False
     assert plan.pbs_tree_extended_selection is False
-    assert plan.collapse.kpi is None
+    assert plan.collapse.kpi is not None
+    assert plan.collapse.lcc_whatif is None
+
+
+def test_fm_detail_toolbar_shows_nb_effect_filter() -> None:
+    curr = _snap(modus=MODE_FM_DETAIL)
+    plan = ResultsWorkspaceOrchestrator.plan_ui_sync(None, curr)
+    assert plan.fm_toolbar is not None
+    assert plan.fm_toolbar.effect_nb_filter_visible is True
 
 
 def test_scope_change_sets_refresh_kpi() -> None:
@@ -106,6 +132,7 @@ def test_bijdragen_horizon_and_nb_toggles() -> None:
     assert plan.bijdragen.year_combo_visible is True
     assert plan.bijdragen.year_choice == 2024
     assert plan.bijdragen.nb_hours_visible is True
+    assert plan.bijdragen.effect_nb_filter_visible is True
     assert plan.bijdragen.nb_percent_checked is True
     assert plan.bijdragen.horizon_per_year_checked is True
 
@@ -140,14 +167,44 @@ def test_lcc_filter_set_in_toolbar_plan() -> None:
     assert plan.lcc_toolbar.lcc_filters == filters
 
 
-def test_meekoppel_expand_triggers_ensure_whatif() -> None:
-    prev = _snap(modus=MODE_LCC, meekoppel_collapsed_in_lcc=True)
-    curr = _snap(modus=MODE_LCC, meekoppel_collapsed_in_lcc=False)
+def test_meekoppel_panel_visible_only_when_whatif_active() -> None:
+    inactive = _snap(modus=MODE_LCC)
+    plan_off = ResultsWorkspaceOrchestrator.plan_ui_sync(None, inactive)
+    assert plan_off.lcc_toolbar is not None
+    assert plan_off.lcc_toolbar.meekoppel_panel_visible is False
+
+    active = _snap(
+        modus=MODE_LCC,
+        planning_overlay=PlanningOverlayState.inactive().begin_what_if(),
+    )
+    plan_on = ResultsWorkspaceOrchestrator.plan_ui_sync(None, active)
+    assert plan_on.lcc_toolbar is not None
+    assert plan_on.lcc_toolbar.meekoppel_panel_visible is True
+
+
+def test_meekoppel_expand_triggers_ensure_whatif_when_whatif_active() -> None:
+    overlay = PlanningOverlayState.inactive().begin_what_if()
+    prev = _snap(
+        modus=MODE_LCC,
+        planning_overlay=overlay,
+        meekoppel_collapsed_in_lcc=True,
+    )
+    curr = _snap(
+        modus=MODE_LCC,
+        planning_overlay=overlay,
+        meekoppel_collapsed_in_lcc=False,
+    )
     plan = ResultsWorkspaceOrchestrator.plan_ui_sync(prev, curr)
 
     assert plan.collapse.meekoppel is not None
     assert plan.collapse.meekoppel.ensure_whatif_if_expanding is True
     assert plan.collapse.meekoppel.content_visible is True
+
+
+def test_meekoppel_collapse_hidden_without_whatif() -> None:
+    snap = _snap(modus=MODE_LCC)
+    plan = ResultsWorkspaceOrchestrator.plan_ui_sync(None, snap)
+    assert plan.collapse.meekoppel is None
 
 
 def _session_with_run() -> ProjectSession:

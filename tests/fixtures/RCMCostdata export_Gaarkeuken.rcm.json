@@ -1,12 +1,13 @@
 {
   "bibliotheek": {},
   "config": {
-    "default_aging_distribution": "weibull_2p",
-    "default_beta_jaar": 3.0,
+    "aw_mc_lifecycle_horizon": true,
+    "default_aging_distribution": "normal",
+    "default_beta_jaar": 0.0,
     "default_mttf_multiplier": 1.25,
     "default_sigma_fraction": 0.15,
-    "lifecycle_years": 52.0,
-    "modeljaar": 2025,
+    "lifecycle_years": 50.0,
+    "modeljaar": 2026,
     "monte_carlo_n": 5000,
     "monte_carlo_seed": 1
   },
@@ -162,12 +163,12 @@
       "aanname_downtime": "",
       "aanname_effectklasse": "",
       "aanname_faalmodel": "",
-      "aging_distribution": "weibull_2p",
-      "beta_jaar": 1.0,
+      "aging_distribution": "normal",
+      "beta_jaar": 0.0,
       "cost_cm_eur": 5000.0,
       "downtime_per_failure": {
         "unit": "uur",
-        "value": 8.0
+        "value": 7.99952763603544
       },
       "eindgevolg": "Niet aandrijven - elektrohydraulisch",
       "faalwijze_omschrijving": "Drukverlies door breuk van slangen BINNEN door veroudering, MTTF=25 jr met SVO.\nIA = 2023",
@@ -180,7 +181,7 @@
       "notes": "",
       "p_ongewenste_gebeurtenis": 1.0,
       "pbs_id": "06H-350.1.1.1.1",
-      "repair_quality": 1.0,
+      "repair_quality": 0.0,
       "sigma_jaar": 3.75
     },
     "06H-350.1.1.1.1.1.A.2": {
@@ -188,8 +189,8 @@
       "aanname_downtime": "",
       "aanname_effectklasse": "",
       "aanname_faalmodel": "",
-      "aging_distribution": "weibull_2p",
-      "beta_jaar": 1.0,
+      "aging_distribution": "normal",
+      "beta_jaar": 0.0,
       "cost_cm_eur": 6000.0,
       "downtime_per_failure": {
         "unit": "uur",
@@ -206,7 +207,7 @@
       "notes": "",
       "p_ongewenste_gebeurtenis": 1.0,
       "pbs_id": "06H-350.1.1.1.1",
-      "repair_quality": 1.0,
+      "repair_quality": 0.0,
       "sigma_jaar": 1.5
     },
     "06H-350.1.1.1.11.1.A.1": {
@@ -214,8 +215,8 @@
       "aanname_downtime": "",
       "aanname_effectklasse": "",
       "aanname_faalmodel": "",
-      "aging_distribution": "weibull_2p",
-      "beta_jaar": 1.0,
+      "aging_distribution": "normal",
+      "beta_jaar": 0.0,
       "cost_cm_eur": 7500.0,
       "downtime_per_failure": {
         "unit": "uur",
@@ -232,7 +233,7 @@
       "notes": "",
       "p_ongewenste_gebeurtenis": 1.0,
       "pbs_id": "06H-350.1.1.1.11",
-      "repair_quality": 1.0,
+      "repair_quality": 0.0,
       "sigma_jaar": 4.8
     },
     "06H-350.1.1.1.13.1.A.1": {
@@ -240,8 +241,8 @@
       "aanname_downtime": "",
       "aanname_effectklasse": "",
       "aanname_faalmodel": "",
-      "aging_distribution": "weibull_2p",
-      "beta_jaar": 1.0,
+      "aging_distribution": "normal",
+      "beta_jaar": 0.0,
       "cost_cm_eur": 35000.0,
       "downtime_per_failure": {
         "unit": "uur",
@@ -258,7 +259,7 @@
       "notes": "",
       "p_ongewenste_gebeurtenis": 1.0,
       "pbs_id": "06H-350.1.1.1.13",
-      "repair_quality": 1.0,
+      "repair_quality": 0.0,
       "sigma_jaar": 7.5
     },
     "06H-350.1.1.1.13.1.A.2": {
@@ -284,7 +285,7 @@
       "notes": "",
       "p_ongewenste_gebeurtenis": 1.0,
       "pbs_id": "06H-350.1.1.1.13",
-      "repair_quality": 1.0,
+      "repair_quality": 0.0,
       "sigma_jaar": 0.0
     },
     "06H-350.1.1.1.2.1.A.1": {
@@ -292,8 +293,8 @@
       "aanname_downtime": "",
       "aanname_effectklasse": "",
       "aanname_faalmodel": "",
-      "aging_distribution": "weibull_2p",
-      "beta_jaar": 1.0,
+      "aging_distribution": "normal",
+      "beta_jaar": 0.0,
       "cost_cm_eur": 5000.0,
       "downtime_per_failure": {
         "unit": "uur",
@@ -310,7 +311,7 @@
       "notes": "",
       "p_ongewenste_gebeurtenis": 1.0,
       "pbs_id": "06H-350.1.1.1.2",
-      "repair_quality": 1.0,
+      "repair_quality": 0.0,
       "sigma_jaar": 3.0
     },
     "06H-350.1.1.1.3.1.A.1": {
@@ -318,8 +319,8 @@
       "aanname_downtime": "",
       "aanname_effectklasse": "",
       "aanname_faalmodel": "",
-      "aging_distribution": "weibull_2p",
-      "beta_jaar": 1.0,
+      "aging_distribution": "normal",
+      "beta_jaar": 0.0,
       "cost_cm_eur": 7000.0,
       "downtime_per_failure": {
         "unit": "uur",
@@ -336,7 +337,7 @@
       "notes": "",
       "p_ongewenste_gebeurtenis": 1.0,
       "pbs_id": "06H-350.1.1.1.3",
-      "repair_quality": 1.0,
+      "repair_quality": 0.0,
       "sigma_jaar": 4.8
     },
     "06H-350.1.1.1.5.1.A.1": {
@@ -344,8 +345,8 @@
       "aanname_downtime": "",
       "aanname_effectklasse": "",
       "aanname_faalmodel": "",
-      "aging_distribution": "weibull_2p",
-      "beta_jaar": 1.0,
+      "aging_distribution": "normal",
+      "beta_jaar": 0.0,
       "cost_cm_eur": 6000.0,
       "downtime_per_failure": {
         "unit": "uur",
@@ -362,7 +363,7 @@
       "notes": "",
       "p_ongewenste_gebeurtenis": 1.0,
       "pbs_id": "06H-350.1.1.1.5",
-      "repair_quality": 1.0,
+      "repair_quality": 0.0,
       "sigma_jaar": 3.75
     },
     "06H-350.1.1.1.9.1.A.1": {
@@ -370,8 +371,8 @@
       "aanname_downtime": "",
       "aanname_effectklasse": "",
       "aanname_faalmodel": "",
-      "aging_distribution": "weibull_2p",
-      "beta_jaar": 1.0,
+      "aging_distribution": "normal",
+      "beta_jaar": 0.0,
       "cost_cm_eur": 1000.0,
       "downtime_per_failure": {
         "unit": "uur",
@@ -388,7 +389,7 @@
       "notes": "",
       "p_ongewenste_gebeurtenis": 1.0,
       "pbs_id": "06H-350.1.1.1.9",
-      "repair_quality": 1.0,
+      "repair_quality": 0.0,
       "sigma_jaar": 7.5
     },
     "06H-350.1.1.1.9.1.A.2": {
@@ -396,8 +397,8 @@
       "aanname_downtime": "",
       "aanname_effectklasse": "",
       "aanname_faalmodel": "",
-      "aging_distribution": "weibull_2p",
-      "beta_jaar": 1.0,
+      "aging_distribution": "normal",
+      "beta_jaar": 0.0,
       "cost_cm_eur": 2500.0,
       "downtime_per_failure": {
         "unit": "uur",
@@ -414,7 +415,7 @@
       "notes": "",
       "p_ongewenste_gebeurtenis": 1.0,
       "pbs_id": "06H-350.1.1.1.9",
-      "repair_quality": 1.0,
+      "repair_quality": 0.0,
       "sigma_jaar": 5.25
     },
     "06H-350.1.1.1.9.1.A.3": {
@@ -422,8 +423,8 @@
       "aanname_downtime": "",
       "aanname_effectklasse": "",
       "aanname_faalmodel": "",
-      "aging_distribution": "weibull_2p",
-      "beta_jaar": 1.0,
+      "aging_distribution": "normal",
+      "beta_jaar": 0.0,
       "cost_cm_eur": 50000.0,
       "downtime_per_failure": {
         "unit": "uur",
@@ -440,7 +441,7 @@
       "notes": "",
       "p_ongewenste_gebeurtenis": 1.0,
       "pbs_id": "06H-350.1.1.1.9",
-      "repair_quality": 1.0,
+      "repair_quality": 0.0,
       "sigma_jaar": 3.0
     },
     "06H-350.1.12.1.1.1.A.1": {
@@ -448,8 +449,8 @@
       "aanname_downtime": "",
       "aanname_effectklasse": "",
       "aanname_faalmodel": "",
-      "aging_distribution": "weibull_2p",
-      "beta_jaar": 1.0,
+      "aging_distribution": "normal",
+      "beta_jaar": 0.0,
       "cost_cm_eur": 98000.0,
       "downtime_per_failure": {
         "unit": "uur",
@@ -466,7 +467,7 @@
       "notes": "",
       "p_ongewenste_gebeurtenis": 1.0,
       "pbs_id": "06H-350.1.12.1.1",
-      "repair_quality": 1.0,
+      "repair_quality": 0.0,
       "sigma_jaar": 18.75
     },
     "06H-350.1.16.4.1.A.1": {
@@ -474,8 +475,8 @@
       "aanname_downtime": "",
       "aanname_effectklasse": "",
       "aanname_faalmodel": "",
-      "aging_distribution": "weibull_2p",
-      "beta_jaar": 1.0,
+      "aging_distribution": "normal",
+      "beta_jaar": 0.0,
       "cost_cm_eur": 5000.0,
       "downtime_per_failure": {
         "unit": "uur",
@@ -492,7 +493,7 @@
       "notes": "",
       "p_ongewenste_gebeurtenis": 1.0,
       "pbs_id": "06H-350.1.16.4",
-      "repair_quality": 1.0,
+      "repair_quality": 0.0,
       "sigma_jaar": 4.8
     },
     "06H-350.1.18.1.1.1.A.1": {
@@ -500,8 +501,8 @@
       "aanname_downtime": "",
       "aanname_effectklasse": "",
       "aanname_faalmodel": "",
-      "aging_distribution": "weibull_2p",
-      "beta_jaar": 1.0,
+      "aging_distribution": "normal",
+      "beta_jaar": 0.0,
       "cost_cm_eur": 35000.0,
       "downtime_per_failure": {
         "unit": "uur",
@@ -518,7 +519,7 @@
       "notes": "",
       "p_ongewenste_gebeurtenis": 1.0,
       "pbs_id": "06H-350.1.18.1.1",
-      "repair_quality": 1.0,
+      "repair_quality": 0.0,
       "sigma_jaar": 3.6
     },
     "06H-350.1.18.1.4.1.A.1": {
@@ -526,8 +527,8 @@
       "aanname_downtime": "",
       "aanname_effectklasse": "",
       "aanname_faalmodel": "",
-      "aging_distribution": "weibull_2p",
-      "beta_jaar": 1.0,
+      "aging_distribution": "normal",
+      "beta_jaar": 0.0,
       "cost_cm_eur": 50000.0,
       "downtime_per_failure": {
         "unit": "uur",
@@ -544,7 +545,7 @@
       "notes": "",
       "p_ongewenste_gebeurtenis": 1.0,
       "pbs_id": "06H-350.1.18.1.4",
-      "repair_quality": 1.0,
+      "repair_quality": 0.0,
       "sigma_jaar": 4.8
     },
     "06H-350.1.18.1.6.1.A.1": {
@@ -552,8 +553,8 @@
       "aanname_downtime": "",
       "aanname_effectklasse": "",
       "aanname_faalmodel": "",
-      "aging_distribution": "weibull_2p",
-      "beta_jaar": 1.0,
+      "aging_distribution": "normal",
+      "beta_jaar": 0.0,
       "cost_cm_eur": 50000.0,
       "downtime_per_failure": {
         "unit": "uur",
@@ -570,7 +571,7 @@
       "notes": "",
       "p_ongewenste_gebeurtenis": 1.0,
       "pbs_id": "06H-350.1.18.1.6",
-      "repair_quality": 1.0,
+      "repair_quality": 0.0,
       "sigma_jaar": 9.45
     },
     "06H-350.1.18.1.6.1.A.2": {
@@ -596,7 +597,7 @@
       "notes": "",
       "p_ongewenste_gebeurtenis": 1.0,
       "pbs_id": "06H-350.1.18.1.6",
-      "repair_quality": 1.0,
+      "repair_quality": 0.0,
       "sigma_jaar": 0.0
     },
     "06H-350.1.18.1.8.1.A.1": {
@@ -604,8 +605,8 @@
       "aanname_downtime": "",
       "aanname_effectklasse": "",
       "aanname_faalmodel": "",
-      "aging_distribution": "weibull_2p",
-      "beta_jaar": 1.0,
+      "aging_distribution": "normal",
+      "beta_jaar": 0.0,
       "cost_cm_eur": 9000.0,
       "downtime_per_failure": {
         "unit": "uur",
@@ -622,7 +623,7 @@
       "notes": "",
       "p_ongewenste_gebeurtenis": 1.0,
       "pbs_id": "06H-350.1.18.1.8",
-      "repair_quality": 1.0,
+      "repair_quality": 0.0,
       "sigma_jaar": 7.5
     },
     "06H-350.1.19.1.1.1.A.1": {
@@ -630,8 +631,8 @@
       "aanname_downtime": "",
       "aanname_effectklasse": "",
       "aanname_faalmodel": "",
-      "aging_distribution": "weibull_2p",
-      "beta_jaar": 1.0,
+      "aging_distribution": "normal",
+      "beta_jaar": 0.0,
       "cost_cm_eur": 35000.0,
       "downtime_per_failure": {
         "unit": "uur",
@@ -648,7 +649,7 @@
       "notes": "",
       "p_ongewenste_gebeurtenis": 1.0,
       "pbs_id": "06H-350.1.19.1.1",
-      "repair_quality": 1.0,
+      "repair_quality": 0.0,
       "sigma_jaar": 3.6
     },
     "06H-350.1.19.1.4.1.A.1": {
@@ -656,8 +657,8 @@
       "aanname_downtime": "",
       "aanname_effectklasse": "",
       "aanname_faalmodel": "",
-      "aging_distribution": "weibull_2p",
-      "beta_jaar": 1.0,
+      "aging_distribution": "normal",
+      "beta_jaar": 0.0,
       "cost_cm_eur": 50000.0,
       "downtime_per_failure": {
         "unit": "uur",
@@ -674,7 +675,7 @@
       "notes": "",
       "p_ongewenste_gebeurtenis": 1.0,
       "pbs_id": "06H-350.1.19.1.4",
-      "repair_quality": 1.0,
+      "repair_quality": 0.0,
       "sigma_jaar": 4.8
     },
     "06H-350.1.19.1.6.1.A.1": {
@@ -682,8 +683,8 @@
       "aanname_downtime": "",
       "aanname_effectklasse": "",
       "aanname_faalmodel": "",
-      "aging_distribution": "weibull_2p",
-      "beta_jaar": 1.0,
+      "aging_distribution": "normal",
+      "beta_jaar": 0.0,
       "cost_cm_eur": 50000.0,
       "downtime_per_failure": {
         "unit": "uur",
@@ -700,7 +701,7 @@
       "notes": "",
       "p_ongewenste_gebeurtenis": 1.0,
       "pbs_id": "06H-350.1.19.1.6",
-      "repair_quality": 1.0,
+      "repair_quality": 0.0,
       "sigma_jaar": 18.75
     },
     "06H-350.1.19.1.6.1.A.2": {
@@ -726,7 +727,7 @@
       "notes": "",
       "p_ongewenste_gebeurtenis": 1.0,
       "pbs_id": "06H-350.1.19.1.6",
-      "repair_quality": 1.0,
+      "repair_quality": 0.0,
       "sigma_jaar": 0.0
     },
     "06H-350.1.19.1.8.1.A.1": {
@@ -734,8 +735,8 @@
       "aanname_downtime": "",
       "aanname_effectklasse": "",
       "aanname_faalmodel": "",
-      "aging_distribution": "weibull_2p",
-      "beta_jaar": 1.0,
+      "aging_distribution": "normal",
+      "beta_jaar": 0.0,
       "cost_cm_eur": 9000.0,
       "downtime_per_failure": {
         "unit": "uur",
@@ -752,7 +753,7 @@
       "notes": "",
       "p_ongewenste_gebeurtenis": 1.0,
       "pbs_id": "06H-350.1.19.1.8",
-      "repair_quality": 1.0,
+      "repair_quality": 0.0,
       "sigma_jaar": 7.5
     },
     "06H-350.1.2.1.1.1.A.1": {
@@ -760,8 +761,8 @@
       "aanname_downtime": "",
       "aanname_effectklasse": "",
       "aanname_faalmodel": "",
-      "aging_distribution": "weibull_2p",
-      "beta_jaar": 1.0,
+      "aging_distribution": "normal",
+      "beta_jaar": 0.0,
       "cost_cm_eur": 1250.0,
       "downtime_per_failure": {
         "unit": "uur",
@@ -778,7 +779,7 @@
       "notes": "",
       "p_ongewenste_gebeurtenis": 1.0,
       "pbs_id": "06H-350.1.2.1.1",
-      "repair_quality": 1.0,
+      "repair_quality": 0.0,
       "sigma_jaar": 3.0
     },
     "06H-350.1.2.1.1.1.A.2": {
@@ -786,8 +787,8 @@
       "aanname_downtime": "",
       "aanname_effectklasse": "",
       "aanname_faalmodel": "",
-      "aging_distribution": "weibull_2p",
-      "beta_jaar": 1.0,
+      "aging_distribution": "normal",
+      "beta_jaar": 0.0,
       "cost_cm_eur": 1500.0,
       "downtime_per_failure": {
         "unit": "uur",
@@ -804,7 +805,7 @@
       "notes": "",
       "p_ongewenste_gebeurtenis": 1.0,
       "pbs_id": "06H-350.1.2.1.1",
-      "repair_quality": 1.0,
+      "repair_quality": 0.0,
       "sigma_jaar": 1.5
     },
     "06H-350.1.2.1.2.1.A.1": {
@@ -812,8 +813,8 @@
       "aanname_downtime": "",
       "aanname_effectklasse": "",
       "aanname_faalmodel": "",
-      "aging_distribution": "weibull_2p",
-      "beta_jaar": 1.0,
+      "aging_distribution": "normal",
+      "beta_jaar": 0.0,
       "cost_cm_eur": 1500.0,
       "downtime_per_failure": {
         "unit": "uur",
@@ -830,7 +831,7 @@
       "notes": "",
       "p_ongewenste_gebeurtenis": 1.0,
       "pbs_id": "06H-350.1.2.1.2",
-      "repair_quality": 1.0,
+      "repair_quality": 0.0,
       "sigma_jaar": 4.8
     },
     "06H-350.1.2.1.6.1.A.1": {
@@ -838,8 +839,8 @@
       "aanname_downtime": "",
       "aanname_effectklasse": "",
       "aanname_faalmodel": "",
-      "aging_distribution": "weibull_2p",
-      "beta_jaar": 1.0,
+      "aging_distribution": "normal",
+      "beta_jaar": 0.0,
       "cost_cm_eur": 250.0,
       "downtime_per_failure": {
         "unit": "uur",
@@ -856,7 +857,7 @@
       "notes": "",
       "p_ongewenste_gebeurtenis": 1.0,
       "pbs_id": "06H-350.1.2.1.6",
-      "repair_quality": 1.0,
+      "repair_quality": 0.0,
       "sigma_jaar": 7.5
     },
     "06H-350.1.2.1.6.1.A.2": {
@@ -864,8 +865,8 @@
       "aanname_downtime": "",
       "aanname_effectklasse": "",
       "aanname_faalmodel": "",
-      "aging_distribution": "weibull_2p",
-      "beta_jaar": 1.0,
+      "aging_distribution": "normal",
+      "beta_jaar": 0.0,
       "cost_cm_eur": 50000.0,
       "downtime_per_failure": {
         "unit": "uur",
@@ -882,7 +883,7 @@
       "notes": "",
       "p_ongewenste_gebeurtenis": 1.0,
       "pbs_id": "06H-350.1.2.1.6",
-      "repair_quality": 1.0,
+      "repair_quality": 0.0,
       "sigma_jaar": 3.0
     },
     "06H-350.1.20.1.1.A.1": {
@@ -890,8 +891,8 @@
       "aanname_downtime": "",
       "aanname_effectklasse": "",
       "aanname_faalmodel": "",
-      "aging_distribution": "weibull_2p",
-      "beta_jaar": 1.0,
+      "aging_distribution": "normal",
+      "beta_jaar": 0.0,
       "cost_cm_eur": 70000.0,
       "downtime_per_failure": {
         "unit": "uur",
@@ -908,7 +909,7 @@
       "notes": "",
       "p_ongewenste_gebeurtenis": 1.0,
       "pbs_id": "06H-350.1.20.1",
-      "repair_quality": 1.0,
+      "repair_quality": 0.0,
       "sigma_jaar": 18.75
     },
     "06H-350.1.20.13.1.A.1": {
@@ -916,8 +917,8 @@
       "aanname_downtime": "",
       "aanname_effectklasse": "",
       "aanname_faalmodel": "",
-      "aging_distribution": "weibull_2p",
-      "beta_jaar": 1.0,
+      "aging_distribution": "normal",
+      "beta_jaar": 0.0,
       "cost_cm_eur": 3000.0,
       "downtime_per_failure": {
         "unit": "uur",
@@ -934,7 +935,7 @@
       "notes": "",
       "p_ongewenste_gebeurtenis": 1.0,
       "pbs_id": "06H-350.1.20.13",
-      "repair_quality": 1.0,
+      "repair_quality": 0.0,
       "sigma_jaar": 9.45
     },
     "06H-350.1.20.13.1.A.2": {
@@ -942,8 +943,8 @@
       "aanname_downtime": "",
       "aanname_effectklasse": "",
       "aanname_faalmodel": "",
-      "aging_distribution": "weibull_2p",
-      "beta_jaar": 1.0,
+      "aging_distribution": "normal",
+      "beta_jaar": 0.0,
       "cost_cm_eur": 500.0,
       "downtime_per_failure": {
         "unit": "uur",
@@ -960,7 +961,7 @@
       "notes": "",
       "p_ongewenste_gebeurtenis": 1.0,
       "pbs_id": "06H-350.1.20.13",
-      "repair_quality": 1.0,
+      "repair_quality": 0.0,
       "sigma_jaar": 1.95
     },
     "06H-350.1.20.17.1.A.1": {
@@ -968,8 +969,8 @@
       "aanname_downtime": "",
       "aanname_effectklasse": "",
       "aanname_faalmodel": "",
-      "aging_distribution": "weibull_2p",
-      "beta_jaar": 1.0,
+      "aging_distribution": "normal",
+      "beta_jaar": 0.0,
       "cost_cm_eur": 0.0,
       "downtime_per_failure": {
         "unit": "uur",
@@ -986,7 +987,7 @@
       "notes": "",
       "p_ongewenste_gebeurtenis": 1.0,
       "pbs_id": "06H-350.1.20.17",
-      "repair_quality": 1.0,
+      "repair_quality": 0.0,
       "sigma_jaar": 9.45
     },
     "06H-350.1.20.20.1.A.1": {
@@ -994,8 +995,8 @@
       "aanname_downtime": "",
       "aanname_effectklasse": "",
       "aanname_faalmodel": "",
-      "aging_distribution": "weibull_2p",
-      "beta_jaar": 1.0,
+      "aging_distribution": "normal",
+      "beta_jaar": 0.0,
       "cost_cm_eur": 8580000.0,
       "downtime_per_failure": {
         "unit": "uur",
@@ -1012,7 +1013,7 @@
       "notes": "",
       "p_ongewenste_gebeurtenis": 1.0,
       "pbs_id": "06H-350.1.20.20",
-      "repair_quality": 1.0,
+      "repair_quality": 0.0,
       "sigma_jaar": 18.75
     },
     "06H-350.1.20.20.1.A.2": {
@@ -1038,7 +1039,7 @@
       "notes": "",
       "p_ongewenste_gebeurtenis": 1.0,
       "pbs_id": "06H-350.1.20.20",
-      "repair_quality": 1.0,
+      "repair_quality": 0.0,
       "sigma_jaar": 0.0
     },
     "06H-350.1.20.4.1.A.1": {
@@ -1046,8 +1047,8 @@
       "aanname_downtime": "",
       "aanname_effectklasse": "",
       "aanname_faalmodel": "",
-      "aging_distribution": "weibull_2p",
-      "beta_jaar": 1.0,
+      "aging_distribution": "normal",
+      "beta_jaar": 0.0,
       "cost_cm_eur": 247000.0,
       "downtime_per_failure": {
         "unit": "uur",
@@ -1064,7 +1065,7 @@
       "notes": "",
       "p_ongewenste_gebeurtenis": 1.0,
       "pbs_id": "06H-350.1.20.4",
-      "repair_quality": 1.0,
+      "repair_quality": 0.0,
       "sigma_jaar": 18.75
     },
     "06H-350.1.20.5.1.A.1": {
@@ -1072,8 +1073,8 @@
       "aanname_downtime": "",
       "aanname_effectklasse": "",
       "aanname_faalmodel": "",
-      "aging_distribution": "weibull_2p",
-      "beta_jaar": 1.0,
+      "aging_distribution": "normal",
+      "beta_jaar": 0.0,
       "cost_cm_eur": 500.0,
       "downtime_per_failure": {
         "unit": "uur",
@@ -1090,7 +1091,7 @@
       "notes": "",
       "p_ongewenste_gebeurtenis": 1.0,
       "pbs_id": "06H-350.1.20.5",
-      "repair_quality": 1.0,
+      "repair_quality": 0.0,
       "sigma_jaar": 18.75
     },
     "06H-350.1.20.6.1.A.1": {
@@ -1116,7 +1117,7 @@
       "notes": "",
       "p_ongewenste_gebeurtenis": 1.0,
       "pbs_id": "06H-350.1.20.6",
-      "repair_quality": 1.0,
+      "repair_quality": 0.0,
       "sigma_jaar": 0.0
     },
     "06H-350.1.20.7.1.A.1": {
@@ -1124,8 +1125,8 @@
       "aanname_downtime": "",
       "aanname_effectklasse": "",
       "aanname_faalmodel": "",
-      "aging_distribution": "weibull_2p",
-      "beta_jaar": 1.0,
+      "aging_distribution": "normal",
+      "beta_jaar": 0.0,
       "cost_cm_eur": 75000.0,
       "downtime_per_failure": {
         "unit": "uur",
@@ -1142,7 +1143,7 @@
       "notes": "",
       "p_ongewenste_gebeurtenis": 1.0,
       "pbs_id": "06H-350.1.20.7",
-      "repair_quality": 1.0,
+      "repair_quality": 0.0,
       "sigma_jaar": 18.75
     },
     "06H-350.1.20.7.1.A.2": {
@@ -1150,8 +1151,8 @@
       "aanname_downtime": "",
       "aanname_effectklasse": "",
       "aanname_faalmodel": "",
-      "aging_distribution": "weibull_2p",
-      "beta_jaar": 1.0,
+      "aging_distribution": "normal",
+      "beta_jaar": 0.0,
       "cost_cm_eur": 7500.0,
       "downtime_per_failure": {
         "unit": "uur",
@@ -1168,7 +1169,7 @@
       "notes": "",
       "p_ongewenste_gebeurtenis": 1.0,
       "pbs_id": "06H-350.1.20.7",
-      "repair_quality": 1.0,
+      "repair_quality": 0.0,
       "sigma_jaar": 4.8
     },
     "06H-350.1.22.3.1.A.1": {
@@ -1176,8 +1177,8 @@
       "aanname_downtime": "",
       "aanname_effectklasse": "",
       "aanname_faalmodel": "",
-      "aging_distribution": "weibull_2p",
-      "beta_jaar": 1.0,
+      "aging_distribution": "normal",
+      "beta_jaar": 0.0,
       "cost_cm_eur": 247000.0,
       "downtime_per_failure": {
         "unit": "uur",
@@ -1194,7 +1195,7 @@
       "notes": "",
       "p_ongewenste_gebeurtenis": 1.0,
       "pbs_id": "06H-350.1.22.3",
-      "repair_quality": 1.0,
+      "repair_quality": 0.0,
       "sigma_jaar": 18.75
     },
     "06H-350.1.22.4.1.A.1": {
@@ -1202,8 +1203,8 @@
       "aanname_downtime": "",
       "aanname_effectklasse": "",
       "aanname_faalmodel": "",
-      "aging_distribution": "weibull_2p",
-      "beta_jaar": 1.0,
+      "aging_distribution": "normal",
+      "beta_jaar": 0.0,
       "cost_cm_eur": 247000.0,
       "downtime_per_failure": {
         "unit": "uur",
@@ -1220,7 +1221,7 @@
       "notes": "",
       "p_ongewenste_gebeurtenis": 1.0,
       "pbs_id": "06H-350.1.22.4",
-      "repair_quality": 1.0,
+      "repair_quality": 0.0,
       "sigma_jaar": 18.75
     },
     "06H-350.1.22.5.1.A.1": {
@@ -1228,8 +1229,8 @@
       "aanname_downtime": "",
       "aanname_effectklasse": "",
       "aanname_faalmodel": "",
-      "aging_distribution": "weibull_2p",
-      "beta_jaar": 1.0,
+      "aging_distribution": "normal",
+      "beta_jaar": 0.0,
       "cost_cm_eur": 15000.0,
       "downtime_per_failure": {
         "unit": "uur",
@@ -1246,7 +1247,7 @@
       "notes": "",
       "p_ongewenste_gebeurtenis": 1.0,
       "pbs_id": "06H-350.1.22.5",
-      "repair_quality": 1.0,
+      "repair_quality": 0.0,
       "sigma_jaar": 18.75
     },
     "06H-350.1.22.6.1.A.1": {
@@ -1254,8 +1255,8 @@
       "aanname_downtime": "",
       "aanname_effectklasse": "",
       "aanname_faalmodel": "",
-      "aging_distribution": "weibull_2p",
-      "beta_jaar": 1.0,
+      "aging_distribution": "normal",
+      "beta_jaar": 0.0,
       "cost_cm_eur": 5000.0,
       "downtime_per_failure": {
         "unit": "uur",
@@ -1272,7 +1273,7 @@
       "notes": "",
       "p_ongewenste_gebeurtenis": 1.0,
       "pbs_id": "06H-350.1.22.6",
-      "repair_quality": 1.0,
+      "repair_quality": 0.0,
       "sigma_jaar": 9.45
     },
     "06H-350.1.22.8.1.A.1": {
@@ -1280,8 +1281,8 @@
       "aanname_downtime": "",
       "aanname_effectklasse": "",
       "aanname_faalmodel": "",
-      "aging_distribution": "weibull_2p",
-      "beta_jaar": 1.0,
+      "aging_distribution": "normal",
+      "beta_jaar": 0.0,
       "cost_cm_eur": 8580000.0,
       "downtime_per_failure": {
         "unit": "uur",
@@ -1298,7 +1299,7 @@
       "notes": "",
       "p_ongewenste_gebeurtenis": 1.0,
       "pbs_id": "06H-350.1.22.8",
-      "repair_quality": 1.0,
+      "repair_quality": 0.0,
       "sigma_jaar": 18.75
     },
     "06H-350.1.3.1.10.1.A.1": {
@@ -1306,8 +1307,8 @@
       "aanname_downtime": "",
       "aanname_effectklasse": "",
       "aanname_faalmodel": "",
-      "aging_distribution": "weibull_2p",
-      "beta_jaar": 1.0,
+      "aging_distribution": "normal",
+      "beta_jaar": 0.0,
       "cost_cm_eur": 10000.0,
       "downtime_per_failure": {
         "unit": "uur",
@@ -1324,7 +1325,7 @@
       "notes": "",
       "p_ongewenste_gebeurtenis": 1.0,
       "pbs_id": "06H-350.1.3.1.10",
-      "repair_quality": 1.0,
+      "repair_quality": 0.0,
       "sigma_jaar": 5.7
     },
     "06H-350.1.3.1.11.1.A.1": {
@@ -1332,8 +1333,8 @@
       "aanname_downtime": "",
       "aanname_effectklasse": "",
       "aanname_faalmodel": "",
-      "aging_distribution": "weibull_2p",
-      "beta_jaar": 1.0,
+      "aging_distribution": "normal",
+      "beta_jaar": 0.0,
       "cost_cm_eur": 40000.0,
       "downtime_per_failure": {
         "unit": "uur",
@@ -1350,7 +1351,7 @@
       "notes": "",
       "p_ongewenste_gebeurtenis": 1.0,
       "pbs_id": "06H-350.1.3.1.11",
-      "repair_quality": 1.0,
+      "repair_quality": 0.0,
       "sigma_jaar": 9.45
     },
     "06H-350.1.3.1.22.1.A.1": {
@@ -1358,8 +1359,8 @@
       "aanname_downtime": "",
       "aanname_effectklasse": "",
       "aanname_faalmodel": "",
-      "aging_distribution": "weibull_2p",
-      "beta_jaar": 1.0,
+      "aging_distribution": "normal",
+      "beta_jaar": 0.0,
       "cost_cm_eur": 30000.0,
       "downtime_per_failure": {
         "unit": "uur",
@@ -1376,7 +1377,7 @@
       "notes": "",
       "p_ongewenste_gebeurtenis": 1.0,
       "pbs_id": "06H-350.1.3.1.22",
-      "repair_quality": 1.0,
+      "repair_quality": 0.0,
       "sigma_jaar": 5.7
     },
     "06H-350.1.3.1.3.1.A.1": {
@@ -1384,8 +1385,8 @@
       "aanname_downtime": "",
       "aanname_effectklasse": "",
       "aanname_faalmodel": "",
-      "aging_distribution": "weibull_2p",
-      "beta_jaar": 1.0,
+      "aging_distribution": "normal",
+      "beta_jaar": 0.0,
       "cost_cm_eur": 20000.0,
       "downtime_per_failure": {
         "unit": "uur",
@@ -1402,7 +1403,7 @@
       "notes": "",
       "p_ongewenste_gebeurtenis": 1.0,
       "pbs_id": "06H-350.1.3.1.3",
-      "repair_quality": 1.0,
+      "repair_quality": 0.0,
       "sigma_jaar": 18.75
     },
     "06H-350.1.6.1.1.A.1": {
@@ -1410,8 +1411,8 @@
       "aanname_downtime": "",
       "aanname_effectklasse": "",
       "aanname_faalmodel": "",
-      "aging_distribution": "weibull_2p",
-      "beta_jaar": 1.0,
+      "aging_distribution": "normal",
+      "beta_jaar": 0.0,
       "cost_cm_eur": 500000.0,
       "downtime_per_failure": {
         "unit": "uur",
@@ -1428,7 +1429,7 @@
       "notes": "",
       "p_ongewenste_gebeurtenis": 1.0,
       "pbs_id": "06H-350.1.6.1",
-      "repair_quality": 1.0,
+      "repair_quality": 0.0,
       "sigma_jaar": 18.75
     },
     "06H-350.1.6.1.1.A.2": {
@@ -1454,7 +1455,7 @@
       "notes": "",
       "p_ongewenste_gebeurtenis": 1.0,
       "pbs_id": "06H-350.1.6.1",
-      "repair_quality": 1.0,
+      "repair_quality": 0.0,
       "sigma_jaar": 0.0
     },
     "06H-350.1.6.3.1.A.1": {
@@ -1480,7 +1481,7 @@
       "notes": "",
       "p_ongewenste_gebeurtenis": 1.0,
       "pbs_id": "06H-350.1.6.3",
-      "repair_quality": 1.0,
+      "repair_quality": 0.0,
       "sigma_jaar": 0.0
     },
     "06H-350.1.7.10.1.A.1": {
@@ -1488,8 +1489,8 @@
       "aanname_downtime": "",
       "aanname_effectklasse": "",
       "aanname_faalmodel": "",
-      "aging_distribution": "weibull_2p",
-      "beta_jaar": 1.0,
+      "aging_distribution": "normal",
+      "beta_jaar": 0.0,
       "cost_cm_eur": 2500.0,
       "downtime_per_failure": {
         "unit": "uur",
@@ -1506,7 +1507,7 @@
       "notes": "",
       "p_ongewenste_gebeurtenis": 1.0,
       "pbs_id": "06H-350.1.7.10",
-      "repair_quality": 1.0,
+      "repair_quality": 0.0,
       "sigma_jaar": 6.6
     },
     "06H-350.1.7.5.1.A.1": {
@@ -1514,8 +1515,8 @@
       "aanname_downtime": "",
       "aanname_effectklasse": "",
       "aanname_faalmodel": "",
-      "aging_distribution": "weibull_2p",
-      "beta_jaar": 1.0,
+      "aging_distribution": "normal",
+      "beta_jaar": 0.0,
       "cost_cm_eur": 1500.0,
       "downtime_per_failure": {
         "unit": "uur",
@@ -1532,7 +1533,7 @@
       "notes": "",
       "p_ongewenste_gebeurtenis": 1.0,
       "pbs_id": "06H-350.1.7.5",
-      "repair_quality": 1.0,
+      "repair_quality": 0.0,
       "sigma_jaar": 1.5
     },
     "06H-350.2.1.1.1.A.1": {
@@ -1540,8 +1541,8 @@
       "aanname_downtime": "",
       "aanname_effectklasse": "",
       "aanname_faalmodel": "",
-      "aging_distribution": "weibull_2p",
-      "beta_jaar": 1.0,
+      "aging_distribution": "normal",
+      "beta_jaar": 0.0,
       "cost_cm_eur": 1250.0,
       "downtime_per_failure": {
         "unit": "uur",
@@ -1558,7 +1559,7 @@
       "notes": "",
       "p_ongewenste_gebeurtenis": 1.0,
       "pbs_id": "06H-350.2.1.1",
-      "repair_quality": 1.0,
+      "repair_quality": 0.0,
       "sigma_jaar": 3.75
     },
     "06H-350.2.1.1.1.A.2": {
@@ -1566,8 +1567,8 @@
       "aanname_downtime": "",
       "aanname_effectklasse": "",
       "aanname_faalmodel": "",
-      "aging_distribution": "weibull_2p",
-      "beta_jaar": 1.0,
+      "aging_distribution": "normal",
+      "beta_jaar": 0.0,
       "cost_cm_eur": 1500.0,
       "downtime_per_failure": {
         "unit": "uur",
@@ -1584,7 +1585,7 @@
       "notes": "",
       "p_ongewenste_gebeurtenis": 1.0,
       "pbs_id": "06H-350.2.1.1",
-      "repair_quality": 1.0,
+      "repair_quality": 0.0,
       "sigma_jaar": 1.5
     },
     "06H-350.2.1.3.1.A.1": {
@@ -1592,8 +1593,8 @@
       "aanname_downtime": "",
       "aanname_effectklasse": "",
       "aanname_faalmodel": "",
-      "aging_distribution": "weibull_2p",
-      "beta_jaar": 1.0,
+      "aging_distribution": "normal",
+      "beta_jaar": 0.0,
       "cost_cm_eur": 1500.0,
       "downtime_per_failure": {
         "unit": "uur",
@@ -1610,7 +1611,7 @@
       "notes": "",
       "p_ongewenste_gebeurtenis": 1.0,
       "pbs_id": "06H-350.2.1.3",
-      "repair_quality": 1.0,
+      "repair_quality": 0.0,
       "sigma_jaar": 4.8
     },
     "06H-350.2.1.7.1.1.A.1": {
@@ -1618,8 +1619,8 @@
       "aanname_downtime": "",
       "aanname_effectklasse": "",
       "aanname_faalmodel": "",
-      "aging_distribution": "weibull_2p",
-      "beta_jaar": 1.0,
+      "aging_distribution": "normal",
+      "beta_jaar": 0.0,
       "cost_cm_eur": 250.0,
       "downtime_per_failure": {
         "unit": "uur",
@@ -1636,7 +1637,7 @@
       "notes": "",
       "p_ongewenste_gebeurtenis": 1.0,
       "pbs_id": "06H-350.2.1.7.1",
-      "repair_quality": 1.0,
+      "repair_quality": 0.0,
       "sigma_jaar": 7.5
     },
     "06H-350.2.1.7.1.1.A.2": {
@@ -1644,8 +1645,8 @@
       "aanname_downtime": "",
       "aanname_effectklasse": "",
       "aanname_faalmodel": "",
-      "aging_distribution": "weibull_2p",
-      "beta_jaar": 1.0,
+      "aging_distribution": "normal",
+      "beta_jaar": 0.0,
       "cost_cm_eur": 50000.0,
       "downtime_per_failure": {
         "unit": "uur",
@@ -1662,7 +1663,7 @@
       "notes": "",
       "p_ongewenste_gebeurtenis": 1.0,
       "pbs_id": "06H-350.2.1.7.1",
-      "repair_quality": 1.0,
+      "repair_quality": 0.0,
       "sigma_jaar": 3.0
     },
     "06H-350.2.11.1.1.A.1": {
@@ -1670,8 +1671,8 @@
       "aanname_downtime": "",
       "aanname_effectklasse": "",
       "aanname_faalmodel": "",
-      "aging_distribution": "weibull_2p",
-      "beta_jaar": 1.0,
+      "aging_distribution": "normal",
+      "beta_jaar": 0.0,
       "cost_cm_eur": 5000.0,
       "downtime_per_failure": {
         "unit": "uur",
@@ -1688,7 +1689,7 @@
       "notes": "",
       "p_ongewenste_gebeurtenis": 1.0,
       "pbs_id": "06H-350.2.11.1",
-      "repair_quality": 1.0,
+      "repair_quality": 0.0,
       "sigma_jaar": 9.45
     },
     "06H-350.2.12.2.1.A.1": {
@@ -1696,8 +1697,8 @@
       "aanname_downtime": "",
       "aanname_effectklasse": "",
       "aanname_faalmodel": "",
-      "aging_distribution": "weibull_2p",
-      "beta_jaar": 1.0,
+      "aging_distribution": "normal",
+      "beta_jaar": 0.0,
       "cost_cm_eur": 32000.0,
       "downtime_per_failure": {
         "unit": "uur",
@@ -1714,7 +1715,7 @@
       "notes": "",
       "p_ongewenste_gebeurtenis": 1.0,
       "pbs_id": "06H-350.2.12.2",
-      "repair_quality": 1.0,
+      "repair_quality": 0.0,
       "sigma_jaar": 3.75
     },
     "06H-350.2.14.2.1.A.1": {
@@ -1722,8 +1723,8 @@
       "aanname_downtime": "",
       "aanname_effectklasse": "",
       "aanname_faalmodel": "",
-      "aging_distribution": "weibull_2p",
-      "beta_jaar": 1.0,
+      "aging_distribution": "normal",
+      "beta_jaar": 0.0,
       "cost_cm_eur": 500.0,
       "downtime_per_failure": {
         "unit": "uur",
@@ -1740,7 +1741,7 @@
       "notes": "",
       "p_ongewenste_gebeurtenis": 1.0,
       "pbs_id": "06H-350.2.14.2",
-      "repair_quality": 1.0,
+      "repair_quality": 0.0,
       "sigma_jaar": 4.8
     },
     "06H-350.2.14.2.1.A.2": {
@@ -1748,8 +1749,8 @@
       "aanname_downtime": "",
       "aanname_effectklasse": "",
       "aanname_faalmodel": "",
-      "aging_distribution": "weibull_2p",
-      "beta_jaar": 1.0,
+      "aging_distribution": "normal",
+      "beta_jaar": 0.0,
       "cost_cm_eur": 4000.0,
       "downtime_per_failure": {
         "unit": "uur",
@@ -1766,7 +1767,7 @@
       "notes": "",
       "p_ongewenste_gebeurtenis": 1.0,
       "pbs_id": "06H-350.2.14.2",
-      "repair_quality": 1.0,
+      "repair_quality": 0.0,
       "sigma_jaar": 5.7
     },
     "06H-350.2.15.1.1.A.1": {
@@ -1774,8 +1775,8 @@
       "aanname_downtime": "",
       "aanname_effectklasse": "",
       "aanname_faalmodel": "",
-      "aging_distribution": "weibull_2p",
-      "beta_jaar": 1.0,
+      "aging_distribution": "normal",
+      "beta_jaar": 0.0,
       "cost_cm_eur": 21000.0,
       "downtime_per_failure": {
         "unit": "uur",
@@ -1792,7 +1793,7 @@
       "notes": "",
       "p_ongewenste_gebeurtenis": 1.0,
       "pbs_id": "06H-350.2.15.1",
-      "repair_quality": 1.0,
+      "repair_quality": 0.0,
       "sigma_jaar": 7.5
     },
     "06H-350.2.2.1.1.A.1": {
@@ -1800,8 +1801,8 @@
       "aanname_downtime": "",
       "aanname_effectklasse": "",
       "aanname_faalmodel": "",
-      "aging_distribution": "weibull_2p",
-      "beta_jaar": 1.0,
+      "aging_distribution": "normal",
+      "beta_jaar": 0.0,
       "cost_cm_eur": 70000.0,
       "downtime_per_failure": {
         "unit": "uur",
@@ -1818,7 +1819,7 @@
       "notes": "",
       "p_ongewenste_gebeurtenis": 1.0,
       "pbs_id": "06H-350.2.2.1",
-      "repair_quality": 1.0,
+      "repair_quality": 0.0,
       "sigma_jaar": 9.375
     },
     "06H-350.2.2.11.1.A.1": {
@@ -1826,8 +1827,8 @@
       "aanname_downtime": "",
       "aanname_effectklasse": "",
       "aanname_faalmodel": "",
-      "aging_distribution": "weibull_2p",
-      "beta_jaar": 1.0,
+      "aging_distribution": "normal",
+      "beta_jaar": 0.0,
       "cost_cm_eur": 15000.0,
       "downtime_per_failure": {
         "unit": "uur",
@@ -1844,7 +1845,7 @@
       "notes": "",
       "p_ongewenste_gebeurtenis": 1.0,
       "pbs_id": "06H-350.2.2.11",
-      "repair_quality": 1.0,
+      "repair_quality": 0.0,
       "sigma_jaar": 18.75
     },
     "06H-350.2.2.14.1.A.1": {
@@ -1852,8 +1853,8 @@
       "aanname_downtime": "",
       "aanname_effectklasse": "",
       "aanname_faalmodel": "",
-      "aging_distribution": "weibull_2p",
-      "beta_jaar": 1.0,
+      "aging_distribution": "normal",
+      "beta_jaar": 0.0,
       "cost_cm_eur": 150000.0,
       "downtime_per_failure": {
         "unit": "uur",
@@ -1870,7 +1871,7 @@
       "notes": "",
       "p_ongewenste_gebeurtenis": 1.0,
       "pbs_id": "06H-350.2.2.14",
-      "repair_quality": 1.0,
+      "repair_quality": 0.0,
       "sigma_jaar": 9.45
     },
     "06H-350.2.2.15.1.A.1": {
@@ -1878,8 +1879,8 @@
       "aanname_downtime": "",
       "aanname_effectklasse": "",
       "aanname_faalmodel": "",
-      "aging_distribution": "weibull_2p",
-      "beta_jaar": 1.0,
+      "aging_distribution": "normal",
+      "beta_jaar": 0.0,
       "cost_cm_eur": 5000.0,
       "downtime_per_failure": {
         "unit": "uur",
@@ -1896,7 +1897,7 @@
       "notes": "",
       "p_ongewenste_gebeurtenis": 1.0,
       "pbs_id": "06H-350.2.2.15",
-      "repair_quality": 1.0,
+      "repair_quality": 0.0,
       "sigma_jaar": 6.0
     },
     "06H-350.2.2.15.2.A.1": {
@@ -1904,8 +1905,8 @@
       "aanname_downtime": "",
       "aanname_effectklasse": "",
       "aanname_faalmodel": "",
-      "aging_distribution": "weibull_2p",
-      "beta_jaar": 1.0,
+      "aging_distribution": "normal",
+      "beta_jaar": 0.0,
       "cost_cm_eur": 4000.0,
       "downtime_per_failure": {
         "unit": "uur",
@@ -1922,7 +1923,7 @@
       "notes": "",
       "p_ongewenste_gebeurtenis": 1.0,
       "pbs_id": "06H-350.2.2.15",
-      "repair_quality": 1.0,
+      "repair_quality": 0.0,
       "sigma_jaar": 6.0
     },
     "06H-350.2.2.22.1.A.1": {
@@ -1930,8 +1931,8 @@
       "aanname_downtime": "",
       "aanname_effectklasse": "",
       "aanname_faalmodel": "",
-      "aging_distribution": "weibull_2p",
-      "beta_jaar": 1.0,
+      "aging_distribution": "normal",
+      "beta_jaar": 0.0,
       "cost_cm_eur": 150000.0,
       "downtime_per_failure": {
         "unit": "uur",
@@ -1948,7 +1949,7 @@
       "notes": "",
       "p_ongewenste_gebeurtenis": 1.0,
       "pbs_id": "06H-350.2.2.22",
-      "repair_quality": 1.0,
+      "repair_quality": 0.0,
       "sigma_jaar": 15.0
     },
     "06H-350.2.2.23.1.A.1": {
@@ -1956,8 +1957,8 @@
       "aanname_downtime": "",
       "aanname_effectklasse": "",
       "aanname_faalmodel": "",
-      "aging_distribution": "weibull_2p",
-      "beta_jaar": 1.0,
+      "aging_distribution": "normal",
+      "beta_jaar": 0.0,
       "cost_cm_eur": 10000.0,
       "downtime_per_failure": {
         "unit": "uur",
@@ -1974,7 +1975,7 @@
       "notes": "",
       "p_ongewenste_gebeurtenis": 1.0,
       "pbs_id": "06H-350.2.2.23",
-      "repair_quality": 1.0,
+      "repair_quality": 0.0,
       "sigma_jaar": 2.7
     },
     "06H-350.2.2.3.1.A.1": {
@@ -1982,8 +1983,8 @@
       "aanname_downtime": "",
       "aanname_effectklasse": "",
       "aanname_faalmodel": "",
-      "aging_distribution": "weibull_2p",
-      "beta_jaar": 1.0,
+      "aging_distribution": "normal",
+      "beta_jaar": 0.0,
       "cost_cm_eur": 1500.0,
       "downtime_per_failure": {
         "unit": "uur",
@@ -2000,7 +2001,7 @@
       "notes": "",
       "p_ongewenste_gebeurtenis": 1.0,
       "pbs_id": "06H-350.2.2.3",
-      "repair_quality": 1.0,
+      "repair_quality": 0.0,
       "sigma_jaar": 1.5
     },
     "06H-350.2.2.9.1.A.1": {
@@ -2008,8 +2009,8 @@
       "aanname_downtime": "",
       "aanname_effectklasse": "",
       "aanname_faalmodel": "",
-      "aging_distribution": "weibull_2p",
-      "beta_jaar": 1.0,
+      "aging_distribution": "normal",
+      "beta_jaar": 0.0,
       "cost_cm_eur": 70000.0,
       "downtime_per_failure": {
         "unit": "uur",
@@ -2026,7 +2027,7 @@
       "notes": "",
       "p_ongewenste_gebeurtenis": 1.0,
       "pbs_id": "06H-350.2.2.9",
-      "repair_quality": 1.0,
+      "repair_quality": 0.0,
       "sigma_jaar": 6.6
     },
     "06H-350.2.4.1.3.1.A.1": {
@@ -2034,8 +2035,8 @@
       "aanname_downtime": "",
       "aanname_effectklasse": "",
       "aanname_faalmodel": "",
-      "aging_distribution": "weibull_2p",
-      "beta_jaar": 1.0,
+      "aging_distribution": "normal",
+      "beta_jaar": 0.0,
       "cost_cm_eur": 4000.0,
       "downtime_per_failure": {
         "unit": "uur",
@@ -2052,7 +2053,7 @@
       "notes": "",
       "p_ongewenste_gebeurtenis": 1.0,
       "pbs_id": "06H-350.2.4.1.3",
-      "repair_quality": 1.0,
+      "repair_quality": 0.0,
       "sigma_jaar": 6.0
     },
     "06H-350.2.4.1.3.1.A.2": {
@@ -2078,7 +2079,7 @@
       "notes": "",
       "p_ongewenste_gebeurtenis": 1.0,
       "pbs_id": "06H-350.2.4.1.3",
-      "repair_quality": 1.0,
+      "repair_quality": 0.0,
       "sigma_jaar": 0.0
     },
     "06H-350.2.6.1.1.A.1": {
@@ -2086,8 +2087,8 @@
       "aanname_downtime": "",
       "aanname_effectklasse": "",
       "aanname_faalmodel": "",
-      "aging_distribution": "weibull_2p",
-      "beta_jaar": 1.0,
+      "aging_distribution": "normal",
+      "beta_jaar": 0.0,
       "cost_cm_eur": 30000.0,
       "downtime_per_failure": {
         "unit": "uur",
@@ -2104,7 +2105,7 @@
       "notes": "",
       "p_ongewenste_gebeurtenis": 1.0,
       "pbs_id": "06H-350.2.6.1",
-      "repair_quality": 1.0,
+      "repair_quality": 0.0,
       "sigma_jaar": 7.5
     },
     "06H-350.2.6.1.1.A.2": {
@@ -2130,7 +2131,7 @@
       "notes": "",
       "p_ongewenste_gebeurtenis": 1.0,
       "pbs_id": "06H-350.2.6.1",
-      "repair_quality": 1.0,
+      "repair_quality": 0.0,
       "sigma_jaar": 0.0
     },
     "06H-350.2.7.2.9.1.A.1": {
@@ -2138,8 +2139,8 @@
       "aanname_downtime": "",
       "aanname_effectklasse": "",
       "aanname_faalmodel": "",
-      "aging_distribution": "weibull_2p",
-      "beta_jaar": 1.0,
+      "aging_distribution": "normal",
+      "beta_jaar": 0.0,
       "cost_cm_eur": 100000.0,
       "downtime_per_failure": {
         "unit": "uur",
@@ -2156,7 +2157,7 @@
       "notes": "",
       "p_ongewenste_gebeurtenis": 1.0,
       "pbs_id": "06H-350.2.7.2.9",
-      "repair_quality": 1.0,
+      "repair_quality": 0.0,
       "sigma_jaar": 13.5
     },
     "06H-350.2.7.2.9.1.A.2": {
@@ -2182,7 +2183,7 @@
       "notes": "",
       "p_ongewenste_gebeurtenis": 1.0,
       "pbs_id": "06H-350.2.7.2.9",
-      "repair_quality": 1.0,
+      "repair_quality": 0.0,
       "sigma_jaar": 0.0
     },
     "06H-350.2.8.8.1.A.1": {
@@ -2190,8 +2191,8 @@
       "aanname_downtime": "",
       "aanname_effectklasse": "",
       "aanname_faalmodel": "",
-      "aging_distribution": "weibull_2p",
-      "beta_jaar": 1.0,
+      "aging_distribution": "normal",
+      "beta_jaar": 0.0,
       "cost_cm_eur": 600000.0,
       "downtime_per_failure": {
         "unit": "uur",
@@ -2208,7 +2209,7 @@
       "notes": "",
       "p_ongewenste_gebeurtenis": 1.0,
       "pbs_id": "06H-350.2.8.8",
-      "repair_quality": 1.0,
+      "repair_quality": 0.0,
       "sigma_jaar": 18.75
     },
     "06H-350.2.9.4.1.A.1": {
@@ -2216,8 +2217,8 @@
       "aanname_downtime": "",
       "aanname_effectklasse": "",
       "aanname_faalmodel": "",
-      "aging_distribution": "weibull_2p",
-      "beta_jaar": 1.0,
+      "aging_distribution": "normal",
+      "beta_jaar": 0.0,
       "cost_cm_eur": 6000.0,
       "downtime_per_failure": {
         "unit": "uur",
@@ -2234,7 +2235,7 @@
       "notes": "",
       "p_ongewenste_gebeurtenis": 1.0,
       "pbs_id": "06H-350.2.9.4",
-      "repair_quality": 1.0,
+      "repair_quality": 0.0,
       "sigma_jaar": 18.75
     },
     "06H-350.3.1.2.1.A.1": {
@@ -2260,7 +2261,7 @@
       "notes": "",
       "p_ongewenste_gebeurtenis": 1.0,
       "pbs_id": "06H-350.3.1.2",
-      "repair_quality": 1.0,
+      "repair_quality": 0.0,
       "sigma_jaar": 0.0
     },
     "06H-350.3.1.2.3.A.1": {
@@ -2268,8 +2269,8 @@
       "aanname_downtime": "",
       "aanname_effectklasse": "",
       "aanname_faalmodel": "",
-      "aging_distribution": "weibull_2p",
-      "beta_jaar": 1.0,
+      "aging_distribution": "normal",
+      "beta_jaar": 0.0,
       "cost_cm_eur": 200000.0,
       "downtime_per_failure": {
         "unit": "uur",
@@ -2286,7 +2287,7 @@
       "notes": "",
       "p_ongewenste_gebeurtenis": 1.0,
       "pbs_id": "06H-350.3.1.2",
-      "repair_quality": 1.0,
+      "repair_quality": 0.0,
       "sigma_jaar": 3.75
     },
     "06H-350.3.11.1.1.A.1": {
@@ -2294,8 +2295,8 @@
       "aanname_downtime": "",
       "aanname_effectklasse": "",
       "aanname_faalmodel": "",
-      "aging_distribution": "weibull_2p",
-      "beta_jaar": 1.0,
+      "aging_distribution": "normal",
+      "beta_jaar": 0.0,
       "cost_cm_eur": 25000.0,
       "downtime_per_failure": {
         "unit": "uur",
@@ -2312,7 +2313,7 @@
       "notes": "",
       "p_ongewenste_gebeurtenis": 1.0,
       "pbs_id": "06H-350.3.11.1",
-      "repair_quality": 1.0,
+      "repair_quality": 0.0,
       "sigma_jaar": 5.25
     },
     "06H-350.3.11.2.1.A.1": {
@@ -2320,8 +2321,8 @@
       "aanname_downtime": "",
       "aanname_effectklasse": "",
       "aanname_faalmodel": "",
-      "aging_distribution": "weibull_2p",
-      "beta_jaar": 1.0,
+      "aging_distribution": "normal",
+      "beta_jaar": 0.0,
       "cost_cm_eur": 30000.0,
       "downtime_per_failure": {
         "unit": "uur",
@@ -2338,7 +2339,7 @@
       "notes": "",
       "p_ongewenste_gebeurtenis": 1.0,
       "pbs_id": "06H-350.3.11.2",
-      "repair_quality": 1.0,
+      "repair_quality": 0.0,
       "sigma_jaar": 4.6875
     },
     "06H-350.3.12.2.1.A.1": {
@@ -2346,8 +2347,8 @@
       "aanname_downtime": "",
       "aanname_effectklasse": "",
       "aanname_faalmodel": "",
-      "aging_distribution": "weibull_2p",
-      "beta_jaar": 1.0,
+      "aging_distribution": "normal",
+      "beta_jaar": 0.0,
       "cost_cm_eur": 25000.0,
       "downtime_per_failure": {
         "unit": "uur",
@@ -2364,7 +2365,7 @@
       "notes": "",
       "p_ongewenste_gebeurtenis": 1.0,
       "pbs_id": "06H-350.3.12.2",
-      "repair_quality": 1.0,
+      "repair_quality": 0.0,
       "sigma_jaar": 4.6875
     },
     "06H-350.3.12.2.1.A.2": {
@@ -2390,7 +2391,7 @@
       "notes": "",
       "p_ongewenste_gebeurtenis": 1.0,
       "pbs_id": "06H-350.3.12.2",
-      "repair_quality": 1.0,
+      "repair_quality": 0.0,
       "sigma_jaar": 0.0
     },
     "06H-350.3.13.4.1.A.1": {
@@ -2398,8 +2399,8 @@
       "aanname_downtime": "",
       "aanname_effectklasse": "",
       "aanname_faalmodel": "",
-      "aging_distribution": "weibull_2p",
-      "beta_jaar": 1.0,
+      "aging_distribution": "normal",
+      "beta_jaar": 0.0,
       "cost_cm_eur": 1000.0,
       "downtime_per_failure": {
         "unit": "uur",
@@ -2416,7 +2417,7 @@
       "notes": "",
       "p_ongewenste_gebeurtenis": 1.0,
       "pbs_id": "06H-350.3.13.4",
-      "repair_quality": 1.0,
+      "repair_quality": 0.0,
       "sigma_jaar": 1.8
     },
     "06H-350.3.14.3.1.A.1": {
@@ -2424,8 +2425,8 @@
       "aanname_downtime": "",
       "aanname_effectklasse": "",
       "aanname_faalmodel": "",
-      "aging_distribution": "weibull_2p",
-      "beta_jaar": 1.0,
+      "aging_distribution": "normal",
+      "beta_jaar": 0.0,
       "cost_cm_eur": 5000.0,
       "downtime_per_failure": {
         "unit": "uur",
@@ -2442,7 +2443,7 @@
       "notes": "",
       "p_ongewenste_gebeurtenis": 1.0,
       "pbs_id": "06H-350.3.14.3",
-      "repair_quality": 1.0,
+      "repair_quality": 0.0,
       "sigma_jaar": 2.25
     },
     "06H-350.3.14.4.1.A.1": {
@@ -2450,8 +2451,8 @@
       "aanname_downtime": "",
       "aanname_effectklasse": "",
       "aanname_faalmodel": "",
-      "aging_distribution": "weibull_2p",
-      "beta_jaar": 1.0,
+      "aging_distribution": "normal",
+      "beta_jaar": 0.0,
       "cost_cm_eur": 7500.0,
       "downtime_per_failure": {
         "unit": "uur",
@@ -2468,7 +2469,7 @@
       "notes": "",
       "p_ongewenste_gebeurtenis": 1.0,
       "pbs_id": "06H-350.3.14.4",
-      "repair_quality": 1.0,
+      "repair_quality": 0.0,
       "sigma_jaar": 1.8
     },
     "06H-350.3.15.4.1.A.1": {
@@ -2476,8 +2477,8 @@
       "aanname_downtime": "",
       "aanname_effectklasse": "",
       "aanname_faalmodel": "",
-      "aging_distribution": "weibull_2p",
-      "beta_jaar": 1.0,
+      "aging_distribution": "normal",
+      "beta_jaar": 0.0,
       "cost_cm_eur": 2600.0,
       "downtime_per_failure": {
         "unit": "uur",
@@ -2494,7 +2495,7 @@
       "notes": "",
       "p_ongewenste_gebeurtenis": 1.0,
       "pbs_id": "06H-350.3.15.4",
-      "repair_quality": 1.0,
+      "repair_quality": 0.0,
       "sigma_jaar": 1.8
     },
     "06H-350.3.15.4.1.A.2": {
@@ -2502,8 +2503,8 @@
       "aanname_downtime": "",
       "aanname_effectklasse": "",
       "aanname_faalmodel": "",
-      "aging_distribution": "weibull_2p",
-      "beta_jaar": 1.0,
+      "aging_distribution": "normal",
+      "beta_jaar": 0.0,
       "cost_cm_eur": 1300.0,
       "downtime_per_failure": {
         "unit": "uur",
@@ -2520,7 +2521,7 @@
       "notes": "",
       "p_ongewenste_gebeurtenis": 1.0,
       "pbs_id": "06H-350.3.15.4",
-      "repair_quality": 1.0,
+      "repair_quality": 0.0,
       "sigma_jaar": 0.6
     },
     "06H-350.3.16.1.1.A.2": {
@@ -2528,8 +2529,8 @@
       "aanname_downtime": "",
       "aanname_effectklasse": "",
       "aanname_faalmodel": "",
-      "aging_distribution": "weibull_2p",
-      "beta_jaar": 1.0,
+      "aging_distribution": "normal",
+      "beta_jaar": 0.0,
       "cost_cm_eur": 250.0,
       "downtime_per_failure": {
         "unit": "uur",
@@ -2546,7 +2547,7 @@
       "notes": "",
       "p_ongewenste_gebeurtenis": 1.0,
       "pbs_id": "06H-350.3.16.1",
-      "repair_quality": 1.0,
+      "repair_quality": 0.0,
       "sigma_jaar": 4.2
     },
     "06H-350.3.16.2.1.A.1": {
@@ -2554,8 +2555,8 @@
       "aanname_downtime": "",
       "aanname_effectklasse": "",
       "aanname_faalmodel": "",
-      "aging_distribution": "weibull_2p",
-      "beta_jaar": 1.0,
+      "aging_distribution": "normal",
+      "beta_jaar": 0.0,
       "cost_cm_eur": 250.0,
       "downtime_per_failure": {
         "unit": "uur",
@@ -2572,7 +2573,7 @@
       "notes": "",
       "p_ongewenste_gebeurtenis": 1.0,
       "pbs_id": "06H-350.3.16.2",
-      "repair_quality": 1.0,
+      "repair_quality": 0.0,
       "sigma_jaar": 0.9
     },
     "06H-350.3.16.3.1.A.1": {
@@ -2598,7 +2599,7 @@
       "notes": "",
       "p_ongewenste_gebeurtenis": 1.0,
       "pbs_id": "06H-350.3.16.3",
-      "repair_quality": 1.0,
+      "repair_quality": 0.0,
       "sigma_jaar": 0.0
     },
     "06H-350.3.17.8.1.A.1": {
@@ -2624,7 +2625,7 @@
       "notes": "",
       "p_ongewenste_gebeurtenis": 1.0,
       "pbs_id": "06H-350.3.17.8",
-      "repair_quality": 1.0,
+      "repair_quality": 0.0,
       "sigma_jaar": 0.0
     },
     "06H-350.3.17.8.1.A.2": {
@@ -2632,8 +2633,8 @@
       "aanname_downtime": "",
       "aanname_effectklasse": "",
       "aanname_faalmodel": "",
-      "aging_distribution": "weibull_2p",
-      "beta_jaar": 1.0,
+      "aging_distribution": "normal",
+      "beta_jaar": 0.0,
       "cost_cm_eur": 30000.0,
       "downtime_per_failure": {
         "unit": "uur",
@@ -2650,7 +2651,7 @@
       "notes": "",
       "p_ongewenste_gebeurtenis": 1.0,
       "pbs_id": "06H-350.3.17.8",
-      "repair_quality": 1.0,
+      "repair_quality": 0.0,
       "sigma_jaar": 4.6875
     },
     "06H-350.3.18.5.1.1.A.1": {
@@ -2658,8 +2659,8 @@
       "aanname_downtime": "",
       "aanname_effectklasse": "",
       "aanname_faalmodel": "",
-      "aging_distribution": "weibull_2p",
-      "beta_jaar": 1.0,
+      "aging_distribution": "normal",
+      "beta_jaar": 0.0,
       "cost_cm_eur": 1000.0,
       "downtime_per_failure": {
         "unit": "uur",
@@ -2676,7 +2677,7 @@
       "notes": "",
       "p_ongewenste_gebeurtenis": 1.0,
       "pbs_id": "06H-350.3.18.5.1",
-      "repair_quality": 1.0,
+      "repair_quality": 0.0,
       "sigma_jaar": 3.75
     },
     "06H-350.3.19.4.1.A.1": {
@@ -2684,8 +2685,8 @@
       "aanname_downtime": "",
       "aanname_effectklasse": "",
       "aanname_faalmodel": "",
-      "aging_distribution": "weibull_2p",
-      "beta_jaar": 1.0,
+      "aging_distribution": "normal",
+      "beta_jaar": 0.0,
       "cost_cm_eur": 500.0,
       "downtime_per_failure": {
         "unit": "uur",
@@ -2702,7 +2703,7 @@
       "notes": "",
       "p_ongewenste_gebeurtenis": 1.0,
       "pbs_id": "06H-350.3.19.4",
-      "repair_quality": 1.0,
+      "repair_quality": 0.0,
       "sigma_jaar": 1.95
     },
     "06H-350.3.19.4.1.A.2": {
@@ -2710,8 +2711,8 @@
       "aanname_downtime": "",
       "aanname_effectklasse": "",
       "aanname_faalmodel": "",
-      "aging_distribution": "weibull_2p",
-      "beta_jaar": 1.0,
+      "aging_distribution": "normal",
+      "beta_jaar": 0.0,
       "cost_cm_eur": 500.0,
       "downtime_per_failure": {
         "unit": "uur",
@@ -2728,7 +2729,7 @@
       "notes": "",
       "p_ongewenste_gebeurtenis": 1.0,
       "pbs_id": "06H-350.3.19.4",
-      "repair_quality": 1.0,
+      "repair_quality": 0.0,
       "sigma_jaar": 4.8
     },
     "06H-350.3.2.1.A.1": {
@@ -2736,8 +2737,8 @@
       "aanname_downtime": "",
       "aanname_effectklasse": "",
       "aanname_faalmodel": "",
-      "aging_distribution": "weibull_2p",
-      "beta_jaar": 1.0,
+      "aging_distribution": "normal",
+      "beta_jaar": 0.0,
       "cost_cm_eur": 4500.0,
       "downtime_per_failure": {
         "unit": "uur",
@@ -2754,7 +2755,7 @@
       "notes": "",
       "p_ongewenste_gebeurtenis": 1.0,
       "pbs_id": "06H-350.3.2",
-      "repair_quality": 1.0,
+      "repair_quality": 0.0,
       "sigma_jaar": 3.75
     },
     "06H-350.3.20.3.1.A.1": {
@@ -2780,7 +2781,7 @@
       "notes": "",
       "p_ongewenste_gebeurtenis": 1.0,
       "pbs_id": "06H-350.3.20.3",
-      "repair_quality": 1.0,
+      "repair_quality": 0.0,
       "sigma_jaar": 0.0
     },
     "06H-350.3.20.3.1.A.2": {
@@ -2806,7 +2807,7 @@
       "notes": "",
       "p_ongewenste_gebeurtenis": 1.0,
       "pbs_id": "06H-350.3.20.3",
-      "repair_quality": 1.0,
+      "repair_quality": 0.0,
       "sigma_jaar": 0.0
     },
     "06H-350.3.20.3.2.A.1": {
@@ -2832,7 +2833,7 @@
       "notes": "",
       "p_ongewenste_gebeurtenis": 1.0,
       "pbs_id": "06H-350.3.20.3",
-      "repair_quality": 1.0,
+      "repair_quality": 0.0,
       "sigma_jaar": 0.0
     },
     "06H-350.3.21.8.1.A.1": {
@@ -2840,8 +2841,8 @@
       "aanname_downtime": "",
       "aanname_effectklasse": "",
       "aanname_faalmodel": "",
-      "aging_distribution": "weibull_2p",
-      "beta_jaar": 1.0,
+      "aging_distribution": "normal",
+      "beta_jaar": 0.0,
       "cost_cm_eur": 40000.0,
       "downtime_per_failure": {
         "unit": "uur",
@@ -2858,7 +2859,7 @@
       "notes": "",
       "p_ongewenste_gebeurtenis": 1.0,
       "pbs_id": "06H-350.3.21.8",
-      "repair_quality": 1.0,
+      "repair_quality": 0.0,
       "sigma_jaar": 1.5
     },
     "06H-350.3.21.8.1.A.2": {
@@ -2884,7 +2885,7 @@
       "notes": "",
       "p_ongewenste_gebeurtenis": 1.0,
       "pbs_id": "06H-350.3.21.8",
-      "repair_quality": 1.0,
+      "repair_quality": 0.0,
       "sigma_jaar": 0.0
     },
     "06H-350.3.23.2.1.A.1": {
@@ -2910,7 +2911,7 @@
       "notes": "",
       "p_ongewenste_gebeurtenis": 1.0,
       "pbs_id": "06H-350.3.23.2",
-      "repair_quality": 1.0,
+      "repair_quality": 0.0,
       "sigma_jaar": 0.0
     },
     "06H-350.3.23.2.1.A.2": {
@@ -2918,8 +2919,8 @@
       "aanname_downtime": "",
       "aanname_effectklasse": "",
       "aanname_faalmodel": "",
-      "aging_distribution": "weibull_2p",
-      "beta_jaar": 1.0,
+      "aging_distribution": "normal",
+      "beta_jaar": 0.0,
       "cost_cm_eur": 250.0,
       "downtime_per_failure": {
         "unit": "uur",
@@ -2936,7 +2937,7 @@
       "notes": "",
       "p_ongewenste_gebeurtenis": 1.0,
       "pbs_id": "06H-350.3.23.2",
-      "repair_quality": 1.0,
+      "repair_quality": 0.0,
       "sigma_jaar": 1.95
     },
     "06H-350.3.3.1.1.1.A.1": {
@@ -2962,7 +2963,7 @@
       "notes": "",
       "p_ongewenste_gebeurtenis": 1.0,
       "pbs_id": "06H-350.3.3.1.1",
-      "repair_quality": 1.0,
+      "repair_quality": 0.0,
       "sigma_jaar": 0.0
     },
     "06H-350.3.3.1.1.1.A.2": {
@@ -2970,8 +2971,8 @@
       "aanname_downtime": "",
       "aanname_effectklasse": "",
       "aanname_faalmodel": "",
-      "aging_distribution": "weibull_2p",
-      "beta_jaar": 1.0,
+      "aging_distribution": "normal",
+      "beta_jaar": 0.0,
       "cost_cm_eur": 1000.0,
       "downtime_per_failure": {
         "unit": "uur",
@@ -2988,7 +2989,7 @@
       "notes": "",
       "p_ongewenste_gebeurtenis": 1.0,
       "pbs_id": "06H-350.3.3.1.1",
-      "repair_quality": 1.0,
+      "repair_quality": 0.0,
       "sigma_jaar": 3.75
     },
     "06H-350.3.3.6.1.A.1": {
@@ -3014,7 +3015,7 @@
       "notes": "",
       "p_ongewenste_gebeurtenis": 1.0,
       "pbs_id": "06H-350.3.3.6",
-      "repair_quality": 1.0,
+      "repair_quality": 0.0,
       "sigma_jaar": 0.0
     },
     "06H-350.3.3.6.1.A.2": {
@@ -3022,8 +3023,8 @@
       "aanname_downtime": "",
       "aanname_effectklasse": "",
       "aanname_faalmodel": "",
-      "aging_distribution": "weibull_2p",
-      "beta_jaar": 1.0,
+      "aging_distribution": "normal",
+      "beta_jaar": 0.0,
       "cost_cm_eur": 2500.0,
       "downtime_per_failure": {
         "unit": "uur",
@@ -3040,7 +3041,7 @@
       "notes": "",
       "p_ongewenste_gebeurtenis": 1.0,
       "pbs_id": "06H-350.3.3.6",
-      "repair_quality": 1.0,
+      "repair_quality": 0.0,
       "sigma_jaar": 3.75
     },
     "06H-350.3.3.7.1.A.1": {
@@ -3048,8 +3049,8 @@
       "aanname_downtime": "",
       "aanname_effectklasse": "",
       "aanname_faalmodel": "",
-      "aging_distribution": "weibull_2p",
-      "beta_jaar": 1.0,
+      "aging_distribution": "normal",
+      "beta_jaar": 0.0,
       "cost_cm_eur": 1500.0,
       "downtime_per_failure": {
         "unit": "uur",
@@ -3066,7 +3067,7 @@
       "notes": "",
       "p_ongewenste_gebeurtenis": 1.0,
       "pbs_id": "06H-350.3.3.7",
-      "repair_quality": 1.0,
+      "repair_quality": 0.0,
       "sigma_jaar": 1.05
     },
     "06H-350.3.5.2.1.A.1": {
@@ -3092,7 +3093,7 @@
       "notes": "",
       "p_ongewenste_gebeurtenis": 1.0,
       "pbs_id": "06H-350.3.5.2",
-      "repair_quality": 1.0,
+      "repair_quality": 0.0,
       "sigma_jaar": 0.0
     },
     "06H-350.3.5.9.1.A.1": {
@@ -3100,8 +3101,8 @@
       "aanname_downtime": "",
       "aanname_effectklasse": "",
       "aanname_faalmodel": "",
-      "aging_distribution": "weibull_2p",
-      "beta_jaar": 1.0,
+      "aging_distribution": "normal",
+      "beta_jaar": 0.0,
       "cost_cm_eur": 30000.0,
       "downtime_per_failure": {
         "unit": "uur",
@@ -3118,7 +3119,7 @@
       "notes": "",
       "p_ongewenste_gebeurtenis": 1.0,
       "pbs_id": "06H-350.3.5.9",
-      "repair_quality": 1.0,
+      "repair_quality": 0.0,
       "sigma_jaar": 5.7
     },
     "06H-350.3.6.1.1.A.1": {
@@ -3126,8 +3127,8 @@
       "aanname_downtime": "",
       "aanname_effectklasse": "",
       "aanname_faalmodel": "",
-      "aging_distribution": "weibull_2p",
-      "beta_jaar": 1.0,
+      "aging_distribution": "normal",
+      "beta_jaar": 0.0,
       "cost_cm_eur": 1500.0,
       "downtime_per_failure": {
         "unit": "uur",
@@ -3144,7 +3145,7 @@
       "notes": "",
       "p_ongewenste_gebeurtenis": 1.0,
       "pbs_id": "06H-350.3.6.1",
-      "repair_quality": 1.0,
+      "repair_quality": 0.0,
       "sigma_jaar": 0.75
     },
     "06H-350.3.6.2.1.A.1": {
@@ -3170,7 +3171,7 @@
       "notes": "",
       "p_ongewenste_gebeurtenis": 1.0,
       "pbs_id": "06H-350.3.6.2",
-      "repair_quality": 1.0,
+      "repair_quality": 0.0,
       "sigma_jaar": 0.0
     },
     "06H-350.3.6.2.1.A.2": {
@@ -3178,8 +3179,8 @@
       "aanname_downtime": "",
       "aanname_effectklasse": "",
       "aanname_faalmodel": "",
-      "aging_distribution": "weibull_2p",
-      "beta_jaar": 1.0,
+      "aging_distribution": "normal",
+      "beta_jaar": 0.0,
       "cost_cm_eur": 12000.0,
       "downtime_per_failure": {
         "unit": "uur",
@@ -3196,7 +3197,7 @@
       "notes": "",
       "p_ongewenste_gebeurtenis": 1.0,
       "pbs_id": "06H-350.3.6.2",
-      "repair_quality": 1.0,
+      "repair_quality": 0.0,
       "sigma_jaar": 3.75
     },
     "06H-350.3.6.3.1.A.1": {
@@ -3204,8 +3205,8 @@
       "aanname_downtime": "",
       "aanname_effectklasse": "",
       "aanname_faalmodel": "",
-      "aging_distribution": "weibull_2p",
-      "beta_jaar": 1.0,
+      "aging_distribution": "normal",
+      "beta_jaar": 0.0,
       "cost_cm_eur": 3000.0,
       "downtime_per_failure": {
         "unit": "uur",
@@ -3222,7 +3223,7 @@
       "notes": "",
       "p_ongewenste_gebeurtenis": 1.0,
       "pbs_id": "06H-350.3.6.3",
-      "repair_quality": 1.0,
+      "repair_quality": 0.0,
       "sigma_jaar": 1.95
     },
     "06H-350.3.8.2.1.A.1": {
@@ -3230,8 +3231,8 @@
       "aanname_downtime": "",
       "aanname_effectklasse": "",
       "aanname_faalmodel": "",
-      "aging_distribution": "weibull_2p",
-      "beta_jaar": 1.0,
+      "aging_distribution": "normal",
+      "beta_jaar": 0.0,
       "cost_cm_eur": 500.0,
       "downtime_per_failure": {
         "unit": "uur",
@@ -3248,7 +3249,7 @@
       "notes": "",
       "p_ongewenste_gebeurtenis": 1.0,
       "pbs_id": "06H-350.3.8.2",
-      "repair_quality": 1.0,
+      "repair_quality": 0.0,
       "sigma_jaar": 2.25
     },
     "06H-350.3.8.3.1.A.1": {
@@ -3256,8 +3257,8 @@
       "aanname_downtime": "",
       "aanname_effectklasse": "",
       "aanname_faalmodel": "",
-      "aging_distribution": "weibull_2p",
-      "beta_jaar": 1.0,
+      "aging_distribution": "normal",
+      "beta_jaar": 0.0,
       "cost_cm_eur": 500.0,
       "downtime_per_failure": {
         "unit": "uur",
@@ -3274,7 +3275,7 @@
       "notes": "",
       "p_ongewenste_gebeurtenis": 1.0,
       "pbs_id": "06H-350.3.8.3",
-      "repair_quality": 1.0,
+      "repair_quality": 0.0,
       "sigma_jaar": 3.0
     },
     "06H-350.3.9.1.1.A.1": {
@@ -3282,8 +3283,8 @@
       "aanname_downtime": "",
       "aanname_effectklasse": "",
       "aanname_faalmodel": "",
-      "aging_distribution": "weibull_2p",
-      "beta_jaar": 1.0,
+      "aging_distribution": "normal",
+      "beta_jaar": 0.0,
       "cost_cm_eur": 5000.0,
       "downtime_per_failure": {
         "unit": "uur",
@@ -3300,7 +3301,7 @@
       "notes": "",
       "p_ongewenste_gebeurtenis": 1.0,
       "pbs_id": "06H-350.3.9.1",
-      "repair_quality": 1.0,
+      "repair_quality": 0.0,
       "sigma_jaar": 9.45
     },
     "06H-350.4.13.3.1.A.1": {
@@ -3308,8 +3309,8 @@
       "aanname_downtime": "",
       "aanname_effectklasse": "",
       "aanname_faalmodel": "",
-      "aging_distribution": "weibull_2p",
-      "beta_jaar": 1.0,
+      "aging_distribution": "normal",
+      "beta_jaar": 0.0,
       "cost_cm_eur": 20000.0,
       "downtime_per_failure": {
         "unit": "uur",
@@ -3326,7 +3327,7 @@
       "notes": "",
       "p_ongewenste_gebeurtenis": 1.0,
       "pbs_id": "06H-350.4.13.3",
-      "repair_quality": 1.0,
+      "repair_quality": 0.0,
       "sigma_jaar": 5.25
     },
     "06H-350.4.13.3.1.A.2": {
@@ -3352,7 +3353,7 @@
       "notes": "",
       "p_ongewenste_gebeurtenis": 1.0,
       "pbs_id": "06H-350.4.13.3",
-      "repair_quality": 1.0,
+      "repair_quality": 0.0,
       "sigma_jaar": 0.0
     },
     "06H-350.4.15.1.1.A.1": {
@@ -3360,8 +3361,8 @@
       "aanname_downtime": "",
       "aanname_effectklasse": "",
       "aanname_faalmodel": "",
-      "aging_distribution": "weibull_2p",
-      "beta_jaar": 1.0,
+      "aging_distribution": "normal",
+      "beta_jaar": 0.0,
       "cost_cm_eur": 25000.0,
       "downtime_per_failure": {
         "unit": "uur",
@@ -3378,7 +3379,7 @@
       "notes": "",
       "p_ongewenste_gebeurtenis": 1.0,
       "pbs_id": "06H-350.4.15.1",
-      "repair_quality": 1.0,
+      "repair_quality": 0.0,
       "sigma_jaar": 4.8
     },
     "06H-350.4.20.1.1.A.1": {
@@ -3386,8 +3387,8 @@
       "aanname_downtime": "",
       "aanname_effectklasse": "",
       "aanname_faalmodel": "",
-      "aging_distribution": "weibull_2p",
-      "beta_jaar": 1.0,
+      "aging_distribution": "normal",
+      "beta_jaar": 0.0,
       "cost_cm_eur": 250.0,
       "downtime_per_failure": {
         "unit": "uur",
@@ -3404,7 +3405,7 @@
       "notes": "",
       "p_ongewenste_gebeurtenis": 1.0,
       "pbs_id": "06H-350.4.20.1",
-      "repair_quality": 1.0,
+      "repair_quality": 0.0,
       "sigma_jaar": 0.9
     },
     "06H-350.4.3.2.1.A.1": {
@@ -3412,8 +3413,8 @@
       "aanname_downtime": "",
       "aanname_effectklasse": "",
       "aanname_faalmodel": "",
-      "aging_distribution": "weibull_2p",
-      "beta_jaar": 1.0,
+      "aging_distribution": "normal",
+      "beta_jaar": 0.0,
       "cost_cm_eur": 300.0,
       "downtime_per_failure": {
         "unit": "uur",
@@ -3430,7 +3431,7 @@
       "notes": "",
       "p_ongewenste_gebeurtenis": 1.0,
       "pbs_id": "06H-350.4.3.2",
-      "repair_quality": 1.0,
+      "repair_quality": 0.0,
       "sigma_jaar": 4.2
     },
     "06H-350.4.4.10.1.A.1": {
@@ -3438,8 +3439,8 @@
       "aanname_downtime": "",
       "aanname_effectklasse": "",
       "aanname_faalmodel": "",
-      "aging_distribution": "weibull_2p",
-      "beta_jaar": 1.0,
+      "aging_distribution": "normal",
+      "beta_jaar": 0.0,
       "cost_cm_eur": 1000.0,
       "downtime_per_failure": {
         "unit": "uur",
@@ -3456,7 +3457,7 @@
       "notes": "",
       "p_ongewenste_gebeurtenis": 1.0,
       "pbs_id": "06H-350.4.4.10",
-      "repair_quality": 1.0,
+      "repair_quality": 0.0,
       "sigma_jaar": 0.9375
     },
     "06H-350.4.4.9.1.A.1": {
@@ -3464,8 +3465,8 @@
       "aanname_downtime": "",
       "aanname_effectklasse": "",
       "aanname_faalmodel": "",
-      "aging_distribution": "weibull_2p",
-      "beta_jaar": 1.0,
+      "aging_distribution": "normal",
+      "beta_jaar": 0.0,
       "cost_cm_eur": 100.0,
       "downtime_per_failure": {
         "unit": "uur",
@@ -3482,7 +3483,7 @@
       "notes": "",
       "p_ongewenste_gebeurtenis": 1.0,
       "pbs_id": "06H-350.4.4.9",
-      "repair_quality": 1.0,
+      "repair_quality": 0.0,
       "sigma_jaar": 0.9375
     },
     "06H-350.4.5.1.1.A.1": {
@@ -3508,7 +3509,7 @@
       "notes": "",
       "p_ongewenste_gebeurtenis": 1.0,
       "pbs_id": "06H-350.4.5.1",
-      "repair_quality": 1.0,
+      "repair_quality": 0.0,
       "sigma_jaar": 0.0
     },
     "06H-350.4.5.1.1.A.2": {
@@ -3516,8 +3517,8 @@
       "aanname_downtime": "",
       "aanname_effectklasse": "",
       "aanname_faalmodel": "",
-      "aging_distribution": "weibull_2p",
-      "beta_jaar": 1.0,
+      "aging_distribution": "normal",
+      "beta_jaar": 0.0,
       "cost_cm_eur": 7000.0,
       "downtime_per_failure": {
         "unit": "uur",
@@ -3534,7 +3535,7 @@
       "notes": "",
       "p_ongewenste_gebeurtenis": 1.0,
       "pbs_id": "06H-350.4.5.1",
-      "repair_quality": 1.0,
+      "repair_quality": 0.0,
       "sigma_jaar": 4.65
     },
     "06H-350.5.4.2.1.A.1": {
@@ -3542,8 +3543,8 @@
       "aanname_downtime": "",
       "aanname_effectklasse": "",
       "aanname_faalmodel": "",
-      "aging_distribution": "weibull_2p",
-      "beta_jaar": 1.0,
+      "aging_distribution": "normal",
+      "beta_jaar": 0.0,
       "cost_cm_eur": 30000.0,
       "downtime_per_failure": {
         "unit": "uur",
@@ -3560,7 +3561,7 @@
       "notes": "",
       "p_ongewenste_gebeurtenis": 1.0,
       "pbs_id": "06H-350.5.4.2",
-      "repair_quality": 1.0,
+      "repair_quality": 0.0,
       "sigma_jaar": 7.5
     },
     "06H-350.5.4.2.1.A.2": {
@@ -3586,7 +3587,7 @@
       "notes": "",
       "p_ongewenste_gebeurtenis": 1.0,
       "pbs_id": "06H-350.5.4.2",
-      "repair_quality": 1.0,
+      "repair_quality": 0.0,
       "sigma_jaar": 0.0
     },
     "06H-350.5.7.1.1.A.1": {
@@ -3594,8 +3595,8 @@
       "aanname_downtime": "",
       "aanname_effectklasse": "",
       "aanname_faalmodel": "",
-      "aging_distribution": "weibull_2p",
-      "beta_jaar": 1.0,
+      "aging_distribution": "normal",
+      "beta_jaar": 0.0,
       "cost_cm_eur": 4000.0,
       "downtime_per_failure": {
         "unit": "uur",
@@ -3612,7 +3613,7 @@
       "notes": "",
       "p_ongewenste_gebeurtenis": 1.0,
       "pbs_id": "06H-350.5.7.1",
-      "repair_quality": 1.0,
+      "repair_quality": 0.0,
       "sigma_jaar": 18.75
     },
     "06H-350.5.7.2.1.A.1": {
@@ -3620,8 +3621,8 @@
       "aanname_downtime": "",
       "aanname_effectklasse": "",
       "aanname_faalmodel": "",
-      "aging_distribution": "weibull_2p",
-      "beta_jaar": 1.0,
+      "aging_distribution": "normal",
+      "beta_jaar": 0.0,
       "cost_cm_eur": 500.0,
       "downtime_per_failure": {
         "unit": "uur",
@@ -3638,7 +3639,7 @@
       "notes": "",
       "p_ongewenste_gebeurtenis": 1.0,
       "pbs_id": "06H-350.5.7.2",
-      "repair_quality": 1.0,
+      "repair_quality": 0.0,
       "sigma_jaar": 18.75
     },
     "06H-350.5.7.3.1.A.1": {
@@ -3646,8 +3647,8 @@
       "aanname_downtime": "",
       "aanname_effectklasse": "",
       "aanname_faalmodel": "",
-      "aging_distribution": "weibull_2p",
-      "beta_jaar": 1.0,
+      "aging_distribution": "normal",
+      "beta_jaar": 0.0,
       "cost_cm_eur": 750.0,
       "downtime_per_failure": {
         "unit": "uur",
@@ -3664,7 +3665,7 @@
       "notes": "",
       "p_ongewenste_gebeurtenis": 1.0,
       "pbs_id": "06H-350.5.7.3",
-      "repair_quality": 1.0,
+      "repair_quality": 0.0,
       "sigma_jaar": 3.75
     }
   },
@@ -6413,409 +6414,2434 @@
     },
     "isograph_causes": {
       "06H-350.1.1.1.1.1.A.1": {
-        "TotalCostErrPc": 0.201740355016702
+        "CTdt": 68.6599457000922,
+        "EffectCost": 0,
+        "EquipmentCost": 0,
+        "FmMttf": 219000,
+        "ITdt": 0,
+        "InitialAge": 8760,
+        "LaborCost": 0,
+        "OperationalCost": 42915,
+        "OutageFrequency": 1.95958904109589e-05,
+        "PTdt": 0,
+        "TotalCost": 42915,
+        "TotalCostErrPc": 0.201740355016702,
+        "TotalTdt": 68.6599457000922,
+        "TotalTdtErr": 0.20173556949675,
+        "TotalW": 8.583,
+        "TotalWErr": 0.201740355016702
       },
       "06H-350.1.1.1.1.1.A.2": {
-        "TotalCostErrPc": 0.060441023686461
+        "CTdt": 316.596362341926,
+        "EffectCost": 0,
+        "EquipmentCost": 0,
+        "FmMttf": 87600,
+        "ITdt": 0,
+        "InitialAge": 8760,
+        "LaborCost": 0,
+        "OperationalCost": 223240.713043592,
+        "OutageFrequency": 0.000194469863013699,
+        "PTdt": 0,
+        "TotalCost": 223240.713043592,
+        "TotalCostErrPc": 0.060441023686461,
+        "TotalTdt": 316.596362341926,
+        "TotalTdtErr": 0.0639377122035713,
+        "TotalW": 85.1778,
+        "TotalWErr": 0.0264014356339302
       },
       "06H-350.1.1.1.11.1.A.1": {
-        "TotalCostErrPc": 0.0659338177341146
+        "CTdt": 16.0544,
+        "EffectCost": 0,
+        "EquipmentCost": 0,
+        "FmMttf": 280320,
+        "ITdt": 0,
+        "InitialAge": 385440,
+        "LaborCost": 0,
+        "OperationalCost": 15051,
+        "OutageFrequency": 1.37141552511416e-05,
+        "PTdt": 0,
+        "TotalCost": 15051,
+        "TotalCostErrPc": 0.0659338177341146,
+        "TotalTdt": 16.0544,
+        "TotalTdtErr": 0.0659338177341122,
+        "TotalW": 6.0068,
+        "TotalWErr": 0.0220276995120202
       },
       "06H-350.1.1.1.13.1.A.1": {
-        "TotalCostErrPc": 0.43941158664898
+        "CTdt": 9.46662000125035,
+        "EffectCost": 0,
+        "EquipmentCost": 0,
+        "FmMttf": 438000,
+        "ITdt": 0,
+        "InitialAge": 385440,
+        "LaborCost": 0,
+        "OperationalCost": 43592.9130434972,
+        "OutageFrequency": 0.000345167579908676,
+        "PTdt": 0,
+        "TotalCost": 43592.9130434972,
+        "TotalCostErrPc": 0.43941158664898,
+        "TotalTdt": 9.46662000125035,
+        "TotalTdtErr": 0.462360548028411,
+        "TotalW": 151.1834,
+        "TotalWErr": 0.003620055619655
       },
       "06H-350.1.1.1.13.1.A.2": {
-        "TotalCostErrPc": 2.01448100379712
+        "CTdt": 3.9696,
+        "EffectCost": 0,
+        "EquipmentCost": 0,
+        "FmMttf": 876000,
+        "ITdt": 0,
+        "InitialAge": 0,
+        "LaborCost": 0,
+        "OperationalCost": 3721.5,
+        "OutageFrequency": 1.13287671232877e-06,
+        "PTdt": 0,
+        "TotalCost": 3721.5,
+        "TotalCostErrPc": 2.01448100379712,
+        "TotalTdt": 3.9696,
+        "TotalTdtErr": 2.01448100379712,
+        "TotalW": 0.4962,
+        "TotalWErr": 2.01448100379712
       },
       "06H-350.1.1.1.2.1.A.1": {
-        "TotalCostErrPc": 0.142933258150074
+        "CTdt": 103.772079020702,
+        "EffectCost": 0,
+        "EquipmentCost": 0,
+        "FmMttf": 175200,
+        "ITdt": 59.9999999993119,
+        "InitialAge": 8760,
+        "LaborCost": 0,
+        "OperationalCost": 64858,
+        "OutageFrequency": 0.00032185296803653,
+        "PTdt": 0,
+        "TotalCost": 64858,
+        "TotalCostErrPc": 0.142933258150074,
+        "TotalTdt": 163.772079020051,
+        "TotalTdtErr": 0.0905693913332146,
+        "TotalW": 140.9716,
+        "TotalWErr": 0.0131521033415306
       },
       "06H-350.1.1.1.3.1.A.1": {
-        "TotalCostErrPc": 0.015316048756722
+        "CTdt": 32.1888,
+        "EffectCost": 0,
+        "EquipmentCost": 0,
+        "FmMttf": 280320,
+        "ITdt": 16,
+        "InitialAge": 385440,
+        "LaborCost": 0,
+        "OperationalCost": 74430.4260869353,
+        "OutageFrequency": 0.000694090867579909,
+        "PTdt": 0,
+        "TotalCost": 74430.4260869353,
+        "TotalCostErrPc": 0.015316048756722,
+        "TotalTdt": 48.1888,
+        "TotalTdtErr": 0.0540720800524107,
+        "TotalW": 304.0118,
+        "TotalWErr": 0.00053568411082219
       },
       "06H-350.1.1.1.5.1.A.1": {
-        "TotalCostErrPc": 0.287760349385676
+        "CTdt": 19.5104,
+        "EffectCost": 0,
+        "EquipmentCost": 0,
+        "FmMttf": 219000,
+        "ITdt": 0,
+        "InitialAge": 385440,
+        "LaborCost": 0,
+        "OperationalCost": 14632.8,
+        "OutageFrequency": 5.56803652968037e-06,
+        "PTdt": 0,
+        "TotalCost": 14632.8,
+        "TotalCostErrPc": 0.287760349385676,
+        "TotalTdt": 19.5104,
+        "TotalTdtErr": 0.287760349385678,
+        "TotalW": 2.4388,
+        "TotalWErr": 0.287760349385678
       },
       "06H-350.1.1.1.9.1.A.1": {
-        "TotalCostErrPc": 0.297440232939887
+        "CTdt": 33.046,
+        "EffectCost": 0,
+        "EquipmentCost": 0,
+        "FmMttf": 438000,
+        "ITdt": 0,
+        "InitialAge": 385440,
+        "LaborCost": 0,
+        "OperationalCost": 16523,
+        "OutageFrequency": 0.000266034246575342,
+        "PTdt": 0,
+        "TotalCost": 16523,
+        "TotalCostErrPc": 0.297440232939887,
+        "TotalTdt": 33.046,
+        "TotalTdtErr": 0.297440232939888,
+        "TotalW": 116.523,
+        "TotalWErr": 0.0421771235624375
       },
       "06H-350.1.1.1.9.1.A.2": {
-        "TotalCostErrPc": 0.080095940238464
+        "CTdt": 15.9232,
+        "EffectCost": 0,
+        "EquipmentCost": 0,
+        "FmMttf": 306600,
+        "ITdt": 0,
+        "InitialAge": 385440,
+        "LaborCost": 0,
+        "OperationalCost": 4976,
+        "OutageFrequency": 0.000241987214611872,
+        "PTdt": 0,
+        "TotalCost": 4976,
+        "TotalCostErrPc": 0.080095940238464,
+        "TotalTdt": 15.9232,
+        "TotalTdtErr": 0.0800959402384641,
+        "TotalW": 105.9904,
+        "TotalWErr": 0.00150412640637758
       },
       "06H-350.1.1.1.9.1.A.3": {
-        "TotalCostErrPc": 0.23670873255141
+        "CTdt": 456.222862259166,
+        "EffectCost": 0,
+        "EquipmentCost": 0,
+        "FmMttf": 175200,
+        "ITdt": 0,
+        "InitialAge": 113880,
+        "LaborCost": 0,
+        "OperationalCost": 135790,
+        "OutageFrequency": 6.20045662100457e-06,
+        "PTdt": 0,
+        "TotalCost": 135790,
+        "TotalCostErrPc": 0.23670873255141,
+        "TotalTdt": 456.222862259166,
+        "TotalTdtErr": 0.236733062295847,
+        "TotalW": 2.7158,
+        "TotalWErr": 0.236708732551411
       },
       "06H-350.1.12.1.1.1.A.1": {
-        "TotalCostErrPc": 6.00788903633532
+        "CTdt": 2.6255584219303,
+        "EffectCost": 0,
+        "EquipmentCost": 0,
+        "FmMttf": 1095000,
+        "ITdt": 0,
+        "InitialAge": 385440,
+        "LaborCost": 0,
+        "OperationalCost": 5370.4,
+        "OutageFrequency": 1.25114155251142e-07,
+        "PTdt": 0,
+        "TotalCost": 5370.4,
+        "TotalCostErrPc": 6.00788903633532,
+        "TotalTdt": 2.6255584219303,
+        "TotalTdtErr": 6.01119879309982,
+        "TotalW": 0.0548,
+        "TotalWErr": 6.00788903633532
       },
       "06H-350.1.16.4.1.A.1": {
-        "TotalCostErrPc": 0.0728610140985862
+        "CTdt": 8.0368,
+        "EffectCost": 0,
+        "EquipmentCost": 0,
+        "FmMttf": 280320,
+        "ITdt": 0,
+        "InitialAge": 385440,
+        "LaborCost": 0,
+        "OperationalCost": 10046,
+        "OutageFrequency": 4.58721461187215e-06,
+        "PTdt": 0,
+        "TotalCost": 10046,
+        "TotalCostErrPc": 0.0728610140985862,
+        "TotalTdt": 8.0368,
+        "TotalTdtErr": 0.0728610140985886,
+        "TotalW": 2.0092,
+        "TotalWErr": 0.0728610140985886
       },
       "06H-350.1.18.1.1.1.A.1": {
-        "TotalCostErrPc": 0.143280422639728
+        "CTdt": 148.721343279768,
+        "EffectCost": 0,
+        "EquipmentCost": 0,
+        "FmMttf": 210240,
+        "ITdt": 0,
+        "InitialAge": 175200,
+        "LaborCost": 0,
+        "OperationalCost": 216895,
+        "OutageFrequency": 1.4148401826484e-05,
+        "PTdt": 0,
+        "TotalCost": 216895,
+        "TotalCostErrPc": 0.143280422639728,
+        "TotalTdt": 148.721343279768,
+        "TotalTdtErr": 0.143230375881709,
+        "TotalW": 6.197,
+        "TotalWErr": 0.143280422639728
       },
       "06H-350.1.18.1.4.1.A.1": {
-        "TotalCostErrPc": 0.471403014704857
+        "CTdt": 108.076980902611,
+        "EffectCost": 0,
+        "EquipmentCost": 0,
+        "FmMttf": 280320,
+        "ITdt": 0,
+        "InitialAge": 122640,
+        "LaborCost": 0,
+        "OperationalCost": 75060,
+        "OutageFrequency": 3.42739726027397e-06,
+        "PTdt": 0,
+        "TotalCost": 75060,
+        "TotalCostErrPc": 0.471403014704857,
+        "TotalTdt": 108.076980902611,
+        "TotalTdtErr": 0.471362336048679,
+        "TotalW": 1.5012,
+        "TotalWErr": 0.471403014704856
       },
       "06H-350.1.18.1.6.1.A.1": {
-        "TotalCostErrPc": 0.0984929887324038
+        "CTdt": 39.3778196749268,
+        "EffectCost": 0,
+        "EquipmentCost": 0,
+        "FmMttf": 551880,
+        "ITdt": 80,
+        "InitialAge": 122640,
+        "LaborCost": 0,
+        "OperationalCost": 357360,
+        "OutageFrequency": 0.000284354337899543,
+        "PTdt": 0,
+        "TotalCost": 357360,
+        "TotalCostErrPc": 0.0984929887324038,
+        "TotalTdt": 119.377819674927,
+        "TotalTdtErr": 0.424469826552167,
+        "TotalW": 124.5472,
+        "TotalWErr": 0.00565206675912064
       },
       "06H-350.1.18.1.6.1.A.2": {
-        "TotalCostErrPc": 1.23919097976599
+        "CTdt": 210.314762426558,
+        "EffectCost": 0,
+        "EquipmentCost": 0,
+        "FmMttf": 350400,
+        "ITdt": 0,
+        "InitialAge": 0,
+        "LaborCost": 0,
+        "OperationalCost": 250480,
+        "OutageFrequency": 2.85936073059361e-06,
+        "PTdt": 0,
+        "TotalCost": 250480,
+        "TotalCostErrPc": 1.23919097976599,
+        "TotalTdt": 210.314762426558,
+        "TotalTdtErr": 1.23903641739693,
+        "TotalW": 1.2524,
+        "TotalWErr": 1.23919097976599
       },
       "06H-350.1.18.1.8.1.A.1": {
-        "TotalCostErrPc": 0.19948906853503
+        "CTdt": 16.3392,
+        "EffectCost": 0,
+        "EquipmentCost": 0,
+        "FmMttf": 438000,
+        "ITdt": 0,
+        "InitialAge": 245280,
+        "LaborCost": 0,
+        "OperationalCost": 9190.8,
+        "OutageFrequency": 2.33150684931507e-06,
+        "PTdt": 0,
+        "TotalCost": 9190.8,
+        "TotalCostErrPc": 0.19948906853503,
+        "TotalTdt": 16.3392,
+        "TotalTdtErr": 0.199489068535031,
+        "TotalW": 1.0212,
+        "TotalWErr": 0.199489068535031
       },
       "06H-350.1.19.1.1.1.A.1": {
-        "TotalCostErrPc": 0.143645973646895
+        "CTdt": 148.804798602454,
+        "EffectCost": 0,
+        "EquipmentCost": 0,
+        "FmMttf": 210240,
+        "ITdt": 0,
+        "InitialAge": 175200,
+        "LaborCost": 0,
+        "OperationalCost": 217014,
+        "OutageFrequency": 0.000128311415525114,
+        "PTdt": 0,
+        "TotalCost": 217014,
+        "TotalCostErrPc": 0.143645973646895,
+        "TotalTdt": 148.804798602454,
+        "TotalTdtErr": 0.143630246837553,
+        "TotalW": 56.2004,
+        "TotalWErr": 0.0158479743026739
       },
       "06H-350.1.19.1.4.1.A.1": {
-        "TotalCostErrPc": 0.471403014704857
+        "CTdt": 108.076980902611,
+        "EffectCost": 0,
+        "EquipmentCost": 0,
+        "FmMttf": 280320,
+        "ITdt": 0,
+        "InitialAge": 122640,
+        "LaborCost": 0,
+        "OperationalCost": 75060,
+        "OutageFrequency": 3.42739726027397e-06,
+        "PTdt": 0,
+        "TotalCost": 75060,
+        "TotalCostErrPc": 0.471403014704857,
+        "TotalTdt": 108.076980902611,
+        "TotalTdtErr": 0.471362336048679,
+        "TotalW": 1.5012,
+        "TotalWErr": 0.471403014704856
       },
       "06H-350.1.19.1.6.1.A.1": {
-        "TotalCostErrPc": 0.00914942296219394
+        "CTdt": 0.0864,
+        "EffectCost": 0,
+        "EquipmentCost": 0,
+        "FmMttf": 1095000,
+        "ITdt": 32,
+        "InitialAge": 183960,
+        "LaborCost": 0,
+        "OperationalCost": 267560,
+        "OutageFrequency": 3.42493150684931e-05,
+        "PTdt": 0,
+        "TotalCost": 267560,
+        "TotalCostErrPc": 0.00914942296219394,
+        "TotalTdt": 32.0864,
+        "TotalTdtErr": 0.109864248877434,
+        "TotalW": 15.0012,
+        "TotalWErr": 0.00326376504252956
       },
       "06H-350.1.19.1.6.1.A.2": {
-        "TotalCostErrPc": 1.23919097976599
+        "CTdt": 210.314762426558,
+        "EffectCost": 0,
+        "EquipmentCost": 0,
+        "FmMttf": 350400,
+        "ITdt": 0,
+        "InitialAge": 0,
+        "LaborCost": 0,
+        "OperationalCost": 250480,
+        "OutageFrequency": 2.85936073059361e-06,
+        "PTdt": 0,
+        "TotalCost": 250480,
+        "TotalCostErrPc": 1.23919097976599,
+        "TotalTdt": 210.314762426558,
+        "TotalTdtErr": 1.23903641739693,
+        "TotalW": 1.2524,
+        "TotalWErr": 1.23919097976599
       },
       "06H-350.1.19.1.8.1.A.1": {
-        "TotalCostErrPc": 0.19948906853503
+        "CTdt": 16.3392,
+        "EffectCost": 0,
+        "EquipmentCost": 0,
+        "FmMttf": 438000,
+        "ITdt": 0,
+        "InitialAge": 245280,
+        "LaborCost": 0,
+        "OperationalCost": 9190.8,
+        "OutageFrequency": 2.33150684931507e-06,
+        "PTdt": 0,
+        "TotalCost": 9190.8,
+        "TotalCostErrPc": 0.19948906853503,
+        "TotalTdt": 16.3392,
+        "TotalTdtErr": 0.199489068535031,
+        "TotalW": 1.0212,
+        "TotalWErr": 0.199489068535031
       },
       "06H-350.1.2.1.1.1.A.1": {
-        "TotalCostErrPc": 0.0504726966022107
+        "CTdt": 223.785345726338,
+        "EffectCost": 0,
+        "EquipmentCost": 0,
+        "FmMttf": 175200,
+        "ITdt": 0,
+        "InitialAge": 394200,
+        "LaborCost": 0,
+        "OperationalCost": 49314.3260869281,
+        "OutageFrequency": 0.00017802100456621,
+        "PTdt": 0,
+        "TotalCost": 49314.3260869281,
+        "TotalCostErrPc": 0.0504726966022107,
+        "TotalTdt": 223.785345726338,
+        "TotalTdtErr": 0.0711844723600408,
+        "TotalW": 77.9732,
+        "TotalWErr": 0.0255372565828812
       },
       "06H-350.1.2.1.1.1.A.2": {
-        "TotalCostErrPc": 0.0633277242250176
+        "CTdt": 316.391196204546,
+        "EffectCost": 0,
+        "EquipmentCost": 0,
+        "FmMttf": 87600,
+        "ITdt": 0,
+        "InitialAge": 8760,
+        "LaborCost": 0,
+        "OperationalCost": 52732.5,
+        "OutageFrequency": 8.02625570776256e-05,
+        "PTdt": 0,
+        "TotalCost": 52732.5,
+        "TotalCostErrPc": 0.0633277242250176,
+        "TotalTdt": 316.391196204546,
+        "TotalTdtErr": 0.0633181932402293,
+        "TotalW": 35.155,
+        "TotalWErr": 0.0633277242250172
       },
       "06H-350.1.2.1.2.1.A.1": {
-        "TotalCostErrPc": 0.0129849389117735
+        "CTdt": 8.0408,
+        "EffectCost": 0,
+        "EquipmentCost": 0,
+        "FmMttf": 280320,
+        "ITdt": 0,
+        "InitialAge": 385440,
+        "LaborCost": 0,
+        "OperationalCost": 17363.1260869503,
+        "OutageFrequency": 0.000118744748858448,
+        "PTdt": 0,
+        "TotalCost": 17363.1260869503,
+        "TotalCostErrPc": 0.0129849389117735,
+        "TotalTdt": 8.0408,
+        "TotalTdtErr": 0.074771708139026,
+        "TotalW": 52.0102,
+        "TotalWErr": 0.00288993481474238
       },
       "06H-350.1.2.1.6.1.A.1": {
-        "TotalCostErrPc": 0.297440232939887
+        "CTdt": 33.046,
+        "EffectCost": 0,
+        "EquipmentCost": 0,
+        "FmMttf": 438000,
+        "ITdt": 0,
+        "InitialAge": 385440,
+        "LaborCost": 0,
+        "OperationalCost": 4130.75,
+        "OutageFrequency": 0.000266034246575342,
+        "PTdt": 0,
+        "TotalCost": 4130.75,
+        "TotalCostErrPc": 0.297440232939887,
+        "TotalTdt": 33.046,
+        "TotalTdtErr": 0.297440232939888,
+        "TotalW": 116.523,
+        "TotalWErr": 0.0421771235624375
       },
       "06H-350.1.2.1.6.1.A.2": {
-        "TotalCostErrPc": 0.237849886259696
+        "CTdt": 455.179682831677,
+        "EffectCost": 0,
+        "EquipmentCost": 0,
+        "FmMttf": 175200,
+        "ITdt": 800,
+        "InitialAge": 113880,
+        "LaborCost": 0,
+        "OperationalCost": 136490,
+        "OutageFrequency": 0.000234497260273973,
+        "PTdt": 0,
+        "TotalCost": 136490,
+        "TotalCostErrPc": 0.237849886259696,
+        "TotalTdt": 1255.17968283168,
+        "TotalTdtErr": 0.0868809461508981,
+        "TotalW": 102.7098,
+        "TotalWErr": 0.00632152549721234
       },
       "06H-350.1.20.1.1.A.1": {
-        "TotalCostErrPc": 5.99764922395053
+        "CTdt": 2.6159584219303,
+        "EffectCost": 0,
+        "EquipmentCost": 0,
+        "FmMttf": 1095000,
+        "ITdt": 0,
+        "InitialAge": 385440,
+        "LaborCost": 0,
+        "OperationalCost": 3822,
+        "OutageFrequency": 1.24657534246575e-07,
+        "PTdt": 0,
+        "TotalCost": 3822,
+        "TotalCostErrPc": 5.99764922395053,
+        "TotalTdt": 2.6159584219303,
+        "TotalTdtErr": 6.00090793357172,
+        "TotalW": 0.0546,
+        "TotalWErr": 5.99764922395053
       },
       "06H-350.1.20.13.1.A.1": {
-        "TotalCostErrPc": 0.391289038397322
+        "CTdt": 0,
+        "EffectCost": 0,
+        "EquipmentCost": 0,
+        "FmMttf": 551880,
+        "ITdt": 0,
+        "InitialAge": 385440,
+        "LaborCost": 0,
+        "OperationalCost": 7021.8,
+        "OutageFrequency": 5.34383561643836e-06,
+        "PTdt": 0,
+        "TotalCost": 7021.8,
+        "TotalCostErrPc": 0.391289038397322,
+        "TotalTdt": 0,
+        "TotalTdtErr": 0,
+        "TotalW": 2.3406,
+        "TotalWErr": 0.391289038397322
       },
       "06H-350.1.20.13.1.A.2": {
-        "TotalCostErrPc": 0.15127990074637
+        "CTdt": 17.184,
+        "EffectCost": 0,
+        "EquipmentCost": 0,
+        "FmMttf": 113880,
+        "ITdt": 0,
+        "InitialAge": 385440,
+        "LaborCost": 0,
+        "OperationalCost": 2148,
+        "OutageFrequency": 9.80821917808219e-06,
+        "PTdt": 0,
+        "TotalCost": 2148,
+        "TotalCostErrPc": 0.15127990074637,
+        "TotalTdt": 17.184,
+        "TotalTdtErr": 0.151279900746372,
+        "TotalW": 4.296,
+        "TotalWErr": 0.151279900746369
       },
       "06H-350.1.20.17.1.A.1": {
-        "TotalCostErrPc": 0
+        "CTdt": 0,
+        "EffectCost": 0,
+        "EquipmentCost": 0,
+        "FmMttf": 551880,
+        "ITdt": 0,
+        "InitialAge": 385440,
+        "LaborCost": 0,
+        "OperationalCost": 0,
+        "OutageFrequency": 2.29680365296804e-06,
+        "PTdt": 0,
+        "TotalCost": 0,
+        "TotalCostErrPc": 0,
+        "TotalTdt": 0,
+        "TotalTdtErr": 0,
+        "TotalW": 1.006,
+        "TotalWErr": 0.108563999534606
       },
       "06H-350.1.20.20.1.A.1": {
-        "TotalCostErrPc": 5.6486356058069
+        "CTdt": 404.40459051857,
+        "EffectCost": 0,
+        "EquipmentCost": 0,
+        "FmMttf": 1095000,
+        "ITdt": 0,
+        "InitialAge": 385440,
+        "LaborCost": 0,
+        "OperationalCost": 467284,
+        "OutageFrequency": 0.00024668904109589,
+        "PTdt": 0,
+        "TotalCost": 467284,
+        "TotalCostErrPc": 5.6486356058069,
+        "TotalTdt": 404.40459051857,
+        "TotalTdtErr": 6.3316580113184,
+        "TotalW": 108.0498,
+        "TotalWErr": 0.00284716879349748
       },
       "06H-350.1.20.20.1.A.2": {
-        "TotalCostErrPc": 11.5343639289966
+        "CTdt": 66.576,
+        "EffectCost": 0,
+        "EquipmentCost": 0,
+        "FmMttf": 35040000,
+        "ITdt": 0,
+        "InitialAge": 0,
+        "LaborCost": 0,
+        "OperationalCost": 30400,
+        "OutageFrequency": 3.4703196347032e-08,
+        "PTdt": 0,
+        "TotalCost": 30400,
+        "TotalCostErrPc": 11.5343639289966,
+        "TotalTdt": 66.576,
+        "TotalTdtErr": 11.5343639289966,
+        "TotalW": 0.0152,
+        "TotalWErr": 11.5343639289966
       },
       "06H-350.1.20.4.1.A.1": {
-        "TotalCostErrPc": 16.819021198294
+        "CTdt": 2.48014205235497,
+        "EffectCost": 0,
+        "EquipmentCost": 0,
+        "FmMttf": 1095000,
+        "ITdt": 0,
+        "InitialAge": 262800,
+        "LaborCost": 0,
+        "OperationalCost": 1827.8,
+        "OutageFrequency": 0.000228327397260274,
+        "PTdt": 0,
+        "TotalCost": 1827.8,
+        "TotalCostErrPc": 16.819021198294,
+        "TotalTdt": 2.48014205235497,
+        "TotalTdtErr": 16.8230567181856,
+        "TotalW": 100.0074,
+        "TotalWErr": 0.00124451547424252
       },
       "06H-350.1.20.5.1.A.1": {
-        "TotalCostErrPc": 11.7787669440592
+        "CTdt": 0,
+        "EffectCost": 0,
+        "EquipmentCost": 0,
+        "FmMttf": 1095000,
+        "ITdt": 0,
+        "InitialAge": 297840,
+        "LaborCost": 0,
+        "OperationalCost": 7.3,
+        "OutageFrequency": 0.000228343835616438,
+        "PTdt": 0,
+        "TotalCost": 7.3,
+        "TotalCostErrPc": 11.7787669440592,
+        "TotalTdt": 0,
+        "TotalTdtErr": 0,
+        "TotalW": 100.0146,
+        "TotalWErr": 0.00171944893439065
       },
       "06H-350.1.20.6.1.A.1": {
-        "TotalCostErrPc": 0.198371597323856
+        "CTdt": 199.9296,
+        "EffectCost": 0,
+        "EquipmentCost": 0,
+        "FmMttf": 8760,
+        "ITdt": 0,
+        "InitialAge": 0,
+        "LaborCost": 0,
+        "OperationalCost": 74973.6,
+        "OutageFrequency": 0.000114115068493151,
+        "PTdt": 0,
+        "TotalCost": 74973.6,
+        "TotalCostErrPc": 0.198371597323856,
+        "TotalTdt": 199.9296,
+        "TotalTdtErr": 0.198371597323854,
+        "TotalW": 49.9824,
+        "TotalWErr": 0.198371597323854
       },
       "06H-350.1.20.7.1.A.1": {
-        "TotalCostErrPc": 5.93082803574603
+        "CTdt": 3.8639584219303,
+        "EffectCost": 0,
+        "EquipmentCost": 0,
+        "FmMttf": 1095000,
+        "ITdt": 0,
+        "InitialAge": 385440,
+        "LaborCost": 0,
+        "OperationalCost": 4035,
+        "OutageFrequency": 1.22831050228311e-07,
+        "PTdt": 0,
+        "TotalCost": 4035,
+        "TotalCostErrPc": 5.93082803574603,
+        "TotalTdt": 3.8639584219303,
+        "TotalTdtErr": 5.9360553329758,
+        "TotalW": 0.0538,
+        "TotalWErr": 5.93082803574603
       },
       "06H-350.1.20.7.1.A.2": {
-        "TotalCostErrPc": 0.0867032609908231
+        "CTdt": 8.052,
+        "EffectCost": 0,
+        "EquipmentCost": 0,
+        "FmMttf": 280320,
+        "ITdt": 600,
+        "InitialAge": 385440,
+        "LaborCost": 0,
+        "OperationalCost": 15097.5,
+        "OutageFrequency": 0.00137445890410959,
+        "PTdt": 0,
+        "TotalCost": 15097.5,
+        "TotalCostErrPc": 0.0867032609908231,
+        "TotalTdt": 608.052,
+        "TotalTdtErr": 0.00114814959525315,
+        "TotalW": 602.013,
+        "TotalWErr": 0.000289916769007362
       },
       "06H-350.1.22.3.1.A.1": {
-        "TotalCostErrPc": 16.819021198294
+        "CTdt": 2.48014205235497,
+        "EffectCost": 0,
+        "EquipmentCost": 0,
+        "FmMttf": 1095000,
+        "ITdt": 0,
+        "InitialAge": 262800,
+        "LaborCost": 0,
+        "OperationalCost": 1827.8,
+        "OutageFrequency": 0.000228327397260274,
+        "PTdt": 0,
+        "TotalCost": 1827.8,
+        "TotalCostErrPc": 16.819021198294,
+        "TotalTdt": 2.48014205235497,
+        "TotalTdtErr": 16.8230567181856,
+        "TotalW": 100.0074,
+        "TotalWErr": 0.00124451547424252
       },
       "06H-350.1.22.4.1.A.1": {
-        "TotalCostErrPc": 16.819021198294
+        "CTdt": 2.48014205235497,
+        "EffectCost": 0,
+        "EquipmentCost": 0,
+        "FmMttf": 1095000,
+        "ITdt": 0,
+        "InitialAge": 262800,
+        "LaborCost": 0,
+        "OperationalCost": 1827.8,
+        "OutageFrequency": 0.000228327397260274,
+        "PTdt": 0,
+        "TotalCost": 1827.8,
+        "TotalCostErrPc": 16.819021198294,
+        "TotalTdt": 2.48014205235497,
+        "TotalTdtErr": 16.8230567181856,
+        "TotalW": 100.0074,
+        "TotalWErr": 0.00124451547424252
       },
       "06H-350.1.22.5.1.A.1": {
-        "TotalCostErrPc": 6.33896437204859
+        "CTdt": 0.3856,
+        "EffectCost": 0,
+        "EquipmentCost": 0,
+        "FmMttf": 1095000,
+        "ITdt": 0,
+        "InitialAge": 385440,
+        "LaborCost": 0,
+        "OperationalCost": 723,
+        "OutageFrequency": 2.97904109589041e-05,
+        "PTdt": 0,
+        "TotalCost": 723,
+        "TotalCostErrPc": 6.33896437204859,
+        "TotalTdt": 0.3856,
+        "TotalTdtErr": 6.33896437204859,
+        "TotalW": 13.0482,
+        "TotalWErr": 0.0234161097111274
       },
       "06H-350.1.22.6.1.A.1": {
-        "TotalCostErrPc": 0.0954714304572463
+        "CTdt": 0,
+        "EffectCost": 0,
+        "EquipmentCost": 0,
+        "FmMttf": 551880,
+        "ITdt": 0,
+        "InitialAge": 385440,
+        "LaborCost": 0,
+        "OperationalCost": 5017,
+        "OutageFrequency": 3.65374429223744e-05,
+        "PTdt": 0,
+        "TotalCost": 5017,
+        "TotalCostErrPc": 0.0954714304572463,
+        "TotalTdt": 0,
+        "TotalTdtErr": 0,
+        "TotalW": 16.0034,
+        "TotalWErr": 0.00598598006180027
       },
       "06H-350.1.22.8.1.A.1": {
-        "TotalCostErrPc": 5.85872270975788
+        "CTdt": 375.476538441507,
+        "EffectCost": 0,
+        "EquipmentCost": 0,
+        "FmMttf": 1095000,
+        "ITdt": 0,
+        "InitialAge": 385440,
+        "LaborCost": 0,
+        "OperationalCost": 432964,
+        "OutageFrequency": 1.83694063926941e-05,
+        "PTdt": 0,
+        "TotalCost": 432964,
+        "TotalCostErrPc": 5.85872270975788,
+        "TotalTdt": 375.476538441507,
+        "TotalTdtErr": 6.61279669777923,
+        "TotalW": 8.0458,
+        "TotalWErr": 0.0367449964817901
       },
       "06H-350.1.3.1.10.1.A.1": {
-        "TotalCostErrPc": 0.156945474474815
+        "CTdt": 97.7380428867953,
+        "EffectCost": 0,
+        "EquipmentCost": 0,
+        "FmMttf": 332880,
+        "ITdt": 0,
+        "InitialAge": 385440,
+        "LaborCost": 0,
+        "OperationalCost": 244348,
+        "OutageFrequency": 5.57872146118722e-05,
+        "PTdt": 0,
+        "TotalCost": 244348,
+        "TotalCostErrPc": 0.156945474474815,
+        "TotalTdt": 97.7380428867953,
+        "TotalTdtErr": 0.156967032046061,
+        "TotalW": 24.4348,
+        "TotalWErr": 0.156945474474813
       },
       "06H-350.1.3.1.11.1.A.1": {
-        "TotalCostErrPc": 0.0911474645629041
+        "CTdt": 4.0152,
+        "EffectCost": 0,
+        "EquipmentCost": 0,
+        "FmMttf": 551880,
+        "ITdt": 0,
+        "InitialAge": 385440,
+        "LaborCost": 0,
+        "OperationalCost": 40152,
+        "OutageFrequency": 4.79538812785388e-05,
+        "PTdt": 0,
+        "TotalCost": 40152,
+        "TotalCostErrPc": 0.0911474645629041,
+        "TotalTdt": 4.0152,
+        "TotalTdtErr": 0.0911474645629044,
+        "TotalW": 21.0038,
+        "TotalWErr": 0.00435606056660335
       },
       "06H-350.1.3.1.22.1.A.1": {
-        "TotalCostErrPc": 0.195861776594927
+        "CTdt": 38.3112,
+        "EffectCost": 0,
+        "EquipmentCost": 0,
+        "FmMttf": 332880,
+        "ITdt": 0,
+        "InitialAge": 385440,
+        "LaborCost": 0,
+        "OperationalCost": 95778,
+        "OutageFrequency": 5.29511415525114e-05,
+        "PTdt": 0,
+        "TotalCost": 95778,
+        "TotalCostErrPc": 0.195861776594927,
+        "TotalTdt": 38.3112,
+        "TotalTdtErr": 0.195861776594926,
+        "TotalW": 23.1926,
+        "TotalWErr": 0.0269615441113521
       },
       "06H-350.1.3.1.3.1.A.1": {
-        "TotalCostErrPc": 6.33896437204859
+        "CTdt": 0.1928,
+        "EffectCost": 0,
+        "EquipmentCost": 0,
+        "FmMttf": 1095000,
+        "ITdt": 0,
+        "InitialAge": 385440,
+        "LaborCost": 0,
+        "OperationalCost": 964,
+        "OutageFrequency": 2.97904109589041e-05,
+        "PTdt": 0,
+        "TotalCost": 964,
+        "TotalCostErrPc": 6.33896437204859,
+        "TotalTdt": 0.1928,
+        "TotalTdtErr": 6.33896437204859,
+        "TotalW": 13.0482,
+        "TotalWErr": 0.0234161097111274
       },
       "06H-350.1.6.1.1.A.1": {
-        "TotalCostErrPc": 5.93082803574603
+        "CTdt": 18.0143584219303,
+        "EffectCost": 0,
+        "EquipmentCost": 0,
+        "FmMttf": 1095000,
+        "ITdt": 0,
+        "InitialAge": 385440,
+        "LaborCost": 0,
+        "OperationalCost": 26900,
+        "OutageFrequency": 1.22831050228311e-07,
+        "PTdt": 0,
+        "TotalCost": 26900,
+        "TotalCostErrPc": 5.93082803574603,
+        "TotalTdt": 18.0143584219303,
+        "TotalTdtErr": 5.9409107700478,
+        "TotalW": 0.0538,
+        "TotalWErr": 5.93082803574603
       },
       "06H-350.1.6.1.1.A.2": {
-        "TotalCostErrPc": 1.40608091661197
+        "CTdt": 7.9424,
+        "EffectCost": 0,
+        "EquipmentCost": 0,
+        "FmMttf": 438000,
+        "ITdt": 0,
+        "InitialAge": 0,
+        "LaborCost": 0,
+        "OperationalCost": 14892,
+        "OutageFrequency": 2.26666666666667e-06,
+        "PTdt": 0,
+        "TotalCost": 14892,
+        "TotalCostErrPc": 1.40608091661197,
+        "TotalTdt": 7.9424,
+        "TotalTdtErr": 1.40608091661197,
+        "TotalW": 0.9928,
+        "TotalWErr": 1.40608091661197
       },
       "06H-350.1.6.3.1.A.1": {
-        "TotalCostErrPc": 0.00758456185547063
+        "CTdt": 15.984,
+        "EffectCost": 0,
+        "EquipmentCost": 0,
+        "FmMttf": 219000,
+        "ITdt": 1736,
+        "InitialAge": 0,
+        "LaborCost": 0,
+        "OperationalCost": 655995,
+        "OutageFrequency": 0.000995429223744292,
+        "PTdt": 0,
+        "TotalCost": 655995,
+        "TotalCostErrPc": 0.00758456185547063,
+        "TotalTdt": 1751.984,
+        "TotalTdtErr": 0.00908763487222546,
+        "TotalW": 435.998,
+        "TotalWErr": 0.00456463988761884
       },
       "06H-350.1.7.10.1.A.1": {
-        "TotalCostErrPc": 0.453139401563627
+        "CTdt": 6.208,
+        "EffectCost": 0,
+        "EquipmentCost": 0,
+        "FmMttf": 385440,
+        "ITdt": 0,
+        "InitialAge": 385440,
+        "LaborCost": 0,
+        "OperationalCost": 3880,
+        "OutageFrequency": 0.000158794520547945,
+        "PTdt": 0,
+        "TotalCost": 3880,
+        "TotalCostErrPc": 0.453139401563627,
+        "TotalTdt": 6.208,
+        "TotalTdtErr": 0.453139401563627,
+        "TotalW": 69.552,
+        "TotalWErr": 0.0101114612265084
       },
       "06H-350.1.7.5.1.A.1": {
-        "TotalCostErrPc": 0.129918628270243
+        "CTdt": 16.5096,
+        "EffectCost": 0,
+        "EquipmentCost": 0,
+        "FmMttf": 87600,
+        "ITdt": 0,
+        "InitialAge": 385440,
+        "LaborCost": 0,
+        "OperationalCost": 8254.8,
+        "OutageFrequency": 1.25643835616438e-05,
+        "PTdt": 0,
+        "TotalCost": 8254.8,
+        "TotalCostErrPc": 0.129918628270243,
+        "TotalTdt": 16.5096,
+        "TotalTdtErr": 0.129918628270248,
+        "TotalW": 5.5032,
+        "TotalWErr": 0.129918628270245
       },
       "06H-350.2.1.1.1.A.1": {
-        "TotalCostErrPc": 0.0656959665245505
+        "CTdt": 165.3856,
+        "EffectCost": 0,
+        "EquipmentCost": 0,
+        "FmMttf": 219000,
+        "ITdt": 0,
+        "InitialAge": 359160,
+        "LaborCost": 0,
+        "OperationalCost": 36384.9782608788,
+        "OutageFrequency": 0.000161354337899543,
+        "PTdt": 0,
+        "TotalCost": 36384.9782608788,
+        "TotalCostErrPc": 0.0656959665245505,
+        "TotalTdt": 165.3856,
+        "TotalTdtErr": 0.092500292700558,
+        "TotalW": 70.6732,
+        "TotalWErr": 0.0270580227166262
       },
       "06H-350.2.1.1.1.A.2": {
-        "TotalCostErrPc": 0.049612408770416
+        "CTdt": 371.100727610774,
+        "EffectCost": 0,
+        "EquipmentCost": 0,
+        "FmMttf": 87600,
+        "ITdt": 0,
+        "InitialAge": 70080,
+        "LaborCost": 0,
+        "OperationalCost": 72393.8782609064,
+        "OutageFrequency": 0.000208295890410959,
+        "PTdt": 0,
+        "TotalCost": 72393.8782609064,
+        "TotalCostErrPc": 0.049612408770416,
+        "TotalTdt": 371.100727610774,
+        "TotalTdtErr": 0.058063832666096,
+        "TotalW": 91.2336,
+        "TotalWErr": 0.0262449702796177
       },
       "06H-350.2.1.3.1.A.1": {
-        "TotalCostErrPc": 0.0157144656544203
+        "CTdt": 8.0376,
+        "EffectCost": 0,
+        "EquipmentCost": 0,
+        "FmMttf": 280320,
+        "ITdt": 0,
+        "InitialAge": 359160,
+        "LaborCost": 0,
+        "OperationalCost": 14101.0565217339,
+        "OutageFrequency": 0.000118742922374429,
+        "PTdt": 0,
+        "TotalCost": 14101.0565217339,
+        "TotalCostErrPc": 0.0157144656544203,
+        "TotalTdt": 8.0376,
+        "TotalTdtErr": 0.0735179882523318,
+        "TotalW": 52.0094,
+        "TotalWErr": 0.00284039126766812
       },
       "06H-350.2.1.7.1.1.A.1": {
-        "TotalCostErrPc": 0.316667473949415
+        "CTdt": 29.5244747797485,
+        "EffectCost": 0,
+        "EquipmentCost": 0,
+        "FmMttf": 438000,
+        "ITdt": 0,
+        "InitialAge": 359160,
+        "LaborCost": 0,
+        "OperationalCost": 3690.6,
+        "OutageFrequency": 0.000262014611872146,
+        "PTdt": 0,
+        "TotalCost": 3690.6,
+        "TotalCostErrPc": 0.316667473949415,
+        "TotalTdt": 29.5244747797485,
+        "TotalTdtErr": 0.316676470431244,
+        "TotalW": 114.7624,
+        "TotalWErr": 0.0407343512982553
       },
       "06H-350.2.1.7.1.1.A.2": {
-        "TotalCostErrPc": 0.286445954094822
+        "CTdt": 405.100585621305,
+        "EffectCost": 0,
+        "EquipmentCost": 0,
+        "FmMttf": 175200,
+        "ITdt": 800,
+        "InitialAge": 78840,
+        "LaborCost": 0,
+        "OperationalCost": 121610,
+        "OutageFrequency": 0.000233817808219178,
+        "PTdt": 0,
+        "TotalCost": 121610,
+        "TotalCostErrPc": 0.286445954094822,
+        "TotalTdt": 1205.1005856213,
+        "TotalTdtErr": 0.0970217310446732,
+        "TotalW": 102.4122,
+        "TotalWErr": 0.00680284037984581
       },
       "06H-350.2.11.1.1.A.1": {
-        "TotalCostErrPc": 0.101679861507633
+        "CTdt": 0,
+        "EffectCost": 0,
+        "EquipmentCost": 0,
+        "FmMttf": 551880,
+        "ITdt": 0,
+        "InitialAge": 385440,
+        "LaborCost": 0,
+        "OperationalCost": 5012,
+        "OutageFrequency": 6.84986301369863e-05,
+        "PTdt": 0,
+        "TotalCost": 5012,
+        "TotalCostErrPc": 0.101679861507633,
+        "TotalTdt": 0,
+        "TotalTdtErr": 0,
+        "TotalW": 30.0024,
+        "TotalWErr": 0.00339719133054739
       },
       "06H-350.2.12.2.1.A.1": {
-        "TotalCostErrPc": 0.254573871328878
+        "CTdt": 117.7248,
+        "EffectCost": 0,
+        "EquipmentCost": 0,
+        "FmMttf": 219000,
+        "ITdt": 20,
+        "InitialAge": 385440,
+        "LaborCost": 0,
+        "OperationalCost": 88483.2,
+        "OutageFrequency": 2.84305936073059e-05,
+        "PTdt": 0,
+        "TotalCost": 88483.2,
+        "TotalCostErrPc": 0.254573871328878,
+        "TotalTdt": 137.7248,
+        "TotalTdtErr": 0.245331749672907,
+        "TotalW": 12.4526,
+        "TotalWErr": 0.0565281316039585
       },
       "06H-350.2.14.2.1.A.1": {
-        "TotalCostErrPc": 0.0950772902399294
+        "CTdt": 3.9848,
+        "EffectCost": 0,
+        "EquipmentCost": 0,
+        "FmMttf": 280320,
+        "ITdt": 0,
+        "InitialAge": 262800,
+        "LaborCost": 0,
+        "OperationalCost": 996.2,
+        "OutageFrequency": 4.54885844748858e-06,
+        "PTdt": 0,
+        "TotalCost": 996.2,
+        "TotalCostErrPc": 0.0950772902399294,
+        "TotalTdt": 3.9848,
+        "TotalTdtErr": 0.0950772902399264,
+        "TotalW": 1.9924,
+        "TotalWErr": 0.0950772902399264
       },
       "06H-350.2.14.2.1.A.2": {
-        "TotalCostErrPc": 0.192814501053282
+        "CTdt": 15.4112,
+        "EffectCost": 0,
+        "EquipmentCost": 0,
+        "FmMttf": 332880,
+        "ITdt": 0,
+        "InitialAge": 385440,
+        "LaborCost": 0,
+        "OperationalCost": 7705.6,
+        "OutageFrequency": 4.39817351598174e-06,
+        "PTdt": 0,
+        "TotalCost": 7705.6,
+        "TotalCostErrPc": 0.192814501053282,
+        "TotalTdt": 15.4112,
+        "TotalTdtErr": 0.192814501053282,
+        "TotalW": 1.9264,
+        "TotalWErr": 0.192814501053282
       },
       "06H-350.2.15.1.1.A.1": {
-        "TotalCostErrPc": 0.461527612383462
+        "CTdt": 28.3632,
+        "EffectCost": 0,
+        "EquipmentCost": 0,
+        "FmMttf": 438000,
+        "ITdt": 0,
+        "InitialAge": 385440,
+        "LaborCost": 0,
+        "OperationalCost": 24817.8,
+        "OutageFrequency": 0.000345163926940639,
+        "PTdt": 0,
+        "TotalCost": 24817.8,
+        "TotalCostErrPc": 0.461527612383462,
+        "TotalTdt": 28.3632,
+        "TotalTdtErr": 0.461527612383462,
+        "TotalW": 151.1818,
+        "TotalWErr": 0.00360779758083315
       },
       "06H-350.2.2.1.1.A.1": {
-        "TotalCostErrPc": 0.095257583049475
+        "CTdt": 1064.76642815857,
+        "EffectCost": 0,
+        "EquipmentCost": 0,
+        "FmMttf": 547500,
+        "ITdt": 200,
+        "InitialAge": 385440,
+        "LaborCost": 0,
+        "OperationalCost": 70322,
+        "OutageFrequency": 0.000285398630136986,
+        "PTdt": 0,
+        "TotalCost": 70322,
+        "TotalCostErrPc": 0.095257583049475,
+        "TotalTdt": 1264.76642815857,
+        "TotalTdtErr": 0.0806773034751617,
+        "TotalW": 125.0046,
+        "TotalWErr": 0.000765537971371389
       },
       "06H-350.2.2.11.1.A.1": {
-        "TotalCostErrPc": 2.52831145750885
+        "CTdt": 17.1904,
+        "EffectCost": 0,
+        "EquipmentCost": 0,
+        "FmMttf": 1095000,
+        "ITdt": 0,
+        "InitialAge": 385440,
+        "LaborCost": 0,
+        "OperationalCost": 1902.95652173972,
+        "OutageFrequency": 0.000420215525114155,
+        "PTdt": 0,
+        "TotalCost": 1902.95652173972,
+        "TotalCostErrPc": 2.52831145750885,
+        "TotalTdt": 17.1904,
+        "TotalTdtErr": 5.89616026599964,
+        "TotalW": 184.0544,
+        "TotalWErr": 0.00174269736805184
       },
       "06H-350.2.2.14.1.A.1": {
-        "TotalCostErrPc": 0.0583265874273622
+        "CTdt": 293.0512,
+        "EffectCost": 0,
+        "EquipmentCost": 3763.5,
+        "FmMttf": 551880,
+        "ITdt": 1460,
+        "InitialAge": 385440,
+        "LaborCost": 0,
+        "OperationalCost": 181626.956521824,
+        "OutageFrequency": 0.000426948858447489,
+        "PTdt": 0,
+        "TotalCost": 235390.456521824,
+        "TotalCostErrPc": 0.0583265874273622,
+        "TotalTdt": 1753.0512,
+        "TotalTdtErr": 0.0148740263071895,
+        "TotalW": 187.0036,
+        "TotalWErr": 0.000477518637788994
       },
       "06H-350.2.2.15.1.A.1": {
-        "TotalCostErrPc": 0.254559732338973
+        "CTdt": 14.7008,
+        "EffectCost": 0,
+        "EquipmentCost": 0,
+        "FmMttf": 350400,
+        "ITdt": 0,
+        "InitialAge": 385440,
+        "LaborCost": 0,
+        "OperationalCost": 10274.9565217326,
+        "OutageFrequency": 0.000346661187214612,
+        "PTdt": 0,
+        "TotalCost": 10274.9565217326,
+        "TotalCostErrPc": 0.254559732338973,
+        "TotalTdt": 14.7008,
+        "TotalTdtErr": 0.284674595338113,
+        "TotalW": 151.8376,
+        "TotalWErr": 0.00344524700332332
       },
       "06H-350.2.2.15.2.A.1": {
-        "TotalCostErrPc": 0.260929645419959
+        "CTdt": 11.0256,
+        "EffectCost": 0,
+        "EquipmentCost": 0,
+        "FmMttf": 350400,
+        "ITdt": 0,
+        "InitialAge": 385440,
+        "LaborCost": 0,
+        "OperationalCost": 8437.35652173342,
+        "OutageFrequency": 0.000346661187214612,
+        "PTdt": 0,
+        "TotalCost": 13031.3565217334,
+        "TotalCostErrPc": 0.260929645419959,
+        "TotalTdt": 11.0256,
+        "TotalTdtErr": 0.284674595338113,
+        "TotalW": 151.8376,
+        "TotalWErr": 0.00344524700332332
       },
       "06H-350.2.2.22.1.A.1": {
-        "TotalCostErrPc": 1.93848273454942
+        "CTdt": 974.991358588722,
+        "EffectCost": 0,
+        "EquipmentCost": 0,
+        "FmMttf": 876000,
+        "ITdt": 0,
+        "InitialAge": 385440,
+        "LaborCost": 0,
+        "OperationalCost": 51756.9565217207,
+        "OutageFrequency": 0.00034323698630137,
+        "PTdt": 0,
+        "TotalCost": 51756.9565217207,
+        "TotalCostErrPc": 1.93848273454942,
+        "TotalTdt": 974.991358588722,
+        "TotalTdtErr": 1.99140443786402,
+        "TotalW": 150.3378,
+        "TotalWErr": 0.00444909027586593
       },
       "06H-350.2.2.23.1.A.1": {
-        "TotalCostErrPc": 0.122627587978121
+        "CTdt": 71.603766408264,
+        "EffectCost": 0,
+        "EquipmentCost": 0,
+        "FmMttf": 157680,
+        "ITdt": 0,
+        "InitialAge": 105120,
+        "LaborCost": 0,
+        "OperationalCost": 29836,
+        "OutageFrequency": 6.81187214611872e-06,
+        "PTdt": 0,
+        "TotalCost": 29836,
+        "TotalCostErrPc": 0.122627587978121,
+        "TotalTdt": 71.603766408264,
+        "TotalTdtErr": 0.122683934726868,
+        "TotalW": 2.9836,
+        "TotalWErr": 0.122627587978123
       },
       "06H-350.2.2.3.1.A.1": {
-        "TotalCostErrPc": 0.129549305527345
+        "CTdt": 44.072640784428,
+        "EffectCost": 0,
+        "EquipmentCost": 0,
+        "FmMttf": 87600,
+        "ITdt": 0,
+        "InitialAge": 385440,
+        "LaborCost": 0,
+        "OperationalCost": 8264.1,
+        "OutageFrequency": 1.25785388127854e-05,
+        "PTdt": 0,
+        "TotalCost": 8264.1,
+        "TotalCostErrPc": 0.129549305527345,
+        "TotalTdt": 44.072640784428,
+        "TotalTdtErr": 0.129535272527663,
+        "TotalW": 5.5094,
+        "TotalWErr": 0.129549305527344
       },
       "06H-350.2.2.9.1.A.1": {
-        "TotalCostErrPc": 0.454355156463913
+        "CTdt": 786.142471441865,
+        "EffectCost": 0,
+        "EquipmentCost": 0,
+        "FmMttf": 385440,
+        "ITdt": 0,
+        "InitialAge": 385440,
+        "LaborCost": 0,
+        "OperationalCost": 108416,
+        "OutageFrequency": 0.000158787671232877,
+        "PTdt": 0,
+        "TotalCost": 116161,
+        "TotalCostErrPc": 0.454355156463913,
+        "TotalTdt": 786.142471441865,
+        "TotalTdtErr": 0.454336685963239,
+        "TotalW": 69.549,
+        "TotalWErr": 0.0101180903015075
       },
       "06H-350.2.4.1.3.1.A.1": {
-        "TotalCostErrPc": 0.295972839404184
+        "CTdt": 10.9380211702671,
+        "EffectCost": 0,
+        "EquipmentCost": 0,
+        "FmMttf": 350400,
+        "ITdt": 0,
+        "InitialAge": 385440,
+        "LaborCost": 0,
+        "OperationalCost": 7292,
+        "OutageFrequency": 4.16255707762557e-06,
+        "PTdt": 0,
+        "TotalCost": 11850,
+        "TotalCostErrPc": 0.295972839404184,
+        "TotalTdt": 10.9380211702671,
+        "TotalTdtErr": 0.296077547443691,
+        "TotalW": 1.8232,
+        "TotalWErr": 0.295920121672897
       },
       "06H-350.2.4.1.3.1.A.2": {
-        "TotalCostErrPc": 0.62120116501023
+        "CTdt": 40.1312,
+        "EffectCost": 0,
+        "EquipmentCost": 12541,
+        "FmMttf": 87600,
+        "ITdt": 0,
+        "InitialAge": 0,
+        "LaborCost": 0,
+        "OperationalCost": 0,
+        "OutageFrequency": 1.14529680365297e-05,
+        "PTdt": 0,
+        "TotalCost": 12541,
+        "TotalCostErrPc": 0.62120116501023,
+        "TotalTdt": 40.1312,
+        "TotalTdtErr": 0.62120116501023,
+        "TotalW": 5.0164,
+        "TotalWErr": 0.62120116501023
       },
       "06H-350.2.6.1.1.A.1": {
-        "TotalCostErrPc": 0.460807004269297
+        "CTdt": 47.2201189433258,
+        "EffectCost": 0,
+        "EquipmentCost": 0,
+        "FmMttf": 438000,
+        "ITdt": 0,
+        "InitialAge": 385440,
+        "LaborCost": 0,
+        "OperationalCost": 35418,
+        "OutageFrequency": 0.000137398630136986,
+        "PTdt": 0,
+        "TotalCost": 35418,
+        "TotalCostErrPc": 0.460807004269297,
+        "TotalTdt": 47.2201189433258,
+        "TotalTdtErr": 0.460670536930219,
+        "TotalW": 60.1806,
+        "TotalWErr": 0.00903993561448326
       },
       "06H-350.2.6.1.1.A.2": {
-        "TotalCostErrPc": 0.279254350824089
+        "CTdt": 50.1196536829486,
+        "EffectCost": 0,
+        "EquipmentCost": 0,
+        "FmMttf": 17520,
+        "ITdt": 0,
+        "InitialAge": 0,
+        "LaborCost": 0,
+        "OperationalCost": 37590,
+        "OutageFrequency": 5.72146118721461e-05,
+        "PTdt": 0,
+        "TotalCost": 37590,
+        "TotalCostErrPc": 0.279254350824089,
+        "TotalTdt": 50.1196536829486,
+        "TotalTdtErr": 0.279249354464825,
+        "TotalW": 25.06,
+        "TotalWErr": 0.279254350824088
       },
       "06H-350.2.7.2.9.1.A.1": {
-        "TotalCostErrPc": 1.42247928692755
+        "CTdt": 155.996109733989,
+        "EffectCost": 0,
+        "EquipmentCost": 0,
+        "FmMttf": 788400,
+        "ITdt": 0,
+        "InitialAge": 385440,
+        "LaborCost": 0,
+        "OperationalCost": 92900,
+        "OutageFrequency": 5.69155251141553e-05,
+        "PTdt": 0,
+        "TotalCost": 92900,
+        "TotalCostErrPc": 1.42247928692755,
+        "TotalTdt": 155.996109733989,
+        "TotalTdtErr": 1.42240435868191,
+        "TotalW": 24.929,
+        "TotalWErr": 0.0530098783567604
       },
       "06H-350.2.7.2.9.1.A.2": {
-        "TotalCostErrPc": 11.5343639289966
+        "CTdt": 66.576,
+        "EffectCost": 0,
+        "EquipmentCost": 0,
+        "FmMttf": 35040000,
+        "ITdt": 0,
+        "InitialAge": 0,
+        "LaborCost": 0,
+        "OperationalCost": 30400,
+        "OutageFrequency": 3.4703196347032e-08,
+        "PTdt": 0,
+        "TotalCost": 30400,
+        "TotalCostErrPc": 11.5343639289966,
+        "TotalTdt": 66.576,
+        "TotalTdtErr": 11.5343639289966,
+        "TotalW": 0.0152,
+        "TotalWErr": 11.5343639289966
       },
       "06H-350.2.8.8.1.A.1": {
-        "TotalCostErrPc": 2.63451518887596
+        "CTdt": 17.0337216561808,
+        "EffectCost": 0,
+        "EquipmentCost": 0,
+        "FmMttf": 1095000,
+        "ITdt": 0,
+        "InitialAge": 385440,
+        "LaborCost": 0,
+        "OperationalCost": 68440,
+        "OutageFrequency": 0.000246683561643836,
+        "PTdt": 0,
+        "TotalCost": 68440,
+        "TotalCostErrPc": 2.63451518887596,
+        "TotalTdt": 17.0337216561808,
+        "TotalTdtErr": 6.34220885402548,
+        "TotalW": 108.0474,
+        "TotalWErr": 0.00278128271379613
       },
       "06H-350.2.9.4.1.A.1": {
-        "TotalCostErrPc": 0.216833510655875
+        "CTdt": 1.128,
+        "EffectCost": 0,
+        "EquipmentCost": 0,
+        "FmMttf": 1095000,
+        "ITdt": 29,
+        "InitialAge": 385440,
+        "LaborCost": 0,
+        "OperationalCost": 8282,
+        "OutageFrequency": 0.00012339497716895,
+        "PTdt": 0,
+        "TotalCost": 8282,
+        "TotalCostErrPc": 0.216833510655875,
+        "TotalTdt": 30.128,
+        "TotalTdtErr": 0.238424739146569,
+        "TotalW": 54.047,
+        "TotalWErr": 0.00553781935246839
       },
       "06H-350.3.1.2.1.A.1": {
-        "TotalCostErrPc": 1.42985966637748
+        "CTdt": 17158.959631437,
+        "EffectCost": 0,
+        "EquipmentCost": 0,
+        "FmMttf": 438000,
+        "ITdt": 0,
+        "InitialAge": 0,
+        "LaborCost": 459.7,
+        "OperationalCost": 1379.1,
+        "OutageFrequency": 1.92479452054795e-05,
+        "PTdt": 0,
+        "TotalCost": 1838.8,
+        "TotalCostErrPc": 1.42985966637748,
+        "TotalTdt": 17158.959631437,
+        "TotalTdtErr": 1.78018486319518,
+        "TotalW": 8.4306,
+        "TotalWErr": 0.108607214665443
       },
       "06H-350.3.1.2.3.A.1": {
-        "TotalCostErrPc": 0.274167659844979
+        "CTdt": 19218.8461558861,
+        "EffectCost": 0,
+        "EquipmentCost": 0,
+        "FmMttf": 219000,
+        "ITdt": 0,
+        "InitialAge": 341640,
+        "LaborCost": 0,
+        "OperationalCost": 451720,
+        "OutageFrequency": 4.5841095890411e-05,
+        "PTdt": 0,
+        "TotalCost": 451720,
+        "TotalCostErrPc": 0.274167659844979,
+        "TotalTdt": 19218.8461558861,
+        "TotalTdtErr": 0.825534046262675,
+        "TotalW": 20.0784,
+        "TotalWErr": 0.041922090769143
       },
       "06H-350.3.11.1.1.A.1": {
-        "TotalCostErrPc": 0.197637906062701
+        "CTdt": 0,
+        "EffectCost": 0,
+        "EquipmentCost": 0,
+        "FmMttf": 306600,
+        "ITdt": 400,
+        "InitialAge": 183960,
+        "LaborCost": 0,
+        "OperationalCost": 88890,
+        "OutageFrequency": 0.000117706849315069,
+        "PTdt": 0,
+        "TotalCost": 88890,
+        "TotalCostErrPc": 0.197637906062701,
+        "TotalTdt": 400,
+        "TotalTdtErr": 0,
+        "TotalW": 51.5556,
+        "TotalWErr": 0.0136303590452914
       },
       "06H-350.3.11.2.1.A.1": {
-        "TotalCostErrPc": 0.365255906670009
+        "CTdt": 0,
+        "EffectCost": 0,
+        "EquipmentCost": 0,
+        "FmMttf": 273750,
+        "ITdt": 100,
+        "InitialAge": 113880,
+        "LaborCost": 0,
+        "OperationalCost": 58040,
+        "OutageFrequency": 0.00011762100456621,
+        "PTdt": 0,
+        "TotalCost": 58040,
+        "TotalCostErrPc": 0.365255906670009,
+        "TotalTdt": 100,
+        "TotalTdtErr": 0,
+        "TotalW": 51.518,
+        "TotalWErr": 0.0137165345595219
       },
       "06H-350.3.12.2.1.A.1": {
-        "TotalCostErrPc": 0.464026564941035
+        "CTdt": 0.0256,
+        "EffectCost": 0,
+        "EquipmentCost": 0,
+        "FmMttf": 273750,
+        "ITdt": 0,
+        "InitialAge": 113880,
+        "LaborCost": 0,
+        "OperationalCost": 38085,
+        "OutageFrequency": 0.000158729223744292,
+        "PTdt": 73.1136,
+        "TotalCost": 38085,
+        "TotalCostErrPc": 0.464026564941035,
+        "TotalTdt": 73.1392,
+        "TotalTdtErr": 0.464735003601418,
+        "TotalW": 69.5234,
+        "TotalWErr": 0.0101677718441876
       },
       "06H-350.3.12.2.1.A.2": {
-        "TotalCostErrPc": 0.139491022288
+        "CTdt": 299.287550079613,
+        "EffectCost": 0,
+        "EquipmentCost": 0,
+        "FmMttf": 4380,
+        "ITdt": 0,
+        "InitialAge": 0,
+        "LaborCost": 0,
+        "OperationalCost": 49881.4,
+        "OutageFrequency": 0.000227768949771689,
+        "PTdt": 0,
+        "TotalCost": 49881.4,
+        "TotalCostErrPc": 0.139491022288,
+        "TotalTdt": 299.287550079613,
+        "TotalTdtErr": 0.139484136744401,
+        "TotalW": 99.7628,
+        "TotalWErr": 0.139491022288
       },
       "06H-350.3.13.4.1.A.1": {
-        "TotalCostErrPc": 0.0781715556820234
+        "CTdt": 0,
+        "EffectCost": 0,
+        "EquipmentCost": 0,
+        "FmMttf": 105120,
+        "ITdt": 0,
+        "InitialAge": 52560,
+        "LaborCost": 0,
+        "OperationalCost": 17836.4,
+        "OutageFrequency": 0.000154877625570776,
+        "PTdt": 0,
+        "TotalCost": 17836.4,
+        "TotalCostErrPc": 0.0781715556820234,
+        "TotalTdt": 0,
+        "TotalTdtErr": 0,
+        "TotalW": 67.8364,
+        "TotalWErr": 0.0205538491984683
       },
       "06H-350.3.14.3.1.A.1": {
-        "TotalCostErrPc": 0.14994818557119
+        "CTdt": 15.244,
+        "EffectCost": 0,
+        "EquipmentCost": 0,
+        "FmMttf": 131400,
+        "ITdt": 0,
+        "InitialAge": 140160,
+        "LaborCost": 0,
+        "OperationalCost": 19055,
+        "OutageFrequency": 8.70091324200913e-06,
+        "PTdt": 0,
+        "TotalCost": 19055,
+        "TotalCostErrPc": 0.14994818557119,
+        "TotalTdt": 15.244,
+        "TotalTdtErr": 0.14994818557119,
+        "TotalW": 3.811,
+        "TotalWErr": 0.14994818557119
       },
       "06H-350.3.14.4.1.A.1": {
-        "TotalCostErrPc": 0.153193163297377
+        "CTdt": 36.7040762963716,
+        "EffectCost": 0,
+        "EquipmentCost": 0,
+        "FmMttf": 105120,
+        "ITdt": 0,
+        "InitialAge": 113880,
+        "LaborCost": 0,
+        "OperationalCost": 34411.5,
+        "OutageFrequency": 1.04753424657534e-05,
+        "PTdt": 0,
+        "TotalCost": 34411.5,
+        "TotalCostErrPc": 0.153193163297377,
+        "TotalTdt": 36.7040762963716,
+        "TotalTdtErr": 0.153207113485945,
+        "TotalW": 4.5882,
+        "TotalWErr": 0.153193163297375
       },
       "06H-350.3.15.4.1.A.1": {
-        "TotalCostErrPc": 0.152740640478756
+        "CTdt": 0,
+        "EffectCost": 0,
+        "EquipmentCost": 0,
+        "FmMttf": 105120,
+        "ITdt": 0,
+        "InitialAge": 113880,
+        "LaborCost": 0,
+        "OperationalCost": 11956.36,
+        "OutageFrequency": 0.000145202283105023,
+        "PTdt": 0,
+        "TotalCost": 11956.36,
+        "TotalCostErrPc": 0.152740640478756,
+        "TotalTdt": 0,
+        "TotalTdtErr": 0,
+        "TotalW": 63.5986,
+        "TotalWErr": 0.0110441599234098
       },
       "06H-350.3.15.4.1.A.2": {
-        "TotalCostErrPc": 0.0659385412050759
+        "CTdt": 0,
+        "EffectCost": 0,
+        "EquipmentCost": 0,
+        "FmMttf": 35040,
+        "ITdt": 0,
+        "InitialAge": 61320,
+        "LaborCost": 0,
+        "OperationalCost": 16863.86,
+        "OutageFrequency": 0.000164320091324201,
+        "PTdt": 0,
+        "TotalCost": 16863.86,
+        "TotalCostErrPc": 0.0659385412050759,
+        "TotalTdt": 0,
+        "TotalTdtErr": 0,
+        "TotalW": 71.9722,
+        "TotalWErr": 0.0118846991508304
       },
       "06H-350.3.16.1.1.A.2": {
-        "TotalCostErrPc": 0.0208495825889796
+        "CTdt": 0.4301,
+        "EffectCost": 0,
+        "EquipmentCost": 0,
+        "FmMttf": 245280,
+        "ITdt": 12.5,
+        "InitialAge": 385440,
+        "LaborCost": 0,
+        "OperationalCost": 5530.25,
+        "OutageFrequency": 0.000160093607305936,
+        "PTdt": 1.0352,
+        "TotalCost": 5530.25,
+        "TotalCostErrPc": 0.0208495825889796,
+        "TotalTdt": 13.9653,
+        "TotalTdtErr": 0.178209781765657,
+        "TotalW": 70.121,
+        "TotalWErr": 0.00657739644967978
       },
       "06H-350.3.16.2.1.A.1": {
-        "TotalCostErrPc": 0.0830670830331792
+        "CTdt": 75.2074635316923,
+        "EffectCost": 0,
+        "EquipmentCost": 0,
+        "FmMttf": 52560,
+        "ITdt": 0,
+        "InitialAge": 385440,
+        "LaborCost": 0,
+        "OperationalCost": 2212,
+        "OutageFrequency": 6.1296803652968e-05,
+        "PTdt": 0,
+        "TotalCost": 2212,
+        "TotalCostErrPc": 0.0830670830331792,
+        "TotalTdt": 75.2074635316923,
+        "TotalTdtErr": 0.0830677872393388,
+        "TotalW": 26.848,
+        "TotalWErr": 0.0273755047183284
       },
       "06H-350.3.16.3.1.A.1": {
-        "TotalCostErrPc": 0.621201165010229
+        "CTdt": 62.705,
+        "EffectCost": 0,
+        "EquipmentCost": 0,
+        "FmMttf": 87600,
+        "ITdt": 0,
+        "InitialAge": 0,
+        "LaborCost": 0,
+        "OperationalCost": 2508.2,
+        "OutageFrequency": 1.14529680365297e-05,
+        "PTdt": 0,
+        "TotalCost": 2508.2,
+        "TotalCostErrPc": 0.621201165010229,
+        "TotalTdt": 62.705,
+        "TotalTdtErr": 0.621201165010229,
+        "TotalW": 5.0164,
+        "TotalWErr": 0.62120116501023
       },
       "06H-350.3.17.8.1.A.1": {
-        "TotalCostErrPc": 0.200979686604229
+        "CTdt": 8433.32472503863,
+        "EffectCost": 0,
+        "EquipmentCost": 0,
+        "FmMttf": 8760,
+        "ITdt": 0,
+        "InitialAge": 0,
+        "LaborCost": 0,
+        "OperationalCost": 73560,
+        "OutageFrequency": 0.000111963470319635,
+        "PTdt": 0,
+        "TotalCost": 73560,
+        "TotalCostErrPc": 0.200979686604229,
+        "TotalTdt": 8433.32472503863,
+        "TotalTdtErr": 0.201028307681933,
+        "TotalW": 49.04,
+        "TotalWErr": 0.200979686604228
       },
       "06H-350.3.17.8.1.A.2": {
-        "TotalCostErrPc": 0.176056474741403
+        "CTdt": 1679.01606678308,
+        "EffectCost": 0,
+        "EquipmentCost": 0,
+        "FmMttf": 273750,
+        "ITdt": 200,
+        "InitialAge": 113880,
+        "LaborCost": 0,
+        "OperationalCost": 120516,
+        "OutageFrequency": 0.000158718721461187,
+        "PTdt": 0,
+        "TotalCost": 120516,
+        "TotalCostErrPc": 0.176056474741403,
+        "TotalTdt": 1879.01606678308,
+        "TotalTdtErr": 0.416083000367652,
+        "TotalW": 69.5188,
+        "TotalWErr": 0.0101723939985157
       },
       "06H-350.3.18.5.1.1.A.1": {
-        "TotalCostErrPc": 0.078612601774744
+        "CTdt": 4.8852,
+        "EffectCost": 0,
+        "EquipmentCost": 0,
+        "FmMttf": 219000,
+        "ITdt": 100,
+        "InitialAge": 385440,
+        "LaborCost": 0,
+        "OperationalCost": 8942.6,
+        "OutageFrequency": 0.00011973196347032,
+        "PTdt": 0,
+        "TotalCost": 8942.6,
+        "TotalCostErrPc": 0.078612601774744,
+        "TotalTdt": 104.8852,
+        "TotalTdtErr": 0.013405152540713,
+        "TotalW": 52.4426,
+        "TotalWErr": 0.013405152540713
       },
       "06H-350.3.19.4.1.A.1": {
-        "TotalCostErrPc": 0.15127990074637
+        "CTdt": 8.592,
+        "EffectCost": 0,
+        "EquipmentCost": 0,
+        "FmMttf": 113880,
+        "ITdt": 0,
+        "InitialAge": 385440,
+        "LaborCost": 0,
+        "OperationalCost": 2148,
+        "OutageFrequency": 9.80821917808219e-06,
+        "PTdt": 0,
+        "TotalCost": 2148,
+        "TotalCostErrPc": 0.15127990074637,
+        "TotalTdt": 8.592,
+        "TotalTdtErr": 0.151279900746369,
+        "TotalW": 4.296,
+        "TotalWErr": 0.151279900746369
       },
       "06H-350.3.19.4.1.A.2": {
-        "TotalCostErrPc": 0.0728610140985825
+        "CTdt": 4.0184,
+        "EffectCost": 0,
+        "EquipmentCost": 0,
+        "FmMttf": 280320,
+        "ITdt": 0,
+        "InitialAge": 385440,
+        "LaborCost": 0,
+        "OperationalCost": 1004.6,
+        "OutageFrequency": 4.58721461187215e-06,
+        "PTdt": 0,
+        "TotalCost": 1004.6,
+        "TotalCostErrPc": 0.0728610140985825,
+        "TotalTdt": 4.0184,
+        "TotalTdtErr": 0.0728610140985886,
+        "TotalW": 2.0092,
+        "TotalWErr": 0.0728610140985886
       },
       "06H-350.3.2.1.A.1": {
-        "TotalCostErrPc": 0.410318286953539
+        "CTdt": 147335.415242094,
+        "EffectCost": 0,
+        "EquipmentCost": 0,
+        "FmMttf": 219000,
+        "ITdt": 0,
+        "InitialAge": 385440,
+        "LaborCost": 0,
+        "OperationalCost": 7620.3,
+        "OutageFrequency": 4.42465753424658e-06,
+        "PTdt": 0,
+        "TotalCost": 7620.3,
+        "TotalCostErrPc": 0.410318286953539,
+        "TotalTdt": 147335.415242094,
+        "TotalTdtErr": 0.75744708755101,
+        "TotalW": 1.938,
+        "TotalWErr": 0.260826598680834
       },
       "06H-350.3.20.3.1.A.1": {
-        "TotalCostErrPc": 0.771718597808963
+        "CTdt": 0,
+        "EffectCost": 0,
+        "EquipmentCost": 0,
+        "FmMttf": 131400,
+        "ITdt": 0,
+        "InitialAge": 0,
+        "LaborCost": 0,
+        "OperationalCost": 4380.48,
+        "OutageFrequency": 7.69315068493151e-06,
+        "PTdt": 0,
+        "TotalCost": 4380.48,
+        "TotalCostErrPc": 0.771718597808963,
+        "TotalTdt": 0,
+        "TotalTdtErr": 0,
+        "TotalW": 3.3696,
+        "TotalWErr": 0.771718597808963
       },
       "06H-350.3.20.3.1.A.2": {
-        "TotalCostErrPc": 0.771718597808963
+        "CTdt": 0,
+        "EffectCost": 0,
+        "EquipmentCost": 0,
+        "FmMttf": 131400,
+        "ITdt": 0,
+        "InitialAge": 0,
+        "LaborCost": 0,
+        "OperationalCost": 4380.48,
+        "OutageFrequency": 7.69315068493151e-06,
+        "PTdt": 0,
+        "TotalCost": 4380.48,
+        "TotalCostErrPc": 0.771718597808963,
+        "TotalTdt": 0,
+        "TotalTdtErr": 0,
+        "TotalW": 3.3696,
+        "TotalWErr": 0.771718597808963
       },
       "06H-350.3.20.3.2.A.1": {
-        "TotalCostErrPc": 0.771718597808963
+        "CTdt": 0,
+        "EffectCost": 0,
+        "EquipmentCost": 0,
+        "FmMttf": 131400,
+        "ITdt": 0,
+        "InitialAge": 0,
+        "LaborCost": 0,
+        "OperationalCost": 3369.6,
+        "OutageFrequency": 7.69315068493151e-06,
+        "PTdt": 0,
+        "TotalCost": 3369.6,
+        "TotalCostErrPc": 0.771718597808963,
+        "TotalTdt": 0,
+        "TotalTdtErr": 0,
+        "TotalW": 3.3696,
+        "TotalWErr": 0.771718597808963
       },
       "06H-350.3.21.8.1.A.1": {
-        "TotalCostErrPc": 0.130996540159782
+        "CTdt": 0,
+        "EffectCost": 0,
+        "EquipmentCost": 0,
+        "FmMttf": 87600,
+        "ITdt": 0,
+        "InitialAge": 105120,
+        "LaborCost": 0,
+        "OperationalCost": 217104,
+        "OutageFrequency": 3.29397260273973e-05,
+        "PTdt": 0,
+        "TotalCost": 217104,
+        "TotalCostErrPc": 0.130996540159782,
+        "TotalTdt": 0,
+        "TotalTdtErr": 0,
+        "TotalW": 14.4276,
+        "TotalWErr": 0.049280325305053
       },
       "06H-350.3.21.8.1.A.2": {
-        "TotalCostErrPc": 0.695747587365379
+        "CTdt": 33.4249042684211,
+        "EffectCost": 0,
+        "EquipmentCost": 0,
+        "FmMttf": 105120,
+        "ITdt": 0,
+        "InitialAge": 0,
+        "LaborCost": 0,
+        "OperationalCost": 20891,
+        "OutageFrequency": 9.53926940639269e-06,
+        "PTdt": 0,
+        "TotalCost": 20891,
+        "TotalCostErrPc": 0.695747587365379,
+        "TotalTdt": 33.4249042684211,
+        "TotalTdtErr": 0.695753413384739,
+        "TotalW": 4.1782,
+        "TotalWErr": 0.695747587365379
       },
       "06H-350.3.23.2.1.A.1": {
-        "TotalCostErrPc": 0.613732095860149
+        "CTdt": 38705.6759787246,
+        "EffectCost": 0,
+        "EquipmentCost": 0,
+        "FmMttf": 87600,
+        "ITdt": 0,
+        "InitialAge": 0,
+        "LaborCost": 0,
+        "OperationalCost": 1112.25,
+        "OutageFrequency": 1.03694063926941e-05,
+        "PTdt": 0,
+        "TotalCost": 1112.25,
+        "TotalCostErrPc": 0.613732095860149,
+        "TotalTdt": 38705.6759787246,
+        "TotalTdtErr": 0.848499639484361,
+        "TotalW": 4.5418,
+        "TotalWErr": 0.607708745032992
       },
       "06H-350.3.23.2.1.A.2": {
-        "TotalCostErrPc": 0.102961049783132
+        "CTdt": 272585.614073135,
+        "EffectCost": 0,
+        "EquipmentCost": 0,
+        "FmMttf": 113880,
+        "ITdt": 0,
+        "InitialAge": 113880,
+        "LaborCost": 0,
+        "OperationalCost": 9146.55,
+        "OutageFrequency": 9.30872146118722e-05,
+        "PTdt": 0,
+        "TotalCost": 9146.55,
+        "TotalCostErrPc": 0.102961049783132,
+        "TotalTdt": 272585.614073135,
+        "TotalTdtErr": 0.146994597994154,
+        "TotalW": 40.7722,
+        "TotalWErr": 0.10352343956218
       },
       "06H-350.3.3.1.1.1.A.1": {
-        "TotalCostErrPc": 2.01448100379712
+        "CTdt": 1.9848,
+        "EffectCost": 0,
+        "EquipmentCost": 0,
+        "FmMttf": 876000,
+        "ITdt": 0,
+        "InitialAge": 0,
+        "LaborCost": 0,
+        "OperationalCost": 7443,
+        "OutageFrequency": 1.13287671232877e-06,
+        "PTdt": 0,
+        "TotalCost": 7443,
+        "TotalCostErrPc": 2.01448100379712,
+        "TotalTdt": 1.9848,
+        "TotalTdtErr": 2.01448100379712,
+        "TotalW": 0.4962,
+        "TotalWErr": 2.01448100379712
       },
       "06H-350.3.3.1.1.1.A.2": {
-        "TotalCostErrPc": 0.159195975278607
+        "CTdt": 28538.5032958846,
+        "EffectCost": 0,
+        "EquipmentCost": 0,
+        "FmMttf": 219000,
+        "ITdt": 0,
+        "InitialAge": 105120,
+        "LaborCost": 0,
+        "OperationalCost": 7109.8,
+        "OutageFrequency": 5.61118721461187e-05,
+        "PTdt": 0,
+        "TotalCost": 7109.8,
+        "TotalCostErrPc": 0.159195975278607,
+        "TotalTdt": 28538.5032958846,
+        "TotalTdtErr": 0.517123251495616,
+        "TotalW": 24.577,
+        "TotalWErr": 0.0596573971580011
       },
       "06H-350.3.3.6.1.A.1": {
-        "TotalCostErrPc": 0.139213299932577
+        "CTdt": 199.680007460729,
+        "EffectCost": 0,
+        "EquipmentCost": 0,
+        "FmMttf": 4380,
+        "ITdt": 0,
+        "InitialAge": 0,
+        "LaborCost": 0,
+        "OperationalCost": 49920.1,
+        "OutageFrequency": 0.000227945662100457,
+        "PTdt": 0,
+        "TotalCost": 49920.1,
+        "TotalCostErrPc": 0.139213299932577,
+        "TotalTdt": 199.680007460729,
+        "TotalTdtErr": 0.139212753993769,
+        "TotalW": 99.8402,
+        "TotalWErr": 0.139213299932577
       },
       "06H-350.3.3.6.1.A.2": {
-        "TotalCostErrPc": 0.149088292991817
+        "CTdt": 77.1777809235412,
+        "EffectCost": 0,
+        "EquipmentCost": 0,
+        "FmMttf": 219000,
+        "ITdt": 0,
+        "InitialAge": 105120,
+        "LaborCost": 0,
+        "OperationalCost": 48236.5,
+        "OutageFrequency": 6.45995433789954e-05,
+        "PTdt": 0,
+        "TotalCost": 48236.5,
+        "TotalCostErrPc": 0.149088292991817,
+        "TotalTdt": 77.1777809235412,
+        "TotalTdtErr": 0.14909886606367,
+        "TotalW": 28.2946,
+        "TotalWErr": 0.101666006162304
       },
       "06H-350.3.3.7.1.A.1": {
-        "TotalCostErrPc": 0.0436438088897596
+        "CTdt": 168.05960978821,
+        "EffectCost": 0,
+        "EquipmentCost": 0,
+        "FmMttf": 61320,
+        "ITdt": 0,
+        "InitialAge": 105120,
+        "LaborCost": 0,
+        "OperationalCost": 63022.2,
+        "OutageFrequency": 0.000230628767123288,
+        "PTdt": 0,
+        "TotalCost": 84029.9,
+        "TotalCostErrPc": 0.0436438088897596,
+        "TotalTdt": 168.05960978821,
+        "TotalTdtErr": 0.0436433049947206,
+        "TotalW": 101.0154,
+        "TotalWErr": 0.018152326768732
       },
       "06H-350.3.5.2.1.A.1": {
-        "TotalCostErrPc": 1.98942203197538
+        "CTdt": 1.9896,
+        "EffectCost": 0,
+        "EquipmentCost": 0,
+        "FmMttf": 876000,
+        "ITdt": 0,
+        "InitialAge": 0,
+        "LaborCost": 0,
+        "OperationalCost": 7958.4,
+        "OutageFrequency": 0.000473738356164383,
+        "PTdt": 0,
+        "TotalCost": 7958.4,
+        "TotalCostErrPc": 1.98942203197538,
+        "TotalTdt": 1.9896,
+        "TotalTdtErr": 1.98942203197538,
+        "TotalW": 207.4974,
+        "TotalWErr": 0.00476892008626492
       },
       "06H-350.3.5.9.1.A.1": {
-        "TotalCostErrPc": 0.192814501053281
+        "CTdt": 7.7056,
+        "EffectCost": 0,
+        "EquipmentCost": 0,
+        "FmMttf": 332880,
+        "ITdt": 0,
+        "InitialAge": 385440,
+        "LaborCost": 0,
+        "OperationalCost": 57792,
+        "OutageFrequency": 4.39817351598174e-06,
+        "PTdt": 0,
+        "TotalCost": 57792,
+        "TotalCostErrPc": 0.192814501053281,
+        "TotalTdt": 7.7056,
+        "TotalTdtErr": 0.192814501053282,
+        "TotalW": 1.9264,
+        "TotalWErr": 0.192814501053282
       },
       "06H-350.3.6.1.1.A.1": {
-        "TotalCostErrPc": 0.035467959216599
+        "CTdt": 59.1021355840232,
+        "EffectCost": 0,
+        "EquipmentCost": 0,
+        "FmMttf": 43800,
+        "ITdt": 0,
+        "InitialAge": 96360,
+        "LaborCost": 0,
+        "OperationalCost": 88653.6,
+        "OutageFrequency": 0.000269640182648402,
+        "PTdt": 0,
+        "TotalCost": 88653.6,
+        "TotalCostErrPc": 0.035467959216599,
+        "TotalTdt": 59.1021355840232,
+        "TotalTdtErr": 0.0354701421458723,
+        "TotalW": 118.1024,
+        "TotalWErr": 0.017749355752331
       },
       "06H-350.3.6.2.1.A.1": {
-        "TotalCostErrPc": 0.62120116501023
+        "CTdt": 40.1312,
+        "EffectCost": 0,
+        "EquipmentCost": 0,
+        "FmMttf": 87600,
+        "ITdt": 0,
+        "InitialAge": 0,
+        "LaborCost": 0,
+        "OperationalCost": 7524.6,
+        "OutageFrequency": 1.14529680365297e-05,
+        "PTdt": 0,
+        "TotalCost": 7524.6,
+        "TotalCostErrPc": 0.62120116501023,
+        "TotalTdt": 40.1312,
+        "TotalTdtErr": 0.62120116501023,
+        "TotalW": 5.0164,
+        "TotalWErr": 0.62120116501023
       },
       "06H-350.3.6.2.1.A.2": {
-        "TotalCostErrPc": 0.290381139112946
+        "CTdt": 1889.18203367734,
+        "EffectCost": 0,
+        "EquipmentCost": 0,
+        "FmMttf": 219000,
+        "ITdt": 0,
+        "InitialAge": 262800,
+        "LaborCost": 0,
+        "OperationalCost": 24386.8,
+        "OutageFrequency": 0.000159762557077626,
+        "PTdt": 15.6452543678306,
+        "TotalCost": 24386.8,
+        "TotalCostErrPc": 0.290381139112946,
+        "TotalTdt": 1904.82728804517,
+        "TotalTdtErr": 2.09473079218267,
+        "TotalW": 69.976,
+        "TotalWErr": 0.0130260180571037
       },
       "06H-350.3.6.3.1.A.1": {
-        "TotalCostErrPc": 0.125225180234679
+        "CTdt": 16.5096,
+        "EffectCost": 0,
+        "EquipmentCost": 0,
+        "FmMttf": 113880,
+        "ITdt": 0,
+        "InitialAge": 96360,
+        "LaborCost": 0,
+        "OperationalCost": 12382.2,
+        "OutageFrequency": 0.000144126484018265,
+        "PTdt": 0,
+        "TotalCost": 16509.6,
+        "TotalCostErrPc": 0.125225180234679,
+        "TotalTdt": 16.5096,
+        "TotalTdtErr": 0.12522518023468,
+        "TotalW": 63.1274,
+        "TotalWErr": 0.00818748132982276
       },
       "06H-350.3.8.2.1.A.1": {
-        "TotalCostErrPc": 0.0557542385582768
+        "CTdt": 151.140465126909,
+        "EffectCost": 0,
+        "EquipmentCost": 0,
+        "FmMttf": 131400,
+        "ITdt": 0,
+        "InitialAge": 385440,
+        "LaborCost": 0,
+        "OperationalCost": 18892.6,
+        "OutageFrequency": 0.000220970776255708,
+        "PTdt": 0,
+        "TotalCost": 18892.6,
+        "TotalCostErrPc": 0.0557542385582768,
+        "TotalTdt": 151.140465126909,
+        "TotalTdtErr": 0.0557459360317854,
+        "TotalW": 96.7852,
+        "TotalWErr": 0.0217666033109714
       },
       "06H-350.3.8.3.1.A.1": {
-        "TotalCostErrPc": 0.089512531667369
+        "CTdt": 0,
+        "EffectCost": 0,
+        "EquipmentCost": 0,
+        "FmMttf": 175200,
+        "ITdt": 0,
+        "InitialAge": 385440,
+        "LaborCost": 0,
+        "OperationalCost": 1507.1,
+        "OutageFrequency": 6.88173515981735e-06,
+        "PTdt": 0,
+        "TotalCost": 1507.1,
+        "TotalCostErrPc": 0.089512531667369,
+        "TotalTdt": 0,
+        "TotalTdtErr": 0,
+        "TotalW": 3.0142,
+        "TotalWErr": 0.0895125316673737
       },
       "06H-350.3.9.1.1.A.1": {
-        "TotalCostErrPc": 1.66297241376122
+        "CTdt": 5.48458977424417,
+        "EffectCost": 0,
+        "EquipmentCost": 0,
+        "FmMttf": 551880,
+        "ITdt": 0,
+        "InitialAge": 113880,
+        "LaborCost": 0,
+        "OperationalCost": 3428,
+        "OutageFrequency": 1.56529680365297e-06,
+        "PTdt": 0,
+        "TotalCost": 3428,
+        "TotalCostErrPc": 1.66297241376122,
+        "TotalTdt": 5.48458977424417,
+        "TotalTdtErr": 1.66288494938734,
+        "TotalW": 0.6856,
+        "TotalWErr": 1.66297241376122
       },
       "06H-350.4.13.3.1.A.1": {
-        "TotalCostErrPc": 0.182742015418461
+        "CTdt": 0,
+        "EffectCost": 0,
+        "EquipmentCost": 0,
+        "FmMttf": 306600,
+        "ITdt": 0,
+        "InitialAge": 35040,
+        "LaborCost": 0,
+        "OperationalCost": 20352,
+        "OutageFrequency": 2.32328767123288e-06,
+        "PTdt": 0,
+        "TotalCost": 20352,
+        "TotalCostErrPc": 0.182742015418461,
+        "TotalTdt": 0,
+        "TotalTdtErr": 0,
+        "TotalW": 1.0176,
+        "TotalWErr": 0.18274201541846
       },
       "06H-350.4.13.3.1.A.2": {
-        "TotalCostErrPc": 0.27854888262823
+        "CTdt": 0,
+        "EffectCost": 0,
+        "EquipmentCost": 0,
+        "FmMttf": 17520,
+        "ITdt": 0,
+        "InitialAge": 0,
+        "LaborCost": 0,
+        "OperationalCost": 37623.6,
+        "OutageFrequency": 5.72657534246575e-05,
+        "PTdt": 0,
+        "TotalCost": 37623.6,
+        "TotalCostErrPc": 0.27854888262823,
+        "TotalTdt": 0,
+        "TotalTdtErr": 0,
+        "TotalW": 25.0824,
+        "TotalWErr": 0.278548882628228
       },
       "06H-350.4.15.1.1.A.1": {
-        "TotalCostErrPc": 0.0289315125318421
+        "CTdt": 257.237365584075,
+        "EffectCost": 0,
+        "EquipmentCost": 0,
+        "FmMttf": 280320,
+        "ITdt": 200,
+        "InitialAge": 385440,
+        "LaborCost": 0,
+        "OperationalCost": 125245,
+        "OutageFrequency": 0.000162122831050228,
+        "PTdt": 0,
+        "TotalCost": 125245,
+        "TotalCostErrPc": 0.0289315125318421,
+        "TotalTdt": 457.237365584075,
+        "TotalTdtErr": 0.0402143977069802,
+        "TotalW": 71.0098,
+        "TotalWErr": 0.00204114208861231
       },
       "06H-350.4.20.1.1.A.1": {
-        "TotalCostErrPc": 0.0821168116315952
+        "CTdt": 0,
+        "EffectCost": 0,
+        "EquipmentCost": 0,
+        "FmMttf": 52560,
+        "ITdt": 0,
+        "InitialAge": 113880,
+        "LaborCost": 0,
+        "OperationalCost": 2213.1,
+        "OutageFrequency": 2.02109589041096e-05,
+        "PTdt": 0,
+        "TotalCost": 2213.1,
+        "TotalCostErrPc": 0.0821168116315952,
+        "TotalTdt": 0,
+        "TotalTdtErr": 0,
+        "TotalW": 8.8524,
+        "TotalWErr": 0.0821168116316008
       },
       "06H-350.4.3.2.1.A.1": {
-        "TotalCostErrPc": 0.183291515915241
+        "CTdt": 0,
+        "EffectCost": 0,
+        "EquipmentCost": 0,
+        "FmMttf": 245280,
+        "ITdt": 0,
+        "InitialAge": 262800,
+        "LaborCost": 0,
+        "OperationalCost": 623.64,
+        "OutageFrequency": 0.000139449315068493,
+        "PTdt": 0,
+        "TotalCost": 623.64,
+        "TotalCostErrPc": 0.183291515915241,
+        "TotalTdt": 0,
+        "TotalTdtErr": 0,
+        "TotalW": 61.0788,
+        "TotalWErr": 0.00623827585486214
       },
       "06H-350.4.4.10.1.A.1": {
-        "TotalCostErrPc": 0.308475696213752
+        "CTdt": 201414.533044155,
+        "EffectCost": 0,
+        "EquipmentCost": 0,
+        "FmMttf": 54750,
+        "ITdt": 0,
+        "InitialAge": 385440,
+        "LaborCost": 0,
+        "OperationalCost": 4598.8,
+        "OutageFrequency": 1.15164383561644e-05,
+        "PTdt": 0,
+        "TotalCost": 4598.8,
+        "TotalCostErrPc": 0.308475696213752,
+        "TotalTdt": 201414.533044155,
+        "TotalTdtErr": 0.359092276274592,
+        "TotalW": 5.0442,
+        "TotalWErr": 0.265066069339662
       },
       "06H-350.4.4.9.1.A.1": {
-        "TotalCostErrPc": 0.0408918776652582
+        "CTdt": 3154.17435918942,
+        "EffectCost": 0,
+        "EquipmentCost": 0,
+        "FmMttf": 54750,
+        "ITdt": 0,
+        "InitialAge": 78840,
+        "LaborCost": 0,
+        "OperationalCost": 1008.36,
+        "OutageFrequency": 4.37433789954338e-05,
+        "PTdt": 0,
+        "TotalCost": 1008.36,
+        "TotalCostErrPc": 0.0408918776652582,
+        "TotalTdt": 3154.17435918942,
+        "TotalTdtErr": 1.90806452529363,
+        "TotalW": 19.1596,
+        "TotalWErr": 0.0287894195892212
       },
       "06H-350.4.5.1.1.A.1": {
-        "TotalCostErrPc": 0.256093272567251
+        "CTdt": 180731.912629962,
+        "EffectCost": 0,
+        "EquipmentCost": 0,
+        "FmMttf": 17520,
+        "ITdt": 0,
+        "InitialAge": 0,
+        "LaborCost": 0,
+        "OperationalCost": 21399.9,
+        "OutageFrequency": 4.26945205479452e-05,
+        "PTdt": 0,
+        "TotalCost": 21399.9,
+        "TotalCostErrPc": 0.256093272567251,
+        "TotalTdt": 180731.912629962,
+        "TotalTdtErr": 0.29676880949712,
+        "TotalW": 18.7002,
+        "TotalWErr": 0.196514795192897
       },
       "06H-350.4.5.1.1.A.2": {
-        "TotalCostErrPc": 0.0111775053355293
+        "CTdt": 3.62393040670091,
+        "EffectCost": 0,
+        "EquipmentCost": 0,
+        "FmMttf": 271560,
+        "ITdt": 199.9928,
+        "InitialAge": 262800,
+        "LaborCost": 0,
+        "OperationalCost": 85024.6,
+        "OutageFrequency": 0.000162105936073059,
+        "PTdt": 0,
+        "TotalCost": 85024.6,
+        "TotalCostErrPc": 0.0111775053355293,
+        "TotalTdt": 203.616730406701,
+        "TotalTdtErr": 0.740061039241373,
+        "TotalW": 71.0024,
+        "TotalWErr": 0.00278808609573533
       },
       "06H-350.5.4.2.1.A.1": {
-        "TotalCostErrPc": 0.460807004269297
+        "CTdt": 47.2201189433258,
+        "EffectCost": 0,
+        "EquipmentCost": 0,
+        "FmMttf": 438000,
+        "ITdt": 0,
+        "InitialAge": 385440,
+        "LaborCost": 0,
+        "OperationalCost": 35418,
+        "OutageFrequency": 0.000137398630136986,
+        "PTdt": 0,
+        "TotalCost": 35418,
+        "TotalCostErrPc": 0.460807004269297,
+        "TotalTdt": 47.2201189433258,
+        "TotalTdtErr": 0.460670536930219,
+        "TotalW": 60.1806,
+        "TotalWErr": 0.00903993561448326
       },
       "06H-350.5.4.2.1.A.2": {
-        "TotalCostErrPc": 0.279254350824089
+        "CTdt": 50.1196536829486,
+        "EffectCost": 0,
+        "EquipmentCost": 0,
+        "FmMttf": 17520,
+        "ITdt": 0,
+        "InitialAge": 0,
+        "LaborCost": 0,
+        "OperationalCost": 37590,
+        "OutageFrequency": 5.72146118721461e-05,
+        "PTdt": 0,
+        "TotalCost": 37590,
+        "TotalCostErrPc": 0.279254350824089,
+        "TotalTdt": 50.1196536829486,
+        "TotalTdtErr": 0.279249354464825,
+        "TotalW": 25.06,
+        "TotalWErr": 0.279254350824088
       },
       "06H-350.5.7.1.1.A.1": {
-        "TotalCostErrPc": 6.44916070626515
+        "CTdt": 0.3824,
+        "EffectCost": 0,
+        "EquipmentCost": 0,
+        "FmMttf": 1095000,
+        "ITdt": 0,
+        "InitialAge": 385440,
+        "LaborCost": 0,
+        "OperationalCost": 191.2,
+        "OutageFrequency": 0.000228419634703196,
+        "PTdt": 0,
+        "TotalCost": 191.2,
+        "TotalCostErrPc": 6.44916070626515,
+        "TotalTdt": 0.3824,
+        "TotalTdtErr": 6.44916070626514,
+        "TotalW": 100.0478,
+        "TotalWErr": 0.00308122599152249
       },
       "06H-350.5.7.2.1.A.1": {
-        "TotalCostErrPc": 3.99959829470092e-05
+        "CTdt": 0,
+        "EffectCost": 0,
+        "EquipmentCost": 0,
+        "FmMttf": 1095000,
+        "ITdt": 0,
+        "InitialAge": 385440,
+        "LaborCost": 0,
+        "OperationalCost": 250000.1,
+        "OutageFrequency": 0.000342466210045662,
+        "PTdt": 0,
+        "TotalCost": 250000.1,
+        "TotalCostErrPc": 3.99959829470092e-05,
+        "TotalTdt": 0,
+        "TotalTdtErr": 0,
+        "TotalW": 150.0002,
+        "TotalWErr": 0.000133319821242995
       },
       "06H-350.5.7.3.1.A.1": {
-        "TotalCostErrPc": 0.0038789187032026
+        "CTdt": 0,
+        "EffectCost": 0,
+        "EquipmentCost": 0,
+        "FmMttf": 219000,
+        "ITdt": 0,
+        "InitialAge": 385440,
+        "LaborCost": 0,
+        "OperationalCost": 136694.85,
+        "OutageFrequency": 0.000589634246575343,
+        "PTdt": 0,
+        "TotalCost": 136694.85,
+        "TotalCostErrPc": 0.0038789187032026,
+        "TotalTdt": 0,
+        "TotalTdtErr": 0,
+        "TotalW": 258.2598,
+        "TotalWErr": 0.00273744093010858
       }
     },
     "isograph_project": {
@@ -6899,9 +8925,10 @@
       "ResultsSpareIndex": 0,
       "ResultsSystemBlockIndex": -1,
       "ResultsSystemGateIndex": -1
-    }
+    },
+    "repair_quality_source": "missing_default_0"
   },
-  "modelleur": "Reinder",
+  "modelleur": "",
   "pbs_items": {
     "06H-350": {
       "aanname_leeftijd": "",
@@ -9778,7 +11805,7 @@
     "06H-350.1.1.1.1.1.A.1|REV|0": {
       "aanname_interval": "",
       "aanname_kosten": "",
-      "aging_effect_pct": 0.0,
+      "aging_effect_pct": 100.0,
       "causes_unavailability": true,
       "cm_kosten_als_basis": false,
       "cost_eur": 2500.0,
@@ -9824,7 +11851,7 @@
     "06H-350.1.1.1.1.1.A.2|REV|0": {
       "aanname_interval": "",
       "aanname_kosten": "",
-      "aging_effect_pct": 0.0,
+      "aging_effect_pct": 100.0,
       "causes_unavailability": true,
       "cm_kosten_als_basis": false,
       "cost_eur": 2500.0,
@@ -9847,7 +11874,7 @@
     "06H-350.1.1.1.1.1.A.2|REV|3": {
       "aanname_interval": "",
       "aanname_kosten": "",
-      "aging_effect_pct": 0.0,
+      "aging_effect_pct": 100.0,
       "causes_unavailability": true,
       "cm_kosten_als_basis": false,
       "cost_eur": 0.0,
@@ -9939,7 +11966,7 @@
     "06H-350.1.1.1.11.1.A.1|REV|0": {
       "aanname_interval": "",
       "aanname_kosten": "",
-      "aging_effect_pct": 0.0,
+      "aging_effect_pct": 100.0,
       "causes_unavailability": true,
       "cm_kosten_als_basis": false,
       "cost_eur": 5000.0,
@@ -9985,7 +12012,7 @@
     "06H-350.1.1.1.13.1.A.1|REV|0": {
       "aanname_interval": "",
       "aanname_kosten": "",
-      "aging_effect_pct": 0.0,
+      "aging_effect_pct": 100.0,
       "causes_unavailability": true,
       "cm_kosten_als_basis": false,
       "cost_eur": 30000.0,
@@ -10146,7 +12173,7 @@
     "06H-350.1.1.1.2.1.A.1|REV|0": {
       "aanname_interval": "",
       "aanname_kosten": "",
-      "aging_effect_pct": 0.0,
+      "aging_effect_pct": 100.0,
       "causes_unavailability": true,
       "cm_kosten_als_basis": false,
       "cost_eur": 2500.0,
@@ -10238,7 +12265,7 @@
     "06H-350.1.1.1.3.1.A.1|REV|0": {
       "aanname_interval": "",
       "aanname_kosten": "",
-      "aging_effect_pct": 0.0,
+      "aging_effect_pct": 100.0,
       "causes_unavailability": true,
       "cm_kosten_als_basis": false,
       "cost_eur": 3000.0,
@@ -10376,7 +12403,7 @@
     "06H-350.1.1.1.5.1.A.1|REV|0": {
       "aanname_interval": "",
       "aanname_kosten": "",
-      "aging_effect_pct": 0.0,
+      "aging_effect_pct": 100.0,
       "causes_unavailability": true,
       "cm_kosten_als_basis": false,
       "cost_eur": 3000.0,
@@ -10445,7 +12472,7 @@
     "06H-350.1.1.1.9.1.A.2|REV|3": {
       "aanname_interval": "",
       "aanname_kosten": "",
-      "aging_effect_pct": 0.0,
+      "aging_effect_pct": 100.0,
       "causes_unavailability": true,
       "cm_kosten_als_basis": false,
       "cost_eur": 0.0,
@@ -10468,7 +12495,7 @@
     "06H-350.1.1.1.9.1.A.2|REV|4": {
       "aanname_interval": "",
       "aanname_kosten": "",
-      "aging_effect_pct": 0.0,
+      "aging_effect_pct": 100.0,
       "causes_unavailability": true,
       "cm_kosten_als_basis": false,
       "cost_eur": 0.0,
@@ -10583,7 +12610,7 @@
     "06H-350.1.12.1.1.1.A.1|REV|0": {
       "aanname_interval": "",
       "aanname_kosten": "",
-      "aging_effect_pct": 0.0,
+      "aging_effect_pct": 100.0,
       "causes_unavailability": true,
       "cm_kosten_als_basis": false,
       "cost_eur": 6350000.0,
@@ -10606,7 +12633,7 @@
     "06H-350.1.16.4.1.A.1|REV|0": {
       "aanname_interval": "",
       "aanname_kosten": "",
-      "aging_effect_pct": 0.0,
+      "aging_effect_pct": 100.0,
       "causes_unavailability": true,
       "cm_kosten_als_basis": false,
       "cost_eur": 2500.0,
@@ -10652,7 +12679,7 @@
     "06H-350.1.18.1.1.1.A.1|REV|0": {
       "aanname_interval": "",
       "aanname_kosten": "",
-      "aging_effect_pct": 0.0,
+      "aging_effect_pct": 100.0,
       "causes_unavailability": true,
       "cm_kosten_als_basis": false,
       "cost_eur": 3000.0,
@@ -10698,7 +12725,7 @@
     "06H-350.1.18.1.4.1.A.1|REV|0": {
       "aanname_interval": "",
       "aanname_kosten": "",
-      "aging_effect_pct": 0.0,
+      "aging_effect_pct": 100.0,
       "causes_unavailability": true,
       "cm_kosten_als_basis": false,
       "cost_eur": 0.0,
@@ -10721,7 +12748,7 @@
     "06H-350.1.18.1.6.1.A.1|REV|0": {
       "aanname_interval": "",
       "aanname_kosten": "",
-      "aging_effect_pct": 0.0,
+      "aging_effect_pct": 100.0,
       "causes_unavailability": true,
       "cm_kosten_als_basis": false,
       "cost_eur": 25000.0,
@@ -10882,7 +12909,7 @@
     "06H-350.1.18.1.8.1.A.1|REV|0": {
       "aanname_interval": "",
       "aanname_kosten": "",
-      "aging_effect_pct": 0.0,
+      "aging_effect_pct": 100.0,
       "causes_unavailability": true,
       "cm_kosten_als_basis": false,
       "cost_eur": 7000.0,
@@ -10905,7 +12932,7 @@
     "06H-350.1.18.1.8.1.A.1|REV|1": {
       "aanname_interval": "",
       "aanname_kosten": "",
-      "aging_effect_pct": 0.0,
+      "aging_effect_pct": 100.0,
       "causes_unavailability": true,
       "cm_kosten_als_basis": false,
       "cost_eur": 2000.0,
@@ -10951,7 +12978,7 @@
     "06H-350.1.19.1.1.1.A.1|REV|0": {
       "aanname_interval": "",
       "aanname_kosten": "",
-      "aging_effect_pct": 0.0,
+      "aging_effect_pct": 100.0,
       "causes_unavailability": true,
       "cm_kosten_als_basis": false,
       "cost_eur": 3000.0,
@@ -10997,7 +13024,7 @@
     "06H-350.1.19.1.4.1.A.1|REV|0": {
       "aanname_interval": "",
       "aanname_kosten": "",
-      "aging_effect_pct": 0.0,
+      "aging_effect_pct": 100.0,
       "causes_unavailability": true,
       "cm_kosten_als_basis": false,
       "cost_eur": 0.0,
@@ -11020,7 +13047,7 @@
     "06H-350.1.19.1.6.1.A.1|REV|0": {
       "aanname_interval": "",
       "aanname_kosten": "",
-      "aging_effect_pct": 0.0,
+      "aging_effect_pct": 100.0,
       "causes_unavailability": true,
       "cm_kosten_als_basis": false,
       "cost_eur": 25000.0,
@@ -11135,7 +13162,7 @@
     "06H-350.1.19.1.8.1.A.1|REV|0": {
       "aanname_interval": "",
       "aanname_kosten": "",
-      "aging_effect_pct": 0.0,
+      "aging_effect_pct": 100.0,
       "causes_unavailability": true,
       "cm_kosten_als_basis": false,
       "cost_eur": 7000.0,
@@ -11158,7 +13185,7 @@
     "06H-350.1.19.1.8.1.A.1|REV|1": {
       "aanname_interval": "",
       "aanname_kosten": "",
-      "aging_effect_pct": 0.0,
+      "aging_effect_pct": 100.0,
       "causes_unavailability": true,
       "cm_kosten_als_basis": false,
       "cost_eur": 2000.0,
@@ -11181,7 +13208,7 @@
     "06H-350.1.2.1.1.1.A.1|REV|0": {
       "aanname_interval": "",
       "aanname_kosten": "",
-      "aging_effect_pct": 0.0,
+      "aging_effect_pct": 100.0,
       "causes_unavailability": true,
       "cm_kosten_als_basis": false,
       "cost_eur": 1000.0,
@@ -11204,7 +13231,7 @@
     "06H-350.1.2.1.1.1.A.1|REV|2": {
       "aanname_interval": "",
       "aanname_kosten": "",
-      "aging_effect_pct": 0.0,
+      "aging_effect_pct": 100.0,
       "causes_unavailability": true,
       "cm_kosten_als_basis": false,
       "cost_eur": 0.0,
@@ -11250,7 +13277,7 @@
     "06H-350.1.2.1.1.1.A.2|REV|0": {
       "aanname_interval": "",
       "aanname_kosten": "",
-      "aging_effect_pct": 0.0,
+      "aging_effect_pct": 100.0,
       "causes_unavailability": true,
       "cm_kosten_als_basis": false,
       "cost_eur": 1000.0,
@@ -11273,7 +13300,7 @@
     "06H-350.1.2.1.1.1.A.2|REV|1": {
       "aanname_interval": "",
       "aanname_kosten": "",
-      "aging_effect_pct": 0.0,
+      "aging_effect_pct": 100.0,
       "causes_unavailability": true,
       "cm_kosten_als_basis": false,
       "cost_eur": 0.0,
@@ -11296,7 +13323,7 @@
     "06H-350.1.2.1.2.1.A.1|REV|0": {
       "aanname_interval": "",
       "aanname_kosten": "",
-      "aging_effect_pct": 0.0,
+      "aging_effect_pct": 100.0,
       "causes_unavailability": true,
       "cm_kosten_als_basis": false,
       "cost_eur": 1000.0,
@@ -11342,7 +13369,7 @@
     "06H-350.1.2.1.6.1.A.1|REV|0": {
       "aanname_interval": "",
       "aanname_kosten": "",
-      "aging_effect_pct": 0.0,
+      "aging_effect_pct": 100.0,
       "causes_unavailability": true,
       "cm_kosten_als_basis": false,
       "cost_eur": 5000.0,
@@ -11388,7 +13415,7 @@
     "06H-350.1.2.1.6.1.A.2|REV|0": {
       "aanname_interval": "",
       "aanname_kosten": "",
-      "aging_effect_pct": 0.0,
+      "aging_effect_pct": 100.0,
       "causes_unavailability": true,
       "cm_kosten_als_basis": false,
       "cost_eur": 10000.0,
@@ -11434,7 +13461,7 @@
     "06H-350.1.20.1.1.A.1|REV|0": {
       "aanname_interval": "",
       "aanname_kosten": "",
-      "aging_effect_pct": 0.0,
+      "aging_effect_pct": 100.0,
       "causes_unavailability": true,
       "cm_kosten_als_basis": false,
       "cost_eur": 240000.0,
@@ -11457,7 +13484,7 @@
     "06H-350.1.20.13.1.A.1|REV|0": {
       "aanname_interval": "",
       "aanname_kosten": "",
-      "aging_effect_pct": 0.0,
+      "aging_effect_pct": 100.0,
       "causes_unavailability": true,
       "cm_kosten_als_basis": false,
       "cost_eur": 2500.0,
@@ -11480,7 +13507,7 @@
     "06H-350.1.20.13.1.A.2|REV|0": {
       "aanname_interval": "",
       "aanname_kosten": "",
-      "aging_effect_pct": 0.0,
+      "aging_effect_pct": 100.0,
       "causes_unavailability": true,
       "cm_kosten_als_basis": false,
       "cost_eur": 250.0,
@@ -11503,7 +13530,7 @@
     "06H-350.1.20.17.1.A.1|REV|0": {
       "aanname_interval": "",
       "aanname_kosten": "",
-      "aging_effect_pct": 0.0,
+      "aging_effect_pct": 100.0,
       "causes_unavailability": true,
       "cm_kosten_als_basis": false,
       "cost_eur": 0.0,
@@ -11549,7 +13576,7 @@
     "06H-350.1.20.20.1.A.1|REV|0": {
       "aanname_interval": "",
       "aanname_kosten": "",
-      "aging_effect_pct": 0.0,
+      "aging_effect_pct": 100.0,
       "causes_unavailability": true,
       "cm_kosten_als_basis": false,
       "cost_eur": 8580000.0,
@@ -11641,7 +13668,7 @@
     "06H-350.1.20.4.1.A.1|REV|0": {
       "aanname_interval": "",
       "aanname_kosten": "",
-      "aging_effect_pct": 0.0,
+      "aging_effect_pct": 100.0,
       "causes_unavailability": true,
       "cm_kosten_als_basis": false,
       "cost_eur": 190000.0,
@@ -11733,7 +13760,7 @@
     "06H-350.1.20.5.1.A.1|REV|1": {
       "aanname_interval": "",
       "aanname_kosten": "",
-      "aging_effect_pct": 0.0,
+      "aging_effect_pct": 100.0,
       "causes_unavailability": true,
       "cm_kosten_als_basis": false,
       "cost_eur": 10000.0,
@@ -11802,7 +13829,7 @@
     "06H-350.1.20.7.1.A.1|REV|0": {
       "aanname_interval": "",
       "aanname_kosten": "",
-      "aging_effect_pct": 0.0,
+      "aging_effect_pct": 100.0,
       "causes_unavailability": true,
       "cm_kosten_als_basis": false,
       "cost_eur": 50000.0,
@@ -11825,7 +13852,7 @@
     "06H-350.1.20.7.1.A.2|REV|0": {
       "aanname_interval": "",
       "aanname_kosten": "",
-      "aging_effect_pct": 0.0,
+      "aging_effect_pct": 100.0,
       "causes_unavailability": true,
       "cm_kosten_als_basis": false,
       "cost_eur": 5000.0,
@@ -11871,7 +13898,7 @@
     "06H-350.1.22.3.1.A.1|REV|0": {
       "aanname_interval": "",
       "aanname_kosten": "",
-      "aging_effect_pct": 0.0,
+      "aging_effect_pct": 100.0,
       "causes_unavailability": true,
       "cm_kosten_als_basis": false,
       "cost_eur": 190000.0,
@@ -11940,7 +13967,7 @@
     "06H-350.1.22.4.1.A.1|REV|0": {
       "aanname_interval": "",
       "aanname_kosten": "",
-      "aging_effect_pct": 0.0,
+      "aging_effect_pct": 100.0,
       "causes_unavailability": true,
       "cm_kosten_als_basis": false,
       "cost_eur": 190000.0,
@@ -12009,7 +14036,7 @@
     "06H-350.1.22.5.1.A.1|REV|0": {
       "aanname_interval": "",
       "aanname_kosten": "",
-      "aging_effect_pct": 0.0,
+      "aging_effect_pct": 100.0,
       "causes_unavailability": true,
       "cm_kosten_als_basis": false,
       "cost_eur": 10000.0,
@@ -12101,7 +14128,7 @@
     "06H-350.1.22.6.1.A.1|REV|0": {
       "aanname_interval": "",
       "aanname_kosten": "",
-      "aging_effect_pct": 0.0,
+      "aging_effect_pct": 100.0,
       "causes_unavailability": true,
       "cm_kosten_als_basis": false,
       "cost_eur": 5000.0,
@@ -12193,7 +14220,7 @@
     "06H-350.1.22.8.1.A.1|REV|0": {
       "aanname_interval": "",
       "aanname_kosten": "",
-      "aging_effect_pct": 0.0,
+      "aging_effect_pct": 100.0,
       "causes_unavailability": true,
       "cm_kosten_als_basis": false,
       "cost_eur": 8580000.0,
@@ -12239,7 +14266,7 @@
     "06H-350.1.3.1.10.1.A.1|REV|0": {
       "aanname_interval": "",
       "aanname_kosten": "",
-      "aging_effect_pct": 0.0,
+      "aging_effect_pct": 100.0,
       "causes_unavailability": true,
       "cm_kosten_als_basis": false,
       "cost_eur": 5000.0,
@@ -12285,7 +14312,7 @@
     "06H-350.1.3.1.11.1.A.1|REV|0": {
       "aanname_interval": "",
       "aanname_kosten": "",
-      "aging_effect_pct": 0.0,
+      "aging_effect_pct": 100.0,
       "causes_unavailability": true,
       "cm_kosten_als_basis": false,
       "cost_eur": 25000.0,
@@ -12354,7 +14381,7 @@
     "06H-350.1.3.1.22.1.A.1|REV|0": {
       "aanname_interval": "",
       "aanname_kosten": "",
-      "aging_effect_pct": 0.0,
+      "aging_effect_pct": 100.0,
       "causes_unavailability": true,
       "cm_kosten_als_basis": false,
       "cost_eur": 25000.0,
@@ -12423,7 +14450,7 @@
     "06H-350.1.3.1.3.1.A.1|REV|0": {
       "aanname_interval": "",
       "aanname_kosten": "",
-      "aging_effect_pct": 0.0,
+      "aging_effect_pct": 100.0,
       "causes_unavailability": true,
       "cm_kosten_als_basis": false,
       "cost_eur": 10000.0,
@@ -12515,7 +14542,7 @@
     "06H-350.1.6.1.1.A.1|REV|0": {
       "aanname_interval": "",
       "aanname_kosten": "",
-      "aging_effect_pct": 0.0,
+      "aging_effect_pct": 100.0,
       "causes_unavailability": true,
       "cm_kosten_als_basis": false,
       "cost_eur": 250000.0,
@@ -12722,7 +14749,7 @@
     "06H-350.1.7.10.1.A.1|REV|0": {
       "aanname_interval": "",
       "aanname_kosten": "",
-      "aging_effect_pct": 0.0,
+      "aging_effect_pct": 100.0,
       "causes_unavailability": true,
       "cm_kosten_als_basis": false,
       "cost_eur": 1500.0,
@@ -12791,7 +14818,7 @@
     "06H-350.1.7.5.1.A.1|REV|0": {
       "aanname_interval": "",
       "aanname_kosten": "",
-      "aging_effect_pct": 0.0,
+      "aging_effect_pct": 100.0,
       "causes_unavailability": true,
       "cm_kosten_als_basis": false,
       "cost_eur": 1000.0,
@@ -12814,7 +14841,7 @@
     "06H-350.2.1.1.1.A.1|REV|0": {
       "aanname_interval": "",
       "aanname_kosten": "",
-      "aging_effect_pct": 0.0,
+      "aging_effect_pct": 100.0,
       "causes_unavailability": true,
       "cm_kosten_als_basis": false,
       "cost_eur": 1000.0,
@@ -12860,7 +14887,7 @@
     "06H-350.2.1.1.1.A.2|REV|0": {
       "aanname_interval": "",
       "aanname_kosten": "",
-      "aging_effect_pct": 0.0,
+      "aging_effect_pct": 100.0,
       "causes_unavailability": true,
       "cm_kosten_als_basis": false,
       "cost_eur": 1000.0,
@@ -12906,7 +14933,7 @@
     "06H-350.2.1.3.1.A.1|REV|0": {
       "aanname_interval": "",
       "aanname_kosten": "",
-      "aging_effect_pct": 0.0,
+      "aging_effect_pct": 100.0,
       "causes_unavailability": true,
       "cm_kosten_als_basis": false,
       "cost_eur": 1000.0,
@@ -12952,7 +14979,7 @@
     "06H-350.2.1.7.1.1.A.1|REV|0": {
       "aanname_interval": "",
       "aanname_kosten": "",
-      "aging_effect_pct": 0.0,
+      "aging_effect_pct": 100.0,
       "causes_unavailability": true,
       "cm_kosten_als_basis": false,
       "cost_eur": 5000.0,
@@ -12998,7 +15025,7 @@
     "06H-350.2.1.7.1.1.A.2|REV|0": {
       "aanname_interval": "",
       "aanname_kosten": "",
-      "aging_effect_pct": 0.0,
+      "aging_effect_pct": 100.0,
       "causes_unavailability": true,
       "cm_kosten_als_basis": false,
       "cost_eur": 10000.0,
@@ -13067,7 +15094,7 @@
     "06H-350.2.11.1.1.A.1|REV|0": {
       "aanname_interval": "",
       "aanname_kosten": "",
-      "aging_effect_pct": 0.0,
+      "aging_effect_pct": 100.0,
       "causes_unavailability": true,
       "cm_kosten_als_basis": false,
       "cost_eur": 4000.0,
@@ -13136,7 +15163,7 @@
     "06H-350.2.12.2.1.A.1|REV|0": {
       "aanname_interval": "",
       "aanname_kosten": "",
-      "aging_effect_pct": 0.0,
+      "aging_effect_pct": 100.0,
       "causes_unavailability": true,
       "cm_kosten_als_basis": false,
       "cost_eur": 25000.0,
@@ -13205,7 +15232,7 @@
     "06H-350.2.14.2.1.A.1|REV|0": {
       "aanname_interval": "",
       "aanname_kosten": "",
-      "aging_effect_pct": 0.0,
+      "aging_effect_pct": 100.0,
       "causes_unavailability": true,
       "cm_kosten_als_basis": false,
       "cost_eur": 500.0,
@@ -13297,7 +15324,7 @@
     "06H-350.2.14.2.1.A.2|REV|0": {
       "aanname_interval": "",
       "aanname_kosten": "",
-      "aging_effect_pct": 0.0,
+      "aging_effect_pct": 100.0,
       "causes_unavailability": true,
       "cm_kosten_als_basis": false,
       "cost_eur": 3000.0,
@@ -13320,7 +15347,7 @@
     "06H-350.2.15.1.1.A.1|REV|0": {
       "aanname_interval": "",
       "aanname_kosten": "",
-      "aging_effect_pct": 0.0,
+      "aging_effect_pct": 100.0,
       "causes_unavailability": true,
       "cm_kosten_als_basis": false,
       "cost_eur": 14000.0,
@@ -13550,7 +15577,7 @@
     "06H-350.2.2.1.1.A.1|REV|0": {
       "aanname_interval": "",
       "aanname_kosten": "",
-      "aging_effect_pct": 0.0,
+      "aging_effect_pct": 100.0,
       "causes_unavailability": true,
       "cm_kosten_als_basis": false,
       "cost_eur": 50000.0,
@@ -13573,7 +15600,7 @@
     "06H-350.2.2.1.1.A.1|REV|9": {
       "aanname_interval": "",
       "aanname_kosten": "",
-      "aging_effect_pct": 0.0,
+      "aging_effect_pct": 100.0,
       "causes_unavailability": true,
       "cm_kosten_als_basis": false,
       "cost_eur": 5000.0,
@@ -13780,7 +15807,7 @@
     "06H-350.2.2.11.1.A.1|REV|0": {
       "aanname_interval": "",
       "aanname_kosten": "",
-      "aging_effect_pct": 0.0,
+      "aging_effect_pct": 100.0,
       "causes_unavailability": true,
       "cm_kosten_als_basis": false,
       "cost_eur": 10000.0,
@@ -14010,7 +16037,7 @@
     "06H-350.2.2.14.1.A.1|REV|0": {
       "aanname_interval": "",
       "aanname_kosten": "",
-      "aging_effect_pct": 0.0,
+      "aging_effect_pct": 100.0,
       "causes_unavailability": true,
       "cm_kosten_als_basis": false,
       "cost_eur": 50000.0,
@@ -14033,7 +16060,7 @@
     "06H-350.2.2.14.1.A.1|REV|10": {
       "aanname_interval": "",
       "aanname_kosten": "",
-      "aging_effect_pct": 0.0,
+      "aging_effect_pct": 100.0,
       "causes_unavailability": true,
       "cm_kosten_als_basis": false,
       "cost_eur": 10000.0,
@@ -14194,7 +16221,7 @@
     "06H-350.2.2.15.1.A.1|REV|0": {
       "aanname_interval": "",
       "aanname_kosten": "",
-      "aging_effect_pct": 0.0,
+      "aging_effect_pct": 100.0,
       "causes_unavailability": true,
       "cm_kosten_als_basis": false,
       "cost_eur": 2500.0,
@@ -14286,7 +16313,7 @@
     "06H-350.2.2.15.2.A.1|REV|0": {
       "aanname_interval": "",
       "aanname_kosten": "",
-      "aging_effect_pct": 0.0,
+      "aging_effect_pct": 100.0,
       "causes_unavailability": true,
       "cm_kosten_als_basis": false,
       "cost_eur": 5000.0,
@@ -14378,7 +16405,7 @@
     "06H-350.2.2.22.1.A.1|REV|0": {
       "aanname_interval": "",
       "aanname_kosten": "",
-      "aging_effect_pct": 0.0,
+      "aging_effect_pct": 100.0,
       "causes_unavailability": true,
       "cm_kosten_als_basis": false,
       "cost_eur": 20000.0,
@@ -14470,7 +16497,7 @@
     "06H-350.2.2.23.1.A.1|REV|0": {
       "aanname_interval": "",
       "aanname_kosten": "",
-      "aging_effect_pct": 0.0,
+      "aging_effect_pct": 100.0,
       "causes_unavailability": true,
       "cm_kosten_als_basis": false,
       "cost_eur": 10000.0,
@@ -14516,7 +16543,7 @@
     "06H-350.2.2.3.1.A.1|REV|0": {
       "aanname_interval": "",
       "aanname_kosten": "",
-      "aging_effect_pct": 0.0,
+      "aging_effect_pct": 100.0,
       "causes_unavailability": true,
       "cm_kosten_als_basis": false,
       "cost_eur": 500.0,
@@ -14677,7 +16704,7 @@
     "06H-350.2.2.9.1.A.1|REV|0": {
       "aanname_interval": "",
       "aanname_kosten": "",
-      "aging_effect_pct": 0.0,
+      "aging_effect_pct": 100.0,
       "causes_unavailability": true,
       "cm_kosten_als_basis": false,
       "cost_eur": 50000.0,
@@ -14723,7 +16750,7 @@
     "06H-350.2.4.1.3.1.A.1|REV|0": {
       "aanname_interval": "",
       "aanname_kosten": "",
-      "aging_effect_pct": 0.0,
+      "aging_effect_pct": 100.0,
       "causes_unavailability": true,
       "cm_kosten_als_basis": false,
       "cost_eur": 2500.0,
@@ -14861,7 +16888,7 @@
     "06H-350.2.6.1.1.A.1|REV|4": {
       "aanname_interval": "",
       "aanname_kosten": "",
-      "aging_effect_pct": 0.0,
+      "aging_effect_pct": 100.0,
       "causes_unavailability": true,
       "cm_kosten_als_basis": false,
       "cost_eur": 15000.0,
@@ -14953,7 +16980,7 @@
     "06H-350.2.7.2.9.1.A.1|REV|0": {
       "aanname_interval": "",
       "aanname_kosten": "",
-      "aging_effect_pct": 0.0,
+      "aging_effect_pct": 100.0,
       "causes_unavailability": true,
       "cm_kosten_als_basis": false,
       "cost_eur": 2000000.0,
@@ -15045,7 +17072,7 @@
     "06H-350.2.8.8.1.A.1|REV|0": {
       "aanname_interval": "",
       "aanname_kosten": "",
-      "aging_effect_pct": 0.0,
+      "aging_effect_pct": 100.0,
       "causes_unavailability": true,
       "cm_kosten_als_basis": false,
       "cost_eur": 100000.0,
@@ -15137,7 +17164,7 @@
     "06H-350.2.9.4.1.A.1|REV|0": {
       "aanname_interval": "",
       "aanname_kosten": "",
-      "aging_effect_pct": 0.0,
+      "aging_effect_pct": 100.0,
       "causes_unavailability": true,
       "cm_kosten_als_basis": false,
       "cost_eur": 4000.0,
@@ -15344,7 +17371,7 @@
     "06H-350.3.1.2.3.A.1|REV|0": {
       "aanname_interval": "",
       "aanname_kosten": "",
-      "aging_effect_pct": 0.0,
+      "aging_effect_pct": 100.0,
       "causes_unavailability": true,
       "cm_kosten_als_basis": false,
       "cost_eur": 20000.0,
@@ -15390,7 +17417,7 @@
     "06H-350.3.11.1.1.A.1|REV|0": {
       "aanname_interval": "",
       "aanname_kosten": "",
-      "aging_effect_pct": 0.0,
+      "aging_effect_pct": 100.0,
       "causes_unavailability": true,
       "cm_kosten_als_basis": false,
       "cost_eur": 20000.0,
@@ -15413,7 +17440,7 @@
     "06H-350.3.11.1.1.A.1|REV|3": {
       "aanname_interval": "",
       "aanname_kosten": "",
-      "aging_effect_pct": 0.0,
+      "aging_effect_pct": 100.0,
       "causes_unavailability": true,
       "cm_kosten_als_basis": false,
       "cost_eur": 5000.0,
@@ -15482,7 +17509,7 @@
     "06H-350.3.11.2.1.A.1|REV|0": {
       "aanname_interval": "",
       "aanname_kosten": "",
-      "aging_effect_pct": 0.0,
+      "aging_effect_pct": 100.0,
       "causes_unavailability": true,
       "cm_kosten_als_basis": false,
       "cost_eur": 20000.0,
@@ -15505,7 +17532,7 @@
     "06H-350.3.11.2.1.A.1|REV|3": {
       "aanname_interval": "",
       "aanname_kosten": "",
-      "aging_effect_pct": 0.0,
+      "aging_effect_pct": 100.0,
       "causes_unavailability": true,
       "cm_kosten_als_basis": false,
       "cost_eur": 5000.0,
@@ -15666,7 +17693,7 @@
     "06H-350.3.12.2.1.A.1|REV|0": {
       "aanname_interval": "",
       "aanname_kosten": "",
-      "aging_effect_pct": 0.0,
+      "aging_effect_pct": 100.0,
       "causes_unavailability": true,
       "cm_kosten_als_basis": false,
       "cost_eur": 25000.0,
@@ -15735,7 +17762,7 @@
     "06H-350.3.13.4.1.A.1|REV|0": {
       "aanname_interval": "",
       "aanname_kosten": "",
-      "aging_effect_pct": 0.0,
+      "aging_effect_pct": 100.0,
       "causes_unavailability": true,
       "cm_kosten_als_basis": false,
       "cost_eur": 10000.0,
@@ -15804,7 +17831,7 @@
     "06H-350.3.14.3.1.A.1|REV|0": {
       "aanname_interval": "",
       "aanname_kosten": "",
-      "aging_effect_pct": 0.0,
+      "aging_effect_pct": 100.0,
       "causes_unavailability": true,
       "cm_kosten_als_basis": false,
       "cost_eur": 0.0,
@@ -15873,7 +17900,7 @@
     "06H-350.3.14.4.1.A.1|REV|0": {
       "aanname_interval": "",
       "aanname_kosten": "",
-      "aging_effect_pct": 0.0,
+      "aging_effect_pct": 100.0,
       "causes_unavailability": true,
       "cm_kosten_als_basis": false,
       "cost_eur": 5000.0,
@@ -15965,7 +17992,7 @@
     "06H-350.3.15.4.1.A.1|REV|0": {
       "aanname_interval": "",
       "aanname_kosten": "",
-      "aging_effect_pct": 0.0,
+      "aging_effect_pct": 100.0,
       "causes_unavailability": true,
       "cm_kosten_als_basis": false,
       "cost_eur": 2000.0,
@@ -16080,7 +18107,7 @@
     "06H-350.3.15.4.1.A.2|REV|0": {
       "aanname_interval": "",
       "aanname_kosten": "",
-      "aging_effect_pct": 0.0,
+      "aging_effect_pct": 100.0,
       "causes_unavailability": true,
       "cm_kosten_als_basis": false,
       "cost_eur": 1000.0,
@@ -16264,7 +18291,7 @@
     "06H-350.3.16.1.1.A.2|REV|0": {
       "aanname_interval": "",
       "aanname_kosten": "",
-      "aging_effect_pct": 0.0,
+      "aging_effect_pct": 100.0,
       "causes_unavailability": true,
       "cm_kosten_als_basis": false,
       "cost_eur": 250.0,
@@ -16448,7 +18475,7 @@
     "06H-350.3.16.2.1.A.1|REV|0": {
       "aanname_interval": "",
       "aanname_kosten": "",
-      "aging_effect_pct": 0.0,
+      "aging_effect_pct": 100.0,
       "causes_unavailability": true,
       "cm_kosten_als_basis": false,
       "cost_eur": 13.0,
@@ -16609,7 +18636,7 @@
     "06H-350.3.17.8.1.A.2|REV|0": {
       "aanname_interval": "",
       "aanname_kosten": "",
-      "aging_effect_pct": 0.0,
+      "aging_effect_pct": 100.0,
       "causes_unavailability": true,
       "cm_kosten_als_basis": false,
       "cost_eur": 23500.0,
@@ -16678,7 +18705,7 @@
     "06H-350.3.18.5.1.1.A.1|REV|0": {
       "aanname_interval": "",
       "aanname_kosten": "",
-      "aging_effect_pct": 0.0,
+      "aging_effect_pct": 100.0,
       "causes_unavailability": true,
       "cm_kosten_als_basis": false,
       "cost_eur": 500.0,
@@ -16747,7 +18774,7 @@
     "06H-350.3.19.4.1.A.1|REV|0": {
       "aanname_interval": "",
       "aanname_kosten": "",
-      "aging_effect_pct": 0.0,
+      "aging_effect_pct": 100.0,
       "causes_unavailability": true,
       "cm_kosten_als_basis": false,
       "cost_eur": 500.0,
@@ -16816,7 +18843,7 @@
     "06H-350.3.19.4.1.A.2|REV|0": {
       "aanname_interval": "",
       "aanname_kosten": "",
-      "aging_effect_pct": 0.0,
+      "aging_effect_pct": 100.0,
       "causes_unavailability": true,
       "cm_kosten_als_basis": false,
       "cost_eur": 500.0,
@@ -16839,7 +18866,7 @@
     "06H-350.3.2.1.A.1|REV|0": {
       "aanname_interval": "",
       "aanname_kosten": "",
-      "aging_effect_pct": 0.0,
+      "aging_effect_pct": 100.0,
       "causes_unavailability": true,
       "cm_kosten_als_basis": false,
       "cost_eur": 3000.0,
@@ -16931,7 +18958,7 @@
     "06H-350.3.20.3.1.A.2|REV|3": {
       "aanname_interval": "",
       "aanname_kosten": "",
-      "aging_effect_pct": 0.0,
+      "aging_effect_pct": 100.0,
       "causes_unavailability": true,
       "cm_kosten_als_basis": false,
       "cost_eur": 1000.0,
@@ -16977,7 +19004,7 @@
     "06H-350.3.20.3.2.A.1|REV|1": {
       "aanname_interval": "",
       "aanname_kosten": "",
-      "aging_effect_pct": 0.0,
+      "aging_effect_pct": 100.0,
       "causes_unavailability": true,
       "cm_kosten_als_basis": false,
       "cost_eur": 1200.0,
@@ -17046,7 +19073,7 @@
     "06H-350.3.21.8.1.A.1|REV|0": {
       "aanname_interval": "",
       "aanname_kosten": "",
-      "aging_effect_pct": 0.0,
+      "aging_effect_pct": 100.0,
       "causes_unavailability": true,
       "cm_kosten_als_basis": false,
       "cost_eur": 30000.0,
@@ -17092,7 +19119,7 @@
     "06H-350.3.23.2.1.A.2|REV|0": {
       "aanname_interval": "",
       "aanname_kosten": "",
-      "aging_effect_pct": 0.0,
+      "aging_effect_pct": 100.0,
       "causes_unavailability": true,
       "cm_kosten_als_basis": false,
       "cost_eur": 5000.0,
@@ -17184,7 +19211,7 @@
     "06H-350.3.3.1.1.1.A.2|REV|0": {
       "aanname_interval": "",
       "aanname_kosten": "",
-      "aging_effect_pct": 0.0,
+      "aging_effect_pct": 100.0,
       "causes_unavailability": true,
       "cm_kosten_als_basis": false,
       "cost_eur": 35000.0,
@@ -17253,7 +19280,7 @@
     "06H-350.3.3.6.1.A.2|REV|0": {
       "aanname_interval": "",
       "aanname_kosten": "",
-      "aging_effect_pct": 0.0,
+      "aging_effect_pct": 100.0,
       "causes_unavailability": true,
       "cm_kosten_als_basis": false,
       "cost_eur": 250000.0,
@@ -17322,7 +19349,7 @@
     "06H-350.3.3.7.1.A.1|REV|0": {
       "aanname_interval": "",
       "aanname_kosten": "",
-      "aging_effect_pct": 0.0,
+      "aging_effect_pct": 100.0,
       "causes_unavailability": true,
       "cm_kosten_als_basis": false,
       "cost_eur": 1500.0,
@@ -17391,7 +19418,7 @@
     "06H-350.3.5.2.1.A.1|REV|0": {
       "aanname_interval": "",
       "aanname_kosten": "",
-      "aging_effect_pct": 0.0,
+      "aging_effect_pct": 100.0,
       "causes_unavailability": true,
       "cm_kosten_als_basis": false,
       "cost_eur": 15000.0,
@@ -17460,7 +19487,7 @@
     "06H-350.3.5.9.1.A.1|REV|0": {
       "aanname_interval": "",
       "aanname_kosten": "",
-      "aging_effect_pct": 0.0,
+      "aging_effect_pct": 100.0,
       "causes_unavailability": true,
       "cm_kosten_als_basis": false,
       "cost_eur": 6000.0,
@@ -17506,7 +19533,7 @@
     "06H-350.3.6.1.1.A.1|REV|0": {
       "aanname_interval": "",
       "aanname_kosten": "",
-      "aging_effect_pct": 0.0,
+      "aging_effect_pct": 100.0,
       "causes_unavailability": true,
       "cm_kosten_als_basis": false,
       "cost_eur": 1500.0,
@@ -17690,7 +19717,7 @@
     "06H-350.3.6.2.1.A.2|REV|0": {
       "aanname_interval": "",
       "aanname_kosten": "",
-      "aging_effect_pct": 0.0,
+      "aging_effect_pct": 100.0,
       "causes_unavailability": true,
       "cm_kosten_als_basis": false,
       "cost_eur": 10000.0,
@@ -17759,7 +19786,7 @@
     "06H-350.3.6.3.1.A.1|REV|0": {
       "aanname_interval": "",
       "aanname_kosten": "",
-      "aging_effect_pct": 0.0,
+      "aging_effect_pct": 100.0,
       "causes_unavailability": true,
       "cm_kosten_als_basis": false,
       "cost_eur": 3500.0,
@@ -17851,7 +19878,7 @@
     "06H-350.3.8.2.1.A.1|REV|0": {
       "aanname_interval": "",
       "aanname_kosten": "",
-      "aging_effect_pct": 0.0,
+      "aging_effect_pct": 100.0,
       "causes_unavailability": true,
       "cm_kosten_als_basis": false,
       "cost_eur": 4000.0,
@@ -17943,7 +19970,7 @@
     "06H-350.3.8.3.1.A.1|REV|0": {
       "aanname_interval": "",
       "aanname_kosten": "",
-      "aging_effect_pct": 0.0,
+      "aging_effect_pct": 100.0,
       "causes_unavailability": true,
       "cm_kosten_als_basis": false,
       "cost_eur": 150.0,
@@ -17966,7 +19993,7 @@
     "06H-350.3.9.1.1.A.1|REV|0": {
       "aanname_interval": "",
       "aanname_kosten": "",
-      "aging_effect_pct": 0.0,
+      "aging_effect_pct": 100.0,
       "causes_unavailability": true,
       "cm_kosten_als_basis": false,
       "cost_eur": 5000.0,
@@ -17989,7 +20016,7 @@
     "06H-350.4.13.3.1.A.1|REV|0": {
       "aanname_interval": "",
       "aanname_kosten": "",
-      "aging_effect_pct": 0.0,
+      "aging_effect_pct": 100.0,
       "causes_unavailability": true,
       "cm_kosten_als_basis": false,
       "cost_eur": 20000.0,
@@ -18127,7 +20154,7 @@
     "06H-350.4.15.1.1.A.1|REV|0": {
       "aanname_interval": "",
       "aanname_kosten": "",
-      "aging_effect_pct": 0.0,
+      "aging_effect_pct": 100.0,
       "causes_unavailability": true,
       "cm_kosten_als_basis": false,
       "cost_eur": 25000.0,
@@ -18173,7 +20200,7 @@
     "06H-350.4.20.1.1.A.1|REV|0": {
       "aanname_interval": "",
       "aanname_kosten": "",
-      "aging_effect_pct": 0.0,
+      "aging_effect_pct": 100.0,
       "causes_unavailability": true,
       "cm_kosten_als_basis": false,
       "cost_eur": 0.0,
@@ -18219,7 +20246,7 @@
     "06H-350.4.3.2.1.A.1|REV|0": {
       "aanname_interval": "",
       "aanname_kosten": "",
-      "aging_effect_pct": 0.0,
+      "aging_effect_pct": 100.0,
       "causes_unavailability": true,
       "cm_kosten_als_basis": false,
       "cost_eur": 250.0,
@@ -18265,7 +20292,7 @@
     "06H-350.4.4.10.1.A.1|REV|0": {
       "aanname_interval": "",
       "aanname_kosten": "",
-      "aging_effect_pct": 0.0,
+      "aging_effect_pct": 100.0,
       "causes_unavailability": true,
       "cm_kosten_als_basis": false,
       "cost_eur": 500.0,
@@ -18357,7 +20384,7 @@
     "06H-350.4.4.9.1.A.1|REV-WET|0": {
       "aanname_interval": "",
       "aanname_kosten": "",
-      "aging_effect_pct": 0.0,
+      "aging_effect_pct": 100.0,
       "causes_unavailability": true,
       "cm_kosten_als_basis": false,
       "cost_eur": 100.0,
@@ -18587,7 +20614,7 @@
     "06H-350.4.5.1.1.A.2|REV|0": {
       "aanname_interval": "",
       "aanname_kosten": "",
-      "aging_effect_pct": 0.0,
+      "aging_effect_pct": 100.0,
       "causes_unavailability": true,
       "cm_kosten_als_basis": false,
       "cost_eur": 5000.0,
@@ -18725,7 +20752,7 @@
     "06H-350.5.4.2.1.A.1|REV|4": {
       "aanname_interval": "",
       "aanname_kosten": "",
-      "aging_effect_pct": 0.0,
+      "aging_effect_pct": 100.0,
       "causes_unavailability": true,
       "cm_kosten_als_basis": false,
       "cost_eur": 15000.0,
@@ -18771,7 +20798,7 @@
     "06H-350.5.7.1.1.A.1|REV|0": {
       "aanname_interval": "",
       "aanname_kosten": "",
-      "aging_effect_pct": 0.0,
+      "aging_effect_pct": 100.0,
       "causes_unavailability": true,
       "cm_kosten_als_basis": false,
       "cost_eur": 17500.0,
@@ -18840,7 +20867,7 @@
     "06H-350.5.7.2.1.A.1|REV|0": {
       "aanname_interval": "",
       "aanname_kosten": "",
-      "aging_effect_pct": 0.0,
+      "aging_effect_pct": 100.0,
       "causes_unavailability": true,
       "cm_kosten_als_basis": false,
       "cost_eur": 60000.0,
@@ -18932,7 +20959,7 @@
     "06H-350.5.7.3.1.A.1|REV|1": {
       "aanname_interval": "",
       "aanname_kosten": "",
-      "aging_effect_pct": 0.0,
+      "aging_effect_pct": 100.0,
       "causes_unavailability": true,
       "cm_kosten_als_basis": false,
       "cost_eur": 51000.0,
@@ -19045,7 +21072,7 @@
       "unavailability_fraction": 0.0
     }
   },
-  "projectnaam": "Gaarkeuken",
+  "projectnaam": "Modellering door Delta Pi",
   "task_groups": {
     "IN-ALG FIT EWC": {
       "causes_unavailability": false,

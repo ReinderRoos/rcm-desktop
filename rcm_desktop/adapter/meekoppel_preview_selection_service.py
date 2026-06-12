@@ -6,13 +6,19 @@ from dataclasses import dataclass, replace
 from typing import Literal
 
 from rcm_desktop import messages
-from rcm_desktop.adapter.meekoppel_bundle_insight_service import MeekoppelPreviewTaskRow
+from rcm_desktop.adapter.meekoppel_apply_service import MeekoppelAnchor
+from rcm_desktop.adapter.meekoppel_bundle_insight_service import (
+    MeekoppelPreviewTaskRow,
+    live_determined_by_line,
+    live_target_year,
+    recompute_task_rows_for_selection,
+)
 
 VisibilityFilter = Literal["all", "shifting_only"]
 
 
 def is_shiftable(row: MeekoppelPreviewTaskRow) -> bool:
-    return row.blocked_reason is None and row.delta_years != 0
+    return row.blocked_reason is None
 
 
 def _is_visible(row: MeekoppelPreviewTaskRow, visibility_filter: VisibilityFilter) -> bool:
@@ -35,15 +41,36 @@ class MeekoppelSelectionCounts:
 class MeekoppelPreviewSelectionModel:
     task_rows: tuple[MeekoppelPreviewTaskRow, ...]
     session_checked: frozenset[str]
+    anchor: MeekoppelAnchor = "later"
     visibility_filter: VisibilityFilter = "all"
     row_filter_text: str = ""
 
     @classmethod
     def from_task_rows(
-        cls, rows: tuple[MeekoppelPreviewTaskRow, ...]
+        cls,
+        rows: tuple[MeekoppelPreviewTaskRow, ...],
+        *,
+        anchor: MeekoppelAnchor = "later",
     ) -> MeekoppelPreviewSelectionModel:
-        shiftable = frozenset(row.pm_id for row in rows if is_shiftable(row))
-        return cls(task_rows=rows, session_checked=shiftable)
+        selectable = frozenset(row.pm_id for row in rows if is_shiftable(row))
+        model = cls(task_rows=rows, session_checked=selectable, anchor=anchor)
+        return model.with_live_rows()
+
+    def with_live_rows(self) -> MeekoppelPreviewSelectionModel:
+        rows = recompute_task_rows_for_selection(
+            all_rows=self.task_rows,
+            checked_pm_ids=self.session_checked,
+            anchor=self.anchor,
+        )
+        if rows == self.task_rows:
+            return self
+        return replace(self, task_rows=rows)
+
+    def determined_by_line(self) -> str:
+        return live_determined_by_line(self.task_rows, self.session_checked)
+
+    def target_year(self) -> int:
+        return live_target_year(self.task_rows, self.session_checked)
 
     def with_visibility_filter(
         self, visibility_filter: VisibilityFilter
@@ -84,22 +111,28 @@ class MeekoppelPreviewSelectionModel:
         if row is None or not is_shiftable(row):
             return self
         if checked:
-            return replace(self, session_checked=self.session_checked | {pm_id})
-        return replace(
-            self, session_checked=self.session_checked - frozenset({pm_id})
-        )
+            updated = replace(self, session_checked=self.session_checked | {pm_id})
+        else:
+            updated = replace(
+                self, session_checked=self.session_checked - frozenset({pm_id})
+            )
+        return updated.with_live_rows()
 
     def bulk_select_visible(self) -> MeekoppelPreviewSelectionModel:
         add = frozenset(
             row.pm_id for row in self.visible_rows() if is_shiftable(row)
         )
-        return replace(self, session_checked=self.session_checked | add)
+        return replace(
+            self, session_checked=self.session_checked | add
+        ).with_live_rows()
 
     def bulk_deselect_visible(self) -> MeekoppelPreviewSelectionModel:
         remove = frozenset(
             row.pm_id for row in self.visible_rows() if is_shiftable(row)
         )
-        return replace(self, session_checked=self.session_checked - remove)
+        return replace(
+            self, session_checked=self.session_checked - remove
+        ).with_live_rows()
 
     def apply_eligible_pm_ids(self) -> frozenset[str]:
         shiftable = frozenset(row.pm_id for row in self.task_rows if is_shiftable(row))

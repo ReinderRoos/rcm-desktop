@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from PySide6.QtWidgets import QHeaderView, QTableWidget
+from PySide6.QtWidgets import QHeaderView, QTableView, QTableWidget
 
 from rcm_desktop.table_ui_constants import TEXT_COL_MAX_WIDTH_WIDE
 
@@ -18,6 +18,24 @@ def resize_rows_if_wrapped_within_limit(
     max_rows: int,
 ) -> None:
     if not wrapped or effective_row_count(table) > max_rows:
+        return
+    table.resizeRowsToContents()
+
+
+def table_view_row_count(table: QTableView) -> int:
+    model = table.model()
+    if model is None:
+        return 0
+    return model.rowCount()
+
+
+def resize_table_view_rows_if_wrapped(
+    table: QTableView,
+    *,
+    wrapped: bool,
+    max_rows: int,
+) -> None:
+    if not wrapped or table_view_row_count(table) > max_rows:
         return
     table.resizeRowsToContents()
 

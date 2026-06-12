@@ -55,8 +55,14 @@ def gate_workbook(path: Path) -> ImportGateResult:
 def persist_wizard_result(
     wizard: ImportWizardResult,
     save_path: Path,
+    *,
+    source_workbook_path: Path | None = None,
 ) -> ImportPersistResult:
-    outcome = persist_import_wizard_result(wizard, save_path)
+    outcome = persist_import_wizard_result(
+        wizard,
+        save_path,
+        source_workbook_path=source_workbook_path,
+    )
     if isinstance(outcome, PersistImportSuccess):
         return ImportPersistResult(kind="success", success=outcome)
     return ImportPersistResult(kind="blocked", failure=outcome)

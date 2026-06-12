@@ -149,6 +149,65 @@ def test_scope_filter_shows_parent_group_when_only_leaf_in_subtree() -> None:
     assert panel.rows[0].pbs_id == "ROOT"
 
 
+def test_sync_meekoppel_panel_multi_select_shows_parent_group_via_leaf() -> None:
+    project = _project_with_rev_tasks()
+    session = ProjectSession.from_parts(LoadedProject.from_core(project))
+    ws = ResultsWorkspaceState()
+    ws.set_modus(MODE_LCC)
+    ws.set_planning_overlay(ws.snapshot().planning_overlay.begin_what_if())
+
+    panel = sync_meekoppel_panel(
+        session,
+        ws.snapshot(),
+        window_years=2,
+        selected_pbs_ids=frozenset({"P1"}),
+    )
+    assert len(panel.rows) == 1
+    assert panel.rows[0].pbs_id == "ROOT"
+
+
+def test_sync_meekoppel_panel_hides_parent_group_without_matching_leaf() -> None:
+    from rcm_core.config import RCMConfig
+    from rcm_core.models import Faalwijze, PBSItem, PMTask, TaskType
+
+    project = RCMProject(
+        config=RCMConfig(lifecycle_years=40.0, modeljaar=2026),
+        pbs_items={
+            "ROOT": PBSItem("ROOT", "obj", "el", "Site"),
+            "P1": PBSItem("P1", "obj", "el", "Pump", parent_pbs_id="ROOT"),
+            "P2": PBSItem("P2", "obj", "el", "Valve", parent_pbs_id="ROOT"),
+            "P3": PBSItem("P3", "obj", "el", "Tank"),
+        },
+        faalwijzes={
+            "FM-1": Faalwijze("FM-1", "P1", "F1", "Leak"),
+            "FM-2": Faalwijze("FM-2", "P2", "F1", "Wear"),
+            "FM-3": Faalwijze("FM-3", "P3", "F1", "Crack"),
+        },
+        pm_tasks={
+            "PM-A": PMTask("PM-A", "FM-1", TaskType.REV, interval_jaar=5.0),
+            "PM-B": PMTask("PM-B", "FM-1", TaskType.REV, interval_jaar=6.0),
+            "PM-C": PMTask("PM-C", "FM-2", TaskType.REV, interval_jaar=6.0),
+            "PM-D": PMTask("PM-D", "FM-2", TaskType.REV, interval_jaar=7.0),
+            "PM-E": PMTask("PM-E", "FM-3", TaskType.REV, interval_jaar=6.0),
+            "PM-F": PMTask("PM-F", "FM-3", TaskType.REV, interval_jaar=7.0),
+        },
+    )
+    session = ProjectSession.from_parts(LoadedProject.from_core(project))
+    ws = ResultsWorkspaceState()
+    ws.set_modus(MODE_LCC)
+    ws.set_planning_overlay(ws.snapshot().planning_overlay.begin_what_if())
+
+    panel = sync_meekoppel_panel(
+        session,
+        ws.snapshot(),
+        window_years=2,
+        selected_pbs_ids=frozenset({"P3"}),
+    )
+    assert len(panel.rows) == 1
+    assert panel.rows[0].pbs_id == "P3"
+    assert panel.rows[0].pbs_id != "ROOT"
+
+
 def test_sync_meekoppel_panel_scope_filter_empty_message() -> None:
     project = _project_with_rev_tasks()
     session = ProjectSession.from_parts(LoadedProject.from_core(project))

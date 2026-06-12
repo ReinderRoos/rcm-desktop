@@ -23,6 +23,8 @@ class LCCStackedBarChartWidget(QWidget):
         self._buckets: tuple[LCCYearBucket, ...] = ()
         self._selected_year: int | None = None
         self._scale_max: float | None = None
+        self._x_axis_label = messages.LCC_PLOT_AXIS_X_KALENDERJAREN
+        self._y_axis_label = ""
         self.setMinimumHeight(220)
 
     def set_buckets(self, buckets: tuple[LCCYearBucket, ...]) -> None:
@@ -38,12 +40,18 @@ class LCCStackedBarChartWidget(QWidget):
         self._scale_max = value
         self.update()
 
+    def set_axis_labels(self, *, x_label: str, y_label: str) -> None:
+        self._x_axis_label = x_label
+        self._y_axis_label = y_label
+        self.update()
+
     def buckets(self) -> tuple[LCCYearBucket, ...]:
         return self._buckets
 
     def _layout_metrics(self, rect):
-        bottom_axis_height = 18
-        left_margin = 8
+        bottom_axis_height = 28
+        left_axis_width = 72
+        left_margin = left_axis_width + 8
         right_margin = 8
         n = len(self._buckets)
         usable_w = max(60, rect.width() - left_margin - right_margin)
@@ -51,14 +59,14 @@ class LCCStackedBarChartWidget(QWidget):
         bar_w = max(4, slot_w - 3)
         plot_h = max(60, rect.height() - bottom_axis_height - 6)
         baseline_y = 6 + plot_h
-        return left_margin, right_margin, slot_w, bar_w, plot_h, baseline_y
+        return left_margin, right_margin, slot_w, bar_w, plot_h, baseline_y, left_axis_width
 
     def _calendar_year_at(self, x: int, y: int) -> int | None:
         if not self._buckets:
             return None
         rect = self.rect()
-        left_margin, _right_margin, slot_w, _bar_w, _plot_h, baseline_y = self._layout_metrics(rect)
-        if y < 0 or y > baseline_y + 18:
+        left_margin, _right_margin, slot_w, _bar_w, _plot_h, baseline_y, _ = self._layout_metrics(rect)
+        if y < 0 or y > baseline_y + 28:
             return None
         index = (x - left_margin) // slot_w
         if 0 <= index < len(self._buckets):
@@ -95,7 +103,9 @@ class LCCStackedBarChartWidget(QWidget):
             painter.end()
             return
 
-        left_margin, right_margin, slot_w, bar_w, plot_h, baseline_y = self._layout_metrics(rect)
+        left_margin, right_margin, slot_w, bar_w, plot_h, baseline_y, left_axis_width = (
+            self._layout_metrics(rect)
+        )
         text_color = QColor("#212121")
         for i, bucket in enumerate(self._buckets):
             x = left_margin + i * slot_w
@@ -114,8 +124,20 @@ class LCCStackedBarChartWidget(QWidget):
                 x, baseline_y - corr_h - prev_h, bar_w, prev_h, QBrush(self._PREVENTIEF_COLOR)
             )
         painter.setPen(QPen(text_color))
+        if self._y_axis_label:
+            painter.save()
+            painter.translate(8, baseline_y)
+            painter.rotate(-90)
+            painter.drawText(0, 0, left_axis_width + 40, 16, Qt.AlignCenter, self._y_axis_label)
+            painter.restore()
         first_year = self._buckets[0].calendar_year
         last_year = self._buckets[-1].calendar_year
         painter.drawText(left_margin, baseline_y + 14, str(first_year))
         painter.drawText(rect.width() - right_margin - 50, baseline_y + 14, str(last_year))
+        if self._x_axis_label:
+            painter.drawText(
+                left_margin,
+                rect.height() - 4,
+                self._x_axis_label,
+            )
         painter.end()

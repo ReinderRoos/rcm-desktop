@@ -941,8 +941,8 @@
       "beta_jaar": 2.5,
       "cost_cm_eur": 45000.0,
       "downtime_per_failure": {
-        "unit": "dag",
-        "value": 1.5
+        "unit": "uur",
+        "value": 36.0
       },
       "eindgevolg": "",
       "faalwijze_omschrijving": "Temperatuurregeling vergisting verstoord",
@@ -1513,8 +1513,8 @@
       "beta_jaar": 0.0,
       "cost_cm_eur": 80000.0,
       "downtime_per_failure": {
-        "unit": "dag",
-        "value": 3.0
+        "unit": "uur",
+        "value": 72.0
       },
       "eindgevolg": "",
       "faalwijze_omschrijving": "Corrosie/betondegradatie constructie",
@@ -1981,8 +1981,8 @@
       "beta_jaar": 0.0,
       "cost_cm_eur": 80000.0,
       "downtime_per_failure": {
-        "unit": "dag",
-        "value": 3.0
+        "unit": "uur",
+        "value": 72.0
       },
       "eindgevolg": "",
       "faalwijze_omschrijving": "Corrosie/betondegradatie constructie",
@@ -2241,8 +2241,8 @@
       "beta_jaar": 0.0,
       "cost_cm_eur": 25000.0,
       "downtime_per_failure": {
-        "unit": "dag",
-        "value": 1.0
+        "unit": "uur",
+        "value": 24.0
       },
       "eindgevolg": "",
       "faalwijze_omschrijving": "Ontwateringsprestatie onder norm",
@@ -8046,13 +8046,6 @@
     }
   },
   "pm_effect_links": {
-    "PMEL-0001": {
-      "aanname_fractie": "Geplande revisie veroorzaakt expliciete maatregelkosten en geplande niet-beschikbaarheid.",
-      "fractie": 1.0,
-      "klasse_id": "EK-OTG-05",
-      "link_id": "PMEL-0001",
-      "pm_id": "PM-001"
-    },
     "PMEL-0002": {
       "aanname_fractie": "Geplande revisie veroorzaakt expliciete maatregelkosten en geplande niet-beschikbaarheid.",
       "fractie": 1.0,
@@ -8490,27 +8483,27 @@
   },
   "pm_tasks": {
     "PM-001": {
-      "aanname_interval": "Interval gekozen op basis van faaltype (aging: gepland, random: detectie/monitoring).",
-      "aanname_kosten": "Educated guess; bij groepsinspectie kosten op taakgroepniveau.",
-      "aging_effect_pct": 100.0,
-      "causes_unavailability": true,
-      "cm_kosten_als_basis": false,
-      "cost_eur": 40000.0,
+      "aanname_interval": null,
+      "aanname_kosten": null,
+      "aging_effect_pct": 0.0,
+      "causes_unavailability": null,
+      "cm_kosten_als_basis": null,
+      "cost_eur": 3800.0,
       "duration": {
-        "unit": "dag",
-        "value": 6.0
+        "unit": "uur",
+        "value": 0.0
       },
-      "effectiveness": 1.0,
-      "fm_id": "FM-001",
-      "interval_jaar": 21.0,
-      "is_wettelijk_verplicht": false,
-      "library_ref": "",
-      "notes": "",
+      "effectiveness": null,
+      "fm_id": "FM-081",
+      "interval_jaar": 0.25,
+      "is_wettelijk_verplicht": null,
+      "library_ref": null,
+      "notes": null,
       "pm_id": "PM-001",
-      "taak_omschrijving": "Revisie/vervanging voor: corrosie/betondegradatie constructie",
-      "taak_type": "REV",
-      "task_group_id": null,
-      "unavailability_fraction": 1.0
+      "taak_omschrijving": "Inspectie",
+      "taak_type": "IN",
+      "task_group_id": "TG-IN-ELEK",
+      "unavailability_fraction": 0.0
     },
     "PM-002": {
       "aanname_interval": "Interval gekozen op basis van faaltype (aging: gepland, random: detectie/monitoring).",

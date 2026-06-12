@@ -5,6 +5,7 @@ from __future__ import annotations
 from datetime import datetime
 from pathlib import Path
 
+from rcm_core.effect_impact_service import aggregate, collect_fm_ids_for_functie
 from rcm_core.models import RCMProject
 
 from rcm_desktop import messages
@@ -37,6 +38,7 @@ from rcm_desktop.adapter.results_workspace_state import (
     ContributionPresentation,
     METRIC_KOSTEN,
     METRIC_NIET_BESCHIKBAARHEID,
+    SOURCE_FAALWIJZE,
     SOURCE_PBS,
 )
 from rcm_desktop.adapter.unavailability_chart_service import build_unavailability_chart_input
@@ -222,6 +224,8 @@ def _build_functie_section(
     section_prefix: str,
 ) -> ReportSection:
     scope_id = _functie_scope_id(project, chapter.functie_id)
+    scope_kind = "nb" if metric == METRIC_NIET_BESCHIKBAARHEID else "cost"
+    fm_scope = collect_fm_ids_for_functie(project, chapter.functie_id, scope_kind)
     children: list[ReportSection] = []
     primary = bundle.scenarios[0]
     narrative = build_functie_narrative(
@@ -237,10 +241,11 @@ def _build_functie_section(
         top_rows = build_contribution_rows(
             project,
             scenario.run_result,
-            source=SOURCE_PBS,
+            source=SOURCE_FAALWIJZE,
             metric=metric,
             top_n=_TOP_N,
-            scope_id=scope_id,
+            scope_id=None,
+            fm_ids=fm_scope,
             presentation=_REPORT_PRESENTATION,
         )
         table_rows = tuple(
@@ -292,6 +297,33 @@ def _build_functie_section(
                         ),
                     )
                 )
+        fm_dict = {fr.fm_id: fr for fr in scenario.run_result.fm_core_results}
+        effect_impact_rows = aggregate(
+            project,
+            fm_dict,
+            fm_ids=fm_scope,
+        )
+        if effect_impact_rows:
+            children.append(
+                ReportSection(
+                    title=f"Effectimpact — {scenario.label}",
+                    tables=(
+                        ReportTable(
+                            headers=("Effectklasse", "Waarde", "Eenheid", "RF", "Aandeel %"),
+                            rows=tuple(
+                                (
+                                    r.label,
+                                    f"{r.waarde_totaal:.2f}",
+                                    r.eenheid,
+                                    r.rf_display,
+                                    f"{r.share_pct:.1f}%",
+                                )
+                                for r in effect_impact_rows
+                            ),
+                        ),
+                    ),
+                )
+            )
         pbs_rows = build_contribution_rows(
             project,
             scenario.run_result,

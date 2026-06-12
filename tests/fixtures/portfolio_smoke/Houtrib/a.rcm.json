@@ -1,0 +1,290 @@
+{
+  "config": {
+    "lifecycle_years": 30.0,
+    "modeljaar": 2026,
+    "monte_carlo_n": 10000,
+    "monte_carlo_seed": 42,
+    "default_mttf_multiplier": 1.25,
+    "default_sigma_fraction": 0.15
+  },
+  "pbs_items": {
+    "PBS-001": {
+      "pbs_id": "PBS-001",
+      "object_naam": "Gemaal Noord",
+      "element_naam": "Gemaal Noord",
+      "bouwdeel_naam": "Gemaal Noord (systeem)",
+      "component_naam": "",
+      "multiplicity": 1,
+      "ontwerpleeftijd_jaar": 0.0,
+      "bouwjaar": 2006,
+      "parent_pbs_id": null,
+      "notes": "Systeemniveau — parent voor PBS-001-1 t/m PBS-001-3",
+      "aanname_leeftijd": "Bouwjaar 2006 = start exploitatie; ontwerpleeftijd 0 op systeemniveau."
+    },
+    "PBS-001-1": {
+      "pbs_id": "PBS-001-1",
+      "object_naam": "Gemaal Noord",
+      "element_naam": "Pompinstallatie",
+      "bouwdeel_naam": "Centrifugaalpomp",
+      "component_naam": "",
+      "multiplicity": 2,
+      "ontwerpleeftijd_jaar": 25.0,
+      "bouwjaar": 0,
+      "parent_pbs_id": "PBS-001",
+      "notes": "bouwjaar=0: erft bouwjaar 2006 van PBS-001. Effectieve multipliciteit = 1x2 = 2."
+    }
+  },
+  "functies": {
+    "FUNC-SYS-01": {
+      "functie_id": "FUNC-SYS-01",
+      "pbs_id": "PBS-001",
+      "functie_omschrijving": "Afvoeren van water bij maatgevende neerslag"
+    },
+    "FUNC-SYS-02": {
+      "functie_id": "FUNC-SYS-02",
+      "pbs_id": "PBS-001",
+      "functie_omschrijving": "Veilige exploitatie gemaal"
+    },
+    "FUNC-001": {
+      "functie_id": "FUNC-001",
+      "pbs_id": "PBS-001-1",
+      "functie_omschrijving": "Oppompen van water"
+    },
+    "FUNC-002": {
+      "functie_id": "FUNC-002",
+      "pbs_id": "PBS-001-1",
+      "functie_omschrijving": "Afdichten pompruimte"
+    }
+  },
+  "faalwijzes": {
+    "FM-001": {
+      "fm_id": "FM-001",
+      "pbs_id": "PBS-001-1",
+      "functie_id": "FUNC-001",
+      "faalwijze_omschrijving": "Impellerslijtage",
+      "failure_type": "aging",
+      "mttf_jaar": 15.0,
+      "sigma_jaar": 3.0,
+      "repair_quality": 0.8,
+      "is_evident": true,
+      "p_ongewenste_gebeurtenis": 1.0,
+      "downtime_per_failure": {
+        "value": 2.0,
+        "unit": "dag"
+      },
+      "cost_cm_eur": 8000.0,
+      "aanname_faalmodel": "Demo: MTTF/sigma/repair_quality voor testproject (slice 27).",
+      "aanname_cm_kosten": "Demo: CM-kostenband voor testproject."
+    },
+    "FM-003": {
+      "fm_id": "FM-003",
+      "pbs_id": "PBS-001-1",
+      "functie_id": "FUNC-001",
+      "faalwijze_omschrijving": "Lagerfalen (verborgen)",
+      "failure_type": "random",
+      "mttf_jaar": 12.0,
+      "sigma_jaar": 0.0,
+      "repair_quality": 1.0,
+      "is_evident": false,
+      "p_ongewenste_gebeurtenis": 1.0,
+      "downtime_per_failure": {
+        "value": 1.0,
+        "unit": "dag"
+      },
+      "cost_cm_eur": 3000.0,
+      "aanname_faalmodel": "Demo: MTTF/sigma/repair_quality voor testproject (slice 27).",
+      "aanname_cm_kosten": "Demo: CM-kostenband voor testproject."
+    }
+  },
+  "pm_tasks": {
+    "PM-001": {
+      "pm_id": "PM-001",
+      "fm_id": "FM-001",
+      "taak_type": "SVO",
+      "taak_omschrijving": "Smeermiddelen bijvullen",
+      "interval_jaar": 0.5,
+      "duration": {
+        "value": 2.0,
+        "unit": "uur"
+      },
+      "cost_eur": 150.0,
+      "effectiveness": 1.0,
+      "causes_unavailability": false,
+      "unavailability_fraction": 0.0,
+      "task_group_id": null,
+      "is_wettelijk_verplicht": false,
+      "aging_effect_pct": 0.0,
+      "aanname_kosten": "Demo: PM-kosten voor testproject.",
+      "aanname_interval": "Demo: inspectie-interval voor testproject."
+    },
+    "PM-002": {
+      "pm_id": "PM-002",
+      "fm_id": "FM-001",
+      "taak_type": "REV",
+      "taak_omschrijving": "Revisie pomp",
+      "interval_jaar": 15.0,
+      "aging_effect_pct": 100.0,
+      "is_wettelijk_verplicht": false,
+      "duration": {
+        "value": 3.0,
+        "unit": "dag"
+      },
+      "cost_eur": 6000.0,
+      "effectiveness": 1.0,
+      "causes_unavailability": true,
+      "unavailability_fraction": 1.0,
+      "task_group_id": null,
+      "aanname_kosten": "Demo: PM-kosten voor testproject.",
+      "aanname_interval": "Demo: inspectie-interval voor testproject."
+    },
+    "PM-003": {
+      "pm_id": "PM-003",
+      "fm_id": "FM-003",
+      "taak_type": "IN",
+      "taak_omschrijving": "Vibratiemeting lagers",
+      "interval_jaar": 1.0,
+      "duration": {
+        "value": 4.0,
+        "unit": "uur"
+      },
+      "cost_eur": 300.0,
+      "effectiveness": 1.0,
+      "causes_unavailability": false,
+      "unavailability_fraction": 0.0,
+      "task_group_id": "TG-001",
+      "is_wettelijk_verplicht": true,
+      "aging_effect_pct": 0.0,
+      "aanname_kosten": "Demo: PM-kosten voor testproject.",
+      "aanname_interval": "Demo: inspectie-interval voor testproject."
+    }
+  },
+  "task_groups": {
+    "TG-001": {
+      "group_id": "TG-001",
+      "omschrijving": "Jaarlijkse inspectieronde pomp",
+      "taak_type": "IN",
+      "interval_jaar": 1.0,
+      "duration": {
+        "value": 8.0,
+        "unit": "uur"
+      },
+      "cost_eur": 500.0,
+      "causes_unavailability": false,
+      "unavailability_fraction": 0.0,
+      "library_ref": ""
+    }
+  },
+  "effect_klassen": {
+    "EK-SYS-01": {
+      "klasse_id": "EK-SYS-01",
+      "omschrijving": "Gemaal volledig buiten gebruik",
+      "functie_id": "FUNC-SYS-01",
+      "categorie": "beschikbaarheid",
+      "notes": "Systeemeindeffect: het gemaal kan geen water afvoeren."
+    },
+    "EK-SYS-02": {
+      "klasse_id": "EK-SYS-02",
+      "omschrijving": "Verminderde afvoercapaciteit",
+      "functie_id": "FUNC-SYS-01",
+      "categorie": "beschikbaarheid",
+      "notes": "Systeemeindeffect: het gemaal functioneert gedeeltelijk."
+    },
+    "EK-SYS-03": {
+      "klasse_id": "EK-SYS-03",
+      "omschrijving": "Wateroverlast (risico)",
+      "functie_id": "FUNC-SYS-01",
+      "categorie": "risico",
+      "notes": "Systeemeindeffect: kans op wateroverlast door onvoldoende afvoercapaciteit."
+    },
+    "EK-SYS-04": {
+      "klasse_id": "EK-SYS-04",
+      "omschrijving": "Veiligheidsincident (RI&E klasse I)",
+      "functie_id": "FUNC-SYS-02",
+      "categorie": "veiligheid",
+      "notes": "Systeemeindeffect: kans op persoonlijk letsel of milieuschade."
+    }
+  },
+  "fm_effect_links": {
+    "FMEL-001": {
+      "link_id": "FMEL-001",
+      "fm_id": "FM-001",
+      "klasse_id": "EK-SYS-02",
+      "fractie": 0.7,
+      "aanname_fractie": "Demo: gedeeltelijke effectbijdrage."
+    },
+    "FMEL-002": {
+      "link_id": "FMEL-002",
+      "fm_id": "FM-001",
+      "klasse_id": "EK-SYS-01",
+      "fractie": 0.3,
+      "aanname_fractie": "Demo: gedeeltelijke effectbijdrage."
+    },
+    "FMEL-003": {
+      "link_id": "FMEL-003",
+      "fm_id": "FM-002",
+      "klasse_id": "EK-SYS-03",
+      "fractie": 0.8,
+      "aanname_fractie": "Demo: gedeeltelijke effectbijdrage."
+    },
+    "FMEL-004": {
+      "link_id": "FMEL-004",
+      "fm_id": "FM-002",
+      "klasse_id": "EK-SYS-04",
+      "fractie": 0.2,
+      "aanname_fractie": "Demo: gedeeltelijke effectbijdrage."
+    },
+    "FMEL-005": {
+      "link_id": "FMEL-005",
+      "fm_id": "FM-003",
+      "klasse_id": "EK-SYS-01",
+      "fractie": 1.0
+    },
+    "FMEL-006": {
+      "link_id": "FMEL-006",
+      "fm_id": "FM-004",
+      "klasse_id": "EK-SYS-01",
+      "fractie": 1.0
+    },
+    "FMEL-007": {
+      "link_id": "FMEL-007",
+      "fm_id": "FM-005",
+      "klasse_id": "EK-SYS-01",
+      "fractie": 0.3,
+      "aanname_fractie": "Demo: gedeeltelijke effectbijdrage."
+    },
+    "FMEL-008": {
+      "link_id": "FMEL-008",
+      "fm_id": "FM-005",
+      "klasse_id": "EK-SYS-03",
+      "fractie": 0.3,
+      "aanname_fractie": "Demo: gedeeltelijke effectbijdrage."
+    },
+    "FMEL-009": {
+      "link_id": "FMEL-009",
+      "fm_id": "FM-006",
+      "klasse_id": "EK-SYS-01",
+      "fractie": 1.0
+    },
+    "FMEL-010": {
+      "link_id": "FMEL-010",
+      "fm_id": "FM-006",
+      "klasse_id": "EK-SYS-03",
+      "fractie": 0.5,
+      "aanname_fractie": "Demo: gedeeltelijke effectbijdrage."
+    }
+  },
+  "pm_effect_links": {
+    "PMEL-001": {
+      "link_id": "PMEL-001",
+      "pm_id": "PM-002",
+      "klasse_id": "EK-SYS-01",
+      "fractie": 1.0
+    },
+    "PMEL-002": {
+      "link_id": "PMEL-002",
+      "pm_id": "PM-007",
+      "klasse_id": "EK-SYS-01",
+      "fractie": 1.0
+    }
+  }
+}

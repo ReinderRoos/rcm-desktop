@@ -4,13 +4,16 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from rcm_desktop.adapter.contribution_chart_service import ContributionRow, build_contribution_rows
-from rcm_desktop.adapter.fm_evident_filter import filter_fm_rows_by_evident
 from rcm_desktop.adapter.lcc_render_cache_service import build_lcc_curve_cache_key
 from rcm_desktop.adapter.lcc_view_service import LCCView, build_lcc_view as build_lcc_view_core
 from rcm_desktop.adapter.presentation_cache_service import PresentationProjectTotal
 from rcm_desktop.adapter.project_session import ProjectSession
 from rcm_desktop.adapter.result_filter_service import filter_run_result
-from rcm_desktop.adapter.result_view_service import FMResultRow
+from rcm_desktop.adapter.result_view_service import (
+    FMResultRow,
+    apply_presentation_scale_to_fm_rows,
+    enrich_fm_rows_with_nmf_rf,
+)
 from rcm_desktop.adapter.results_workspace_state import (
     MODE_BIJDRAGEN,
     MODE_FM_DETAIL,
@@ -36,14 +39,22 @@ def build_workspace_cache_modus_key(snapshot: WorkspaceStateSnapshot) -> str:
     if snapshot.modus == MODE_BIJDRAGEN:
         p = snapshot.contribution_presentation
         year = p.year_choice if p.year_choice == "average" else int(p.year_choice)
+        filt = snapshot.effect_nb_filter
+        filt_key = (
+            "all"
+            if filt.is_all()
+            else ",".join(sorted(filt.selected_klasse_ids))
+        )
         return (
             f"{snapshot.modus}|{snapshot.source}|{snapshot.metric}|{snapshot.top_n}|"
-            f"{p.horizon}|{year}|{p.unavailability_display}"
+            f"{p.horizon}|{year}|{p.unavailability_display}|nb:{filt_key}"
         )
     if snapshot.modus == MODE_LCC:
         return build_lcc_curve_cache_key(snapshot)
     if snapshot.modus == MODE_FM_DETAIL:
-        return f"fm|{snapshot.scope_id}|{snapshot.fm_evident_filter}"
+        filt = snapshot.effect_nb_filter
+        filt_key = "all" if filt.is_all() else ",".join(sorted(filt.selected_klasse_ids))
+        return f"fm|{snapshot.scope_id}|nb:{filt_key}"
     return snapshot.modus
 
 
@@ -55,11 +66,13 @@ def _contribution_cache_matches(
     if cached is None or snapshot.scope_id is not None:
         return False
     p = snapshot.contribution_presentation
+    filt = snapshot.effect_nb_filter
     return (
         snapshot.source == cached.contribution_source
         and snapshot.metric == cached.contribution_metric
         and snapshot.top_n == cached.contribution_top_n
         and p == cached.contribution_presentation
+        and filt.is_all()
     )
 
 
@@ -73,10 +86,17 @@ def build_fm_detail_view(
     run = session.run
     assert run is not None
     view = filter_run_result(project, run, snapshot.scope_id)
-    rows = filter_fm_rows_by_evident(
-        view.fm_rows, project, snapshot.fm_evident_filter
+    rows = apply_presentation_scale_to_fm_rows(
+        project,
+        run.fm_core_results,
+        view.fm_rows,
+        presentation=snapshot.contribution_presentation,
+        nb_filter=snapshot.effect_nb_filter,
     )
-    return FMDetailView(fm_rows=tuple(rows))
+    rows = enrich_fm_rows_with_nmf_rf(
+        project, out=rows, nb_filter=snapshot.effect_nb_filter
+    )
+    return FMDetailView(fm_rows=rows)
 
 
 def build_bijdragen_view(
@@ -113,6 +133,7 @@ def build_bijdragen_view(
             top_n=snapshot.top_n,
             scope_id=snapshot.scope_id,
             presentation=snapshot.contribution_presentation,
+            effect_nb_filter=snapshot.effect_nb_filter,
         ),
     )
     return BijdragenView(

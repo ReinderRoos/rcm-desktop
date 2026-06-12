@@ -1,6 +1,6 @@
 # KANBAN handoff — slice 55 (meekoppel discovery parent-rollup)
 
-**Status:** niet gestart  
+**Status:** done (issues 01–03 af; issue 04 HITL handcheck open)  
 **PRD:** `PRD.md`  
 **Slice-map:** `SLICE_MAP.md`
 
@@ -12,9 +12,9 @@ Discovery groepeert REV op **parent** van FM-knoop (één trede hoger); scope-fi
 
 | # | Issue | Type | Status |
 |---|-------|------|--------|
-| 01 | `bundling_pbs_id` + discovery rollup | AFK | ⬜ |
-| 02 | Scope-filter leaf-dekking | AFK | ⬜ |
-| 03 | ADR-0005 amendement | AFK | ⬜ |
+| 01 | `bundling_pbs_id` + discovery rollup | AFK | **done** |
+| 02 | Scope-filter leaf-dekking | AFK | **done** |
+| 03 | ADR-0005 amendement | AFK | **done** |
 | 04 | Haarlem-handcheck + GO | HITL | ⬜ |
 
 ## Haarlem-handcheck (template — invullen bij issue 04)
@@ -51,4 +51,11 @@ Discovery groepeert REV op **parent** van FM-knoop (één trede hoger); scope-fi
 
 ## Sessienotities
 
-_(agent/human vult aan tijdens implementatie)_
+- Issues 01–02 waren al geïmplementeerd; deze sessie: ADR-amendement, gate tests (`test_slice55_discovery_rollup_gate.py`), panel multi-select tests.
+- Slice 54 issue 05 gestart: live doeljaar op checkbox-selectie (`recompute_task_rows_for_selection`).
+
+## Testcommando
+
+```powershell
+python -m pytest tests/test_slice55_discovery_rollup_gate.py tests/test_meekoppelkansen_discovery_service.py tests/test_meekoppel_panel_service.py tests/test_meekoppel_preview_selection_service.py -q
+```

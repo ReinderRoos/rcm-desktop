@@ -75,7 +75,27 @@ def run(project_path: str | Path) -> tuple[ValidateResult, RCMProject | None]:
             None,
         )
 
-    errors = validate_project(project)
+    try:
+        errors = validate_project(project)
+    except Exception as exc:
+        return (
+            ValidateResult(
+                status="error",
+                summary="Onverwachte fout tijdens valideren.",
+                details=[
+                    DetailItem(
+                        severity="error",
+                        code="VALIDATE_UNEXPECTED",
+                        message=str(exc),
+                    )
+                ],
+                error=UserFacingError(
+                    code="UNEXPECTED_ERROR",
+                    message="Er ging iets mis tijdens valideren.",
+                ),
+            ),
+            None,
+        )
     if errors:
         return (
             ValidateResult(

@@ -9,6 +9,7 @@ from rcm_desktop.adapter.editing_session import EditingSession
 from rcm_desktop.adapter.fm_edit_bundle_service import FmEditBundle
 from rcm_desktop.adapter.fm_edit_commit_service import (
     FmEditCommitResult,
+    apply_fm_scope,
     commit_edits,
     replace_fm_scope,
 )
@@ -32,7 +33,7 @@ def commit_fm_edit(
     """Valideer, materialiseer en optioneel save + incrementele run voor FM-edit."""
     del run_policy  # async pad blijft FmEditCommitRunner; façade deelt validate→run-logica
     if bundle is not None:
-        replace_fm_scope(session, bundle)
+        apply_fm_scope(session, bundle)
     return commit_edits(
         session,
         project_path=path,

@@ -21,10 +21,12 @@ from rcm_desktop.adapter.compare_view_service import (
 )
 from rcm_desktop.adapter.lcc_type_filter import LCCTypeFilterSet
 from rcm_desktop.adapter.lcc_view_service import LCCView
+from rcm_desktop.adapter.workspace_lcc_preset_service import effective_lcc_filters
 from rcm_desktop.adapter.presentation_cache_service import PresentationProjectTotal
 from rcm_desktop.adapter.project_session import ProjectSession
 from rcm_desktop.adapter.results_workspace_state import (
     METRIC_FAALMOMENTEN,
+    METRIC_KOSTEN,
     METRIC_NIET_BESCHIKBAARHEID,
     MODE_BIJDRAGEN,
     MODE_FM_DETAIL,
@@ -39,6 +41,12 @@ from rcm_desktop.adapter.workspace_detail_render_scope import (
     workspace_detail_split_render_depth,
 )
 from rcm_desktop.adapter.workspace_render_index import WorkspaceRenderIndex
+from rcm_desktop.adapter.workspace_view_registry import (
+    SIDE_INPUT,
+    WORKSPACE_VIEW_REGISTRY,
+    view_by_id,
+    views_for_side,
+)
 from rcm_desktop.adapter.workspace_view_service import (
     BijdragenView,
     FMDetailView,
@@ -62,6 +70,25 @@ _COLLAPSE_COLLAPSED = "▶"
 
 
 @dataclass(frozen=True)
+class WorkspaceViewDropdownItem:
+    view_id: str
+    label: str
+    enabled: bool
+    selected: bool
+
+
+@dataclass(frozen=True)
+class WorkspaceNavigationPlan:
+    workspace_side: str
+    active_view_id: str
+    side_input_checked: bool
+    side_output_checked: bool
+    dropdown_items: tuple[WorkspaceViewDropdownItem, ...]
+    show_input_placeholder: bool
+    show_input_entity_grid: bool
+
+
+@dataclass(frozen=True)
 class BijdragenToolbarPlan:
     top10_subbar_visible: bool
     horizon_lifecycle_visible: bool
@@ -69,6 +96,7 @@ class BijdragenToolbarPlan:
     year_combo_visible: bool
     nb_hours_visible: bool
     nb_percent_visible: bool
+    effect_nb_filter_visible: bool
     horizon_lifecycle_checked: bool
     horizon_per_year_checked: bool
     nb_hours_checked: bool
@@ -79,9 +107,14 @@ class BijdragenToolbarPlan:
 @dataclass(frozen=True)
 class LccToolbarVisibilityPlan:
     filter_bar_visible: bool
+    pm_type_filters_visible: bool
+    metric_combo_visible: bool
+    effect_nb_filter_visible: bool
     show_all_years_visible: bool
     year_summary_label_visible: bool
     meekoppel_panel_visible: bool
+    cm_filter_visible: bool
+    cm_preset_button_visible: bool
     lcc_filters: LCCTypeFilterSet
 
 
@@ -89,9 +122,16 @@ class LccToolbarVisibilityPlan:
 class FmToolbarPlan:
     batch_faalwijzen_visible: bool
     new_fm_visible: bool
-    fm_evident_filter_visible: bool
     fm_inspector_visible: bool
     clear_fm_inspector: bool
+    effect_nb_filter_visible: bool = True
+    metric_combo_visible: bool = False
+    horizon_lifecycle_visible: bool = False
+    horizon_per_year_visible: bool = False
+    year_combo_visible: bool = False
+    horizon_lifecycle_checked: bool = True
+    horizon_per_year_checked: bool = False
+    year_choice: str | int = "average"
 
 
 @dataclass(frozen=True)
@@ -130,11 +170,18 @@ class CollapsePanelsPlan:
 
 
 @dataclass(frozen=True)
+class SharedToolbarPlan:
+    effect_nb_filter_in_shared_row: bool
+
+
+@dataclass(frozen=True)
 class WorkspaceUiSyncPlan:
     detail_page_modus: str
     modus_button: str
+    navigation: WorkspaceNavigationPlan
     source_toggle: str
     metric: str
+    shared_toolbar: SharedToolbarPlan
     bijdragen: BijdragenToolbarPlan | None
     lcc_toolbar: LccToolbarVisibilityPlan | None
     fm_toolbar: FmToolbarPlan | None
@@ -175,6 +222,36 @@ def plan_compare_chrome(snapshot: WorkspaceStateSnapshot) -> CompareChromePlan:
     return _plan_compare_chrome(snapshot)
 
 
+def _plan_navigation(snapshot: WorkspaceStateSnapshot) -> WorkspaceNavigationPlan:
+    active_entry = view_by_id(WORKSPACE_VIEW_REGISTRY, snapshot.active_view_id)
+    on_input_side = snapshot.workspace_side == SIDE_INPUT
+    input_view_ready = (
+        active_entry is not None
+        and active_entry.side == SIDE_INPUT
+        and active_entry.enabled
+    )
+    show_input_entity_grid = on_input_side and input_view_ready
+    show_input_placeholder = on_input_side and not input_view_ready
+    dropdown_items = tuple(
+        WorkspaceViewDropdownItem(
+            view_id=entry.view_id,
+            label=entry.label,
+            enabled=entry.enabled,
+            selected=entry.view_id == snapshot.active_view_id,
+        )
+        for entry in views_for_side(WORKSPACE_VIEW_REGISTRY, snapshot.workspace_side)
+    )
+    return WorkspaceNavigationPlan(
+        workspace_side=snapshot.workspace_side,
+        active_view_id=snapshot.active_view_id,
+        side_input_checked=snapshot.workspace_side == SIDE_INPUT,
+        side_output_checked=snapshot.workspace_side != SIDE_INPUT,
+        dropdown_items=dropdown_items,
+        show_input_placeholder=show_input_placeholder,
+        show_input_entity_grid=show_input_entity_grid,
+    )
+
+
 def _plan_bijdragen_toolbar(
     snapshot: WorkspaceStateSnapshot,
 ) -> BijdragenToolbarPlan | None:
@@ -194,6 +271,7 @@ def _plan_bijdragen_toolbar(
         year_combo_visible=year_combo_visible,
         nb_hours_visible=nb_visible,
         nb_percent_visible=nb_visible,
+        effect_nb_filter_visible=nb_visible,
         horizon_lifecycle_checked=pres.horizon == "lifecycle",
         horizon_per_year_checked=pres.horizon == "per_year",
         nb_hours_checked=pres.unavailability_display == "hours",
@@ -203,22 +281,39 @@ def _plan_bijdragen_toolbar(
 
 
 def _plan_lcc_toolbar(snapshot: WorkspaceStateSnapshot) -> LccToolbarVisibilityPlan:
+    nb_visible = snapshot.metric == METRIC_NIET_BESCHIKBAARHEID
+    whatif_active = snapshot.planning_overlay.active
+    preset = effective_lcc_filters(snapshot)
+    cm_controls = preset.cm
     return LccToolbarVisibilityPlan(
         filter_bar_visible=True,
+        pm_type_filters_visible=snapshot.metric == METRIC_KOSTEN,
+        metric_combo_visible=True,
+        effect_nb_filter_visible=nb_visible,
         show_all_years_visible=True,
         year_summary_label_visible=True,
-        meekoppel_panel_visible=True,
-        lcc_filters=snapshot.lcc_filters,
+        meekoppel_panel_visible=whatif_active,
+        cm_filter_visible=cm_controls,
+        cm_preset_button_visible=cm_controls,
+        lcc_filters=preset,
     )
 
 
-def _plan_fm_toolbar(_snapshot: WorkspaceStateSnapshot) -> FmToolbarPlan:
+def _plan_fm_toolbar(snapshot: WorkspaceStateSnapshot) -> FmToolbarPlan:
+    pres = snapshot.contribution_presentation
     return FmToolbarPlan(
         batch_faalwijzen_visible=True,
         new_fm_visible=True,
-        fm_evident_filter_visible=True,
         fm_inspector_visible=True,
         clear_fm_inspector=False,
+        effect_nb_filter_visible=True,
+        metric_combo_visible=True,
+        horizon_lifecycle_visible=True,
+        horizon_per_year_visible=True,
+        year_combo_visible=pres.horizon == "per_year",
+        horizon_lifecycle_checked=pres.horizon == "lifecycle",
+        horizon_per_year_checked=pres.horizon == "per_year",
+        year_choice=pres.year_choice,
     )
 
 
@@ -240,9 +335,7 @@ def _collapse_glyph(collapsed: bool) -> str:
     return _COLLAPSE_COLLAPSED if collapsed else _COLLAPSE_EXPANDED
 
 
-def _plan_kpi_collapse(snapshot: WorkspaceStateSnapshot) -> CollapsePanelPlan | None:
-    if snapshot.modus != MODE_LCC:
-        return None
+def _plan_kpi_collapse(snapshot: WorkspaceStateSnapshot) -> CollapsePanelPlan:
     collapsed = snapshot.kpi_collapsed_in_lcc
     return CollapsePanelPlan(
         chrome_visible=True,
@@ -283,7 +376,7 @@ def _plan_meekoppel_collapse(
     previous: WorkspaceStateSnapshot | None,
     snapshot: WorkspaceStateSnapshot,
 ) -> MeekoppelCollapsePlan | None:
-    if snapshot.modus != MODE_LCC:
+    if snapshot.modus != MODE_LCC or not snapshot.planning_overlay.active:
         return None
     collapsed = snapshot.meekoppel_collapsed_in_lcc
     content_visible = not collapsed
@@ -311,10 +404,23 @@ def _inactive_fm_toolbar() -> FmToolbarPlan:
     return FmToolbarPlan(
         batch_faalwijzen_visible=False,
         new_fm_visible=False,
-        fm_evident_filter_visible=False,
         fm_inspector_visible=False,
         clear_fm_inspector=True,
+        effect_nb_filter_visible=False,
     )
+
+
+def _plan_shared_toolbar(snapshot: WorkspaceStateSnapshot) -> SharedToolbarPlan:
+    modus = snapshot.modus
+    if modus == MODE_BIJDRAGEN:
+        visible = snapshot.metric == METRIC_NIET_BESCHIKBAARHEID
+    elif modus == MODE_LCC:
+        visible = snapshot.metric == METRIC_NIET_BESCHIKBAARHEID
+    elif modus == MODE_FM_DETAIL:
+        visible = True
+    else:
+        visible = False
+    return SharedToolbarPlan(effect_nb_filter_in_shared_row=visible)
 
 
 class ResultsWorkspaceOrchestrator:
@@ -334,8 +440,10 @@ class ResultsWorkspaceOrchestrator:
         return WorkspaceUiSyncPlan(
             detail_page_modus=current.modus,
             modus_button=current.modus,
+            navigation=_plan_navigation(current),
             source_toggle=current.source,
             metric=current.metric,
+            shared_toolbar=_plan_shared_toolbar(current),
             bijdragen=_plan_bijdragen_toolbar(current),
             lcc_toolbar=(
                 _plan_lcc_toolbar(current) if current.modus == MODE_LCC else None

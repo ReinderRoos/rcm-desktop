@@ -1,0 +1,125 @@
+Totaal FMs: 135
+
+--- Dominante factor ---
+  133  residu (AW-onbekend)
+    2  scenario (CM-overlay)
+
+--- Actie ---
+   79  Band gebruiken; dieper onderzoek sigma/NMF/verdeling
+   25  Run met CM-overlay materialiseren
+   15  Geen actie nodig
+   13  MTTF/multipliciteit controleren; rest via MC-band
+    3  Optioneel invoer harmoniseren (leeftijd/MTTF/REV-scenario)
+
+--- Oorzaakcodes ---
+   88  C2
+   79  A1
+   27  B3
+   25  C1
+   13  A4
+
+ef_actual=0: 10 FMs
+  06H-350.1.20.13.1.A.2  leeftijd=44 MTTF=13 ratio=3.4x  AW_TotalW=4.296  mult=4
+  06H-350.1.7.5.1.A.1  leeftijd=44 MTTF=10 ratio=4.4x  AW_TotalW=5.5032  mult=4
+  06H-350.2.2.3.1.A.1  leeftijd=44 MTTF=10 ratio=4.4x  AW_TotalW=5.5094  mult=2
+  06H-350.3.16.2.1.A.1  leeftijd=44 MTTF=6 ratio=7.3x  AW_TotalW=26.848  mult=38
+  06H-350.3.19.4.1.A.1  leeftijd=44 MTTF=13 ratio=3.4x  AW_TotalW=4.296  mult=10
+  06H-350.3.6.1.1.A.1  leeftijd=11 MTTF=5 ratio=2.2x  AW_TotalW=118.1024  mult=1
+  06H-350.3.8.2.1.A.1  leeftijd=44 MTTF=15 ratio=2.9x  AW_TotalW=96.7852  mult=2
+  06H-350.3.8.3.1.A.1  leeftijd=44 MTTF=20 ratio=2.2x  AW_TotalW=3.0142  mult=2
+  06H-350.4.20.1.1.A.1  leeftijd=13 MTTF=6 ratio=2.2x  AW_TotalW=8.8524  mult=22
+  06H-350.4.4.10.1.A.1  leeftijd=44 MTTF=6.25 ratio=7.0x  AW_TotalW=5.0442  mult=8
+
+Scenario-mismatch (|Δscenario|>0.5): 63 FMs
+  06H-350.1.1.1.1.1.A.1  ef_actual=88.87  ef_cm=99.89  Δscenario=-11.02
+  06H-350.1.1.1.1.1.A.2  ef_actual=125.62  ef_cm=100.00  Δscenario=25.62
+  06H-350.1.1.1.11.1.A.1  ef_actual=81.50  ef_cm=76.00  Δscenario=5.50
+  06H-350.1.1.1.13.1.A.1  ef_actual=3.82  ef_cm=5.45  Δscenario=-1.64
+  06H-350.1.1.1.2.1.A.1  ef_actual=98.63  ef_cm=100.00  Δscenario=-1.37
+  06H-350.1.1.1.5.1.A.1  ef_actual=34.92  ef_cm=32.00  Δscenario=2.92
+  06H-350.1.1.1.9.1.A.2  ef_actual=73.52  ef_cm=76.16  Δscenario=-2.64
+  06H-350.1.18.1.1.1.A.1  ef_actual=50.26  ef_cm=48.00  Δscenario=2.26
+  06H-350.1.18.1.4.1.A.1  ef_actual=44.80  ef_cm=49.69  Δscenario=-4.89
+  06H-350.1.18.1.8.1.A.1  ef_actual=34.94  ef_cm=45.11  Δscenario=-10.17
+  06H-350.1.19.1.1.1.A.1  ef_actual=50.26  ef_cm=48.00  Δscenario=2.26
+  06H-350.1.19.1.4.1.A.1  ef_actual=44.80  ef_cm=49.69  Δscenario=-4.89
+  06H-350.1.19.1.8.1.A.1  ef_actual=17.47  ef_cm=22.55  Δscenario=-5.08
+  06H-350.1.2.1.1.1.A.1  ef_actual=187.64  ef_cm=200.00  Δscenario=-12.36
+  06H-350.1.2.1.1.1.A.2  ef_actual=251.24  ef_cm=200.00  Δscenario=51.24
+  06H-350.1.2.1.2.1.A.1  ef_actual=163.00  ef_cm=152.00  Δscenario=11.00
+  06H-350.1.2.1.6.1.A.1  ef_actual=31.18  ef_cm=38.12  Δscenario=-6.94
+  06H-350.1.2.1.6.1.A.2  ef_actual=195.49  ef_cm=200.00  Δscenario=-4.51
+  06H-350.1.20.7.1.A.2  ef_actual=81.50  ef_cm=76.00  Δscenario=5.50
+  06H-350.1.3.1.10.1.A.1  ef_actual=1319.23  ef_cm=1386.00  Δscenario=-66.77
+  06H-350.1.3.1.11.1.A.1  ef_actual=104.85  ef_cm=113.53  Δscenario=-8.68
+  06H-350.1.3.1.22.1.A.1  ef_actual=20.94  ef_cm=22.00  Δscenario=-1.06
+  06H-350.1.7.10.1.A.1  ef_actual=92.75  ef_cm=96.00  Δscenario=-3.25
+  06H-350.2.1.1.1.A.1  ef_actual=23.24  ef_cm=25.00  Δscenario=-1.76
+  06H-350.2.1.1.1.A.2  ef_actual=32.33  ef_cm=24.00  Δscenario=8.33
+  06H-350.2.1.3.1.A.1  ef_actual=42.89  ef_cm=40.00  Δscenario=2.89
+  06H-350.2.1.7.1.1.A.1  ef_actual=2.34  ef_cm=3.52  Δscenario=-1.18
+  06H-350.2.1.7.1.1.A.2  ef_actual=23.56  ef_cm=25.00  Δscenario=-1.44
+  06H-350.2.12.2.1.A.1  ef_actual=8.73  ef_cm=8.00  Δscenario=0.73
+  06H-350.2.14.2.1.A.1  ef_actual=191.35  ef_cm=192.00  Δscenario=-0.65
+  06H-350.2.14.2.1.A.2  ef_actual=182.45  ef_cm=192.00  Δscenario=-9.54
+  06H-350.2.15.1.1.A.1  ef_actual=41.09  ef_cm=43.52  Δscenario=-2.42
+  06H-350.2.2.1.1.A.1  ef_actual=17.99  ef_cm=19.51  Δscenario=-1.52
+  06H-350.2.2.14.1.A.1  ef_actual=17.29  ef_cm=18.92  Δscenario=-1.63
+  06H-350.2.2.15.1.A.1  ef_actual=44.81  ef_cm=46.00  Δscenario=-1.19
+  06H-350.2.2.15.2.A.1  ef_actual=43.96  ef_cm=46.00  Δscenario=-2.04
+  06H-350.2.2.23.1.A.1  ef_actual=57.13  ef_cm=50.00  Δscenario=7.13
+  06H-350.2.2.9.1.A.1  ef_actual=46.37  ef_cm=48.00  Δscenario=-1.63
+  06H-350.2.4.1.3.1.A.1  ef_actual=21.96  ef_cm=27.60  Δscenario=-5.64
+  06H-350.3.1.2.3.A.1  ef_actual=22.76  ef_cm=24.84  Δscenario=-2.08
+  06H-350.3.11.1.1.A.1  ef_actual=20.62  ef_cm=24.95  Δscenario=-4.34
+  06H-350.3.11.2.1.A.1  ef_actual=20.58  ef_cm=24.92  Δscenario=-4.34
+  06H-350.3.12.2.1.A.1  ef_actual=11.59  ef_cm=12.41  Δscenario=-0.82
+  06H-350.3.13.4.1.A.1  ef_actual=53.56  ef_cm=25.00  Δscenario=28.56
+  06H-350.3.14.3.1.A.1  ef_actual=28.29  ef_cm=23.00  Δscenario=5.29
+  06H-350.3.14.4.1.A.1  ef_actual=34.30  ef_cm=23.00  Δscenario=11.30
+  06H-350.3.15.4.1.A.1  ef_actual=31.72  ef_cm=25.00  Δscenario=6.72
+  06H-350.3.15.4.1.A.2  ef_actual=20.50  ef_cm=9.00  Δscenario=11.50
+  06H-350.3.16.1.1.A.2  ef_actual=536.82  ef_cm=532.00  Δscenario=4.82
+  06H-350.3.17.8.1.A.2  ef_actual=11.59  ef_cm=12.41  Δscenario=-0.82
+  06H-350.3.18.5.1.1.A.1  ef_actual=52.38  ef_cm=48.00  Δscenario=4.38
+  06H-350.3.19.4.1.A.2  ef_actual=203.75  ef_cm=190.00  Δscenario=13.75
+  06H-350.3.2.1.A.1  ef_actual=8.73  ef_cm=8.00  Δscenario=0.73
+  06H-350.3.21.8.1.A.1  ef_actual=30.85  ef_cm=25.00  Δscenario=5.85
+  06H-350.3.23.2.1.A.2  ef_actual=268.96  ef_cm=250.00  Δscenario=18.96
+  06H-350.3.3.1.1.1.A.2  ef_actual=22.76  ef_cm=24.84  Δscenario=-2.08
+  06H-350.3.3.6.1.A.2  ef_actual=22.76  ef_cm=24.84  Δscenario=-2.08
+  06H-350.3.3.7.1.A.1  ef_actual=100.90  ef_cm=60.00  Δscenario=40.90
+  06H-350.3.5.9.1.A.1  ef_actual=2387.18  ef_cm=2508.00  Δscenario=-120.82
+  06H-350.3.6.3.1.A.1  ef_actual=26.39  ef_cm=24.00  Δscenario=2.39
+  06H-350.4.13.3.1.A.1  ef_actual=7.08  ef_cm=8.03  Δscenario=-0.94
+  06H-350.4.15.1.1.A.1  ef_actual=20.38  ef_cm=19.00  Δscenario=1.38
+  06H-350.4.5.1.1.A.2  ef_actual=11.98  ef_cm=12.79  Δscenario=-0.80
+
+B3 leeftijd-mismatch: 27 FMs
+  06H-350.1.1.1.13.1.A.1  AW-leeftijd=44  RCM2-leeftijd=0
+  06H-350.1.1.1.9.1.A.1  AW-leeftijd=44  RCM2-leeftijd=13
+  06H-350.1.1.1.9.1.A.2  AW-leeftijd=44  RCM2-leeftijd=13
+  06H-350.1.18.1.6.1.A.1  AW-leeftijd=14  RCM2-leeftijd=0
+  06H-350.1.19.1.6.1.A.1  AW-leeftijd=21  RCM2-leeftijd=0
+  06H-350.1.2.1.1.1.A.1  AW-leeftijd=45  RCM2-leeftijd=1
+  06H-350.1.2.1.6.1.A.1  AW-leeftijd=44  RCM2-leeftijd=13
+  06H-350.1.20.20.1.A.1  AW-leeftijd=44  RCM2-leeftijd=0
+  06H-350.1.6.1.1.A.1  AW-leeftijd=44  RCM2-leeftijd=0
+  06H-350.2.1.1.1.A.1  AW-leeftijd=41  RCM2-leeftijd=8
+  06H-350.2.1.7.1.1.A.1  AW-leeftijd=41  RCM2-leeftijd=9
+  06H-350.2.14.2.1.A.2  AW-leeftijd=44  RCM2-leeftijd=30
+  06H-350.2.4.1.3.1.A.1  AW-leeftijd=44  RCM2-leeftijd=0
+  06H-350.2.6.1.1.A.1  AW-leeftijd=44  RCM2-leeftijd=0
+  06H-350.2.7.2.9.1.A.1  AW-leeftijd=44  RCM2-leeftijd=0
+  06H-350.3.1.2.3.A.1  AW-leeftijd=39  RCM2-leeftijd=0
+  06H-350.3.12.2.1.A.1  AW-leeftijd=13  RCM2-leeftijd=0
+  06H-350.3.15.4.1.A.1  AW-leeftijd=13  RCM2-leeftijd=7
+  06H-350.3.17.8.1.A.2  AW-leeftijd=13  RCM2-leeftijd=0
+  06H-350.3.21.8.1.A.1  AW-leeftijd=12  RCM2-leeftijd=0
+  06H-350.3.23.2.1.A.2  AW-leeftijd=13  RCM2-leeftijd=0
+  06H-350.3.3.1.1.1.A.2  AW-leeftijd=12  RCM2-leeftijd=0
+  06H-350.3.3.6.1.A.2  AW-leeftijd=12  RCM2-leeftijd=0
+  06H-350.3.6.2.1.A.2  AW-leeftijd=30  RCM2-leeftijd=0
+  06H-350.4.13.3.1.A.1  AW-leeftijd=4  RCM2-leeftijd=0
+  06H-350.4.5.1.1.A.2  AW-leeftijd=30  RCM2-leeftijd=0
+  06H-350.5.4.2.1.A.1  AW-leeftijd=44  RCM2-leeftijd=0

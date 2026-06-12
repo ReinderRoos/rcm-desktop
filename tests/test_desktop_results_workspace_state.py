@@ -18,12 +18,12 @@ from rcm_desktop.adapter.results_workspace_state import (
 )
 
 
-def test_default_snapshot_is_bijdragen_pbs_niet_beschikbaarheid_top10_no_scope():
+def test_default_snapshot_is_bijdragen_faalwijze_niet_beschikbaarheid_top10_no_scope():
     state = ResultsWorkspaceState()
     snap = state.snapshot()
 
     assert snap.modus == MODE_BIJDRAGEN
-    assert snap.source == SOURCE_PBS
+    assert snap.source == SOURCE_FAALWIJZE
     assert snap.metric == METRIC_NIET_BESCHIKBAARHEID
     assert snap.top_n == 10
     assert snap.scope_id is None

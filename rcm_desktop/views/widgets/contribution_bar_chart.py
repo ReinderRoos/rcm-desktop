@@ -8,6 +8,11 @@ from PySide6.QtWidgets import QWidget
 
 from rcm_desktop import messages
 from rcm_desktop.adapter.contribution_chart_service import ContributionRow
+from rcm_desktop.adapter.contribution_display_service import format_contribution_bar_annotation
+from rcm_desktop.adapter.results_workspace_state import (
+    ContributionPresentation,
+    METRIC_NIET_BESCHIKBAARHEID,
+)
 
 
 class ContributionBarChartWidget(QWidget):
@@ -16,7 +21,18 @@ class ContributionBarChartWidget(QWidget):
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
         self._rows: tuple[ContributionRow, ...] = ()
+        self._metric: str = METRIC_NIET_BESCHIKBAARHEID
+        self._presentation = ContributionPresentation()
         self.setMinimumHeight(180)
+
+    def set_display_context(
+        self,
+        metric: str,
+        presentation: ContributionPresentation,
+    ) -> None:
+        self._metric = metric
+        self._presentation = presentation
+        self.update()
 
     def set_rows(self, rows: tuple[ContributionRow, ...]) -> None:
         self._rows = tuple(rows)
@@ -24,6 +40,11 @@ class ContributionBarChartWidget(QWidget):
 
     def rows(self) -> tuple[ContributionRow, ...]:
         return self._rows
+
+    def bar_value_label(self, row: ContributionRow) -> str:
+        return format_contribution_bar_annotation(
+            row.value, self._metric, self._presentation
+        )
 
     def paintEvent(self, event):  # noqa: N802
         painter = QPainter(self)
@@ -58,5 +79,6 @@ class ContributionBarChartWidget(QWidget):
             bar_w = int(bar_max_width * (row.value / max_value))
             painter.fillRect(bar_x, y, bar_w, bar_height, QBrush(bar_color))
             painter.setPen(QPen(text_color))
-            painter.drawText(bar_x + bar_w + 4, y + bar_height - 4, f"{row.share_pct:.1f} %")
+            value_label = self.bar_value_label(row)
+            painter.drawText(bar_x + bar_w + 4, y + bar_height - 4, value_label)
         painter.end()

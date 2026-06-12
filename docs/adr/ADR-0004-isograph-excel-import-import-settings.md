@@ -2,7 +2,7 @@
 
 ## Status
 
-Accepted (2026-05-19). Haalt **Excel-import (bootstrap)** van de scrub-list; **subset-export** naar AW blijft latere slice.
+Accepted (2026-05-19). Haalt **Excel-import (bootstrap)** van de scrub-list; **subset-export** naar AW blijft latere slice. **Export-clausule superseded door ADR-0011** (2026-06-11): round-trip-export via bewaarde AW-bron. Import-besluiten hieronder blijven van kracht.
 
 ## Datum
 
@@ -63,6 +63,26 @@ Optioneel veld naast `config`, `pbs_items`, …:
 - **RF** → `FMEffectLink.fractie`.
 - **PM-effectlinks** alleen na afgeronde PM-spike (issue 02); anders leeg + waarschuwing.
 - **Leeftijd** op PBS (`bouwjaar`), niet per FM; `modeljaar` via wizard.
+
+### PM-effect fractie (slice 69)
+
+- **RF op PM:** `RedundancyFactor` op dezelfde assignment-rij → `PMEffectLink.fractie`
+  (analist-verwachting: zelfde RF als bij correctief falen wanneer `PEnable`/`IEnable` actief).
+- **Dual-scope:** `PEnable` en `IEnable` resolven apart naar Planned- resp. Inspection-taken.
+- **SubIndex-fallback:** alleen bij exact één kandidaat in scope; verplichte importwaarschuwing.
+- Semantiek-detail: `.scratch/rcm-desktop-slice69-ohs-effect-import-alignment/EFFECT_SEMANTICS_SPIKE.md`.
+
+### Effect-taxonomie (slice 70)
+
+- **`EffectKlasse.categorie`:** genormaliseerd (`beschikbaarheid`, `veiligheid`, `kosten`, `overig`) via mapping uit AW `RcmEffects.Type` — geen pass-through meer.
+- **`EffectKlasse.aw_effect_type`:** ruwe AW `Type` (bv. `Schutten`, `VGM`) voor traceerbaarheid.
+- Mapping v1: `Schutten`/`Keren`/`Kruisen`/`Spuien` → beschikbaarheid; `VGM` → veiligheid; leeg/onbekend → overig + waarschuwing.
+- **Geen wijziging** slice 69 link-logica (`FMEffectLink`/`PMEffectLink`).
+
+### Gevolgkosten (slice 70 — bevestiging)
+
+- **Geen** heropening: `CostPerOccurrence` wordt **niet** geïmporteerd; besluit § domeinregels blijft.
+- AW `EffectCost` blijft benchmark-metadata in `import_settings` (ADR-0008).
 
 ### Monte Carlo
 

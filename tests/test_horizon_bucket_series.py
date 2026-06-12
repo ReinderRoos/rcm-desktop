@@ -52,7 +52,7 @@ def test_fm_horizon_context_uses_pbs_age_and_multiplicity():
     project = _minimal_project()
     age, lifecycle, mult = fm_horizon_context(project, "PBS-1")
     assert age == 6.0
-    assert lifecycle == 10.0
+    assert lifecycle == 16.0  # aw_mc_lifecycle_horizon=True: age + lifecycle_years
     assert mult == 1.0
 
 

@@ -9,7 +9,7 @@ from rcm_core.models import RCMProject
 
 from rcm_desktop.adapter import run_service
 from rcm_desktop.adapter.planning_overlay_state import PlanningOverlayState
-from rcm_desktop.adapter.run_decision import RunUserIntent, resolve_run_execution
+from rcm_desktop.adapter.run_policy import DEFAULT_RUN_POLICY, RunUserIntent
 from rcm_desktop.adapter.run_service import RunResult
 from rcm_desktop.adapter.scenario_run_service import build_project_for_scenario
 
@@ -48,7 +48,7 @@ def execute_planning_run(request: PlanningRunRequest) -> PlanningRunOutcome:
         if request.force_recompute
         else RunUserIntent.START_ANALYSE
     )
-    opts = resolve_run_execution(user_intent=intent)
+    opts = DEFAULT_RUN_POLICY.resolve(user_intent=intent)
     rr = run_service.run(
         run_project,
         request.project_path,

@@ -29,7 +29,7 @@ from rcm_desktop.adapter.results_workspace_state import (
     METRIC_NIET_BESCHIKBAARHEID,
     MODE_BIJDRAGEN,
     MODE_LCC,
-    SOURCE_PBS,
+    SOURCE_FAALWIJZE,
     normalize_metric,
 )
 from rcm_desktop.adapter.run_service import RunResult
@@ -68,14 +68,14 @@ def build_contribution_presentation(
     contrib = build_contribution_rows(
         project,
         run,
-        source=SOURCE_PBS,
+        source=SOURCE_FAALWIJZE,
         metric=METRIC_NIET_BESCHIKBAARHEID,
         top_n=_DEFAULT_TOP_N,
         scope_id=None,
         presentation=default_presentation,
     )
     return PresentationProjectTotal(
-        contribution_source=SOURCE_PBS,
+        contribution_source=SOURCE_FAALWIJZE,
         contribution_metric=METRIC_NIET_BESCHIKBAARHEID,
         contribution_top_n=_DEFAULT_TOP_N,
         contribution_presentation=default_presentation,
@@ -130,7 +130,7 @@ def _infer_built_modi_from_legacy(pt: dict[str, Any]) -> frozenset[str]:
 
 def _contribution_from_section(contrib: dict[str, Any]) -> tuple[str, str, int, ContributionPresentation, tuple[ContributionRow, ...]]:
     return (
-        str(contrib.get("source", SOURCE_PBS)),
+        str(contrib.get("source", SOURCE_FAALWIJZE)),
         normalize_metric(str(contrib.get("metric", METRIC_NIET_BESCHIKBAARHEID))),
         int(contrib.get("top_n", _DEFAULT_TOP_N)),
         _presentation_from_dict(contrib.get("presentation")),

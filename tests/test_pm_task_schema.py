@@ -22,6 +22,19 @@ def test_from_dict_rev_defaults_aging_effect_pct_to_100():
     assert task.is_wettelijk_verplicht is False
 
 
+def test_from_dict_rev_null_aging_effect_pct_defaults_to_100():
+    task = PMTask.from_dict(
+        {
+            "pm_id": "PM-001",
+            "fm_id": "FM-031",
+            "taak_type": "REV",
+            "interval_jaar": 8.0,
+            "aging_effect_pct": None,
+        }
+    )
+    assert task.aging_effect_pct == 100.0
+
+
 def test_from_dict_non_rev_defaults_new_fields_to_zero_and_false():
     task = PMTask.from_dict(
         {

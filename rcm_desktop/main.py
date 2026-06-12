@@ -31,6 +31,7 @@ def main() -> int:
     app = QApplication(sys.argv)
     window = ResultsWorkspaceWindow()
     window.setWindowTitle("RCM2 — resultatenwerkruimte")
+    app.aboutToQuit.connect(window.cancel_background_runners)
     window.show()
     return app.exec()
 

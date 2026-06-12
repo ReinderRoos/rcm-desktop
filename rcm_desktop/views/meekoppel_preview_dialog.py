@@ -195,7 +195,8 @@ class MeekoppelPreviewDialog(QDialog):
             self._scope_label.setText(insight.summary_lines[0])
             self._determined_label.setText(insight.summary_lines[1])
             self._selection = MeekoppelPreviewSelectionModel.from_task_rows(
-                insight.task_rows
+                insight.task_rows,
+                anchor=self._anchor,
             )
             self._refresh_table()
         else:
@@ -227,6 +228,7 @@ class MeekoppelPreviewDialog(QDialog):
         try:
             self._populate_table(self._selection.visible_rows())
             self._selection_summary_label.setText(self._selection.summary_line())
+            self._determined_label.setText(self._selection.determined_by_line())
         finally:
             self._syncing_checks = False
         self._update_apply_enabled()
@@ -274,7 +276,8 @@ class MeekoppelPreviewDialog(QDialog):
             return
         self._selection = self._selection.set_checked(pm_id, widget.isChecked())
         self._selection_summary_label.setText(self._selection.summary_line())
-        self._update_apply_enabled()
+        self._determined_label.setText(self._selection.determined_by_line())
+        self._refresh_table()
 
     def _on_row_filter_changed(self, text: str) -> None:
         if self._selection is None:
@@ -329,8 +332,10 @@ class MeekoppelPreviewDialog(QDialog):
             messages.WORKSPACE_MEEKOPPEL_PREVIEW_APPLY_CONFIRM.format(
                 scope_label=scope_label,
                 count=len(selected),
-                target=self._preview.target_year,
-                target_cal=due_calendar_year(modeljaar, self._preview.target_year),
+                target=self._selection.target_year(),
+                target_cal=due_calendar_year(
+                    modeljaar, self._selection.target_year()
+                ),
             ),
         )
         if confirm != QMessageBox.StandardButton.Yes:

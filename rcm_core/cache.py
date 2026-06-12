@@ -33,10 +33,16 @@ if TYPE_CHECKING:
     from rcm_core.models import FMResult, RCMProject
 
 # Handmatig verhogen wanneer analytische uitkomsten kunnen veranderen zonder wijziging aan project-JSON-vorm.
-CACHE_INPUTS_VERSION = 106  # slice 52: effective_sigma via default_sigma_fraction
+CACHE_INPUTS_VERSION = 112  # slice 72: legacy effectklasse-categorie genormaliseerd bij laden
 
 # Top-level projectvelden die geen motor/cache-invoer zijn (rapportage-metadata).
 _DIGEST_EXCLUDED_PROJECT_KEYS = frozenset({"projectnaam", "modelleur"})
+# Presentatievelden op PBS-items: wel in to_dict(), niet in vingerafdrukken (ADR-0013).
+_PBS_FINGERPRINT_EXCLUDED_KEYS = frozenset({"volgorde"})
+
+
+def _pbs_dict_for_fingerprint(d: dict) -> dict:
+    return {k: v for k, v in d.items() if k not in _PBS_FINGERPRINT_EXCLUDED_KEYS}
 
 
 # ---------------------------------------------------------------------------
@@ -59,6 +65,12 @@ def compute_global_digest(project: "RCMProject") -> str:
     canonical_dict = project.to_dict()
     for key in _DIGEST_EXCLUDED_PROJECT_KEYS:
         canonical_dict.pop(key, None)
+    pbs = canonical_dict.get("pbs_items")
+    if isinstance(pbs, dict):
+        canonical_dict["pbs_items"] = {
+            k: _pbs_dict_for_fingerprint(v) if isinstance(v, dict) else v
+            for k, v in pbs.items()
+        }
     canonical = json.dumps(canonical_dict, sort_keys=True, ensure_ascii=False)
     payload = f"{canonical}|CACHE_INPUTS_VERSION={CACHE_INPUTS_VERSION}".encode("utf-8")
     return hashlib.sha256(payload).hexdigest()
@@ -89,13 +101,16 @@ def fm_analytical_inputs_dict(project: "RCMProject", fm_id: str) -> dict | None:
     return {
         "slice": FM_HASH_INPUT_SLICE_VERSION,
         "fm": fm.to_dict(),
-        "pbs": pbs.to_dict(),
+        "pbs": _pbs_dict_for_fingerprint(pbs.to_dict()),
         "pm_tasks": [t.to_dict() for t in pm_tasks],
         "task_groups": {k: project.task_groups[k].to_dict() for k in sorted(project.task_groups)},
         "config": project.config.to_dict(),
         "fm_effect_links": [l.to_dict() for l in fm_effect_links],
         "pm_effect_links": [l.to_dict() for l in pm_effect_links],
-        "pbs_items": {k: project.pbs_items[k].to_dict() for k in sorted(project.pbs_items)},
+        "pbs_items": {
+            k: _pbs_dict_for_fingerprint(project.pbs_items[k].to_dict())
+            for k in sorted(project.pbs_items)
+        },
     }
 
 

@@ -58,17 +58,16 @@ def _session(project: RCMProject, fm_results: list[FMResult]) -> ProjectSession:
     return ProjectSession.from_parts(loaded, run=run)
 
 
-def test_build_fm_detail_view_filters_evident_only() -> None:
+def test_build_fm_detail_view_returns_all_fm_rows() -> None:
     project = _project_with_fm()
     session = _session(project, [_fm_result("FM-1"), _fm_result("FM-2")])
     ws = ResultsWorkspaceState()
     ws.set_modus(MODE_FM_DETAIL)
-    ws.set_fm_evident_filter("evident_only")
     snapshot = ws.snapshot()
 
     view = build_fm_detail_view(session, snapshot)
     assert view is not None
-    assert [r.fm_id for r in view.fm_rows] == ["FM-1"]
+    assert [r.fm_id for r in view.fm_rows] == ["FM-1", "FM-2"]
 
 
 def test_build_fm_detail_view_returns_none_without_completed_run() -> None:

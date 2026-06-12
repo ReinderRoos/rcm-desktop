@@ -60,7 +60,7 @@ def test_slice58_report_dialog_opens_with_path_input_only(monkeypatch) -> None:
 
     assert window._project_session() is not None
     assert window._project_session().path is None
-    assert window.generate_report_button.isEnabled() is True
+    assert window._workspace_menu.actions_by_id["analysis.generate_report"].isEnabled() is True
 
     window._open_report_generation()
     app.processEvents()

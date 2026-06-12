@@ -9,6 +9,7 @@ from rcm_desktop.adapter.presentation_lazy_service import warm_lcc_render_index
 from rcm_desktop.adapter.qt.background_runner import BackgroundRunner
 from rcm_desktop.adapter.results_workspace_state import WorkspaceStateSnapshot
 from rcm_desktop.adapter.run_service import RunResult
+from rcm_desktop.adapter.workspace_lcc_preset_service import effective_lcc_filters
 from rcm_desktop.adapter.workspace_render_index import WorkspaceRenderIndex
 
 
@@ -40,7 +41,8 @@ class _LCCWarmupWorker(QObject):
             scope_id=self._snapshot.scope_id,
             cache_modus_key=build_lcc_curve_cache_key(self._snapshot),
             overlay=self._snapshot.planning_overlay,
-            type_filters=self._snapshot.lcc_filters,
+            type_filters=effective_lcc_filters(self._snapshot),
+            snapshot=self._snapshot,
         )
         self.finished.emit()
 
