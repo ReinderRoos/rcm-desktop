@@ -7,6 +7,7 @@ from collections.abc import Callable
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QFont
 from PySide6.QtWidgets import (
+    QCheckBox,
     QHBoxLayout,
     QHeaderView,
     QLabel,
@@ -16,6 +17,7 @@ from PySide6.QtWidgets import (
     QTableView,
     QVBoxLayout,
     QWidget,
+    QWidgetAction,
 )
 
 from rcm_core.models import RCMProject
@@ -27,7 +29,11 @@ from rcm_desktop.adapter.entity_grid_config import (
     entity_grid_config_for_view,
     schema_columns_for_view,
 )
-from rcm_desktop.adapter.entity_table_model import EntityTableModel, install_faalwijzen_delegates
+from rcm_desktop.adapter.entity_table_model import (
+    EntityTableModel,
+    install_faalwijzen_delegates,
+    menu_foreground_for_severity,
+)
 from rcm_desktop.adapter.input_scope_policy import InputScopeMode, input_scope_mode
 from rcm_desktop.views.input_entity_filter_proxy import InputEntityFilterProxy
 
@@ -179,10 +185,32 @@ class EntityGridPanel(QWidget):
 
     def column_menu_action_bold(self, col_id: str) -> bool:
         """Test seam: vet menu-item in het kolommen-menu bij invoerbevindingen."""
+        widget = self._column_menu_widget(col_id)
+        if isinstance(widget, QCheckBox):
+            return widget.font().bold()
+        action = self._column_menu_action(col_id)
+        return action is not None and action.font().bold()
+
+    def column_menu_action_foreground(self, col_id: str):
+        """Test seam: kleur menu-item in het kolommen-menu bij invoerbevindingen."""
+        widget = self._column_menu_widget(col_id)
+        if isinstance(widget, QCheckBox):
+            severity = widget.property("findings_severity")
+            if severity in ("error", "warning"):
+                return menu_foreground_for_severity(str(severity))
+        return None
+
+    def _column_menu_action(self, col_id: str):
         for action in self._build_column_menu().actions():
             if str(action.data()) == col_id:
-                return action.font().bold()
-        return False
+                return action
+        return None
+
+    def _column_menu_widget(self, col_id: str):
+        action = self._column_menu_action(col_id)
+        if action is None or not isinstance(action, QWidgetAction):
+            return None
+        return action.defaultWidget()
 
     def set_hidden_columns(self, hidden: frozenset[str]) -> None:
         self._hidden_columns = hidden
@@ -248,14 +276,29 @@ class EntityGridPanel(QWidget):
             return menu
         bold_font = QFont()
         bold_font.setBold(True)
-        cols_with_findings = self._service.columns_with_findings()
+        severity_by_col = self._service.column_findings_severity()
         for col_id in schema_columns_for_view(self._view_id):
-            action = menu.addAction(col_id)
-            action.setCheckable(True)
-            action.setChecked(col_id not in self._hidden_columns)
-            action.setData(col_id)
-            if col_id in cols_with_findings:
-                action.setFont(bold_font)
+            severity = severity_by_col.get(col_id)
+            if severity is None:
+                action = menu.addAction(col_id)
+                action.setCheckable(True)
+                action.setChecked(col_id not in self._hidden_columns)
+                action.setData(col_id)
+                continue
+
+            cb = QCheckBox(col_id)
+            cb.setChecked(col_id not in self._hidden_columns)
+            cb.setFont(bold_font)
+            cb.setProperty("findings_severity", severity)
+            fg = menu_foreground_for_severity(severity)
+            if fg is not None:
+                cb.setStyleSheet(
+                    f"QCheckBox {{ color: rgb({fg.red()}, {fg.green()}, {fg.blue()}); font-weight: bold; }}"
+                )
+            wa = QWidgetAction(menu)
+            wa.setData(col_id)
+            wa.setDefaultWidget(cb)
+            menu.addAction(wa)
         return menu
 
     def _show_column_menu(self) -> None:
@@ -271,8 +314,10 @@ class EntityGridPanel(QWidget):
         col_id = str(chosen.data())
         if col_id not in available_column_ids(self._view_id):
             return
+        widget = chosen.defaultWidget()
+        is_checked = widget.isChecked() if isinstance(widget, QCheckBox) else chosen.isChecked()
         hidden = set(self._hidden_columns)
-        if chosen.isChecked():
+        if is_checked:
             hidden.discard(col_id)
         else:
             hidden.add(col_id)

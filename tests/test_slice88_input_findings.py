@@ -16,15 +16,19 @@ pytest.importorskip("PySide6")
 
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QColor
-from PySide6.QtWidgets import QApplication
+from PySide6.QtWidgets import QApplication, QStyleOptionViewItem
 
 from rcm_desktop.adapter.editing_session import EditingSession
 from rcm_desktop.adapter.entity_edit_service import EntityEditService
 from rcm_desktop.adapter.entity_table_model import (
     ERROR_BACKGROUND,
+    ERROR_MENU_FOREGROUND,
     WARNING_BACKGROUND,
     WARNING_FOREGROUND,
+    WARNING_MENU_FOREGROUND,
+    EntityFkDelegate,
     EntityTableModel,
+    apply_findings_style_to_option,
     cell_background_for_errors,
     cell_foreground_for_errors,
     cell_tooltip_for_errors,
@@ -139,6 +143,50 @@ def test_cell_foreground_black_for_warnings_only() -> None:
     assert cell_foreground_for_errors(()) is None
 
 
+def test_apply_findings_style_to_option_uses_model_roles(sample_project) -> None:
+    _ensure_app()
+    session: dict = {}
+    init_edit_state(sample_project, session=session)
+    _inject_warning(session, "faalwijzes", "FM-001", "functie_id", "waarschuwing")
+    svc = EntityEditService.for_view("input.faalwijzen")
+    editing = EditingSession(session=session)
+    editing._base_project = sample_project  # noqa: SLF001
+    svc.attach_editing_session(editing)
+    cfg = entity_grid_config_for_view("input.faalwijzen")
+    assert cfg is not None
+    model = EntityTableModel(svc, sample_project, cfg, cfg.preset_columns)
+    row = next(i for i in range(model.rowCount()) if model.row_key_at(i) == "FM-001")
+    functie_col = cfg.preset_columns.index("functie_id")
+    index = model.index(row, functie_col)
+
+    option = QStyleOptionViewItem()
+    apply_findings_style_to_option(option, index)
+    assert option.palette.color(option.palette.ColorRole.Text) == WARNING_FOREGROUND
+    assert option.palette.color(option.palette.ColorRole.Base) == WARNING_BACKGROUND
+
+
+def test_fk_delegate_applies_warning_foreground(sample_project) -> None:
+    _ensure_app()
+    session: dict = {}
+    init_edit_state(sample_project, session=session)
+    _inject_warning(session, "faalwijzes", "FM-001", "functie_id", "waarschuwing")
+    svc = EntityEditService.for_view("input.faalwijzen")
+    editing = EditingSession(session=session)
+    editing._base_project = sample_project  # noqa: SLF001
+    svc.attach_editing_session(editing)
+    cfg = entity_grid_config_for_view("input.faalwijzen")
+    assert cfg is not None
+    model = EntityTableModel(svc, sample_project, cfg, cfg.preset_columns)
+    row = next(i for i in range(model.rowCount()) if model.row_key_at(i) == "FM-001")
+    functie_col = cfg.preset_columns.index("functie_id")
+    index = model.index(row, functie_col)
+
+    delegate = EntityFkDelegate(sample_project)
+    option = QStyleOptionViewItem()
+    delegate.initStyleOption(option, index)
+    assert option.palette.color(option.palette.ColorRole.Text) == WARNING_FOREGROUND
+
+
 def test_tooltip_groups_by_severity() -> None:
     errs = (
         CellErrorView(code="E", message="fout melding", severity="error"),
@@ -180,6 +228,32 @@ def test_columns_with_findings(sample_project) -> None:
     assert svc.columns_with_findings() == frozenset({"sigma_jaar"})
 
 
+def test_column_findings_severity(sample_project) -> None:
+    session: dict = {}
+    init_edit_state(sample_project, session=session)
+    _inject_warning(session, "faalwijzes", "FM-001", "sigma_jaar", "waarschuwing")
+    svc = EntityEditService.for_view("input.faalwijzen")
+    editing = EditingSession(session=session)
+    editing._base_project = sample_project  # noqa: SLF001
+    svc.attach_editing_session(editing)
+    assert svc.column_findings_severity() == {"sigma_jaar": "warning"}
+
+    svc.apply_change("FM-001", "mttf_jaar", "0")
+    assert svc.column_findings_severity()["mttf_jaar"] == "error"
+
+    session["edit_errors"]["faalwijzes"]["FM-001"]["mttf_jaar"].append(
+        {
+            "code": "TEST_WARNING",
+            "severity": "warning",
+            "message": "waarschuwing",
+            "field": "mttf_jaar",
+            "row_key": "FM-001",
+            "entity": "faalwijzes",
+        }
+    )
+    assert svc.column_findings_severity()["mttf_jaar"] == "error"
+
+
 def test_entity_grid_panel_column_menu_bolds_findings_columns(sample_project) -> None:
     _ensure_app()
     session: dict = {}
@@ -193,6 +267,24 @@ def test_entity_grid_panel_column_menu_bolds_findings_columns(sample_project) ->
     panel.attach(svc, sample_project, view_id="input.faalwijzen")
     assert panel.column_menu_action_bold("sigma_jaar") is True
     assert panel.column_menu_action_bold("fm_id") is False
+
+
+def test_entity_grid_panel_column_menu_colors_findings_columns(sample_project) -> None:
+    _ensure_app()
+    session: dict = {}
+    init_edit_state(sample_project, session=session)
+    _inject_warning(session, "faalwijzes", "FM-001", "sigma_jaar", "waarschuwing")
+    svc = EntityEditService.for_view("input.faalwijzen")
+    editing = EditingSession(session=session)
+    editing._base_project = sample_project  # noqa: SLF001
+    svc.attach_editing_session(editing)
+    panel = EntityGridPanel()
+    panel.attach(svc, sample_project, view_id="input.faalwijzen")
+    assert panel.column_menu_action_foreground("sigma_jaar") == WARNING_MENU_FOREGROUND
+    assert panel.column_menu_action_foreground("fm_id") is None
+
+    svc.apply_change("FM-001", "mttf_jaar", "0")
+    assert panel.column_menu_action_foreground("mttf_jaar") == ERROR_MENU_FOREGROUND
 
 
 def test_entity_grid_panel_shows_findings_count(sample_project) -> None:

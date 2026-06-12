@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import Any
 
 from PySide6.QtCore import QAbstractTableModel, QModelIndex, Qt
-from PySide6.QtGui import QColor
+from PySide6.QtGui import QColor, QPalette
 from PySide6.QtWidgets import QComboBox, QStyledItemDelegate, QStyleOptionViewItem, QWidget
 
 from rcm_core.models import RCMProject
@@ -24,6 +24,16 @@ RAW_ROLE = Qt.UserRole + 1
 ERROR_BACKGROUND = QColor(255, 235, 235)
 WARNING_BACKGROUND = QColor(255, 235, 156)
 WARNING_FOREGROUND = QColor(0, 0, 0)
+ERROR_MENU_FOREGROUND = QColor(180, 30, 30)
+WARNING_MENU_FOREGROUND = QColor(160, 110, 0)
+
+
+def menu_foreground_for_severity(severity: str) -> QColor | None:
+    if severity == "error":
+        return ERROR_MENU_FOREGROUND
+    if severity == "warning":
+        return WARNING_MENU_FOREGROUND
+    return None
 
 
 def cell_background_for_errors(errs: tuple[CellErrorView, ...]) -> QColor | None:
@@ -53,6 +63,18 @@ def cell_tooltip_for_errors(errs: tuple[CellErrorView, ...]) -> str | None:
     if warnings:
         parts.append("\n".join(warnings))
     return "\n\n".join(parts)
+
+
+def apply_findings_style_to_option(option: QStyleOptionViewItem, index: QModelIndex) -> None:
+    """Pas foreground/background uit het model toe (dark-theme-delegates negeren dat anders)."""
+    fg = index.data(Qt.ForegroundRole)
+    if isinstance(fg, QColor):
+        option.palette.setColor(QPalette.ColorRole.Text, fg)
+        option.palette.setColor(QPalette.ColorRole.HighlightedText, fg)
+    bg = index.data(Qt.BackgroundRole)
+    if isinstance(bg, QColor):
+        option.palette.setColor(QPalette.ColorRole.Base, bg)
+        option.palette.setColor(QPalette.ColorRole.Window, bg)
 
 _FAALWIJZEN_HEADERS = {
     "fm_id": messages.FAALWIJZEN_EDIT_HEADER_FM_ID,
@@ -276,7 +298,13 @@ class EntityTableModel(QAbstractTableModel):
         )
 
 
-class EntityFkDelegate(QStyledItemDelegate):
+class EntityCellDelegate(QStyledItemDelegate):
+    def initStyleOption(self, option: QStyleOptionViewItem, index):  # noqa: ANN001
+        super().initStyleOption(option, index)
+        apply_findings_style_to_option(option, index)
+
+
+class EntityFkDelegate(EntityCellDelegate):
     def __init__(self, project: RCMProject, parent: QWidget | None = None) -> None:
         super().__init__(parent)
         self._project = project
@@ -313,7 +341,7 @@ class EntityFkDelegate(QStyledItemDelegate):
         model.setData(index, out, Qt.EditRole)
 
 
-class EntityFailureTypeDelegate(QStyledItemDelegate):
+class EntityFailureTypeDelegate(EntityCellDelegate):
     def createEditor(self, parent: QWidget, option, index):  # noqa: ANN001
         cb = QComboBox(parent)
         cb.addItem(messages.FAALWIJZEN_FAILURE_RANDOM, "random")
@@ -333,7 +361,7 @@ class EntityFailureTypeDelegate(QStyledItemDelegate):
         model.setData(index, editor.currentData(), Qt.EditRole)
 
 
-class EntityAgingDistributionDelegate(QStyledItemDelegate):
+class EntityAgingDistributionDelegate(EntityCellDelegate):
     def createEditor(self, parent: QWidget, option, index):  # noqa: ANN001
         cb = QComboBox(parent)
         cb.addItem("Normal", "normal")
@@ -354,7 +382,7 @@ class EntityAgingDistributionDelegate(QStyledItemDelegate):
         model.setData(index, editor.currentData(), Qt.EditRole)
 
 
-class EntityNmfDelegate(QStyledItemDelegate):
+class EntityNmfDelegate(EntityCellDelegate):
     def createEditor(self, parent: QWidget, option, index):  # noqa: ANN001
         cb = QComboBox(parent)
         cb.addItem(messages.FAALWIJZEN_NMF_JA, True)
@@ -376,6 +404,7 @@ class EntityNmfDelegate(QStyledItemDelegate):
 
 
 def install_faalwijzen_delegates(table, project: RCMProject, columns: tuple[str, ...]) -> None:
+    table.setItemDelegate(EntityCellDelegate(table))
     col = {name: columns.index(name) for name in columns}
     if "functie_id" in col:
         table.setItemDelegateForColumn(col["functie_id"], EntityFkDelegate(project, table))

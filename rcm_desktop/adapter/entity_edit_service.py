@@ -225,6 +225,21 @@ class EntityEditService:
                     cols.add(field)
         return frozenset(cols)
 
+    def column_findings_severity(self) -> dict[str, str]:
+        """Per kolom de hoogste ernst: 'error' wint boven 'warning'."""
+        if not self._editing.is_loaded:
+            return {}
+        severity_by_col: dict[str, str] = {}
+        for fields in self._session.get("edit_errors", {}).get(self._entity, {}).values():
+            for field, arr in fields.items():
+                if not arr:
+                    continue
+                if any(e.get("severity", "error") == "error" for e in arr):
+                    severity_by_col[field] = "error"
+                elif field not in severity_by_col:
+                    severity_by_col[field] = "warning"
+        return severity_by_col
+
     def materialize_for_run(self) -> RCMProject:
         return self._materialize()
 
