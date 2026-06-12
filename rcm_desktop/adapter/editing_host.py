@@ -46,8 +46,26 @@ class EditingHost:
         self._grid = service
 
     def is_grid_dirty(self) -> bool:
+        """Buffer-brede dirty-check: `edit_dirty_global` uit de editing-pipeline (slice 89)."""
         grid = self.grid_service()
-        return grid is not None and grid.is_dirty()
+        if grid is None:
+            return False
+        session = grid.editing_session.session
+        return bool(session.get("edit_dirty_global", False))
+
+    def discard_buffer_changes(self) -> None:
+        """Verwerp onopgeslagen invoerwijzigingen buffer-breed (slice 89)."""
+        grid = self.grid_service()
+        if grid is None:
+            return
+        from rcm_core.editing.state import restore_entity
+
+        session = grid.editing_session.session
+        for entity, dirty in dict(session.get("edit_dirty", {})).items():
+            if dirty:
+                restore_entity(entity, session=session)
+        # Faalwijzen-pad: hervalidatie, digest-reset en UI-callback.
+        grid.discard_changes()
 
     def set_save_handler(self, handler: Callable[[], bool] | None) -> None:
         self._save_handler = handler
@@ -67,8 +85,9 @@ class EditingHost:
             return True
         if grid.has_errors():
             return False
-        grid.mark_saved()
-        return True
+        # Geen handler: commit de hele buffer in-memory zodat
+        # edit_dirty_global weer False is (slice 89).
+        return self.commit_grid_edits().ok
 
     def clear_grid(self) -> None:
         if self._grid is not None:
@@ -84,13 +103,21 @@ class EditingHost:
         baseline_mtime_ns: int | None = None,
     ) -> FmEditCommitResult:
         session = self.editing_session
-        return commit_fm_edit(
+        result = commit_fm_edit(
             session,
             None,
             path=path,
             save_to_disk=save_to_disk,
             baseline_mtime_ns=baseline_mtime_ns,
         )
+        if result.ok and result.project is not None:
+            # Rebaseline: gecommit project wordt de nieuwe edit_original,
+            # zodat edit_dirty_global weer False is (slice 89).
+            session.load_project(result.project)
+            grid = self.grid_service()
+            if grid is not None:
+                grid.mark_saved()
+        return result
 
 
 def get_editing_host() -> EditingHost:

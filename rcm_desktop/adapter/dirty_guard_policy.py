@@ -16,9 +16,7 @@ def resolve_dirty_choice(host: EditingHost, choice: DirtyChoice) -> DirtyOutcome
     if choice == "cancel":
         return "cancel"
     if choice == "discard":
-        svc = host.grid_service()
-        if svc is not None:
-            svc.discard_changes()
+        host.discard_buffer_changes()
         return "proceed"
     if host.invoke_grid_save():
         return "proceed"

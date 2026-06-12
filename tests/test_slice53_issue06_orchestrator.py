@@ -11,26 +11,35 @@ from rcm_desktop.adapter.planning_overlay_state import PlanningOverlayState
 from rcm_desktop.adapter.results_workspace_controller import ResultsWorkspaceController
 
 
+class _StubEditingSession:
+    """Minimale sessie-stub met buffer-brede dirty-vlag (slice 89)."""
+
+    def __init__(self, state: dict) -> None:
+        self.session = state
+
+
 class _DirtyGridStub:
     def __init__(self) -> None:
-        self._dirty = True
         self.discarded = False
+        self.editing_session = _StubEditingSession(
+            {"edit_dirty_global": True, "edit_dirty": {}}
+        )
 
     def is_active(self) -> bool:
         return True
 
     def is_dirty(self) -> bool:
-        return self._dirty
+        return bool(self.editing_session.session["edit_dirty_global"])
 
     def discard_changes(self) -> None:
         self.discarded = True
-        self._dirty = False
+        self.editing_session.session["edit_dirty_global"] = False
 
     def has_errors(self) -> bool:
         return False
 
     def mark_saved(self) -> None:
-        self._dirty = False
+        self.editing_session.session["edit_dirty_global"] = False
 
 
 def test_dirty_policy_is_adapter_only_and_unit_testable() -> None:

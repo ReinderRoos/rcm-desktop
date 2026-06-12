@@ -1359,7 +1359,7 @@ class ResultsWorkspaceWindow(QMainWindow):
         grid_svc = host.grid_service()
         if grid_svc is None or not grid_svc.is_active():
             return True
-        if not grid_svc.is_dirty() or grid_svc.error_count() != 0:
+        if not host.is_grid_dirty() or grid_svc.error_count() != 0:
             return grid_svc.error_count() == 0
         path = self.path_input.text().strip() or None
         result = host.commit_grid_edits(path=path, save_to_disk=bool(path))
@@ -1452,7 +1452,7 @@ class ResultsWorkspaceWindow(QMainWindow):
         layout.addWidget(close_btn)
         dialog.exec()
         host.set_save_handler(prev_save)
-        if grid_svc.is_dirty() and grid_svc.error_count() == 0:
+        if host.is_grid_dirty() and grid_svc.error_count() == 0:
             self._commit_active_grid_edits()
 
     def _on_fm_table_double_clicked(self, index: QModelIndex) -> None:
@@ -2725,7 +2725,10 @@ class ResultsWorkspaceWindow(QMainWindow):
         )
         for step in plan.steps:
             if step is ShutdownStep.RESOLVE_GRID_DIRTY:
-                if resolve_grid_dirty_before_editor(self, self._editing_host) == "cancel":
+                resolution = resolve_grid_dirty_before_editor(
+                    self, self._editing_host, context="shutdown"
+                )
+                if resolution == "cancel":
                     event.ignore()
                     return
             elif step is ShutdownStep.CONFIRM_BUSY_CANCEL:
