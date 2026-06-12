@@ -20,6 +20,7 @@ from PySide6.QtCore import (
     QItemSelection,
     QItemSelectionModel,
     QModelIndex,
+    QSettings,
     QSortFilterProxyModel,
     Qt,
     QUrl,
@@ -28,8 +29,8 @@ from PySide6.QtCore import (
 from PySide6.QtGui import QCloseEvent, QColor, QDesktopServices
 from PySide6.QtWidgets import (
     QAbstractItemView,
+    QApplication,
     QButtonGroup,
-    QCheckBox,
     QComboBox,
     QFileDialog,
     QHBoxLayout,
@@ -41,8 +42,6 @@ from PySide6.QtWidgets import (
     QMainWindow,
     QMessageBox,
     QPushButton,
-    QRadioButton,
-    QSpinBox,
     QSplitter,
     QStackedWidget,
     QTableView,
@@ -81,13 +80,14 @@ from rcm_desktop.adapter.report_generation_service import ReportGenerationOutcom
 from rcm_desktop.adapter.project_path_resolution_service import resolve_project_file_path
 from rcm_desktop.adapter.report_runner import ReportRunner
 from rcm_desktop.adapter.run_runner import PHASE_MOTOR, PHASE_PRESENTATION, RunRunner
-from rcm_desktop.adapter.contribution_table_model import ContributionTableModel
+from rcm_desktop.adapter.shutdown_planner import ShutdownStep, plan_shutdown
 from rcm_desktop.adapter.contribution_chart_service import build_contribution_rows
-from rcm_desktop.adapter.fm_results_table_model import (
-    FMResultsSortProxy,
-    FMResultsTableModel,
-    RAW_ROLE,
+from rcm_desktop.adapter.fm_results_column_settings import (
+    read_fm_hidden_optional_columns,
+    write_fm_hidden_optional_columns,
 )
+from rcm_desktop.adapter.fm_results_sort_policy import default_fm_sort_column
+from rcm_desktop.adapter.fm_results_table_model import FMResultsTableModel, RAW_ROLE
 from rcm_desktop.adapter.fm_verification_service import FMVerificationView
 from rcm_desktop.adapter.fm_verification_year_table_model import (
     FMVerificationYearTableModel,
@@ -97,12 +97,15 @@ from rcm_desktop.adapter.project_session import ProjectSession
 from rcm_desktop.adapter.lcc_planning_service import build_lcc_planning_curve_reconciled
 from rcm_desktop.adapter.lcc_detail_selection import rev_row_indices
 from rcm_desktop.adapter.lcc_type_filter import LCCTypeFilterSet
-from rcm_desktop.adapter.lcc_year_detail_table_model import (
-    LCCYearDetailTableModel,
-    PASSIVE_COLUMN,
-)
+from rcm_desktop.adapter.lcc_year_detail_table_model import PASSIVE_COLUMN
 from rcm_desktop.adapter.lcc_year_table_model import LCCYearTableModel
+from rcm_desktop.adapter.workspace_lcc_preset_service import effective_lcc_filters
 from rcm_desktop.adapter.import_flow_service import gate_workbook, persist_wizard_result
+from rcm_desktop.adapter.isograph_export_flow_service import (
+    ExportFlowBlocked,
+    ExportFlowSuccess,
+    export_rcm_cost_project,
+)
 from rcm_desktop.adapter.isograph_open_flow_service import PersistImportSuccess
 from rcm_desktop.adapter.meekoppel_display_service import (
     due_calendar_year,
@@ -122,28 +125,99 @@ from rcm_desktop.adapter.meekoppelkansen_discovery_service import (
 )
 from rcm_desktop.views.meekoppel_preview_dialog import MeekoppelPreviewDialog
 from rcm_desktop.views.report_generation_dialog import ReportGenerationDialog
-from rcm_desktop.adapter.meekoppel_suggestions_table_model import (
-    MeekoppelSuggestionsTableModel,
-)
 from rcm_desktop.adapter.planning_overlay_state import PlanningOverlayState
 from rcm_desktop.adapter.planning_whatif_service import apply_overlay_shift
 from rcm_desktop.adapter.pbs_results_tree_model import PBSResultsTreeModel
 from rcm_desktop.adapter.rcm_navigation_tree_model import RcmNavigationTreeModel
 from rcm_desktop.adapter import workspace_session_service as wss
 from rcm_desktop.adapter.editing_host import EditingHost
+from rcm_desktop.adapter.entity_edit_service import EntityEditService
+from rcm_desktop.adapter.entity_grid_column_settings import (
+    read_hidden_entity_columns,
+    write_hidden_entity_columns,
+)
 from rcm_desktop.adapter.faalwijzen_edit_service import FaalwijzenEditService
 from rcm_desktop.views.fm_editor_dialog import FmEditorDialog
 from rcm_desktop.views.grid_dirty_guard import resolve_grid_dirty_before_editor
 from rcm_desktop.views.model_settings_dialog import ModelSettingsDialog
 from rcm_desktop.views.validate_faalwijzen_panel import ValidateFaalwijzenPanel
 from rcm_desktop.views.import_wizard_dialog import ImportDialogInput, run_import_wizard
-from rcm_desktop.views.compare_slot_column import (
-    build_bijdragen_compare_column,
-    build_lcc_compare_column,
-    set_compare_placeholder,
+from rcm_desktop.adapter.portfolio_wizard_service import persist_portfolio_wizard_result
+from rcm_desktop.adapter.rcm_cost_parity_service import build_parity_view
+from rcm_core.rcm_cost_benchmark import has_aw_benchmarks
+from rcm_desktop.views.portfolio_wizard_dialog import run_portfolio_wizard_with_root_picker
+from rcm_desktop.views.rcm_cost_parity_dialog import show_rcm_cost_parity_dialog
+from rcm_desktop.views.compare_slot_column import set_compare_placeholder
+from rcm_desktop.views.panels.bijdragen_workspace_panel import (
+    build_bijdragen_workspace_panel,
 )
-from rcm_desktop.views.widgets.contribution_bar_chart import ContributionBarChartWidget
-from rcm_desktop.views.widgets.lcc_stacked_bar_chart import LCCStackedBarChartWidget
+from rcm_desktop.views.panels.fm_detail_workspace_panel import (
+    build_fm_detail_workspace_panel,
+)
+from rcm_desktop.views.panels.fm_results_column_binding import (
+    apply_fm_optional_column_visibility,
+    build_fm_column_context_menu,
+)
+from rcm_desktop.views.panels.fm_results_filter_binding import (
+    apply_fm_filter_row_to_proxy,
+    bind_fm_filter_row,
+)
+from rcm_desktop.views.panels.entity_grid_panel import EntityGridPanel
+from rcm_desktop.views.panels.lcc_workspace_panel import build_lcc_workspace_panel
+from rcm_desktop.adapter.column_fit_policy import ColumnFitMode
+from rcm_desktop.adapter.column_fit_settings import (
+    column_fit_mode_from_crop_checked,
+    crop_checked_from_column_fit_mode,
+    read_fm_detail_column_fit_mode,
+    write_fm_detail_column_fit_mode,
+)
+from rcm_desktop.views.panels.workspace_menu_binding import (
+    WorkspaceMenuBinding,
+    WorkspaceMenuHandlers,
+    build_workspace_menu_bar,
+    sync_workspace_menu_check_states,
+)
+from rcm_desktop.views.panels.workspace_navigation_panel import (
+    apply_workspace_navigation_plan,
+    build_workspace_navigation_panel,
+)
+from rcm_desktop.views.panels.fm_inspector_binding import (
+    apply_fm_inspector_view,
+    refresh_fm_inspector,
+)
+from rcm_desktop.views.panels.meekoppel_workspace_binding import (
+    bind_meekoppel_panel,
+    clear_meekoppel_preview_gate,
+    ensure_whatif_for_meekoppel,
+    on_meekoppel_anchor_changed,
+    on_meekoppel_apply,
+    on_meekoppel_preview,
+    on_meekoppel_window_changed,
+)
+from rcm_desktop.views.panels.pbs_sidebar_panel import build_pbs_sidebar_panel
+from rcm_desktop.views.panels.pbs_tree_navigation_binding import (
+    pbs_tree_has_focus,
+    pbs_tree_navigate,
+    pbs_tree_reorder,
+)
+from rcm_desktop.views.panels.top10_subbar_panel import build_top10_subbar_panel
+from rcm_desktop.views.panels.workspace_shutdown_binding import (
+    any_runner_busy,
+    cancel_background_runners as cancel_window_background_runners,
+    confirm_busy_shutdown,
+    detach_table_models_before_close,
+)
+from rcm_desktop.views.panels.workspace_toolbar_sync import (
+    apply_bijdragen_toolbar,
+    apply_collapse_panels,
+    apply_compare_chrome,
+    apply_fm_toolbar,
+    apply_lcc_toolbar,
+)
+from rcm_desktop.views.panels.workspace_table_policy import (
+    apply_column_fit_mode_to_table,
+    apply_workspace_data_table_header_policy,
+)
 from rcm_desktop.adapter.preview_service import build as build_project_preview
 from rcm_desktop.adapter.project_paths import resolve_default_fixture_path
 from rcm_desktop.adapter.result_view_service import (
@@ -163,6 +237,7 @@ from rcm_desktop.adapter.results_workspace_orchestrator import (
     WorkspaceUiSyncPlan,
     plan_compare_chrome,
 )
+from rcm_core.effect_impact_service import EffectNbFilterSet
 from rcm_desktop.adapter.results_workspace_state import (
     ALL_METRICS,
     METRIC_FAALMOMENTEN,
@@ -172,7 +247,6 @@ from rcm_desktop.adapter.results_workspace_state import (
     MODE_FM_DETAIL,
     MODE_LCC,
     SOURCE_FAALWIJZE,
-    SOURCE_PBS,
     ResultsWorkspaceState,
     WorkspaceStateSnapshot,
 )
@@ -183,47 +257,18 @@ from rcm_desktop.adapter.validate_service import (
     UserFacingError,
     ValidateResult,
 )
-from rcm_desktop.adapter.workspace_detail_render_scope import RenderSplitDepth
+from rcm_desktop.adapter.workspace_navigation_settings import (
+    read_workspace_navigation,
+    write_workspace_navigation,
+)
 from rcm_desktop.adapter.workspace_render_index import WorkspaceRenderIndex
+from rcm_desktop.views.widgets.nb_effect_filter_combo import NbEffectFilterCombo
 from rcm_desktop.app_state import AppState
 from rcm_desktop.table_ui_constants import PBS_FILTER_MAX_EXPAND_NODES
 
 
 def _apply_workspace_data_table_header_policy(header: QHeaderView) -> None:
-    """Schaalbare kolombreedtes i.p.v. ResizeToContents op grote tabellen (slice 25)."""
-    header.setSectionResizeMode(QHeaderView.Interactive)
-    header.setStretchLastSection(True)
-
-
-class _PBSSidebarFilterProxy(QSortFilterProxyModel):
-    """Recursief substring-filter op PBS-id en bouwdeelnaam."""
-
-    def __init__(self, parent: QWidget | None = None) -> None:
-        super().__init__(parent)
-        self.setRecursiveFilteringEnabled(True)
-        self._needle = ""
-
-    def set_needle(self, needle: str) -> None:
-        self._needle = needle.strip().lower()
-        # `invalidate()` re-runs both filtering and sorting; for a tree with stable
-        # rows the cost is negligible and avoids PySide6 deprecation noise on the
-        # filter-only invalidator variants.
-        self.invalidate()
-
-    def has_needle(self) -> bool:
-        return bool(self._needle)
-
-    def filterAcceptsRow(self, source_row: int, source_parent: QModelIndex) -> bool:  # noqa: N802
-        if not self._needle:
-            return True
-        model = self.sourceModel()
-        if model is None:
-            return False
-        idx_pbs = model.index(source_row, 0, source_parent)
-        idx_bouw = model.index(source_row, 1, source_parent)
-        pbs_text = (model.data(idx_pbs, Qt.DisplayRole) or "")
-        bouw_text = (model.data(idx_bouw, Qt.DisplayRole) or "")
-        return self._needle in str(pbs_text).lower() or self._needle in str(bouw_text).lower()
+    apply_workspace_data_table_header_policy(header)
 
 
 class ResultsWorkspaceWindow(QMainWindow):
@@ -255,6 +300,7 @@ class ResultsWorkspaceWindow(QMainWindow):
         self._state.result_changed.connect(self._render_validate_result)
 
         self._pbs_scope_id: str | None = None
+        self._last_lcc_toolbar_plan = None
         self._pbs_source_model: PBSResultsTreeModel | RcmNavigationTreeModel | None = None
         self._suppress_path_change = False
         self._project_total_presentation: PresentationProjectTotal | None = None
@@ -282,6 +328,10 @@ class ResultsWorkspaceWindow(QMainWindow):
         self._build_detail_zone()
         self._build_layout()
         self._wire_pbs_tree_interaction()
+        self._build_workspace_menu()
+        self._restore_fm_column_fit_preferences()
+        self._restore_fm_optional_column_preferences()
+        self._restore_workspace_navigation_preferences()
         self.workspace_state.subscribe(self._on_workspace_state_changed)
         # Sync UI elements to the current snapshot once so initial widget state
         # matches the orchestrator's defaults.
@@ -296,8 +346,13 @@ class ResultsWorkspaceWindow(QMainWindow):
         self.path_input.textChanged.connect(self._on_path_changed)
         self.pick_button = QPushButton(messages.PICK_BUTTON_LABEL)
         self.pick_button.clicked.connect(self._pick_file)
-        self.open_isograph_button = QPushButton(messages.ISOGRAPH_OPEN_BUTTON_LABEL)
-        self.open_isograph_button.clicked.connect(self._open_rcm_cost_export)
+        self.portfolio_wizard_button = QPushButton(messages.PORTFOLIO_WIZARD_BUTTON_LABEL)
+        self.portfolio_wizard_button.setToolTip(messages.PORTFOLIO_WIZARD_BUTTON_TOOLTIP)
+        self.portfolio_wizard_button.clicked.connect(self._open_portfolio_wizard)
+        self.rcm_cost_parity_button = QPushButton(messages.RCM_COST_PARITY_BUTTON_LABEL)
+        self.rcm_cost_parity_button.setToolTip(messages.RCM_COST_PARITY_BUTTON_TOOLTIP)
+        self.rcm_cost_parity_button.setEnabled(False)
+        self.rcm_cost_parity_button.clicked.connect(self._open_rcm_cost_parity)
         self.validate_button = QPushButton(messages.VALIDATE_BUTTON_LABEL)
         self.validate_button.setToolTip(messages.VALIDATE_BUTTON_TOOLTIP)
         self.validate_button.clicked.connect(self._start_validate)
@@ -329,30 +384,105 @@ class ResultsWorkspaceWindow(QMainWindow):
         self.compare_toggle_button.toggled.connect(self._on_compare_toggle)
         self.clear_compare_button = QPushButton(messages.WORKSPACE_CLEAR_COMPARE_BUTTON_LABEL)
         self.clear_compare_button.clicked.connect(self._clear_compare_slots)
-        self.batch_faalwijzen_button = QPushButton(messages.WORKSPACE_MENU_FAALWIJZEN_BATCH)
-        self.batch_faalwijzen_button.setToolTip(messages.WORKSPACE_MENU_FAALWIJZEN_BATCH)
-        self.batch_faalwijzen_button.clicked.connect(self._open_batch_faalwijzen_grid)
-        self.model_settings_button = QPushButton(messages.MODEL_SETTINGS_BUTTON_LABEL)
-        self.model_settings_button.setToolTip(messages.MODEL_SETTINGS_BUTTON_LABEL)
-        self.model_settings_button.clicked.connect(self._open_model_settings)
-        self.generate_report_button = QPushButton(messages.REPORT_GENERATE_BUTTON_LABEL)
-        self.generate_report_button.setToolTip(messages.REPORT_GENERATE_BUTTON_TOOLTIP)
-        self.generate_report_button.setEnabled(False)
-        self.generate_report_button.clicked.connect(self._open_report_generation)
-
-        self.pbs_toggle_button = QToolButton()
-        self.pbs_toggle_button.setText(messages.WORKSPACE_PBS_TOGGLE_LABEL)
-        self.pbs_toggle_button.setToolTip(messages.WORKSPACE_PBS_TOGGLE_TOOLTIP)
-        self.pbs_toggle_button.setCheckable(True)
-        self.pbs_toggle_button.setChecked(True)
-        self.pbs_toggle_button.toggled.connect(self._on_pbs_toggle)
 
         self.show_whole_project_button = QPushButton(messages.WORKSPACE_SHOW_WHOLE_PROJECT_BUTTON)
         self.show_whole_project_button.setToolTip(messages.WORKSPACE_SHOW_WHOLE_PROJECT_TOOLTIP)
         self.show_whole_project_button.clicked.connect(self._on_show_whole_project_clicked)
 
-        self._build_modus_segmented_control()
+        self._build_workspace_navigation()
         self._build_validate_status_strip()
+
+    def _build_workspace_navigation(self) -> None:
+        self._workspace_navigation = build_workspace_navigation_panel(self.workspace_state)
+        self._build_top10_subbar()
+
+    def _build_workspace_menu(self) -> None:
+        self._workspace_menu: WorkspaceMenuBinding = build_workspace_menu_bar(
+            self,
+            WorkspaceMenuHandlers(
+                open_project=self._start_validate,
+                open_rcm_cost=self._open_rcm_cost_export,
+                export_rcm_cost=self._export_rcm_cost_workbook,
+                quit=self.close,
+                set_pbs_sidebar_visible=self._set_pbs_sidebar_visible,
+                set_kpi_overview_visible=self._set_kpi_overview_visible,
+                set_fm_column_crop=self._on_fm_column_crop_toggled,
+                toggle_lcc_whatif=self._toggle_lcc_whatif_from_menu,
+                run_compare_slot_a=self._start_run_slot_a,
+                run_compare_slot_b=self._start_run_slot_b,
+                set_compare_scenario_cm=lambda: self._set_compare_scenario("cm"),
+                set_compare_scenario_pm=lambda: self._set_compare_scenario("pm"),
+                revalidate_input=self._revalidate_input,
+                open_faalwijzen_grid=self._open_batch_faalwijzen_grid,
+                open_model_settings=self._open_model_settings,
+                open_report_generation=self._open_report_generation,
+                pbs_select_prev_sibling=lambda: self._pbs_tree_navigate("prev_sibling"),
+                pbs_select_next_sibling=lambda: self._pbs_tree_navigate("next_sibling"),
+                pbs_select_parent=lambda: self._pbs_tree_navigate("parent"),
+                pbs_select_first_child=lambda: self._pbs_tree_navigate("first_child"),
+                pbs_move_up=lambda: self._pbs_tree_reorder("up"),
+                pbs_move_down=lambda: self._pbs_tree_reorder("down"),
+                set_workspace_side=self.workspace_state.set_workspace_side,
+                set_active_view=self.workspace_state.set_active_view,
+            ),
+        )
+        self._sync_workspace_menu_check_states()
+
+    def _sync_workspace_menu_check_states(self) -> None:
+        crop_checked = None
+        if hasattr(self, "_fm_column_fit_mode"):
+            crop_checked = crop_checked_from_column_fit_mode(self._fm_column_fit_mode)
+        snapshot = self.workspace_state.snapshot()
+        sync_workspace_menu_check_states(
+            self._workspace_menu,
+            pbs_sidebar_visible=not self.pbs_sidebar.isHidden(),
+            kpi_overview_visible=not snapshot.kpi_collapsed_in_lcc,
+            fm_column_crop_checked=crop_checked,
+            workspace_side=snapshot.workspace_side,
+            active_view_id=snapshot.active_view_id,
+        )
+        self._update_report_menu_enabled()
+
+    def _pbs_tree_has_focus(self) -> bool:
+        return pbs_tree_has_focus(self)
+
+    def _current_pbs_scope_id(self) -> str | None:
+        from rcm_desktop.views.panels.pbs_tree_navigation_binding import current_pbs_scope_id
+
+        return current_pbs_scope_id(self)
+
+    def _select_pbs_id_in_tree(self, pbs_id: str) -> None:
+        from rcm_desktop.views.panels.pbs_tree_navigation_binding import select_pbs_id_in_tree
+
+        select_pbs_id_in_tree(self, pbs_id)
+
+    def _pbs_tree_navigate(self, action: str) -> None:
+        pbs_tree_navigate(self, action)
+
+    def _pbs_tree_reorder(self, direction: str) -> None:
+        pbs_tree_reorder(self, direction)
+
+    def _set_pbs_sidebar_visible(self, visible: bool) -> None:
+        self.pbs_sidebar.setVisible(visible)
+        self._sync_workspace_menu_check_states()
+
+    def _set_kpi_overview_visible(self, visible: bool) -> None:
+        self.workspace_state.set_kpi_collapsed_in_lcc(not visible)
+
+    def _report_menu_action(self):
+        return self._workspace_menu.actions_by_id.get("analysis.generate_report")
+
+    def _update_report_menu_enabled(self) -> None:
+        action = self._report_menu_action()
+        if action is None:
+            return
+        assessment = assess_report_workspace(
+            last_run=self._state.last_run,
+            compare_slots=self._compare_slots,
+            live_overlay=self.workspace_state.snapshot().planning_overlay,
+        )
+        busy = getattr(self, "_report_runner", None) is not None and self._report_runner.busy
+        action.setEnabled(assessment.eligible and not busy)
 
     def _build_validate_status_strip(self) -> None:
         self.validate_status_label = QLabel(messages.status_label("idle"))
@@ -360,144 +490,64 @@ class ResultsWorkspaceWindow(QMainWindow):
         self.validate_summary_label.setWordWrap(True)
         self._apply_semantic_status_style(self.validate_status_label, "idle")
 
-    def _build_modus_segmented_control(self) -> None:
-        """Toolbar: drie modus-knoppen (Top 10, Tijdsplot, FM-detail)."""
-        labels = (
-            (MODE_BIJDRAGEN, messages.WORKSPACE_MODE_BIJDRAGEN),
-            (MODE_LCC, messages.WORKSPACE_MODE_LCC),
-            (MODE_FM_DETAIL, messages.WORKSPACE_MODE_FM_DETAIL),
-        )
-        self.modus_button_group = QButtonGroup(self)
-        self.modus_button_group.setExclusive(True)
-        self.modus_buttons: dict[str, QToolButton] = {}
-        for modus_key, label in labels:
-            button = QToolButton()
-            button.setText(label)
-            button.setCheckable(True)
-            button.setChecked(modus_key == MODE_BIJDRAGEN)
-            if modus_key == MODE_LCC:
-                button.setToolTip(messages.WORKSPACE_LCC_MODE_TOOLTIP)
-            button.clicked.connect(
-                lambda _checked=False, key=modus_key: self.workspace_state.set_modus(key)
-            )
-            self.modus_button_group.addButton(button)
-            self.modus_buttons[modus_key] = button
-
-        self._build_top10_subbar()
-
     def _build_top10_subbar(self) -> None:
-        """Sub-balk voor Top 10: bron, metric, horizon en NB-weergave."""
-        self.top10_subbar = QWidget()
-        row = QHBoxLayout(self.top10_subbar)
-        row.setContentsMargins(0, 0, 0, 0)
-        row.addWidget(QLabel(messages.WORKSPACE_TOP10_SUBBAR_LABEL))
-
-        self.source_button_group = QButtonGroup(self.top10_subbar)
-        self.source_button_group.setExclusive(True)
-        self.source_toggle_pbs_button = QToolButton()
-        self.source_toggle_pbs_button.setText(messages.WORKSPACE_SOURCE_TOGGLE_PBS)
-        self.source_toggle_pbs_button.setCheckable(True)
-        self.source_toggle_pbs_button.setChecked(True)
-        self.source_toggle_pbs_button.clicked.connect(
-            lambda _checked=False: self.workspace_state.set_source(SOURCE_PBS)
-        )
-        self.source_toggle_faalwijze_button = QToolButton()
-        self.source_toggle_faalwijze_button.setText(
-            messages.WORKSPACE_SOURCE_TOGGLE_FAALWIJZE
-        )
-        self.source_toggle_faalwijze_button.setCheckable(True)
-        self.source_toggle_faalwijze_button.clicked.connect(
-            lambda _checked=False: self.workspace_state.set_source(SOURCE_FAALWIJZE)
-        )
-        self.source_button_group.addButton(self.source_toggle_pbs_button)
-        self.source_button_group.addButton(self.source_toggle_faalwijze_button)
-        row.addWidget(self.source_toggle_pbs_button)
-        row.addWidget(self.source_toggle_faalwijze_button)
-        row.addSpacing(8)
-
-        self.metric_combo = QComboBox()
-        metric_labels = {
-            METRIC_FAALMOMENTEN: messages.WORKSPACE_METRIC_FAALMOMENTEN,
-            METRIC_NIET_BESCHIKBAARHEID: messages.WORKSPACE_METRIC_NIET_BESCHIKBAARHEID,
-            METRIC_KOSTEN: messages.WORKSPACE_METRIC_KOSTEN,
-        }
-        for metric_key in ALL_METRICS:
-            self.metric_combo.addItem(metric_labels[metric_key], userData=metric_key)
+        subbar = build_top10_subbar_panel()
+        self.top10_subbar = subbar.widget
+        self.metric_combo = subbar.metric_combo
+        self.nb_effect_filter_combo = subbar.nb_effect_filter_combo
+        self.horizon_button_group = subbar.horizon_button_group
+        self.horizon_lifecycle_button = subbar.horizon_lifecycle_button
+        self.horizon_per_year_button = subbar.horizon_per_year_button
+        self.contribution_year_combo = subbar.contribution_year_combo
+        self.nb_display_button_group = subbar.nb_display_button_group
+        self.nb_hours_button = subbar.nb_hours_button
+        self.nb_percent_button = subbar.nb_percent_button
         self.metric_combo.currentIndexChanged.connect(self._on_metric_combo_changed)
-        row.addWidget(self.metric_combo)
-        row.addSpacing(12)
-
-        self.horizon_button_group = QButtonGroup(self.top10_subbar)
-        self.horizon_button_group.setExclusive(True)
-        self.horizon_lifecycle_button = QToolButton()
-        self.horizon_lifecycle_button.setText(
-            messages.WORKSPACE_CONTRIBUTION_HORIZON_LIFECYCLE
-        )
-        self.horizon_lifecycle_button.setCheckable(True)
-        self.horizon_lifecycle_button.setToolTip(
-            messages.WORKSPACE_CONTRIBUTION_HORIZON_TOOLTIP
-        )
+        self.nb_effect_filter_combo.filter_changed.connect(self._on_nb_effect_filter_changed)
         self.horizon_lifecycle_button.clicked.connect(
             lambda _c=False: self.workspace_state.set_contribution_horizon("lifecycle")
-        )
-        self.horizon_per_year_button = QToolButton()
-        self.horizon_per_year_button.setText(
-            messages.WORKSPACE_CONTRIBUTION_HORIZON_PER_YEAR
-        )
-        self.horizon_per_year_button.setCheckable(True)
-        self.horizon_per_year_button.setChecked(True)
-        self.horizon_per_year_button.setToolTip(
-            messages.WORKSPACE_CONTRIBUTION_HORIZON_TOOLTIP
         )
         self.horizon_per_year_button.clicked.connect(
             lambda _c=False: self.workspace_state.set_contribution_horizon("per_year")
         )
-        self.horizon_button_group.addButton(self.horizon_lifecycle_button)
-        self.horizon_button_group.addButton(self.horizon_per_year_button)
-        row.addWidget(self.horizon_lifecycle_button)
-        row.addWidget(self.horizon_per_year_button)
-
-        self.contribution_year_combo = QComboBox()
-        self.contribution_year_combo.addItem(
-            messages.WORKSPACE_CONTRIBUTION_YEAR_AVERAGE,
-            userData="average",
-        )
-        self.contribution_year_combo.setToolTip(
-            messages.WORKSPACE_CONTRIBUTION_YEAR_AVERAGE_TOOLTIP
-        )
         self.contribution_year_combo.currentIndexChanged.connect(
             self._on_contribution_year_combo_changed
         )
-        row.addWidget(self.contribution_year_combo)
-
-        self.nb_display_button_group = QButtonGroup(self.top10_subbar)
-        self.nb_display_button_group.setExclusive(True)
-        self.nb_hours_button = QToolButton()
-        self.nb_hours_button.setText(messages.WORKSPACE_CONTRIBUTION_NB_HOURS)
-        self.nb_hours_button.setCheckable(True)
-        self.nb_hours_button.setChecked(True)
         self.nb_hours_button.clicked.connect(
             lambda _c=False: self.workspace_state.set_unavailability_display("hours")
-        )
-        self.nb_percent_button = QToolButton()
-        self.nb_percent_button.setText(messages.WORKSPACE_CONTRIBUTION_NB_PERCENT)
-        self.nb_percent_button.setCheckable(True)
-        self.nb_percent_button.setToolTip(
-            messages.WORKSPACE_CONTRIBUTION_NB_PERCENT_TOOLTIP
         )
         self.nb_percent_button.clicked.connect(
             lambda _c=False: self.workspace_state.set_unavailability_display("percent")
         )
-        self.nb_display_button_group.addButton(self.nb_hours_button)
-        self.nb_display_button_group.addButton(self.nb_percent_button)
-        row.addWidget(self.nb_hours_button)
-        row.addWidget(self.nb_percent_button)
-        row.addStretch(1)
 
     def _on_metric_combo_changed(self, _idx: int) -> None:
         metric = self.metric_combo.currentData()
         if isinstance(metric, str):
             self.workspace_state.set_metric(metric)
+
+    def _on_nb_effect_filter_changed(self, filt: EffectNbFilterSet) -> None:
+        self.workspace_state.set_effect_nb_filter(filt)
+
+    def _refresh_nb_effect_filter_combo(self, project: object) -> None:
+        if project is None:
+            self.nb_effect_filter_combo.set_klassen(())
+            return
+        from rcm_core.models import RCMProject
+
+        from rcm_desktop.adapter.nb_effect_filter_presentation import (
+            build_nb_effect_filter_presentation,
+        )
+
+        if isinstance(project, RCMProject):
+            session = self._project_session()
+            fm_results: tuple = ()
+            if session.run is not None and session.run.fm_core_results:
+                fm_results = tuple(session.run.fm_core_results)
+            presentation = build_nb_effect_filter_presentation(project, fm_results)
+            self.nb_effect_filter_combo.set_presentation(presentation)
+            self.nb_effect_filter_combo.set_filter(
+                self.workspace_state.snapshot().effect_nb_filter
+            )
 
     def _on_contribution_year_combo_changed(self, _idx: int) -> None:
         data = self.contribution_year_combo.currentData()
@@ -526,35 +576,13 @@ class ResultsWorkspaceWindow(QMainWindow):
         self.contribution_year_combo.blockSignals(blocker)
 
     def _build_pbs_sidebar(self) -> None:
-        self.pbs_sidebar = QWidget()
-        sidebar_layout = QVBoxLayout(self.pbs_sidebar)
-        sidebar_layout.setContentsMargins(0, 0, 0, 0)
-        title = QLabel(messages.WORKSPACE_PBS_SIDEBAR_TITLE)
-        title.setStyleSheet("font-weight: 600;")
-        sidebar_layout.addWidget(title)
-
-        self.pbs_filter_input = QLineEdit()
-        self.pbs_filter_input.setPlaceholderText(messages.WORKSPACE_PBS_FILTER_PLACEHOLDER)
-        self.pbs_filter_input.setToolTip(messages.WORKSPACE_PBS_FILTER_TOOLTIP)
+        pbs = build_pbs_sidebar_panel()
+        self.pbs_sidebar = pbs.sidebar
+        self.pbs_filter_input = pbs.filter_input
+        self.pbs_tree_view = pbs.tree_view
+        self.pbs_empty_state_label = pbs.empty_state_label
+        self.pbs_proxy = pbs.proxy
         self.pbs_filter_input.textChanged.connect(self._on_pbs_filter_text_changed)
-        sidebar_layout.addWidget(self.pbs_filter_input)
-
-        self.pbs_tree_view = QTreeView()
-        self.pbs_tree_view.setSortingEnabled(False)
-        self.pbs_tree_view.setAlternatingRowColors(True)
-        self.pbs_tree_view.setHeaderHidden(False)
-        self.pbs_tree_view.header().setSectionResizeMode(QHeaderView.Interactive)
-        self.pbs_tree_view.header().setStretchLastSection(True)
-        self.pbs_tree_view.setSelectionBehavior(QTreeView.SelectRows)
-        sidebar_layout.addWidget(self.pbs_tree_view, stretch=1)
-
-        self.pbs_empty_state_label = QLabel(messages.WORKSPACE_PBS_EMPTY_STATE)
-        self.pbs_empty_state_label.setWordWrap(True)
-        self.pbs_empty_state_label.setVisible(False)
-        sidebar_layout.addWidget(self.pbs_empty_state_label)
-
-        self.pbs_proxy = _PBSSidebarFilterProxy(self.pbs_tree_view)
-        self.pbs_tree_view.setModel(self.pbs_proxy)
 
     def _build_detail_zone(self) -> None:
         self.detail_zone = QWidget()
@@ -573,6 +601,17 @@ class ResultsWorkspaceWindow(QMainWindow):
         self.bijdragen_page = self._build_bijdragen_page()
         self.lcc_page = self._build_lcc_page()
         self.fm_detail_page = self._build_fm_detail_page()
+        self.input_placeholder_page = self._build_placeholder_page(
+            messages.WORKSPACE_INPUT_PLACEHOLDER
+        )
+        self.input_entity_grid_page = QWidget()
+        input_grid_layout = QVBoxLayout(self.input_entity_grid_page)
+        input_grid_layout.setContentsMargins(0, 0, 0, 0)
+        self._entity_grid_panel = EntityGridPanel()
+        self._entity_grid_panel.set_hidden_columns_handler(self._on_entity_grid_columns_changed)
+        input_grid_layout.addWidget(self._entity_grid_panel)
+        self._entity_grid_view_id: str | None = None
+        self._entity_grid_hidden: frozenset[str] = frozenset()
 
         self._detail_pages: dict[str, QWidget] = {
             MODE_BIJDRAGEN: self.bijdragen_page,
@@ -581,319 +620,127 @@ class ResultsWorkspaceWindow(QMainWindow):
         }
         for modus_key in (MODE_BIJDRAGEN, MODE_LCC, MODE_FM_DETAIL):
             self.detail_stack.addWidget(self._detail_pages[modus_key])
+        self.detail_stack.addWidget(self.input_placeholder_page)
+        self.detail_stack.addWidget(self.input_entity_grid_page)
         detail_layout.addWidget(self.detail_stack, stretch=1)
 
 
     def _build_bijdragen_page(self) -> QWidget:
-        page = QWidget()
-        page_layout = QVBoxLayout(page)
-        page_layout.setContentsMargins(0, 0, 0, 0)
-
-        self.bijdragen_chart_label = QLabel(messages.WORKSPACE_BIJDRAGE_EMPTY_STATE)
-        self.bijdragen_chart_label.setStyleSheet("color: #9E9E9E;")
-        page_layout.addWidget(self.bijdragen_chart_label)
-
-        # Legacy single-slot pane.
-        self.bijdragen_single_slot_pane = QWidget()
-        single_layout = QVBoxLayout(self.bijdragen_single_slot_pane)
-        single_layout.setContentsMargins(0, 0, 0, 0)
-        self.bijdragen_chart_widget = ContributionBarChartWidget()
-        single_layout.addWidget(self.bijdragen_chart_widget, stretch=2)
-        self.bijdragen_table_view = QTableView()
-        self.bijdragen_table_view.setAlternatingRowColors(True)
-        _apply_workspace_data_table_header_policy(self.bijdragen_table_view.horizontalHeader())
-        single_layout.addWidget(self.bijdragen_table_view, stretch=1)
-        page_layout.addWidget(self.bijdragen_single_slot_pane, stretch=1)
-        self.bijdragen_compare_pane = QWidget()
-        compare_layout = QHBoxLayout(self.bijdragen_compare_pane)
-        compare_layout.setContentsMargins(0, 0, 0, 0)
-        self._bijdragen_compare_col_a = build_bijdragen_compare_column(self.bijdragen_compare_pane)
-        self._bijdragen_compare_col_b = build_bijdragen_compare_column(self.bijdragen_compare_pane)
-        compare_layout.addWidget(self._bijdragen_compare_col_a["host"], stretch=1)
-        compare_layout.addWidget(self._bijdragen_compare_col_b["host"], stretch=1)
-        self.bijdragen_compare_pane.setVisible(False)
-        page_layout.addWidget(self.bijdragen_compare_pane, stretch=1)
-        return page
+        panel = build_bijdragen_workspace_panel()
+        self.bijdragen_chart_label = panel.chart_label
+        self.bijdragen_single_slot_pane = panel.single_slot_pane
+        self.bijdragen_chart_widget = panel.chart_widget
+        self.bijdragen_compare_pane = panel.compare_pane
+        self._bijdragen_compare_col_a = panel.compare_col_a
+        self._bijdragen_compare_col_b = panel.compare_col_b
+        return panel.page
 
     def _build_lcc_page(self) -> QWidget:
-        page = QWidget()
-        page_layout = QVBoxLayout(page)
-        page_layout.setContentsMargins(0, 0, 0, 0)
-
-        self.lcc_empty_state_label = QLabel(messages.WORKSPACE_LCC_EMPTY_STATE)
-        self.lcc_empty_state_label.setStyleSheet("color: #9E9E9E;")
-        self.lcc_empty_state_label.setVisible(True)
-        page_layout.addWidget(self.lcc_empty_state_label)
-
-        self.lcc_filter_bar = QWidget()
-        filter_bar_layout = QVBoxLayout(self.lcc_filter_bar)
-        filter_bar_layout.setContentsMargins(0, 0, 0, 0)
-        filter_bar_layout.setSpacing(2)
-        whatif_header = QHBoxLayout()
-        self.lcc_whatif_collapse_button = QToolButton()
-        self.lcc_whatif_collapse_button.setToolTip(messages.WORKSPACE_LCC_WHATIF_COLLAPSE_TOOLTIP)
-        self.lcc_whatif_collapse_button.clicked.connect(self._on_lcc_whatif_collapse_toggled)
-        self.lcc_whatif_bar_title = QLabel(messages.WORKSPACE_LCC_WHATIF_BAR_TITLE)
-        self.lcc_whatif_bar_title.setStyleSheet("font-weight: 600;")
-        whatif_header.addWidget(self.lcc_whatif_collapse_button)
-        whatif_header.addWidget(self.lcc_whatif_bar_title)
-        whatif_header.addStretch(1)
-        filter_bar_layout.addLayout(whatif_header)
-        self.lcc_whatif_content = QWidget()
-        filter_layout = QHBoxLayout(self.lcc_whatif_content)
-        filter_layout.setContentsMargins(0, 0, 0, 0)
-        self._lcc_filter_checks: dict[str, QCheckBox] = {}
-        for key, label in (
-            ("cm", messages.WORKSPACE_LCC_FILTER_CM),
-            ("rev", messages.WORKSPACE_LCC_FILTER_REV),
-            ("in_task", messages.WORKSPACE_LCC_FILTER_IN),
-            ("tst", messages.WORKSPACE_LCC_FILTER_TST),
-            ("svo", messages.WORKSPACE_LCC_FILTER_SVO),
-            ("wet", messages.WORKSPACE_LCC_FILTER_WET),
-        ):
-            box = QCheckBox(label)
-            box.setChecked(True)
-            box.toggled.connect(self._on_lcc_filter_toggled)
-            self._lcc_filter_checks[key] = box
-            filter_layout.addWidget(box)
-        filter_layout.addStretch(1)
-        self.lcc_whatif_button = QPushButton(messages.WORKSPACE_LCC_WHAT_IF_TOGGLE)
-        self.lcc_whatif_button.setCheckable(True)
-        self.lcc_whatif_button.toggled.connect(self._on_lcc_whatif_toggled)
-        filter_layout.addWidget(self.lcc_whatif_button)
-        self.lcc_reset_overlay_button = QPushButton(messages.WORKSPACE_LCC_RESET_OVERLAY)
-        self.lcc_reset_overlay_button.clicked.connect(self._on_lcc_reset_overlay)
-        filter_layout.addWidget(self.lcc_reset_overlay_button)
-        self.lcc_bulk_rev_passive_button = QPushButton(messages.WORKSPACE_LCC_BULK_REV_PASSIVE)
-        self.lcc_bulk_rev_passive_button.clicked.connect(self._on_lcc_bulk_rev_toggle)
-        filter_layout.addWidget(self.lcc_bulk_rev_passive_button)
-        self.lcc_cm_preset_button = QPushButton(messages.WORKSPACE_LCC_CM_POLICY_PRESET)
-        self.lcc_cm_preset_button.setToolTip(messages.WORKSPACE_LCC_CM_PRESET_TOOLTIP)
-        self.lcc_cm_preset_button.clicked.connect(self._on_lcc_cm_policy_preset)
-        filter_layout.addWidget(self.lcc_cm_preset_button)
-        filter_bar_layout.addWidget(self.lcc_whatif_content)
-        self.lcc_filter_bar.setVisible(False)
-        page_layout.addWidget(self.lcc_filter_bar)
-
-        self.lcc_overlay_status_label = QLabel("")
-        self.lcc_overlay_status_label.setStyleSheet("color: #E65100; font-weight: 600;")
-        page_layout.addWidget(self.lcc_overlay_status_label)
-
-        self.meekoppel_panel = QWidget()
-        meekoppel_layout = QVBoxLayout(self.meekoppel_panel)
-        meekoppel_layout.setContentsMargins(0, 0, 0, 0)
-        meekoppel_layout.setSpacing(2)
-        meekoppel_header = QHBoxLayout()
-        self.meekoppel_collapse_button = QToolButton()
-        self.meekoppel_collapse_button.setToolTip(messages.WORKSPACE_MEEKOPPEL_COLLAPSE_TOOLTIP)
-        self.meekoppel_collapse_button.clicked.connect(self._on_meekoppel_collapse_toggled)
-        self.meekoppel_title_label = QLabel(messages.WORKSPACE_MEEKOPPEL_PANEL_TITLE)
-        self.meekoppel_title_label.setStyleSheet("font-weight: 600;")
-        meekoppel_header.addWidget(self.meekoppel_collapse_button)
-        meekoppel_header.addWidget(self.meekoppel_title_label)
-        meekoppel_header.addStretch(1)
-        meekoppel_layout.addLayout(meekoppel_header)
-        self.meekoppel_content = QWidget()
-        meekoppel_content_layout = QVBoxLayout(self.meekoppel_content)
-        meekoppel_content_layout.setContentsMargins(0, 0, 0, 0)
-        self.meekoppel_help_label = QLabel(messages.WORKSPACE_MEEKOPPEL_PANEL_HELP)
-        self.meekoppel_help_label.setWordWrap(True)
-        self.meekoppel_help_label.setStyleSheet("color: #616161; font-size: 11px;")
-        meekoppel_content_layout.addWidget(self.meekoppel_help_label)
-        self.meekoppel_whatif_hint_label = QLabel(messages.WORKSPACE_MEEKOPPEL_WHATIF_HINT)
-        self.meekoppel_whatif_hint_label.setWordWrap(True)
-        self.meekoppel_whatif_hint_label.setStyleSheet("color: #757575;")
-        meekoppel_content_layout.addWidget(self.meekoppel_whatif_hint_label)
-        self.meekoppel_selection_summary_label = QLabel("")
-        self.meekoppel_selection_summary_label.setWordWrap(True)
-        self.meekoppel_selection_summary_label.setStyleSheet("color: #616161;")
-        self.meekoppel_selection_summary_label.setVisible(False)
-        meekoppel_content_layout.addWidget(self.meekoppel_selection_summary_label)
-        meekoppel_tb = QHBoxLayout()
-        meekoppel_tb.addWidget(QLabel(messages.WORKSPACE_MEEKOPPEL_WINDOW_LABEL))
-        self.meekoppel_window_spin = QSpinBox()
-        self.meekoppel_window_spin.setRange(1, 5)
-        self.meekoppel_window_spin.setValue(2)
-        self.meekoppel_window_spin.valueChanged.connect(self._on_meekoppel_window_changed)
-        meekoppel_tb.addWidget(self.meekoppel_window_spin)
-        self.meekoppel_anchor_earlier = QRadioButton(messages.WORKSPACE_MEEKOPPEL_ANCHOR_EARLIER)
-        self.meekoppel_anchor_later = QRadioButton(messages.WORKSPACE_MEEKOPPEL_ANCHOR_LATER)
-        self.meekoppel_anchor_later.setChecked(True)
-        self._meekoppel_anchor_group = QButtonGroup(self)
-        self._meekoppel_anchor_group.addButton(self.meekoppel_anchor_earlier)
-        self._meekoppel_anchor_group.addButton(self.meekoppel_anchor_later)
-        self._meekoppel_anchor_group.buttonClicked.connect(self._on_meekoppel_anchor_changed)
-        meekoppel_tb.addWidget(self.meekoppel_anchor_earlier)
-        meekoppel_tb.addWidget(self.meekoppel_anchor_later)
-        self.meekoppel_preview_button = QPushButton(messages.WORKSPACE_MEEKOPPEL_PREVIEW)
-        self.meekoppel_preview_button.clicked.connect(self._on_meekoppel_preview)
-        meekoppel_tb.addWidget(self.meekoppel_preview_button)
-        self.meekoppel_apply_button = QPushButton(messages.WORKSPACE_MEEKOPPEL_APPLY)
-        self.meekoppel_apply_button.clicked.connect(self._on_meekoppel_apply)
-        meekoppel_tb.addWidget(self.meekoppel_apply_button)
-        meekoppel_tb.addStretch(1)
-        meekoppel_content_layout.addLayout(meekoppel_tb)
-        self.meekoppel_empty_label = QLabel(messages.WORKSPACE_MEEKOPPEL_EMPTY)
-        self.meekoppel_empty_label.setStyleSheet("color: #9E9E9E;")
-        meekoppel_content_layout.addWidget(self.meekoppel_empty_label)
-        self.meekoppel_table_view = QTableView()
-        self.meekoppel_table_view.setAlternatingRowColors(True)
-        self.meekoppel_table_view.setSelectionBehavior(QAbstractItemView.SelectRows)
-        self.meekoppel_table_view.setSelectionMode(QAbstractItemView.SingleSelection)
-        _apply_workspace_data_table_header_policy(self.meekoppel_table_view.horizontalHeader())
-        self._meekoppel_table_model = MeekoppelSuggestionsTableModel(parent=self.meekoppel_table_view)
-        self.meekoppel_table_view.setModel(self._meekoppel_table_model)
-        meekoppel_content_layout.addWidget(self.meekoppel_table_view, stretch=1)
-        meekoppel_layout.addWidget(self.meekoppel_content)
-        self.meekoppel_panel.setVisible(False)
+        panel = build_lcc_workspace_panel()
+        self.lcc_empty_state_label = panel.lcc_empty_state_label
+        self.lcc_filter_bar = panel.lcc_filter_bar
+        self.lcc_whatif_collapse_button = panel.lcc_whatif_collapse_button
+        self.lcc_whatif_bar_title = panel.lcc_whatif_bar_title
+        self.lcc_whatif_content = panel.lcc_whatif_content
+        self._lcc_filter_checks = panel.lcc_filter_checks
+        self.lcc_whatif_button = panel.lcc_whatif_button
+        self.lcc_reset_overlay_button = panel.lcc_reset_overlay_button
+        self.lcc_bulk_rev_passive_button = panel.lcc_bulk_rev_passive_button
+        self.lcc_cm_preset_button = panel.lcc_cm_preset_button
+        self.lcc_overlay_status_label = panel.lcc_overlay_status_label
+        self.meekoppel_panel = panel.meekoppel_panel
+        self.meekoppel_collapse_button = panel.meekoppel_collapse_button
+        self.meekoppel_title_label = panel.meekoppel_title_label
+        self.meekoppel_content = panel.meekoppel_content
+        self.meekoppel_help_label = panel.meekoppel_help_label
+        self.meekoppel_whatif_hint_label = panel.meekoppel_whatif_hint_label
+        self.meekoppel_selection_summary_label = panel.meekoppel_selection_summary_label
+        self.meekoppel_window_spin = panel.meekoppel_window_spin
+        self.meekoppel_anchor_earlier = panel.meekoppel_anchor_earlier
+        self.meekoppel_anchor_later = panel.meekoppel_anchor_later
+        self._meekoppel_anchor_group = panel.meekoppel_anchor_group
+        self.meekoppel_preview_button = panel.meekoppel_preview_button
+        self.meekoppel_apply_button = panel.meekoppel_apply_button
+        self.meekoppel_empty_label = panel.meekoppel_empty_label
+        self.meekoppel_table_view = panel.meekoppel_table_view
+        self._meekoppel_table_model = panel.meekoppel_table_model
         self._meekoppel_preview_gate: MeekoppelPreviewGate | None = None
         self._meekoppel_location_groups: tuple[MeekoppelLocationGroup, ...] = ()
         self._meekoppel_workflow = MeekoppelWorkflowService()
-        page_layout.addWidget(self.meekoppel_panel)
+        self.lcc_year_summary_label = panel.lcc_year_summary_label
+        self.lcc_show_all_years_button = panel.lcc_show_all_years_button
+        self.lcc_detail_toolbar = panel.lcc_detail_toolbar
+        self.lcc_shift_selection_hint = panel.lcc_shift_selection_hint
+        self.lcc_select_rev_button = panel.lcc_select_rev_button
+        self.lcc_shift_spin = panel.lcc_shift_spin
+        self.lcc_shift_button = panel.lcc_shift_button
+        self.lcc_single_slot_pane = panel.lcc_single_slot_pane
+        self.lcc_chart_widget = panel.lcc_chart_widget
+        self.lcc_table_view = panel.lcc_table_view
+        self.lcc_detail_table_view = panel.lcc_detail_table_view
+        self._lcc_detail_model = panel.lcc_detail_model
+        self.lcc_compare_pane = panel.lcc_compare_pane
+        self._lcc_compare_col_a = panel.lcc_compare_col_a
+        self._lcc_compare_col_b = panel.lcc_compare_col_b
 
-        self.lcc_year_summary_label = QLabel("")
-        self.lcc_year_summary_label.setWordWrap(True)
-        page_layout.addWidget(self.lcc_year_summary_label)
-
-        self.lcc_show_all_years_button = QPushButton(messages.WORKSPACE_LCC_SHOW_ALL_YEARS)
+        self.lcc_whatif_collapse_button.clicked.connect(self._on_lcc_whatif_collapse_toggled)
+        for box in self._lcc_filter_checks.values():
+            box.toggled.connect(self._on_lcc_filter_toggled)
+        self.lcc_whatif_button.toggled.connect(self._on_lcc_whatif_toggled)
+        self.lcc_reset_overlay_button.clicked.connect(self._on_lcc_reset_overlay)
+        self.lcc_bulk_rev_passive_button.clicked.connect(self._on_lcc_bulk_rev_toggle)
+        self.lcc_cm_preset_button.clicked.connect(self._on_lcc_cm_policy_preset)
+        self.meekoppel_collapse_button.clicked.connect(self._on_meekoppel_collapse_toggled)
+        self.meekoppel_window_spin.valueChanged.connect(self._on_meekoppel_window_changed)
+        self._meekoppel_anchor_group.buttonClicked.connect(self._on_meekoppel_anchor_changed)
+        self.meekoppel_preview_button.clicked.connect(self._on_meekoppel_preview)
+        self.meekoppel_apply_button.clicked.connect(self._on_meekoppel_apply)
         self.lcc_show_all_years_button.clicked.connect(self._on_lcc_show_all_years)
-        page_layout.addWidget(self.lcc_show_all_years_button)
-
-        self.lcc_detail_toolbar = QWidget()
-        detail_tb = QHBoxLayout(self.lcc_detail_toolbar)
-        detail_tb.setContentsMargins(0, 0, 0, 0)
-        self.lcc_shift_selection_hint = QLabel(messages.WORKSPACE_LCC_SHIFT_SELECTION_HINT)
-        self.lcc_shift_selection_hint.setWordWrap(True)
-        detail_tb.addWidget(self.lcc_shift_selection_hint, stretch=1)
-        self.lcc_select_rev_button = QPushButton(messages.WORKSPACE_LCC_SELECT_REV_IN_YEAR)
         self.lcc_select_rev_button.clicked.connect(self._on_lcc_select_rev_in_year)
-        detail_tb.addWidget(self.lcc_select_rev_button)
-        self.lcc_shift_spin = QSpinBox()
-        self.lcc_shift_spin.setMinimum(-50)
-        self.lcc_shift_spin.setMaximum(50)
-        self.lcc_shift_spin.setToolTip(messages.WORKSPACE_LCC_SHIFT_SPIN_TOOLTIP)
-        detail_tb.addWidget(self.lcc_shift_spin)
-        self.lcc_shift_button = QPushButton(messages.WORKSPACE_LCC_SHIFT_SELECTED)
         self.lcc_shift_button.clicked.connect(self._on_lcc_shift_selected)
-        detail_tb.addWidget(self.lcc_shift_button)
-        detail_tb.addStretch(1)
-        self.lcc_detail_toolbar.setVisible(False)
-        page_layout.addWidget(self.lcc_detail_toolbar)
-
-        # Single-run pane voor de LCC-weergave.
-        # Attribuutnamen blijven stabiel voor bestaande UI-tests.
-        self.lcc_single_slot_pane = QWidget()
-        single_layout = QVBoxLayout(self.lcc_single_slot_pane)
-        single_layout.setContentsMargins(0, 0, 0, 0)
-        self.lcc_chart_widget = LCCStackedBarChartWidget()
         self.lcc_chart_widget.year_clicked.connect(self._on_lcc_year_clicked)
-        single_layout.addWidget(self.lcc_chart_widget, stretch=2)
-        self.lcc_table_view = QTableView()
-        self.lcc_table_view.setAlternatingRowColors(True)
-        _apply_workspace_data_table_header_policy(self.lcc_table_view.horizontalHeader())
-        single_layout.addWidget(self.lcc_table_view, stretch=1)
-        self.lcc_detail_table_view = QTableView()
-        self.lcc_detail_table_view.setAlternatingRowColors(True)
-        _apply_workspace_data_table_header_policy(self.lcc_detail_table_view.horizontalHeader())
-        single_layout.addWidget(self.lcc_detail_table_view, stretch=1)
-        self._lcc_detail_model = LCCYearDetailTableModel(parent=self.lcc_detail_table_view)
-        self.lcc_detail_table_view.setModel(self._lcc_detail_model)
-        self.lcc_detail_table_view.setSelectionBehavior(QAbstractItemView.SelectRows)
-        self.lcc_detail_table_view.setSelectionMode(QAbstractItemView.ExtendedSelection)
         self.lcc_detail_table_view.clicked.connect(self._on_lcc_detail_cell_clicked)
-        page_layout.addWidget(self.lcc_single_slot_pane, stretch=1)
-        self.lcc_compare_pane = QWidget()
-        lcc_compare_layout = QVBoxLayout(self.lcc_compare_pane)
-        lcc_compare_layout.setContentsMargins(0, 0, 0, 0)
-        self._lcc_compare_col_a = build_lcc_compare_column(self.lcc_compare_pane)
-        self._lcc_compare_col_b = build_lcc_compare_column(self.lcc_compare_pane)
         self._lcc_compare_col_a["chart"].year_clicked.connect(self._on_lcc_year_clicked)
         self._lcc_compare_col_b["chart"].year_clicked.connect(self._on_lcc_year_clicked)
-        lcc_compare_layout.addWidget(self._lcc_compare_col_a["host"], stretch=1)
-        lcc_compare_layout.addWidget(self._lcc_compare_col_b["host"], stretch=1)
-        self.lcc_compare_pane.setVisible(False)
-        page_layout.addWidget(self.lcc_compare_pane, stretch=1)
-        return page
+        return panel.page
 
     def _build_fm_detail_page(self) -> QWidget:
-        page = QWidget()
-        page_layout = QVBoxLayout(page)
-        page_layout.setContentsMargins(0, 0, 0, 0)
-
-        self.fm_detail_splitter = QSplitter(Qt.Vertical)
-        table_host = QWidget()
-        table_layout = QVBoxLayout(table_host)
-        table_layout.setContentsMargins(0, 0, 0, 0)
-        fm_toolbar = QHBoxLayout()
-        self.new_fm_button = QPushButton(messages.FM_EDITOR_NEW_FM)
-        self.new_fm_button.setToolTip(messages.FM_EDITOR_NEW_FM_TOOLTIP)
+        panel = build_fm_detail_workspace_panel()
+        self.fm_detail_splitter = panel.fm_detail_splitter
+        self.new_fm_button = panel.new_fm_button
+        panel.column_crop_button.setVisible(False)
+        self.fm_table_view = panel.fm_table_view
+        self._fm_table_filter_proxy = panel.fm_table_filter_proxy
+        self._fm_table_proxy = panel.fm_table_proxy
+        self.fm_table_filter_row = panel.fm_table_filter_row
+        self.fm_filter_clear_button = panel.fm_filter_clear_button
+        self.fm_filter_row_count_label = panel.fm_filter_row_count_label
+        self.detail_empty_state_label = panel.detail_empty_state_label
+        self.fm_inspector_container = panel.fm_inspector_container
+        self.fm_inspector_empty_label = panel.fm_inspector_empty_label
+        self.fm_inspector_panel = panel.fm_inspector_panel
+        self.fm_inspector_identity_label = panel.fm_inspector_identity_label
+        self.fm_inspector_lifecycle_label = panel.fm_inspector_lifecycle_label
+        self.fm_inspector_hash_label = panel.fm_inspector_hash_label
+        self.fm_inspector_reconcile_label = panel.fm_inspector_reconcile_label
+        self.fm_inspector_profile_missing_label = panel.fm_inspector_profile_missing_label
+        self.fm_inspector_year_table_view = panel.fm_inspector_year_table_view
         self.new_fm_button.clicked.connect(self._on_new_fm_clicked)
-        fm_toolbar.addWidget(self.new_fm_button)
-        fm_toolbar.addStretch(1)
-        table_layout.addLayout(fm_toolbar)
-        self.fm_table_view = QTableView()
-        self.fm_table_view.setSortingEnabled(True)
-        self.fm_table_view.setAlternatingRowColors(True)
-        self.fm_table_view.setSelectionBehavior(QAbstractItemView.SelectRows)
-        self.fm_table_view.setSelectionMode(QAbstractItemView.SingleSelection)
-        self._fm_table_proxy = FMResultsSortProxy(self.fm_table_view)
-        self.fm_table_view.setModel(self._fm_table_proxy)
         sel = self.fm_table_view.selectionModel()
         if sel is not None:
             sel.selectionChanged.connect(self._on_fm_table_selection_changed)
         self.fm_table_view.doubleClicked.connect(self._on_fm_table_double_clicked)
-        table_layout.addWidget(self.fm_table_view, stretch=1)
-        self.detail_empty_state_label = QLabel(messages.WORKSPACE_DETAIL_EMPTY_STATE)
-        self.detail_empty_state_label.setStyleSheet("color: #9E9E9E;")
-        table_layout.addWidget(self.detail_empty_state_label)
-        self.fm_detail_splitter.addWidget(table_host)
-
-        self.fm_inspector_container = QWidget()
-        inspector_layout = QVBoxLayout(self.fm_inspector_container)
-        inspector_layout.setContentsMargins(4, 4, 4, 4)
-        inspector_title = QLabel(messages.WORKSPACE_FM_INSPECTOR_TITLE)
-        inspector_title.setStyleSheet("font-weight: bold;")
-        inspector_layout.addWidget(inspector_title)
-        self.fm_inspector_empty_label = QLabel(messages.WORKSPACE_FM_INSPECTOR_EMPTY)
-        self.fm_inspector_empty_label.setStyleSheet("color: #9E9E9E;")
-        inspector_layout.addWidget(self.fm_inspector_empty_label)
-        self.fm_inspector_panel = QWidget()
-        panel_layout = QVBoxLayout(self.fm_inspector_panel)
-        panel_layout.setContentsMargins(0, 0, 0, 0)
-        self.fm_inspector_identity_label = QLabel()
-        self.fm_inspector_identity_label.setWordWrap(True)
-        panel_layout.addWidget(self.fm_inspector_identity_label)
-        self.fm_inspector_lifecycle_label = QLabel()
-        self.fm_inspector_lifecycle_label.setWordWrap(True)
-        panel_layout.addWidget(self.fm_inspector_lifecycle_label)
-        self.fm_inspector_hash_label = QLabel()
-        self.fm_inspector_hash_label.setTextInteractionFlags(
-            Qt.TextSelectableByMouse
+        bind_fm_filter_row(
+            self.fm_table_filter_row,
+            self.fm_table_view,
+            self._fm_table_filter_proxy,
+            on_filters_changed=self._refresh_fm_filter_row_count,
         )
-        panel_layout.addWidget(self.fm_inspector_hash_label)
-        self.fm_inspector_reconcile_label = QLabel()
-        self.fm_inspector_reconcile_label.setWordWrap(True)
-        panel_layout.addWidget(self.fm_inspector_reconcile_label)
-        self.fm_inspector_profile_missing_label = QLabel()
-        self.fm_inspector_profile_missing_label.setWordWrap(True)
-        self.fm_inspector_profile_missing_label.setStyleSheet("color: #E65100;")
-        panel_layout.addWidget(self.fm_inspector_profile_missing_label)
-        self.fm_inspector_year_table_view = QTableView()
-        self.fm_inspector_year_table_view.setAlternatingRowColors(True)
-        self.fm_inspector_year_table_view.setToolTip(
-            messages.WORKSPACE_FM_INSPECTOR_FAALMOMENTEN_PROXY_TOOLTIP
-        )
-        self.fm_inspector_year_table_view.horizontalHeader().setStretchLastSection(True)
-        panel_layout.addWidget(self.fm_inspector_year_table_view, stretch=1)
-        inspector_layout.addWidget(self.fm_inspector_panel)
-        self.fm_inspector_panel.setVisible(False)
-        self.fm_inspector_container.setVisible(False)
-        self.fm_detail_splitter.addWidget(self.fm_inspector_container)
-        self.fm_detail_splitter.setStretchFactor(0, 2)
-        self.fm_detail_splitter.setStretchFactor(1, 1)
-
-        page_layout.addWidget(self.fm_detail_splitter, stretch=1)
-        return page
+        self.fm_filter_clear_button.clicked.connect(self._on_fm_filter_clear)
+        fm_header = self.fm_table_view.horizontalHeader()
+        fm_header.setContextMenuPolicy(Qt.CustomContextMenu)
+        fm_header.customContextMenuRequested.connect(self._on_fm_table_header_context_menu)
+        return panel.page
 
     def _build_placeholder_page(self, text: str) -> QWidget:
         page = QWidget()
@@ -912,11 +759,9 @@ class ResultsWorkspaceWindow(QMainWindow):
         for w in (
             self.path_input,
             self.pick_button,
-            self.open_isograph_button,
+            self.portfolio_wizard_button,
+            self.rcm_cost_parity_button,
             self.validate_button,
-            self.batch_faalwijzen_button,
-            self.model_settings_button,
-            self.generate_report_button,
             self.compare_scenario_combo,
             self.run_slot_a_button,
             self.run_slot_b_button,
@@ -926,23 +771,10 @@ class ResultsWorkspaceWindow(QMainWindow):
         ):
             toolbar_row.addWidget(w)
         toolbar_row.addStretch(1)
-        toolbar_row.addWidget(self.pbs_toggle_button)
         toolbar_row.addWidget(self.show_whole_project_button)
 
         modus_row = QHBoxLayout()
-        for key in (MODE_BIJDRAGEN, MODE_LCC, MODE_FM_DETAIL):
-            modus_row.addWidget(self.modus_buttons[key])
-        self.fm_evident_filter_combo = QComboBox()
-        for label, value in (
-            (messages.WORKSPACE_FM_EVIDENT_FILTER_ALL, "all"),
-            (messages.WORKSPACE_FM_EVIDENT_FILTER_NMF, "nmf_only"),
-            (messages.WORKSPACE_FM_EVIDENT_FILTER_EVIDENT, "evident_only"),
-        ):
-            self.fm_evident_filter_combo.addItem(label, value)
-        self.fm_evident_filter_combo.currentIndexChanged.connect(
-            self._on_fm_evident_filter_changed
-        )
-        modus_row.addWidget(self.fm_evident_filter_combo)
+        modus_row.addWidget(self._workspace_navigation.widget)
         modus_row.addStretch(1)
 
         self.main_splitter = QSplitter(Qt.Horizontal)
@@ -958,11 +790,7 @@ class ResultsWorkspaceWindow(QMainWindow):
         kpi_panel_layout.setContentsMargins(0, 0, 0, 0)
         kpi_panel_layout.setSpacing(2)
         kpi_header = QHBoxLayout()
-        self.kpi_collapse_button = QToolButton()
-        self.kpi_collapse_button.setToolTip(messages.WORKSPACE_KPI_COLLAPSE_TOOLTIP)
-        self.kpi_collapse_button.clicked.connect(self._on_kpi_collapse_toggled)
         self.kpi_panel_title = QLabel(messages.WORKSPACE_KPI_PANEL_TITLE)
-        kpi_header.addWidget(self.kpi_collapse_button)
         kpi_header.addWidget(self.kpi_panel_title)
         kpi_header.addStretch(1)
         kpi_panel_layout.addLayout(kpi_header)
@@ -998,9 +826,6 @@ class ResultsWorkspaceWindow(QMainWindow):
         default_path = resolve_default_fixture_path()
         if default_path is not None:
             self.path_input.setText(str(default_path))
-
-    def _on_pbs_toggle(self, checked: bool) -> None:
-        self.pbs_sidebar.setVisible(checked)
 
     def _expand_pbs_filtered_nodes_capped(self) -> None:
         """Expandeer zichtbare proxy-rijen tot diepte; geen `expandAll` (slice 25)."""
@@ -1073,6 +898,9 @@ class ResultsWorkspaceWindow(QMainWindow):
         self._pbs_scope_id = scope_id
         self.workspace_state.set_scope(scope_id)
         self._update_scope_status_label()
+        session = self._project_session()
+        project = wss.editing_project(session) if session is not None else None
+        self._entity_grid_panel.set_scope(scope_id, project)
 
     def _on_workspace_state_changed(self, snapshot: WorkspaceStateSnapshot) -> None:
         previous = self._last_workspace_snapshot_for_split_depth
@@ -1084,6 +912,7 @@ class ResultsWorkspaceWindow(QMainWindow):
         self._apply_ui_sync(tick.ui_sync, snapshot)
         self._apply_render_plan(tick.render, snapshot)
         self._last_workspace_snapshot_for_split_depth = snapshot
+        self._persist_workspace_navigation_preferences(snapshot)
 
     def _render_context(self) -> WorkspaceRenderContext:
         return WorkspaceRenderContext(
@@ -1226,19 +1055,25 @@ class ResultsWorkspaceWindow(QMainWindow):
         plan: WorkspaceUiSyncPlan,
         snapshot: WorkspaceStateSnapshot,
     ) -> None:
-        page = self._detail_pages.get(plan.detail_page_modus, self.bijdragen_page)
-        if self.detail_stack.currentWidget() is not page:
-            self.detail_stack.setCurrentWidget(page)
-        target_button = self.modus_buttons.get(plan.modus_button)
-        if target_button is not None and not target_button.isChecked():
-            target_button.setChecked(True)
-        if plan.source_toggle == SOURCE_PBS and not self.source_toggle_pbs_button.isChecked():
-            self.source_toggle_pbs_button.setChecked(True)
-        elif (
-            plan.source_toggle == SOURCE_FAALWIJZE
-            and not self.source_toggle_faalwijze_button.isChecked()
-        ):
-            self.source_toggle_faalwijze_button.setChecked(True)
+        apply_workspace_navigation_plan(
+            self._workspace_navigation,
+            workspace_side=plan.navigation.workspace_side,
+            active_view_id=plan.navigation.active_view_id,
+            dropdown_items=plan.navigation.dropdown_items,
+        )
+        if plan.navigation.show_input_placeholder:
+            if self.detail_stack.currentWidget() is not self.input_placeholder_page:
+                self.detail_stack.setCurrentWidget(self.input_placeholder_page)
+        elif plan.navigation.show_input_entity_grid:
+            if self.detail_stack.currentWidget() is not self.input_entity_grid_page:
+                self.detail_stack.setCurrentWidget(self.input_entity_grid_page)
+            self._refresh_entity_grid(plan.navigation.active_view_id)
+        else:
+            page = self._detail_pages.get(plan.detail_page_modus, self.bijdragen_page)
+            if self.detail_stack.currentWidget() is not page:
+                self.detail_stack.setCurrentWidget(page)
+        if plan.detail_page_modus != MODE_FM_DETAIL:
+            self._fm_sort_metric = None
         idx = self.metric_combo.findData(plan.metric)
         if idx >= 0 and idx != self.metric_combo.currentIndex():
             blocker = self.metric_combo.blockSignals(True)
@@ -1258,139 +1093,27 @@ class ResultsWorkspaceWindow(QMainWindow):
         if plan.scope_id != self._pbs_scope_id:
             self._pbs_scope_id = plan.scope_id
             self._update_scope_status_label()
+        if hasattr(self, "_workspace_menu"):
+            self._sync_workspace_menu_check_states()
 
     def _apply_bijdragen_toolbar(self, toolbar: BijdragenToolbarPlan | None) -> None:
-        if toolbar is None:
-            self.top10_subbar.setVisible(False)
-            self.horizon_lifecycle_button.setVisible(False)
-            self.horizon_per_year_button.setVisible(False)
-            self.contribution_year_combo.setVisible(False)
-            self.nb_hours_button.setVisible(False)
-            self.nb_percent_button.setVisible(False)
-            return
-        self.top10_subbar.setVisible(toolbar.top10_subbar_visible)
-        self.horizon_lifecycle_button.setVisible(toolbar.horizon_lifecycle_visible)
-        self.horizon_per_year_button.setVisible(toolbar.horizon_per_year_visible)
-        self.contribution_year_combo.setVisible(toolbar.year_combo_visible)
-        self.nb_hours_button.setVisible(toolbar.nb_hours_visible)
-        self.nb_percent_button.setVisible(toolbar.nb_percent_visible)
-        if toolbar.horizon_lifecycle_visible:
-            if toolbar.horizon_lifecycle_checked and not self.horizon_lifecycle_button.isChecked():
-                self.horizon_lifecycle_button.setChecked(True)
-            elif toolbar.horizon_per_year_checked and not self.horizon_per_year_button.isChecked():
-                self.horizon_per_year_button.setChecked(True)
-        if toolbar.nb_hours_visible:
-            if toolbar.nb_hours_checked and not self.nb_hours_button.isChecked():
-                self.nb_hours_button.setChecked(True)
-            elif toolbar.nb_percent_checked and not self.nb_percent_button.isChecked():
-                self.nb_percent_button.setChecked(True)
-        if toolbar.year_combo_visible:
-            idx = self.contribution_year_combo.findData(toolbar.year_choice)
-            if idx >= 0 and idx != self.contribution_year_combo.currentIndex():
-                blocker = self.contribution_year_combo.blockSignals(True)
-                self.contribution_year_combo.setCurrentIndex(idx)
-                self.contribution_year_combo.blockSignals(blocker)
+        apply_bijdragen_toolbar(self, toolbar)
 
     def _apply_lcc_toolbar(
         self,
         toolbar: LccToolbarVisibilityPlan | None,
         snapshot: WorkspaceStateSnapshot,
     ) -> None:
-        if toolbar is None:
-            self.lcc_filter_bar.setVisible(False)
-            self.lcc_show_all_years_button.setVisible(False)
-            self.lcc_year_summary_label.setVisible(False)
-            self.meekoppel_panel.setVisible(False)
-            return
-        self.lcc_filter_bar.setVisible(toolbar.filter_bar_visible)
-        self.lcc_show_all_years_button.setVisible(toolbar.show_all_years_visible)
-        self.lcc_year_summary_label.setVisible(toolbar.year_summary_label_visible)
-        self.meekoppel_panel.setVisible(toolbar.meekoppel_panel_visible)
-        self._sync_lcc_filter_checks(toolbar.lcc_filters)
-        self._sync_meekoppel_panel(snapshot)
+        apply_lcc_toolbar(self, toolbar, snapshot)
 
     def _apply_fm_toolbar(self, toolbar: FmToolbarPlan) -> None:
-        self.batch_faalwijzen_button.setVisible(toolbar.batch_faalwijzen_visible)
-        if hasattr(self, "new_fm_button"):
-            self.new_fm_button.setVisible(toolbar.new_fm_visible)
-            if toolbar.new_fm_visible:
-                self._sync_new_fm_button_enabled()
-        self.fm_evident_filter_combo.setVisible(toolbar.fm_evident_filter_visible)
-        self.fm_evident_filter_combo.setEnabled(toolbar.fm_evident_filter_visible)
-        if hasattr(self, "fm_inspector_container"):
-            self.fm_inspector_container.setVisible(toolbar.fm_inspector_visible)
-            if toolbar.clear_fm_inspector:
-                self._refresh_fm_inspector(None)
+        apply_fm_toolbar(self, toolbar)
 
     def _apply_compare_chrome(self, compare: CompareChromePlan) -> None:
-        if hasattr(self, "compare_toggle_button"):
-            if self.compare_toggle_button.isChecked() != compare.compare_mode_checked:
-                blocker = self.compare_toggle_button.blockSignals(True)
-                self.compare_toggle_button.setChecked(compare.compare_mode_checked)
-                self.compare_toggle_button.blockSignals(blocker)
-        if hasattr(self, "bijdragen_single_slot_pane"):
-            self.bijdragen_single_slot_pane.setVisible(compare.bijdragen_single_visible)
-            self.bijdragen_compare_pane.setVisible(compare.bijdragen_compare_visible)
-            self.bijdragen_chart_label.setVisible(compare.bijdragen_chart_label_visible)
-        if hasattr(self, "lcc_single_slot_pane"):
-            self.lcc_single_slot_pane.setVisible(compare.lcc_single_visible)
-            self.lcc_compare_pane.setVisible(compare.lcc_compare_visible)
-            if compare.lcc_empty_state_visible:
-                self.lcc_empty_state_label.setVisible(True)
+        apply_compare_chrome(self, compare)
 
     def _apply_collapse_panels(self, collapse: CollapsePanelsPlan) -> None:
-        self._apply_collapse_panel(
-            collapse.kpi,
-            chrome_button=getattr(self, "kpi_collapse_button", None),
-            title=getattr(self, "kpi_panel_title", None),
-            content=getattr(self, "kpi_table_view", None),
-        )
-        self._apply_collapse_panel(
-            collapse.lcc_whatif,
-            chrome_button=getattr(self, "lcc_whatif_collapse_button", None),
-            title=getattr(self, "lcc_whatif_bar_title", None),
-            content=getattr(self, "lcc_whatif_content", None),
-        )
-        self._apply_meekoppel_collapse(collapse.meekoppel)
-
-    @staticmethod
-    def _apply_collapse_panel(
-        panel: CollapsePanelPlan | None,
-        *,
-        chrome_button,
-        title,
-        content,
-    ) -> None:
-        if chrome_button is None:
-            return
-        if panel is None:
-            chrome_button.setVisible(False)
-            if title is not None:
-                title.setVisible(False)
-            if content is not None:
-                content.setVisible(True)
-            return
-        chrome_button.setVisible(panel.chrome_visible)
-        if title is not None:
-            title.setVisible(panel.chrome_visible)
-        if content is not None:
-            content.setVisible(panel.content_visible)
-        chrome_button.setText(panel.collapse_glyph)
-        chrome_button.setEnabled(panel.chrome_enabled)
-
-    def _apply_meekoppel_collapse(self, panel: MeekoppelCollapsePlan | None) -> None:
-        if not hasattr(self, "meekoppel_collapse_button"):
-            return
-        if panel is None:
-            self.meekoppel_collapse_button.setVisible(False)
-            self.meekoppel_content.setVisible(False)
-            return
-        if panel.ensure_whatif_if_expanding:
-            self._ensure_whatif_for_meekoppel()
-        self.meekoppel_collapse_button.setVisible(panel.chrome_visible)
-        self.meekoppel_content.setVisible(panel.content_visible)
-        self.meekoppel_collapse_button.setText(panel.collapse_glyph)
-        self.meekoppel_collapse_button.setEnabled(panel.chrome_enabled)
+        apply_collapse_panels(self, collapse)
 
     def _seed_planning_overlay_from_import(self, project: object) -> None:
         import_settings = getattr(project, "import_settings", None)
@@ -1402,6 +1125,7 @@ class ResultsWorkspaceWindow(QMainWindow):
 
     def _on_state_project_changed(self, project: object) -> None:
         self._refresh_contribution_year_combo(project)
+        self._refresh_nb_effect_filter_combo(project)
         if project is None:
             self._set_pbs_source_model(None, show_totals=False)
             self._pbs_scope_id = None
@@ -1493,11 +1217,90 @@ class ResultsWorkspaceWindow(QMainWindow):
         fm_id = model.data(indexes[0], RAW_ROLE)
         return str(fm_id) if fm_id is not None else None
 
+    def _restore_fm_column_fit_preferences(self) -> None:
+        settings = QSettings("rcm2", "desktop")
+        mode = read_fm_detail_column_fit_mode(settings)
+        self._fm_column_fit_mode = mode
+        self._apply_fm_column_fit_mode(mode)
+        if hasattr(self, "_workspace_menu"):
+            self._sync_workspace_menu_check_states()
+
+    def _restore_fm_optional_column_preferences(self) -> None:
+        settings = QSettings("rcm2", "desktop")
+        self._fm_hidden_optional_columns = read_fm_hidden_optional_columns(settings)
+        self._apply_fm_optional_column_visibility()
+
+    def _apply_fm_optional_column_visibility(self) -> None:
+        if not hasattr(self, "fm_table_view"):
+            return
+        hidden = getattr(self, "_fm_hidden_optional_columns", frozenset({"pbs_id"}))
+        apply_fm_optional_column_visibility(
+            self.fm_table_view,
+            hidden_optional_columns=hidden,
+        )
+        if hasattr(self, "fm_table_filter_row"):
+            self.fm_table_filter_row._sync_column_widths()
+
+    def _on_fm_table_header_context_menu(self, pos) -> None:
+        hidden = getattr(self, "_fm_hidden_optional_columns", frozenset({"pbs_id"}))
+        menu = build_fm_column_context_menu(
+            self.fm_table_view,
+            hidden_optional_columns=hidden,
+            on_toggle=self._on_fm_optional_column_toggled,
+        )
+        header = self.fm_table_view.horizontalHeader()
+        menu.exec(header.mapToGlobal(pos))
+
+    def _on_fm_optional_column_toggled(self, column_id: str, visible: bool) -> None:
+        hidden = set(getattr(self, "_fm_hidden_optional_columns", frozenset()))
+        if visible:
+            hidden.discard(column_id)
+        else:
+            hidden.add(column_id)
+        self._fm_hidden_optional_columns = frozenset(hidden)
+        write_fm_hidden_optional_columns(
+            QSettings("rcm2", "desktop"),
+            self._fm_hidden_optional_columns,
+        )
+        self._apply_fm_optional_column_visibility()
+
+    def _restore_workspace_navigation_preferences(self) -> None:
+        settings = QSettings("rcm2", "desktop")
+        side, sticky = read_workspace_navigation(settings)
+        self.workspace_state.restore_navigation(side, sticky)
+
+    def _persist_workspace_navigation_preferences(self, snapshot: WorkspaceStateSnapshot) -> None:
+        write_workspace_navigation(
+            QSettings("rcm2", "desktop"),
+            workspace_side=snapshot.workspace_side,
+            sticky_by_side=self.workspace_state.sticky_views_by_side(),
+        )
+
+    def _apply_fm_column_fit_mode(self, mode: ColumnFitMode) -> None:
+        if not hasattr(self, "fm_table_view"):
+            return
+        apply_column_fit_mode_to_table(self.fm_table_view, mode)
+
+    def _on_fm_column_crop_toggled(self, checked: bool) -> None:
+        mode = column_fit_mode_from_crop_checked(checked)
+        self._fm_column_fit_mode = mode
+        write_fm_detail_column_fit_mode(QSettings("rcm2", "desktop"), mode)
+        self._apply_fm_column_fit_mode(mode)
+        self._sync_workspace_menu_check_states()
+
     def _render_fm_rows(self, fm_rows) -> None:
         prior_fm_id = self._selected_fm_id_from_table()
         model = FMResultsTableModel(list(fm_rows), self.fm_table_view)
-        self._fm_table_proxy.setSourceModel(model)
+        self._fm_table_filter_proxy.setSourceModel(model)
+        metric = self.workspace_state.snapshot().metric
+        if getattr(self, "_fm_sort_metric", None) != metric:
+            self._fm_sort_metric = metric
+            col = default_fm_sort_column(metric)
+            self.fm_table_view.sortByColumn(col, Qt.DescendingOrder)
+        self._apply_fm_optional_column_visibility()
         self.detail_empty_state_label.setVisible(model.rowCount() == 0)
+        if hasattr(self, "_fm_column_fit_mode"):
+            self._apply_fm_column_fit_mode(self._fm_column_fit_mode)
         restore_row: int | None = None
         if prior_fm_id is not None:
             for row in range(self._fm_table_proxy.rowCount()):
@@ -1510,6 +1313,23 @@ class ResultsWorkspaceWindow(QMainWindow):
             self.fm_table_view.selectRow(restore_row)
         else:
             self._refresh_fm_inspector(None)
+        self._refresh_fm_filter_row_count()
+
+    def _refresh_fm_filter_row_count(self) -> None:
+        if not hasattr(self, "fm_filter_row_count_label"):
+            return
+        visible = self._fm_table_proxy.rowCount()
+        source = self._fm_table_filter_proxy.sourceModel()
+        total = source.rowCount() if source is not None else visible
+        self.fm_filter_row_count_label.setText(
+            messages.TABLE_FILTER_ROW_COUNT.format(visible=visible, total=total)
+        )
+
+    def _on_fm_filter_clear(self) -> None:
+        self.fm_table_filter_row.clear_all()
+        self._fm_table_filter_proxy.clear_filters()
+        self.fm_table_filter_row.apply_invalid_numeric_columns(frozenset())
+        self._refresh_fm_filter_row_count()
 
     def _on_fm_table_selection_changed(
         self,
@@ -1551,6 +1371,61 @@ class ResultsWorkspaceWindow(QMainWindow):
             self._state.set_last_run(result.run_result)
         grid_svc.mark_saved()
         return True
+
+    def _revalidate_input(self) -> None:
+        session = self._project_session()
+        if session is None:
+            return
+        from rcm_desktop.adapter.input_revalidation_service import revalidate_input_buffer
+
+        project = wss.editing_project(session)
+        host = self._editing_host
+        grid = host.ensure_grid(project)
+        revalidate_input_buffer(grid.editing_session)
+        self._entity_grid_panel.refresh_view()
+
+    def _on_entity_grid_changed(self) -> None:
+        self._entity_grid_panel.refresh_view()
+        self._update_run_buttons_enabled()
+
+    def _on_entity_grid_columns_changed(self, hidden: frozenset[str]) -> None:
+        view_id = self._entity_grid_view_id
+        if view_id is None:
+            return
+        write_hidden_entity_columns(QSettings("rcm2", "desktop"), view_id, hidden)
+        self._entity_grid_hidden = hidden
+
+    def _refresh_entity_grid(self, view_id: str) -> None:
+        hidden = read_hidden_entity_columns(QSettings("rcm2", "desktop"), view_id)
+        if (
+            view_id == self._entity_grid_view_id
+            and hidden == self._entity_grid_hidden
+            and self._entity_grid_panel.table_model() is not None
+        ):
+            return
+        session = self._project_session()
+        if session is None:
+            self._entity_grid_panel.detach()
+            self._entity_grid_view_id = None
+            self._entity_grid_hidden = frozenset()
+            return
+        project = wss.editing_project(session)
+        host = self._editing_host
+        shared = host.ensure_grid(project)
+        entity_svc = EntityEditService.for_view(
+            view_id,
+            changed=self._on_entity_grid_changed,
+        )
+        entity_svc.attach_editing_session(shared.editing_session)
+        self._entity_grid_panel.attach(
+            entity_svc,
+            project,
+            view_id=view_id,
+            hidden_columns=hidden,
+        )
+        self._entity_grid_panel.set_scope(self._pbs_scope_id, project)
+        self._entity_grid_view_id = view_id
+        self._entity_grid_hidden = hidden
 
     def _open_batch_faalwijzen_grid(self) -> None:
         session = self._project_session()
@@ -1806,81 +1681,10 @@ class ResultsWorkspaceWindow(QMainWindow):
         return None
 
     def _refresh_fm_inspector(self, fm_id: str | None) -> None:
-        if not hasattr(self, "fm_inspector_panel"):
-            return
-        if fm_id is None:
-            self.fm_inspector_empty_label.setVisible(True)
-            self.fm_inspector_panel.setVisible(False)
-            return
-        session = self._project_session()
-        fmr = self._fm_core_result_for_id(fm_id)
-        if session is None or fmr is None:
-            self.fm_inspector_empty_label.setVisible(True)
-            self.fm_inspector_panel.setVisible(False)
-            return
-        view = wss.build_fm_verification_for_session(session, fmr)
-        self._apply_fm_inspector_view(view)
+        refresh_fm_inspector(self, fm_id)
 
     def _apply_fm_inspector_view(self, view: FMVerificationView) -> None:
-        self.fm_inspector_empty_label.setVisible(False)
-        self.fm_inspector_panel.setVisible(True)
-        self.fm_inspector_identity_label.setText(
-            f"{view.fm_id} — {view.faalwijze_omschrijving}\n"
-            f"{view.pbs_id} — {view.bouwdeel_naam}"
-        )
-        lc = view.lifecycle
-        lines = [
-            f"{messages.WORKSPACE_FM_INSPECTOR_FAALMOMENTEN}: "
-            f"{format_int(int(round(lc.expected_failures)))}",
-            f"{messages.WORKSPACE_FM_INSPECTOR_RAW_DOWNTIME}: "
-            f"{format_float(lc.expected_raw_downtime_hr)}",
-            f"{messages.WORKSPACE_FM_INSPECTOR_DETECTION_DELAY}: "
-            f"{format_float(lc.expected_detection_delay_hr)}",
-            f"{messages.WORKSPACE_FM_INSPECTOR_PM_DOWNTIME}: "
-            f"{format_float(lc.expected_pm_downtime_hr)}",
-            f"{messages.WORKSPACE_FM_INSPECTOR_TOTAL_DOWNTIME}: "
-            f"{format_float(lc.expected_total_downtime_hr)}",
-            f"{messages.WORKSPACE_FM_INSPECTOR_CM_COST}: "
-            f"{format_eur(lc.expected_cm_cost_eur)}",
-            f"{messages.WORKSPACE_FM_INSPECTOR_PM_COST}: "
-            f"{format_eur(lc.pm_cost_eur)}",
-            f"{messages.WORKSPACE_FM_INSPECTOR_TOTAL_COST}: "
-            f"{format_eur(lc.total_cost_eur)}",
-        ]
-        if lc.effect_bijdragen:
-            effects = ", ".join(
-                f"{kid}: {format_float(v)}" for kid, v in lc.effect_bijdragen
-            )
-            lines.append(f"{messages.WORKSPACE_FM_INSPECTOR_EFFECTS}: {effects}")
-        self.fm_inspector_lifecycle_label.setText("\n".join(lines))
-        if view.fm_input_hash:
-            self.fm_inspector_hash_label.setText(
-                f"{messages.WORKSPACE_FM_INSPECTOR_HASH_PREFIX} {view.fm_input_hash}"
-            )
-        else:
-            self.fm_inspector_hash_label.setText(
-                messages.WORKSPACE_FM_INSPECTOR_HASH_MISSING
-            )
-        if view.profile_missing:
-            self.fm_inspector_profile_missing_label.setText(
-                messages.WORKSPACE_FM_INSPECTOR_PROFILE_MISSING
-            )
-            self.fm_inspector_profile_missing_label.setVisible(True)
-            self.fm_inspector_year_table_view.setVisible(False)
-            self.fm_inspector_year_table_view.setModel(None)
-            reconcile_prefix = messages.WORKSPACE_FM_INSPECTOR_RECONCILE_WARN
-        else:
-            self.fm_inspector_profile_missing_label.setVisible(False)
-            self.fm_inspector_year_table_view.setVisible(True)
-            year_model = FMVerificationYearTableModel(view.year_rows)
-            self.fm_inspector_year_table_view.setModel(year_model)
-            reconcile_prefix = (
-                messages.WORKSPACE_FM_INSPECTOR_RECONCILE_OK
-                if view.reconcile_ok
-                else messages.WORKSPACE_FM_INSPECTOR_RECONCILE_WARN
-            )
-        notes = "; ".join(view.reconcile_notes)
-        self.fm_inspector_reconcile_label.setText(f"{reconcile_prefix} — {notes}")
+        apply_fm_inspector_view(self, view)
 
     def _render_lcc_view(
         self,
@@ -1910,6 +1714,7 @@ class ResultsWorkspaceWindow(QMainWindow):
         buckets = tuple(curve.display_buckets)
         self.lcc_chart_widget.set_buckets(buckets)
         self.lcc_chart_widget.set_selected_year(snapshot.lcc_calendar_year)
+        self._sync_lcc_axis_labels(snapshot)
         self._lcc_table_model = LCCYearTableModel(buckets)
         self.lcc_table_view.setModel(self._lcc_table_model)
         self.lcc_empty_state_label.setVisible(False)
@@ -1918,10 +1723,15 @@ class ResultsWorkspaceWindow(QMainWindow):
 
     def _sync_lcc_chrome(self, snapshot: WorkspaceStateSnapshot) -> None:
         session = self._project_session()
+        snapshot = self.workspace_state.snapshot()
         overlay = snapshot.planning_overlay
         active = overlay.active
         year_selected = snapshot.lcc_calendar_year is not None
-        self.lcc_whatif_button.setChecked(active)
+        whatif_blocker = self.lcc_whatif_button.blockSignals(True)
+        try:
+            self.lcc_whatif_button.setChecked(active)
+        finally:
+            self.lcc_whatif_button.blockSignals(whatif_blocker)
         self.lcc_reset_overlay_button.setEnabled(active)
         self.lcc_bulk_rev_passive_button.setEnabled(active and session is not None)
         self.lcc_cm_preset_button.setEnabled(active and session is not None)
@@ -1955,237 +1765,26 @@ class ResultsWorkspaceWindow(QMainWindow):
         if snapshot.modus == MODE_LCC:
             self._sync_meekoppel_panel(snapshot)
 
-    def _meekoppel_current_anchor(self) -> str:
-        return "later" if self.meekoppel_anchor_later.isChecked() else "earlier"
-
-    def _selected_meekoppel_pbs_ids(self) -> frozenset[str]:
-        return self._pbs_selected_ids_from_tree()
-
     def _ensure_whatif_for_meekoppel(self) -> None:
-        overlay = self.workspace_state.snapshot().planning_overlay
-        if overlay.active:
-            return
-        self.workspace_state.set_planning_overlay(overlay.begin_what_if())
-        blocker = self.lcc_whatif_button.blockSignals(True)
-        try:
-            self.lcc_whatif_button.setChecked(True)
-        finally:
-            self.lcc_whatif_button.blockSignals(blocker)
+        ensure_whatif_for_meekoppel(self)
 
     def _clear_meekoppel_preview_gate(self) -> None:
-        self._meekoppel_preview_gate = None
+        clear_meekoppel_preview_gate(self)
 
     def _sync_meekoppel_panel(self, snapshot: WorkspaceStateSnapshot) -> None:
-        session = self._project_session()
-        selected_pbs_ids = self._selected_meekoppel_pbs_ids()
-        panel = sync_meekoppel_panel(
-            session,
-            snapshot,
-            window_years=int(self.meekoppel_window_spin.value()),
-            preview_gate=self._meekoppel_preview_gate,
-            selected_pbs_ids=selected_pbs_ids or None,
-            current_anchor=self._meekoppel_current_anchor(),  # type: ignore[arg-type]
-        )
-        self.meekoppel_whatif_hint_label.setVisible(panel.show_whatif_hint)
-        self.meekoppel_window_spin.setEnabled(panel.window_spin_enabled)
-        self.meekoppel_anchor_earlier.setEnabled(panel.window_spin_enabled)
-        self.meekoppel_anchor_later.setEnabled(panel.window_spin_enabled)
-        self.meekoppel_table_view.setVisible(panel.table_visible)
-        self.meekoppel_preview_button.setEnabled(panel.preview_enabled)
-        self.meekoppel_apply_button.setEnabled(panel.apply_enabled)
-        self._meekoppel_location_groups = panel.location_groups
-        self._meekoppel_table_model.set_panel_rows(
-            panel.rows, columns=panel.columns
-        )
-        if panel.selection_summary_text:
-            self.meekoppel_selection_summary_label.setText(panel.selection_summary_text)
-            self.meekoppel_selection_summary_label.setVisible(True)
-        else:
-            self.meekoppel_selection_summary_label.setVisible(False)
-        if panel.empty_label_text:
-            self.meekoppel_empty_label.setText(panel.empty_label_text)
-            self.meekoppel_empty_label.setVisible(True)
-        else:
-            self.meekoppel_empty_label.setVisible(False)
+        bind_meekoppel_panel(self, snapshot)
 
     def _on_meekoppel_anchor_changed(self, _button) -> None:
-        snapshot = self.workspace_state.snapshot()
-        if snapshot.modus == MODE_LCC:
-            self._sync_meekoppel_panel(snapshot)
+        on_meekoppel_anchor_changed(self, _button)
 
     def _on_meekoppel_window_changed(self, _value: int) -> None:
-        snapshot = self.workspace_state.snapshot()
-        if snapshot.modus == MODE_LCC:
-            self._sync_meekoppel_panel(snapshot)
-
-    def _selected_meekoppel_location_group(self) -> MeekoppelLocationGroup | None:
-        sm = self.meekoppel_table_view.selectionModel()
-        if sm is None or not sm.hasSelection():
-            return None
-        panel_row = self._meekoppel_table_model.row_at(sm.currentIndex().row())
-        if panel_row is None:
-            return None
-        for group in self._meekoppel_location_groups:
-            if group.pbs_id == panel_row.pbs_id:
-                return group
-        return None
+        on_meekoppel_window_changed(self, _value)
 
     def _on_meekoppel_preview(self) -> None:
-        session = self._project_session()
-        if session is None:
-            return
-        self._ensure_whatif_for_meekoppel()
-        overlay = self.workspace_state.snapshot().planning_overlay
-        pbs_ids = self._selected_meekoppel_pbs_ids()
-        anchor = self._meekoppel_current_anchor()
-        if meekoppel_workflow_v2_enabled():
-            if not pbs_ids:
-                QMessageBox.warning(
-                    self,
-                    messages.LTAP_ERROR_DIALOG_TITLE,
-                    messages.WORKSPACE_MEEKOPPEL_SELECT_PBS,
-                )
-                return
-            dialog = MeekoppelPreviewDialog(
-                self,
-                session=session,
-                overlay=overlay,
-                pbs_ids=pbs_ids,
-                anchor=anchor,  # type: ignore[arg-type]
-                location_group=self._selected_meekoppel_location_group(),
-                workflow=self._meekoppel_workflow,
-            )
-            dialog.exec()
-            result = dialog.result_payload()
-            if result.preview is None:
-                return
-            self._meekoppel_preview_gate = MeekoppelPreviewGate(
-                pbs_ids=pbs_ids,
-                anchor=anchor,  # type: ignore[arg-type]
-            )
-            if result.accepted and result.scope_kind is not None:
-                apply_result = self._meekoppel_workflow.apply(
-                    session=session,
-                    overlay=overlay,
-                    pbs_ids=pbs_ids,
-                    anchor=anchor,  # type: ignore[arg-type]
-                    scope_kind=result.scope_kind,
-                    location_group=self._selected_meekoppel_location_group()
-                    if result.scope_kind == "location_row"
-                    else None,
-                    checked_pm_ids=result.checked_pm_ids,
-                )
-                if apply_result.status == "ok":
-                    self.workspace_state.set_planning_overlay(apply_result.overlay)
-                elif apply_result.user_message:
-                    QMessageBox.critical(
-                        self,
-                        messages.LTAP_ERROR_DIALOG_TITLE,
-                        apply_result.user_message,
-                    )
-            self._sync_meekoppel_panel(self.workspace_state.snapshot())
-            return
-        else:
-            if not pbs_ids:
-                QMessageBox.warning(
-                    self,
-                    messages.LTAP_ERROR_DIALOG_TITLE,
-                    messages.WORKSPACE_MEEKOPPEL_SELECT_PBS,
-                )
-                return
-            prev = preview_meekoppel(
-                session,
-                overlay,
-                pbs_ids,
-                anchor=anchor,  # type: ignore[arg-type]
-            )
-        if prev.blocked_reason:
-            QMessageBox.information(
-                self,
-                messages.WORKSPACE_MEEKOPPEL_PREVIEW_TITLE,
-                messages.WORKSPACE_MEEKOPPEL_PREVIEW_BLOCKED.format(reason=prev.blocked_reason),
-            )
-            return
-        project = session.loaded.core()
-        modeljaar = int(project.config.modeljaar)
-        tasks = collect_rev_tasks_for_pbs_selection(project, pbs_ids)
-        moves_text = format_meekoppel_preview_moves_text(
-            project,
-            overlay,
-            modeljaar,
-            prev,
-            tasks,
-        )
-        pbs_footnote = messages.WORKSPACE_MEEKOPPEL_PREVIEW_PBS_FOOTNOTE.format(
-            pbs_id=prev.pbs_id
-        )
-        QMessageBox.information(
-            self,
-            messages.WORKSPACE_MEEKOPPEL_PREVIEW_TITLE,
-            messages.WORKSPACE_MEEKOPPEL_PREVIEW_BODY.format(
-                location=prev.path_label,
-                target=prev.target_year,
-                target_cal=due_calendar_year(modeljaar, prev.target_year),
-                moves=moves_text,
-                pbs_footnote=pbs_footnote,
-            ),
-        )
-        self._meekoppel_preview_gate = MeekoppelPreviewGate(
-            pbs_ids=pbs_ids,
-            anchor=anchor,  # type: ignore[arg-type]
-        )
-        self._sync_meekoppel_panel(self.workspace_state.snapshot())
+        on_meekoppel_preview(self)
 
     def _on_meekoppel_apply(self) -> None:
-        session = self._project_session()
-        if session is None:
-            return
-        self._ensure_whatif_for_meekoppel()
-        overlay = self.workspace_state.snapshot().planning_overlay
-        pbs_ids = self._selected_meekoppel_pbs_ids()
-        anchor = self._meekoppel_current_anchor()
-        if meekoppel_workflow_v2_enabled():
-            workflow_result = self._meekoppel_workflow.apply(
-                session=session,
-                overlay=overlay,
-                pbs_ids=pbs_ids,
-                anchor=anchor,  # type: ignore[arg-type]
-                scope_kind="pbs_selection",
-            )
-            if workflow_result.status == "validation":
-                QMessageBox.warning(
-                    self,
-                    messages.LTAP_ERROR_DIALOG_TITLE,
-                    workflow_result.user_message,
-                )
-                return
-            if workflow_result.status != "ok":
-                QMessageBox.critical(
-                    self,
-                    messages.LTAP_ERROR_DIALOG_TITLE,
-                    workflow_result.user_message,
-                )
-                return
-            self.workspace_state.set_planning_overlay(workflow_result.overlay)
-        else:
-            if not pbs_ids:
-                QMessageBox.warning(
-                    self,
-                    messages.LTAP_ERROR_DIALOG_TITLE,
-                    messages.WORKSPACE_MEEKOPPEL_SELECT_PBS,
-                )
-                return
-            result = apply_meekoppel(
-                session,
-                overlay,
-                pbs_ids,
-                anchor=anchor,  # type: ignore[arg-type]
-            )
-            if result.error:
-                QMessageBox.critical(self, messages.LTAP_ERROR_DIALOG_TITLE, result.error)
-                return
-            self.workspace_state.set_planning_overlay(result.overlay)
-        self._sync_meekoppel_panel(self.workspace_state.snapshot())
+        on_meekoppel_apply(self)
 
     def _render_lcc_year_detail(
         self,
@@ -2206,7 +1805,7 @@ class ResultsWorkspaceWindow(QMainWindow):
             year,
             scope_id=snapshot.scope_id,
             overlay=snapshot.planning_overlay,
-            type_filters=snapshot.lcc_filters,
+            type_filters=effective_lcc_filters(snapshot),
             planning_curve=planning_curve,
         )
         if detail is None:
@@ -2273,7 +1872,18 @@ class ResultsWorkspaceWindow(QMainWindow):
                 box.blockSignals(blocker)
 
     def _on_lcc_filter_toggled(self, _checked: bool = False) -> None:
-        self.workspace_state.set_lcc_filters(self._lcc_filters_from_ui())
+        ui_filters = self._lcc_filters_from_ui()
+        plan = self._last_lcc_toolbar_plan
+        if plan is not None and not plan.cm_filter_visible:
+            ui_filters = LCCTypeFilterSet(
+                cm=self.workspace_state.snapshot().lcc_filters.cm,
+                rev=ui_filters.rev,
+                in_task=ui_filters.in_task,
+                tst=ui_filters.tst,
+                svo=ui_filters.svo,
+                wet=ui_filters.wet,
+            )
+        self.workspace_state.set_lcc_filters(ui_filters)
 
     def _on_lcc_year_clicked(self, calendar_year: int) -> None:
         self.workspace_state.set_lcc_calendar_year(calendar_year)
@@ -2314,12 +1924,6 @@ class ResultsWorkspaceWindow(QMainWindow):
             bottom_right = self._lcc_detail_model.index(row, last_col)
             item_selection.select(top_left, bottom_right)
         selection_model.select(item_selection, QItemSelectionModel.SelectionFlag.Select)
-
-    def _on_kpi_collapse_toggled(self) -> None:
-        snapshot = self.workspace_state.snapshot()
-        if snapshot.modus != MODE_LCC:
-            return
-        self.workspace_state.set_kpi_collapsed_in_lcc(not snapshot.kpi_collapsed_in_lcc)
 
     def _on_lcc_whatif_collapse_toggled(self) -> None:
         snapshot = self.workspace_state.snapshot()
@@ -2407,10 +2011,19 @@ class ResultsWorkspaceWindow(QMainWindow):
             overlay.set_passive(pm_id, passive=not passive)
         )
 
-    def _on_fm_evident_filter_changed(self, _index: int = 0) -> None:
-        value = self.fm_evident_filter_combo.currentData()
-        if value in ("all", "nmf_only", "evident_only"):
-            self.workspace_state.set_fm_evident_filter(value)
+    def _sync_lcc_axis_labels(self, snapshot: WorkspaceStateSnapshot) -> None:
+        from rcm_desktop.adapter.lcc_plot_axis_labels import lcc_plot_axis_labels
+
+        pres = snapshot.contribution_presentation
+        x_label, y_label = lcc_plot_axis_labels(
+            snapshot.metric,
+            unavailability_display=pres.unavailability_display,
+        )
+        self.lcc_chart_widget.set_axis_labels(x_label=x_label, y_label=y_label)
+        for col in getattr(self, "_compare_lcc_columns", ()) or ():
+            chart = col.get("chart")
+            if chart is not None:
+                chart.set_axis_labels(x_label=x_label, y_label=y_label)
 
     def _bind_bijdragen_view(
         self,
@@ -2418,21 +2031,18 @@ class ResultsWorkspaceWindow(QMainWindow):
         snapshot: WorkspaceStateSnapshot,
     ) -> None:
         rows = bijdragen_view.contribution_rows
-        self.bijdragen_chart_widget.set_rows(rows)
-        table_model = ContributionTableModel(
-            rows,
-            metric=snapshot.metric,
-            presentation=snapshot.contribution_presentation,
+        self.bijdragen_chart_widget.set_display_context(
+            snapshot.metric,
+            snapshot.contribution_presentation,
         )
-        self.bijdragen_table_view.setModel(table_model)
+        self.bijdragen_chart_widget.set_rows(rows)
         self.bijdragen_chart_label.setVisible(len(rows) == 0)
 
     def _clear_detail_zone(self) -> None:
-        self._fm_table_proxy.setSourceModel(None)
+        self._fm_table_filter_proxy.setSourceModel(None)
         self.detail_empty_state_label.setVisible(True)
         self._refresh_fm_inspector(None)
         self.bijdragen_chart_widget.set_rows(())
-        self.bijdragen_table_view.setModel(None)
         self.bijdragen_chart_label.setVisible(True)
         self.lcc_chart_widget.set_buckets(())
         self.lcc_table_view.setModel(None)
@@ -2497,7 +2107,11 @@ class ResultsWorkspaceWindow(QMainWindow):
         if not save_path:
             return
 
-        outcome = persist_wizard_result(wizard, Path(save_path))
+        outcome = persist_wizard_result(
+            wizard,
+            Path(save_path),
+            source_workbook_path=Path(excel_path),
+        )
         if outcome.kind == "blocked":
             if outcome.validate_result is not None:
                 self._state.set_last_result(outcome.validate_result)
@@ -2508,6 +2122,49 @@ class ResultsWorkspaceWindow(QMainWindow):
 
         assert outcome.success is not None
         self._apply_import_success(outcome.success)
+
+    def _open_portfolio_wizard(self) -> None:
+        result = run_portfolio_wizard_with_root_picker(parent=self)
+        if result is None:
+            return
+
+        default_name = result.project.projectnaam.strip().replace(" ", "_") or "portfolio"
+        save_path, _ = QFileDialog.getSaveFileName(
+            self,
+            messages.PORTFOLIO_SAVE_TITLE,
+            str(Path.cwd() / f"{default_name}.rcm.json"),
+            messages.PORTFOLIO_SAVE_FILTER,
+        )
+        if not save_path:
+            return
+
+        path = Path(save_path)
+        if not path.name.endswith(".rcm.json"):
+            stem = path.name[:-5] if path.name.endswith(".json") else path.name
+            path = path.with_name(f"{stem}.rcm.json")
+
+        persist_portfolio_wizard_result(result, path)
+
+        self._suppress_path_change = True
+        self.path_input.setText(str(path))
+        self._suppress_path_change = False
+        self._state.set_last_run(None)
+        self._state.set_last_project(result.project)
+        self._state.set_last_preview(build_project_preview(result.project))
+        self._project_total_presentation = None
+        self._clear_compare_slots()
+        self.validate_summary_label.setText(
+            messages.PORTFOLIO_SAVE_SUCCESS.format(path=path)
+        )
+
+        if result.warnings:
+            QMessageBox.warning(
+                self,
+                messages.PORTFOLIO_WIZARD_TITLE,
+                "; ".join(result.warnings),
+            )
+
+        self._start_validate()
 
     def _apply_import_success(self, outcome: PersistImportSuccess) -> None:
         self._suppress_path_change = True
@@ -2543,6 +2200,17 @@ class ResultsWorkspaceWindow(QMainWindow):
         self.validate_summary_label.clear()
         if self._runner.start(path):
             self.validate_button.setEnabled(False)
+
+    def _toggle_lcc_whatif_from_menu(self) -> None:
+        if self.workspace_state.snapshot().modus != MODE_LCC:
+            return
+        self.lcc_whatif_button.toggle()
+
+    def _set_compare_scenario(self, scenario_key: str | None) -> None:
+        for index in range(self.compare_scenario_combo.count()):
+            if self.compare_scenario_combo.itemData(index) == scenario_key:
+                self.compare_scenario_combo.setCurrentIndex(index)
+                return
 
     def _compare_run_config(self) -> CompareRunConfig:
         snapshot = self.workspace_state.snapshot()
@@ -2648,16 +2316,14 @@ class ResultsWorkspaceWindow(QMainWindow):
         snapshot: WorkspaceStateSnapshot,
     ) -> None:
         rows = bijdragen_view.contribution_rows
-        column["chart"].set_rows(rows)
-        table_model = ContributionTableModel(
-            rows,
-            metric=snapshot.metric,
-            presentation=snapshot.contribution_presentation,
+        chart = column["chart"]
+        chart.set_display_context(
+            snapshot.metric,
+            snapshot.contribution_presentation,
         )
-        column["table"].setModel(table_model)
+        chart.set_rows(rows)
         column["placeholder"].setVisible(len(rows) == 0)
         column["chart"].setVisible(len(rows) > 0)
-        column["table"].setVisible(len(rows) > 0)
 
     def _start_analyse(self) -> None:
         path = self.path_input.text().strip()
@@ -2856,15 +2522,7 @@ class ResultsWorkspaceWindow(QMainWindow):
         self._after_project_validated(project)
 
     def _update_report_button_enabled(self) -> None:
-        if not hasattr(self, "generate_report_button"):
-            return
-        assessment = assess_report_workspace(
-            last_run=self._state.last_run,
-            compare_slots=self._compare_slots,
-            live_overlay=self.workspace_state.snapshot().planning_overlay,
-        )
-        busy = getattr(self, "_report_runner", None) is not None and self._report_runner.busy
-        self.generate_report_button.setEnabled(assessment.eligible and not busy)
+        self._update_report_menu_enabled()
 
     def _open_report_generation(self) -> None:
         session = self._project_session()
@@ -2917,7 +2575,9 @@ class ResultsWorkspaceWindow(QMainWindow):
 
     def _on_report_runner_state_changed(self, state: str) -> None:
         if state == "busy":
-            self.generate_report_button.setEnabled(False)
+            action = self._report_menu_action()
+            if action is not None:
+                action.setEnabled(False)
         else:
             self._update_report_button_enabled()
 
@@ -2959,6 +2619,46 @@ class ResultsWorkspaceWindow(QMainWindow):
             if btn is not None:
                 btn.setEnabled(can_run)
         self._update_report_button_enabled()
+        self._update_parity_button_enabled()
+
+    def _update_parity_button_enabled(self) -> None:
+        if not hasattr(self, "rcm_cost_parity_button"):
+            return
+        session = self._project_session()
+        run = self._state.last_run
+        has_run = run is not None and run.status == "done" and bool(run.fm_core_results)
+        has_bench = session is not None and has_aw_benchmarks(session.loaded.core())
+        busy = self._run_runner.busy or self._compare_run_runner.busy
+        self.rcm_cost_parity_button.setEnabled(has_run and has_bench and not busy)
+
+    def _open_rcm_cost_parity(self) -> None:
+        session = self._project_session()
+        run = self._state.last_run
+        if session is None or run is None or run.status != "done":
+            QMessageBox.information(
+                self,
+                messages.RCM_COST_PARITY_TITLE,
+                messages.RCM_COST_PARITY_NO_RUN,
+            )
+            return
+        project = session.loaded.core()
+        if not has_aw_benchmarks(project):
+            QMessageBox.information(
+                self,
+                messages.RCM_COST_PARITY_TITLE,
+                messages.RCM_COST_PARITY_NO_BENCHMARK,
+            )
+            return
+        fm_results = {fmr.fm_id: fmr for fmr in run.fm_core_results}
+        view = build_parity_view(project, fm_results)
+        project_path = Path(session.path) if session.path else None
+        show_rcm_cost_parity_dialog(
+            view,
+            project=project,
+            fm_results=fm_results,
+            project_path=project_path,
+            parent=self,
+        )
 
     def _clear_validate_status_strip(self) -> None:
         if not hasattr(self, "validate_status_label"):
@@ -3006,28 +2706,105 @@ class ResultsWorkspaceWindow(QMainWindow):
     def _show_run_error(self, error: UserFacingError) -> None:
         QMessageBox.critical(self, messages.RUN_ERROR_DIALOG_TITLE, error.message)
 
+    def cancel_background_runners(self) -> None:
+        cancel_window_background_runners(self)
+
+    def _any_runner_busy(self) -> bool:
+        return any_runner_busy(self)
+
+    def _detach_table_models_before_close(self) -> None:
+        detach_table_models_before_close(self)
+
+    def _confirm_busy_shutdown(self) -> bool:
+        return confirm_busy_shutdown(self)
+
     def closeEvent(self, event: QCloseEvent) -> None:  # noqa: N802
-        # Voorkom Windows-teardown crash (-1073741819 / ACCESS_VIOLATION) door
-        # alle Qt-table-models expliciet te ontkoppelen vóórdat de window
-        # Python-zijde wordt opgeruimd. Zonder dit kunnen modellen na de
-        # `QTableView` worden vernietigd, met een dangling C++ pointer als gevolg.
-        for view_name in (
-            "fm_table_view",
-            "bijdragen_table_view",
-            "bijdragen_table_view_cm",
-            "bijdragen_table_view_pm",
-            "lcc_table_view",
-            "lcc_table_view_cm",
-            "lcc_table_view_pm",
-            "unavailability_table_view",
-            "unavailability_table_view_cm",
-            "unavailability_table_view_pm",
-            "pm_table_view",
-            "pm_table_view_cm",
-            "pm_table_view_pm",
-            "kpi_table_view",
-        ):
-            view = getattr(self, view_name, None)
-            if view is not None:
-                view.setModel(None)
-        event.accept()
+        plan = plan_shutdown(
+            grid_dirty=self._editing_host.is_grid_dirty(),
+            busy=self._any_runner_busy(),
+        )
+        for step in plan.steps:
+            if step is ShutdownStep.RESOLVE_GRID_DIRTY:
+                if resolve_grid_dirty_before_editor(self, self._editing_host) == "cancel":
+                    event.ignore()
+                    return
+            elif step is ShutdownStep.CONFIRM_BUSY_CANCEL:
+                if not self._confirm_busy_shutdown():
+                    event.ignore()
+                    return
+                self.cancel_background_runners()
+                app = QApplication.instance()
+                if app is not None:
+                    for _ in range(200):
+                        if not self._any_runner_busy():
+                            break
+                        app.processEvents()
+            elif step is ShutdownStep.CLOSE:
+                self._detach_table_models_before_close()
+                event.accept()
+
+    def _export_rcm_cost_workbook(self) -> None:
+        session = self._project_session()
+        if session is None:
+            QMessageBox.information(
+                self,
+                messages.ERROR_DIALOG_TITLE,
+                messages.MODEL_SETTINGS_NO_PROJECT,
+            )
+            return
+        resolved = resolve_project_file_path(
+            session_path=session.path,
+            path_text=self.path_input.text(),
+        )
+        if resolved.file_path is None:
+            QMessageBox.information(
+                self,
+                messages.ERROR_DIALOG_TITLE,
+                messages.ERROR_EMPTY_PATH,
+            )
+            return
+        save_path, _ = QFileDialog.getSaveFileName(
+            self,
+            messages.ISOGRAPH_EXPORT_FILE_DIALOG_TITLE,
+            str(resolved.file_path.with_suffix("").with_suffix(".export.xlsx")),
+            messages.ISOGRAPH_OPEN_FILE_FILTER,
+        )
+        if not save_path:
+            return
+        outcome = export_rcm_cost_project(
+            session.loaded.core(),
+            project_file_path=resolved.file_path,
+            output_path=Path(save_path),
+        )
+        if isinstance(outcome, ExportFlowBlocked):
+            if outcome.code != "MISSING_SOURCE_WORKBOOK":
+                QMessageBox.critical(self, messages.ERROR_DIALOG_TITLE, outcome.message)
+                return
+            located, _ = QFileDialog.getOpenFileName(
+                self,
+                messages.ISOGRAPH_EXPORT_MISSING_SOURCE_TITLE,
+                str(resolved.file_path.parent),
+                messages.ISOGRAPH_OPEN_FILE_FILTER,
+            )
+            if not located:
+                return
+            outcome = export_rcm_cost_project(
+                session.loaded.core(),
+                project_file_path=resolved.file_path,
+                output_path=Path(save_path),
+                located_source_path=Path(located),
+            )
+            if isinstance(outcome, ExportFlowBlocked):
+                QMessageBox.critical(self, messages.ERROR_DIALOG_TITLE, outcome.message)
+                return
+        assert isinstance(outcome, ExportFlowSuccess)
+        result = outcome.result
+        QMessageBox.information(
+            self,
+            messages.ISOGRAPH_EXPORT_SUMMARY_TITLE,
+            messages.ISOGRAPH_EXPORT_SUMMARY_BODY.format(
+                patched=result.total_patched,
+                added=result.total_added,
+                warned=result.total_warned,
+            ),
+        )

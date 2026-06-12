@@ -31,6 +31,7 @@ _FIELD_TYPES: dict[str, str] = _SCHEMA["field_types"]
 class CellErrorView:
     code: str
     message: str
+    severity: str = "error"
 
 
 @dataclass(frozen=True)
@@ -90,17 +91,21 @@ def _errors_for_row(session: dict[str, Any], fm_id: str) -> dict[str, tuple[Cell
     raw_errors = session.get("edit_errors", {}).get(_ENTITY, {}).get(fm_id, {})
     out: dict[str, tuple[CellErrorView, ...]] = {}
     for field, arr in raw_errors.items():
-        out[field] = tuple(CellErrorView(code=e["code"], message=e["message"]) for e in arr)
+        out[field] = tuple(
+            CellErrorView(
+                code=e["code"],
+                message=e["message"],
+                severity=e.get("severity", "error"),
+            )
+            for e in arr
+        )
     return out
 
 
 def _session_error_total(session: dict[str, Any]) -> int:
-    total = 0
-    for _entity, rows_e in session.get("edit_errors", {}).items():
-        for _rk, fields in rows_e.items():
-            for _f, arr in fields.items():
-                total += len(arr)
-    return total
+    from rcm_core.editing.state import blocking_edit_error_count
+
+    return blocking_edit_error_count(session)
 
 
 def _session_content_digest(session: dict[str, Any]) -> str:
