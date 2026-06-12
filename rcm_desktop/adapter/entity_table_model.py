@@ -23,6 +23,7 @@ from rcm_desktop.adapter.entity_grid_derived_values import (
 RAW_ROLE = Qt.UserRole + 1
 ERROR_BACKGROUND = QColor(255, 235, 235)
 WARNING_BACKGROUND = QColor(255, 235, 156)
+WARNING_FOREGROUND = QColor(0, 0, 0)
 
 
 def cell_background_for_errors(errs: tuple[CellErrorView, ...]) -> QColor | None:
@@ -31,6 +32,14 @@ def cell_background_for_errors(errs: tuple[CellErrorView, ...]) -> QColor | None
     if any(e.severity == "error" for e in errs):
         return ERROR_BACKGROUND
     return WARNING_BACKGROUND
+
+
+def cell_foreground_for_errors(errs: tuple[CellErrorView, ...]) -> QColor | None:
+    if not errs:
+        return None
+    if any(e.severity == "error" for e in errs):
+        return None
+    return WARNING_FOREGROUND
 
 
 def cell_tooltip_for_errors(errs: tuple[CellErrorView, ...]) -> str | None:
@@ -183,6 +192,9 @@ class EntityTableModel(QAbstractTableModel):
         if role == Qt.BackgroundRole:
             return cell_background_for_errors(self._errors_on_cell(row_v, field))
 
+        if role == Qt.ForegroundRole:
+            return cell_foreground_for_errors(self._errors_on_cell(row_v, field))
+
         if role == Qt.ToolTipRole:
             return cell_tooltip_for_errors(self._errors_on_cell(row_v, field))
 
@@ -253,7 +265,14 @@ class EntityTableModel(QAbstractTableModel):
         self.dataChanged.emit(
             tl,
             br,
-            [Qt.DisplayRole, Qt.EditRole, Qt.BackgroundRole, Qt.ToolTipRole, RAW_ROLE],
+            [
+                Qt.DisplayRole,
+                Qt.EditRole,
+                Qt.BackgroundRole,
+                Qt.ForegroundRole,
+                Qt.ToolTipRole,
+                RAW_ROLE,
+            ],
         )
 
 

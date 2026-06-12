@@ -214,6 +214,17 @@ class EntityEditService:
         warnings = edit_findings_count(self._session, severity="warning", entity=self._entity)
         return (errors, warnings)
 
+    def columns_with_findings(self) -> frozenset[str]:
+        """Kolomvelden met minstens één invoerbevinding (fout of waarschuwing)."""
+        if not self._editing.is_loaded:
+            return frozenset()
+        cols: set[str] = set()
+        for fields in self._session.get("edit_errors", {}).get(self._entity, {}).values():
+            for field, arr in fields.items():
+                if arr:
+                    cols.add(field)
+        return frozenset(cols)
+
     def materialize_for_run(self) -> RCMProject:
         return self._materialize()
 

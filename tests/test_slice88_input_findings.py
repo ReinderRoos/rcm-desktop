@@ -15,6 +15,7 @@ from rcm_core.validators import validate_project
 pytest.importorskip("PySide6")
 
 from PySide6.QtCore import Qt
+from PySide6.QtGui import QColor
 from PySide6.QtWidgets import QApplication
 
 from rcm_desktop.adapter.editing_session import EditingSession
@@ -22,8 +23,10 @@ from rcm_desktop.adapter.entity_edit_service import EntityEditService
 from rcm_desktop.adapter.entity_table_model import (
     ERROR_BACKGROUND,
     WARNING_BACKGROUND,
+    WARNING_FOREGROUND,
     EntityTableModel,
     cell_background_for_errors,
+    cell_foreground_for_errors,
     cell_tooltip_for_errors,
 )
 from rcm_desktop.adapter.entity_grid_config import entity_grid_config_for_view
@@ -107,12 +110,14 @@ def test_entity_table_model_warning_and_error_backgrounds(sample_project) -> Non
     sigma_col = cfg.preset_columns.index("sigma_jaar")
     warn_ix = model.index(row, sigma_col)
     assert model.data(warn_ix, Qt.BackgroundRole) == WARNING_BACKGROUND
+    assert model.data(warn_ix, Qt.ForegroundRole) == WARNING_FOREGROUND
 
     svc.apply_change("FM-001", "mttf_jaar", "0")
     model.emit_grid_refresh()
     mttf_col = cfg.preset_columns.index("mttf_jaar")
     err_ix = model.index(row, mttf_col)
     assert model.data(err_ix, Qt.BackgroundRole) == ERROR_BACKGROUND
+    assert model.data(err_ix, Qt.ForegroundRole) is None
 
 
 def test_error_background_wins_over_warning() -> None:
@@ -121,6 +126,17 @@ def test_error_background_wins_over_warning() -> None:
         CellErrorView(code="E", message="err", severity="error"),
     )
     assert cell_background_for_errors(errs) == ERROR_BACKGROUND
+
+
+def test_cell_foreground_black_for_warnings_only() -> None:
+    warn_only = (CellErrorView(code="W", message="warn", severity="warning"),)
+    mixed = (
+        CellErrorView(code="W", message="warn", severity="warning"),
+        CellErrorView(code="E", message="err", severity="error"),
+    )
+    assert cell_foreground_for_errors(warn_only) == WARNING_FOREGROUND
+    assert cell_foreground_for_errors(mixed) is None
+    assert cell_foreground_for_errors(()) is None
 
 
 def test_tooltip_groups_by_severity() -> None:
@@ -151,6 +167,32 @@ def test_workspace_menu_has_revalidate_input() -> None:
     item = by_id["analysis.revalidate_input"]
     assert item.shortcut == "F7"
     assert item.checkable is False
+
+
+def test_columns_with_findings(sample_project) -> None:
+    session: dict = {}
+    init_edit_state(sample_project, session=session)
+    _inject_warning(session, "faalwijzes", "FM-001", "sigma_jaar", "waarschuwing")
+    svc = EntityEditService.for_view("input.faalwijzen")
+    editing = EditingSession(session=session)
+    editing._base_project = sample_project  # noqa: SLF001
+    svc.attach_editing_session(editing)
+    assert svc.columns_with_findings() == frozenset({"sigma_jaar"})
+
+
+def test_entity_grid_panel_column_menu_bolds_findings_columns(sample_project) -> None:
+    _ensure_app()
+    session: dict = {}
+    init_edit_state(sample_project, session=session)
+    _inject_warning(session, "faalwijzes", "FM-001", "sigma_jaar", "waarschuwing")
+    svc = EntityEditService.for_view("input.faalwijzen")
+    editing = EditingSession(session=session)
+    editing._base_project = sample_project  # noqa: SLF001
+    svc.attach_editing_session(editing)
+    panel = EntityGridPanel()
+    panel.attach(svc, sample_project, view_id="input.faalwijzen")
+    assert panel.column_menu_action_bold("sigma_jaar") is True
+    assert panel.column_menu_action_bold("fm_id") is False
 
 
 def test_entity_grid_panel_shows_findings_count(sample_project) -> None:

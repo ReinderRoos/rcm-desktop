@@ -5,6 +5,7 @@ from __future__ import annotations
 from collections.abc import Callable
 
 from PySide6.QtCore import Qt
+from PySide6.QtGui import QFont
 from PySide6.QtWidgets import (
     QHBoxLayout,
     QHeaderView,
@@ -176,6 +177,13 @@ class EntityGridPanel(QWidget):
     def row_count_label_text(self) -> str:
         return self._row_count_label.text()
 
+    def column_menu_action_bold(self, col_id: str) -> bool:
+        """Test seam: vet menu-item in het kolommen-menu bij invoerbevindingen."""
+        for action in self._build_column_menu().actions():
+            if str(action.data()) == col_id:
+                return action.font().bold()
+        return False
+
     def set_hidden_columns(self, hidden: frozenset[str]) -> None:
         self._hidden_columns = hidden
         self._apply_column_visibility()
@@ -234,18 +242,29 @@ class EntityGridPanel(QWidget):
         )
         self._scope_status_label.setVisible(True)
 
+    def _build_column_menu(self) -> QMenu:
+        menu = QMenu(self)
+        if self._view_id is None or self._service is None:
+            return menu
+        bold_font = QFont()
+        bold_font.setBold(True)
+        cols_with_findings = self._service.columns_with_findings()
+        for col_id in schema_columns_for_view(self._view_id):
+            action = menu.addAction(col_id)
+            action.setCheckable(True)
+            action.setChecked(col_id not in self._hidden_columns)
+            action.setData(col_id)
+            if col_id in cols_with_findings:
+                action.setFont(bold_font)
+        return menu
+
     def _show_column_menu(self) -> None:
         if self._view_id is None or self._service is None or self._project is None:
             return
         cfg = entity_grid_config_for_view(self._view_id)
         if cfg is None:
             return
-        menu = QMenu(self)
-        for col_id in schema_columns_for_view(self._view_id):
-            action = menu.addAction(col_id)
-            action.setCheckable(True)
-            action.setChecked(col_id not in self._hidden_columns)
-            action.setData(col_id)
+        menu = self._build_column_menu()
         chosen = menu.exec(self._column_button.mapToGlobal(self._column_button.rect().bottomLeft()))
         if chosen is None:
             return
