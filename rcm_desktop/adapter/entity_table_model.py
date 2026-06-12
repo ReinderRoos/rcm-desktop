@@ -277,6 +277,18 @@ class EntityTableModel(QAbstractTableModel):
         else:
             raw = value if isinstance(value, str) else str(value) if value is not None else ""
         self._service.apply_change(row_v.row_key, field, raw)
+        self.dataChanged.emit(
+            index,
+            index,
+            [
+                Qt.DisplayRole,
+                Qt.EditRole,
+                Qt.BackgroundRole,
+                Qt.ForegroundRole,
+                Qt.ToolTipRole,
+                RAW_ROLE,
+            ],
+        )
         return True
 
     def emit_grid_refresh(self) -> None:

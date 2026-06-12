@@ -8,16 +8,17 @@ from PySide6.QtCore import Qt
 from PySide6.QtGui import QFont
 from PySide6.QtWidgets import (
     QCheckBox,
+    QDialog,
+    QDialogButtonBox,
     QHBoxLayout,
     QHeaderView,
     QLabel,
     QLineEdit,
-    QMenu,
     QPushButton,
+    QScrollArea,
     QTableView,
     QVBoxLayout,
     QWidget,
-    QWidgetAction,
 )
 
 from rcm_core.models import RCMProject
@@ -81,6 +82,11 @@ class EntityGridPanel(QWidget):
         self._table.setSelectionBehavior(QTableView.SelectRows)
         self._table.setSelectionMode(QTableView.SingleSelection)
         self._table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+        self._table.setEditTriggers(
+            QTableView.EditTrigger.DoubleClicked
+            | QTableView.EditTrigger.SelectedClicked
+            | QTableView.EditTrigger.EditKeyPressed
+        )
         root.addWidget(self._table)
 
     def set_hidden_columns_handler(
@@ -183,34 +189,32 @@ class EntityGridPanel(QWidget):
     def row_count_label_text(self) -> str:
         return self._row_count_label.text()
 
+    def hidden_columns(self) -> frozenset[str]:
+        return self._hidden_columns
+
     def column_menu_action_bold(self, col_id: str) -> bool:
-        """Test seam: vet menu-item in het kolommen-menu bij invoerbevindingen."""
-        widget = self._column_menu_widget(col_id)
-        if isinstance(widget, QCheckBox):
-            return widget.font().bold()
-        action = self._column_menu_action(col_id)
-        return action is not None and action.font().bold()
+        """Test seam: vet kolom-item in de kolomkiezer bij invoerbevindingen."""
+        cb = self._column_checkboxes_for(self._hidden_columns).get(col_id)
+        return cb is not None and cb.font().bold()
 
     def column_menu_action_foreground(self, col_id: str):
-        """Test seam: kleur menu-item in het kolommen-menu bij invoerbevindingen."""
-        widget = self._column_menu_widget(col_id)
-        if isinstance(widget, QCheckBox):
-            severity = widget.property("findings_severity")
-            if severity in ("error", "warning"):
-                return menu_foreground_for_severity(str(severity))
-        return None
-
-    def _column_menu_action(self, col_id: str):
-        for action in self._build_column_menu().actions():
-            if str(action.data()) == col_id:
-                return action
-        return None
-
-    def _column_menu_widget(self, col_id: str):
-        action = self._column_menu_action(col_id)
-        if action is None or not isinstance(action, QWidgetAction):
+        """Test seam: kleur kolom-item in de kolomkiezer bij invoerbevindingen."""
+        cb = self._column_checkboxes_for(self._hidden_columns).get(col_id)
+        if cb is None:
             return None
-        return action.defaultWidget()
+        severity = cb.property("findings_severity")
+        if severity in ("error", "warning"):
+            return menu_foreground_for_severity(str(severity))
+        return None
+
+    def apply_column_picker_hidden(self, hidden: frozenset[str]) -> None:
+        """Test seam: pas kolomzichtbaarheid toe (OK in kolomkiezer)."""
+        self.set_hidden_columns(hidden)
+
+    def column_picker_checkbox_checked(self, col_id: str, *, draft_hidden: frozenset[str]) -> bool:
+        """Test seam: zichtbaarheid in concept-kolomkiezer (aangevinkt = zichtbaar)."""
+        cb = self._column_checkboxes_for(draft_hidden).get(col_id)
+        return cb is not None and cb.isChecked()
 
     def set_hidden_columns(self, hidden: frozenset[str]) -> None:
         self._hidden_columns = hidden
@@ -270,55 +274,66 @@ class EntityGridPanel(QWidget):
         )
         self._scope_status_label.setVisible(True)
 
-    def _build_column_menu(self) -> QMenu:
-        menu = QMenu(self)
+    def _column_checkboxes_for(self, hidden: frozenset[str]) -> dict[str, QCheckBox]:
         if self._view_id is None or self._service is None:
-            return menu
+            return {}
         bold_font = QFont()
         bold_font.setBold(True)
         severity_by_col = self._service.column_findings_severity()
+        out: dict[str, QCheckBox] = {}
         for col_id in schema_columns_for_view(self._view_id):
-            severity = severity_by_col.get(col_id)
-            if severity is None:
-                action = menu.addAction(col_id)
-                action.setCheckable(True)
-                action.setChecked(col_id not in self._hidden_columns)
-                action.setData(col_id)
-                continue
-
             cb = QCheckBox(col_id)
-            cb.setChecked(col_id not in self._hidden_columns)
-            cb.setFont(bold_font)
-            cb.setProperty("findings_severity", severity)
-            fg = menu_foreground_for_severity(severity)
-            if fg is not None:
-                cb.setStyleSheet(
-                    f"QCheckBox {{ color: rgb({fg.red()}, {fg.green()}, {fg.blue()}); font-weight: bold; }}"
-                )
-            wa = QWidgetAction(menu)
-            wa.setData(col_id)
-            wa.setDefaultWidget(cb)
-            menu.addAction(wa)
-        return menu
+            cb.setChecked(col_id not in hidden)
+            severity = severity_by_col.get(col_id)
+            if severity is not None:
+                cb.setFont(bold_font)
+                cb.setProperty("findings_severity", severity)
+                fg = menu_foreground_for_severity(severity)
+                if fg is not None:
+                    cb.setStyleSheet(
+                        f"QCheckBox {{ color: rgb({fg.red()}, {fg.green()}, {fg.blue()}); font-weight: bold; }}"
+                    )
+            out[col_id] = cb
+        return out
+
+    def _hidden_from_checkboxes(self, checkboxes: dict[str, QCheckBox]) -> frozenset[str]:
+        allowed = available_column_ids(self._view_id or "")
+        hidden = {col_id for col_id, cb in checkboxes.items() if not cb.isChecked()}
+        return frozenset(col_id for col_id in hidden if col_id in allowed)
 
     def _show_column_menu(self) -> None:
-        if self._view_id is None or self._service is None or self._project is None:
+        if self._view_id is None or self._service is None:
             return
-        cfg = entity_grid_config_for_view(self._view_id)
-        if cfg is None:
+        dialog = QDialog(self)
+        dialog.setWindowTitle(messages.ENTITY_GRID_COLUMNS_DIALOG_TITLE)
+        layout = QVBoxLayout(dialog)
+
+        def _add_ok_row() -> None:
+            row = QHBoxLayout()
+            row.addStretch(1)
+            ok_btn = QPushButton("OK")
+            ok_btn.clicked.connect(dialog.accept)
+            row.addWidget(ok_btn)
+            layout.addLayout(row)
+
+        _add_ok_row()
+
+        scroll = QScrollArea()
+        scroll.setWidgetResizable(True)
+        list_host = QWidget()
+        list_layout = QVBoxLayout(list_host)
+        checkboxes = self._column_checkboxes_for(self._hidden_columns)
+        for col_id in schema_columns_for_view(self._view_id):
+            list_layout.addWidget(checkboxes[col_id])
+        list_layout.addStretch(1)
+        scroll.setWidget(list_host)
+        layout.addWidget(scroll)
+
+        buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
+        buttons.accepted.connect(dialog.accept)
+        buttons.rejected.connect(dialog.reject)
+        layout.addWidget(buttons)
+
+        if dialog.exec() != QDialog.DialogCode.Accepted:
             return
-        menu = self._build_column_menu()
-        chosen = menu.exec(self._column_button.mapToGlobal(self._column_button.rect().bottomLeft()))
-        if chosen is None:
-            return
-        col_id = str(chosen.data())
-        if col_id not in available_column_ids(self._view_id):
-            return
-        widget = chosen.defaultWidget()
-        is_checked = widget.isChecked() if isinstance(widget, QCheckBox) else chosen.isChecked()
-        hidden = set(self._hidden_columns)
-        if is_checked:
-            hidden.discard(col_id)
-        else:
-            hidden.add(col_id)
-        self.set_hidden_columns(frozenset(hidden))
+        self.set_hidden_columns(self._hidden_from_checkboxes(checkboxes))

@@ -54,7 +54,10 @@ def _config(
         preset_columns=preset,
         readonly_columns=(readonly | derived) & (frozenset(schema["field_types"]) | derived),
         editable_columns=_editable_from_preset(
-            entity, preset, readonly=readonly | derived, extra_editable=extra_editable
+            entity,
+            preset,
+            readonly=readonly | derived,
+            extra_editable=extra_editable | (optional - derived),
         ),
         key_field=str(schema["key_field"]),
         optional_columns=optional,
