@@ -29,6 +29,7 @@ class WorkspaceMenuHandlers:
     set_compare_scenario_pm: Callable[[], None]
     revalidate_input: Callable[[], None]
     open_faalwijzen_grid: Callable[[], None]
+    open_compare_models: Callable[[], None]
     open_model_settings: Callable[[], None]
     open_report_generation: Callable[[], None]
     pbs_select_prev_sibling: Callable[[], None]
@@ -193,6 +194,9 @@ def _connect_action(
         return
     if action_id == "analysis.faalwijzen_grid":
         action.triggered.connect(handlers.open_faalwijzen_grid)
+        return
+    if action_id == "analysis.compare_models":
+        action.triggered.connect(handlers.open_compare_models)
         return
     if action_id == "analysis.model_settings":
         action.triggered.connect(handlers.open_model_settings)

@@ -104,6 +104,24 @@ Qt-vrije declaratieve lijst van werkruimte-views: `view_id`, zijde, label,
 sneltoets, volgorde, enabled. Voedt dropdown, Beeld-submenu's en
 modus-mapping (legacy `MODE_*` blijft implementatiedetail).
 
+**Chrome-profiel** (`WorkspaceChromeProfile`, slice 95)
+Declaratieve capability-metadata per `view_id` in de view-registry:
+toolbar-acties, filters en `toolbar_family` (`none` | `top10` | `lcc` | `fm` |
+`input_grid`). De orchestrator **interpreteert** dit profiel i.p.v. ad hoc
+view-checks.
+
+**Vergelijkingswerkruimte**
+Aparte workflow voor het naast elkaar laden en vergelijken van twee
+`.rcm.json`-bestanden (baseline A, scenario B). Balanced split per faalwijze:
+invoer én resultaten even zichtbaar. Niet de dagelijkse enkel-model navigatie
+(ADR-0016).
+
+**Uniformeringsvoorstel**
+Review-only voorstel om verschillen tussen twee modellen te harmoniseren, met
+expliciete bron (A→B of B→A). Pipeline:
+`DifferenceSet → NormalizationProposal → UserReview → Patch → AuditTrail`;
+geen automatische merge op lage drempel in v1.
+
 **FM-resultaten**
 Output-view (was: FM-detail): sorteerbare FM-tabel plus inspector in de
 resultatenwerkruimte.

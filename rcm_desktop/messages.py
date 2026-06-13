@@ -467,6 +467,25 @@ WORKSPACE_CLEAR_COMPARE_BUTTON_LABEL = "Wis vergelijking"
 WORKSPACE_COMPARE_SLOT_PLACEHOLDER = "Nog geen run — gebruik Run → {slot}"
 WORKSPACE_COMPARE_SLOT_HEADER = "{label}"
 
+# Dual-project vergelijkingswerkruimte (slice 95 issue 07).
+WORKSPACE_MENU_COMPARE_MODELS = "Vergelijk modellen…"
+COMPARE_MODELS_WINDOW_TITLE = "Vergelijkingswerkruimte"
+COMPARE_MODELS_PATH_A = "Project A (baseline)"
+COMPARE_MODELS_PATH_B = "Project B (scenario)"
+COMPARE_MODELS_LOAD_BUTTON = "Vergelijk"
+COMPARE_MODELS_SELECT_BOTH = "Kies eerst project A en project B."
+COMPARE_MODELS_SUMMARY = "{label_a} ↔ {label_b} — {count} faalwijze-regels"
+COMPARE_MODELS_DETAIL_PLACEHOLDER = "Selecteer een faalwijze-regel voor invoer- en resultaatdiffs."
+COMPARE_MODELS_DETAIL_TITLE = "FM {fm_a} ↔ {fm_b} ({klasse})"
+COMPARE_MODELS_TABLE_HEADER_STATUS = "Status"
+COMPARE_MODELS_TABLE_HEADER_FM_A = "FM A"
+COMPARE_MODELS_TABLE_HEADER_FM_B = "FM B"
+COMPARE_MODELS_TABLE_HEADER_CLASS = "Klasse"
+COMPARE_MODELS_TABLE_HEADER_FIELD_DIFFS = "Invoer Δ"
+COMPARE_MODELS_TABLE_HEADER_RESULT_DIFFS = "Resultaat Δ"
+COMPARE_MODELS_DETAIL_FIELD_HEADER = ("Veld", "A", "B")
+COMPARE_MODELS_DETAIL_RESULT_HEADER = ("Metric", "A", "B")
+
 # LCC-planning (slice 28).
 WORKSPACE_LCC_FILTER_CM = "CM"
 WORKSPACE_LCC_FILTER_REV = "REV"

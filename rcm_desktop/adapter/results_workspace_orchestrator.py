@@ -41,15 +41,14 @@ from rcm_desktop.adapter.workspace_detail_render_scope import (
     workspace_detail_split_render_depth,
 )
 from rcm_desktop.adapter.workspace_render_index import WorkspaceRenderIndex
-from rcm_desktop.adapter.workspace_navigation_policy import INPUT_FAALWIJZEN_VIEW
 from rcm_desktop.adapter.workspace_view_registry import (
     SIDE_INPUT,
     WORKSPACE_VIEW_REGISTRY,
+    WorkspaceChromeProfile,
+    chrome_for_view,
     view_by_id,
     views_for_side,
 )
-
-OUTPUT_FM_RESULTS_VIEW = "output.fm_results"
 from rcm_desktop.adapter.workspace_view_service import (
     BijdragenView,
     FMDetailView,
@@ -307,27 +306,30 @@ def _plan_lcc_toolbar(snapshot: WorkspaceStateSnapshot) -> LccToolbarVisibilityP
     )
 
 
-def _plan_input_faalwijzen_chrome() -> FmToolbarPlan:
+def _plan_input_faalwijzen_chrome(profile: WorkspaceChromeProfile) -> FmToolbarPlan:
     return FmToolbarPlan(
-        batch_faalwijzen_visible=True,
-        new_fm_visible=True,
-        column_crop_visible=False,
+        batch_faalwijzen_visible=profile.shows_batch_faalwijzen,
+        new_fm_visible=profile.allows_new_fm,
+        column_crop_visible=profile.shows_column_crop,
         fm_inspector_visible=False,
         clear_fm_inspector=False,
-        effect_nb_filter_visible=False,
+        effect_nb_filter_visible=profile.shows_nb_effect_filter,
     )
 
 
-def _plan_output_fm_results_toolbar(snapshot: WorkspaceStateSnapshot) -> FmToolbarPlan:
+def _plan_output_fm_results_toolbar(
+    snapshot: WorkspaceStateSnapshot,
+    profile: WorkspaceChromeProfile,
+) -> FmToolbarPlan:
     pres = snapshot.contribution_presentation
     return FmToolbarPlan(
-        batch_faalwijzen_visible=False,
-        new_fm_visible=False,
-        column_crop_visible=True,
+        batch_faalwijzen_visible=profile.shows_batch_faalwijzen,
+        new_fm_visible=profile.allows_new_fm,
+        column_crop_visible=profile.shows_column_crop,
         fm_inspector_visible=True,
         clear_fm_inspector=False,
-        effect_nb_filter_visible=True,
-        metric_combo_visible=True,
+        effect_nb_filter_visible=profile.shows_nb_effect_filter,
+        metric_combo_visible=profile.shows_metric_combo,
         horizon_lifecycle_visible=True,
         horizon_per_year_visible=True,
         year_combo_visible=pres.horizon == "per_year",
@@ -338,12 +340,12 @@ def _plan_output_fm_results_toolbar(snapshot: WorkspaceStateSnapshot) -> FmToolb
 
 
 def _plan_fm_toolbar(snapshot: WorkspaceStateSnapshot) -> FmToolbarPlan:
-    view_id = snapshot.active_view_id
-    if view_id == INPUT_FAALWIJZEN_VIEW:
-        return _plan_input_faalwijzen_chrome()
-    if view_id == OUTPUT_FM_RESULTS_VIEW:
-        return _plan_output_fm_results_toolbar(snapshot)
-    return _inactive_fm_toolbar()
+    profile = chrome_for_view(WORKSPACE_VIEW_REGISTRY, snapshot.active_view_id)
+    if profile is None or profile.toolbar_family != "fm":
+        return _inactive_fm_toolbar()
+    if profile.allows_new_fm:
+        return _plan_input_faalwijzen_chrome(profile)
+    return _plan_output_fm_results_toolbar(snapshot, profile)
 
 
 def _plan_compare_chrome(snapshot: WorkspaceStateSnapshot) -> CompareChromePlan:

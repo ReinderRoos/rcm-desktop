@@ -234,6 +234,43 @@ class EntityEditService:
     def materialize_for_save(self) -> RCMProject:
         return self._materialize()
 
+    def delete_row(self, row_key: str) -> None:
+        if not self._editing.is_loaded:
+            raise RuntimeError("EntityEditService is not initialized")
+        target = normalize_key(row_key)
+        rows = self._session["edit_current"][self._entity]
+        filtered = [r for r in rows if normalize_key(r.get(self._key_field)) != target]
+        if len(filtered) == len(rows):
+            return
+        self._editing.apply_entity_rows(self._entity, filtered)
+        if self._entity == "faalwijzes":
+            self._cascade_delete_faalwijze(target)
+        revalidate_input_buffer(self._editing)
+        self._invalidate_rows_cache()
+        if self._changed:
+            self._changed()
+
+    def _cascade_delete_faalwijze(self, fm_id: str) -> None:
+        current = self._session["edit_current"]
+        pm_rows = current.get("pm_tasks", [])
+        pm_for_fm = [r for r in pm_rows if normalize_key(r.get("fm_id")) == fm_id]
+        pm_ids = {normalize_key(r.get("pm_id")) for r in pm_for_fm}
+        remaining_pm = [r for r in pm_rows if normalize_key(r.get("fm_id")) != fm_id]
+        if len(remaining_pm) != len(pm_rows):
+            self._editing.apply_entity_rows("pm_tasks", remaining_pm)
+        fm_links = current.get("fm_effect_links", [])
+        remaining_fm_links = [
+            r for r in fm_links if normalize_key(r.get("fm_id")) != fm_id
+        ]
+        if len(remaining_fm_links) != len(fm_links):
+            self._editing.apply_entity_rows("fm_effect_links", remaining_fm_links)
+        pm_links = current.get("pm_effect_links", [])
+        remaining_pm_links = [
+            r for r in pm_links if normalize_key(r.get("pm_id")) not in pm_ids
+        ]
+        if len(remaining_pm_links) != len(pm_links):
+            self._editing.apply_entity_rows("pm_effect_links", remaining_pm_links)
+
     def _materialize(self) -> RCMProject:
         if not self._editing.is_loaded:
             raise RuntimeError("EntityEditService is not initialized")

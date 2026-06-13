@@ -163,6 +163,12 @@ WORKSPACE_MENU_SPEC: tuple[WorkspaceMenuSection, ...] = (
         label=messages.WORKSPACE_MENU_ANALYSIS,
         items=(
             WorkspaceMenuItem(
+                action_id="analysis.compare_models",
+                label=messages.WORKSPACE_MENU_COMPARE_MODELS,
+                checkable=False,
+                shortcut="Ctrl+Shift+L",
+            ),
+            WorkspaceMenuItem(
                 action_id="analysis.revalidate_input",
                 label=messages.WORKSPACE_MENU_REVALIDATE_INPUT,
                 checkable=False,

@@ -147,6 +147,7 @@ from rcm_desktop.adapter.rcm_cost_parity_service import build_parity_view
 from rcm_desktop.adapter.view_core_facade import has_aw_benchmarks
 from rcm_desktop.views.portfolio_wizard_dialog import run_portfolio_wizard_with_root_picker
 from rcm_desktop.views.rcm_cost_parity_dialog import show_rcm_cost_parity_dialog
+from rcm_desktop.views.compare_models_window import CompareModelsWindow
 from rcm_desktop.views.compare_slot_column import set_compare_placeholder
 from rcm_desktop.views.panels.bijdragen_workspace_panel import (
     build_bijdragen_workspace_panel,
@@ -320,6 +321,7 @@ class ResultsWorkspaceWindow(QMainWindow):
         self._report_runner.finished.connect(self._on_report_generation_finished)
         self._report_runner.failed.connect(self._on_report_generation_failed)
         self._editing_host = editing_host if editing_host is not None else EditingHost()
+        self._compare_models_window: CompareModelsWindow | None = None
 
         self.workspace_state = ResultsWorkspaceState()
         self._last_workspace_snapshot_for_split_depth: WorkspaceStateSnapshot | None = None
@@ -417,6 +419,7 @@ class ResultsWorkspaceWindow(QMainWindow):
                 set_compare_scenario_pm=lambda: self._set_compare_scenario("pm"),
                 revalidate_input=self._revalidate_input,
                 open_faalwijzen_grid=self._open_batch_faalwijzen_grid,
+                open_compare_models=self._open_compare_models,
                 open_model_settings=self._open_model_settings,
                 open_report_generation=self._open_report_generation,
                 pbs_select_prev_sibling=lambda: self._pbs_tree_navigate("prev_sibling"),
@@ -1089,23 +1092,27 @@ class ResultsWorkspaceWindow(QMainWindow):
             self._show_run_error(run_result.error)
 
     def _sync_pbs_tree_for_state(self) -> None:
+        from rcm_desktop.adapter.workspace_derived_refresh import plan_pbs_tree_refresh
+
         session = self._project_session()
         run_result = self._state.last_run
-        if session is None:
+        plan = plan_pbs_tree_refresh(session, run_result=run_result)
+        if plan.kind == "empty":
             self._set_pbs_source_model(None, show_totals=False)
             return
-        if isinstance(run_result, RunResult) and run_result.status == "done" and run_result.pbs_rows:
-            roots = build_pbs_tree(list(run_result.pbs_rows))
-            self._set_pbs_source_model(PBSResultsTreeModel(roots), show_totals=True)
+        if plan.kind == "run_results":
+            self._set_pbs_source_model(PBSResultsTreeModel(plan.roots), show_totals=True)
             return
-        if wss.has_functies(session):
+        if plan.kind == "navigation" and session is not None:
             self._set_pbs_source_model(
                 wss.build_navigation_tree_model_for_session(session),
                 show_totals=False,
             )
             return
-        roots = wss.build_pbs_structure_tree_for_session(session)
-        self._set_pbs_source_model(PBSResultsTreeModel(roots, show_totals=False), show_totals=False)
+        self._set_pbs_source_model(
+            PBSResultsTreeModel(plan.roots, show_totals=plan.show_totals),
+            show_totals=plan.show_totals,
+        )
 
     def _pbs_scope_from_tree_index(self, source_model, source_index: QModelIndex) -> str | None:
         if isinstance(source_model, RcmNavigationTreeModel):
@@ -2325,9 +2332,11 @@ class ResultsWorkspaceWindow(QMainWindow):
     def _refresh_kpi_table_view(self) -> None:
         if not hasattr(self, "kpi_table_view"):
             return
+        from rcm_desktop.adapter.workspace_derived_refresh import plan_kpi_refresh
+
         session = self._project_session()
         scope_id = self.workspace_state.snapshot().scope_id
-        table = wss.build_kpi_table_for_session(
+        table = plan_kpi_refresh(
             session,
             run_result=self._state.last_run,
             scope_id=scope_id,
@@ -2446,6 +2455,13 @@ class ResultsWorkspaceWindow(QMainWindow):
 
     def _update_report_button_enabled(self) -> None:
         self._update_report_menu_enabled()
+
+    def _open_compare_models(self) -> None:
+        if self._compare_models_window is None:
+            self._compare_models_window = CompareModelsWindow(self)
+        self._compare_models_window.show()
+        self._compare_models_window.raise_()
+        self._compare_models_window.activateWindow()
 
     def _open_report_generation(self) -> None:
         session = self._project_session()

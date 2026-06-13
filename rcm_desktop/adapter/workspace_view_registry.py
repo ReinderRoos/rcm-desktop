@@ -3,8 +3,11 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import Literal
 
 from rcm_desktop import messages
+
+ToolbarFamily = Literal["none", "top10", "lcc", "fm", "input_grid"]
 from rcm_desktop.adapter.workspace_menu_spec import WORKSPACE_MENU_SPEC, WorkspaceMenuSection
 
 SIDE_INPUT = "input"
@@ -31,6 +34,18 @@ class WorkspaceSideEntry:
 
 
 @dataclass(frozen=True)
+class WorkspaceChromeProfile:
+    """Declaratief chrome-beleid per view (slice 95)."""
+
+    allows_new_fm: bool = False
+    shows_nb_effect_filter: bool = False
+    shows_metric_combo: bool = False
+    shows_batch_faalwijzen: bool = False
+    shows_column_crop: bool = False
+    toolbar_family: ToolbarFamily = "none"
+
+
+@dataclass(frozen=True)
 class WorkspaceViewEntry:
     view_id: str
     side: str
@@ -40,6 +55,7 @@ class WorkspaceViewEntry:
     enabled: bool
     legacy_modus: str | None = None
     lcc_preset: LccViewPreset | None = None
+    chrome: WorkspaceChromeProfile | None = None
 
 
 WORKSPACE_SIDES: tuple[WorkspaceSideEntry, ...] = (
@@ -55,6 +71,29 @@ WORKSPACE_SIDES: tuple[WorkspaceSideEntry, ...] = (
     ),
 )
 
+_CHROME_TOP10 = WorkspaceChromeProfile(
+    toolbar_family="top10",
+    shows_metric_combo=True,
+    shows_nb_effect_filter=True,
+)
+_CHROME_LCC = WorkspaceChromeProfile(
+    toolbar_family="lcc",
+    shows_metric_combo=True,
+    shows_nb_effect_filter=True,
+)
+_CHROME_FM_INPUT = WorkspaceChromeProfile(
+    toolbar_family="fm",
+    allows_new_fm=True,
+    shows_batch_faalwijzen=True,
+)
+_CHROME_FM_OUTPUT = WorkspaceChromeProfile(
+    toolbar_family="fm",
+    shows_column_crop=True,
+    shows_metric_combo=True,
+    shows_nb_effect_filter=True,
+)
+_CHROME_INPUT_GRID = WorkspaceChromeProfile(toolbar_family="input_grid")
+
 WORKSPACE_VIEW_REGISTRY: tuple[WorkspaceViewEntry, ...] = (
     WorkspaceViewEntry(
         view_id="output.top_10",
@@ -64,6 +103,7 @@ WORKSPACE_VIEW_REGISTRY: tuple[WorkspaceViewEntry, ...] = (
         order=1,
         enabled=True,
         legacy_modus=_LEGACY_MODUS_BIJDRAGEN,
+        chrome=_CHROME_TOP10,
     ),
     WorkspaceViewEntry(
         view_id="output.lcc_plot",
@@ -73,6 +113,7 @@ WORKSPACE_VIEW_REGISTRY: tuple[WorkspaceViewEntry, ...] = (
         order=2,
         enabled=True,
         legacy_modus=_LEGACY_MODUS_LCC,
+        chrome=_CHROME_LCC,
     ),
     WorkspaceViewEntry(
         view_id="output.ltap",
@@ -83,6 +124,7 @@ WORKSPACE_VIEW_REGISTRY: tuple[WorkspaceViewEntry, ...] = (
         enabled=True,
         legacy_modus=_LEGACY_MODUS_LCC,
         lcc_preset=LccViewPreset(cm_enabled=False),
+        chrome=_CHROME_LCC,
     ),
     WorkspaceViewEntry(
         view_id="output.fm_results",
@@ -92,6 +134,7 @@ WORKSPACE_VIEW_REGISTRY: tuple[WorkspaceViewEntry, ...] = (
         order=4,
         enabled=True,
         legacy_modus=_LEGACY_MODUS_FM_DETAIL,
+        chrome=_CHROME_FM_OUTPUT,
     ),
     WorkspaceViewEntry(
         view_id="input.faalwijzen",
@@ -101,6 +144,7 @@ WORKSPACE_VIEW_REGISTRY: tuple[WorkspaceViewEntry, ...] = (
         order=1,
         enabled=True,
         legacy_modus=None,
+        chrome=_CHROME_FM_INPUT,
     ),
     WorkspaceViewEntry(
         view_id="input.rev_tasks",
@@ -110,6 +154,7 @@ WORKSPACE_VIEW_REGISTRY: tuple[WorkspaceViewEntry, ...] = (
         order=2,
         enabled=True,
         legacy_modus=None,
+        chrome=_CHROME_INPUT_GRID,
     ),
     WorkspaceViewEntry(
         view_id="input.effecten",
@@ -119,6 +164,7 @@ WORKSPACE_VIEW_REGISTRY: tuple[WorkspaceViewEntry, ...] = (
         order=3,
         enabled=True,
         legacy_modus=None,
+        chrome=_CHROME_INPUT_GRID,
     ),
     WorkspaceViewEntry(
         view_id="input.taakgroepen",
@@ -128,6 +174,7 @@ WORKSPACE_VIEW_REGISTRY: tuple[WorkspaceViewEntry, ...] = (
         order=4,
         enabled=True,
         legacy_modus=None,
+        chrome=_CHROME_INPUT_GRID,
     ),
     WorkspaceViewEntry(
         view_id="input.correctief",
@@ -137,6 +184,7 @@ WORKSPACE_VIEW_REGISTRY: tuple[WorkspaceViewEntry, ...] = (
         order=5,
         enabled=True,
         legacy_modus=None,
+        chrome=_CHROME_INPUT_GRID,
     ),
 )
 
@@ -166,6 +214,16 @@ def view_by_id(
         if entry.view_id == view_id:
             return entry
     return None
+
+
+def chrome_for_view(
+    registry: tuple[WorkspaceViewEntry, ...],
+    view_id: str,
+) -> WorkspaceChromeProfile | None:
+    entry = view_by_id(registry, view_id)
+    if entry is None:
+        return None
+    return entry.chrome
 
 
 def _menu_shortcuts(spec: tuple[WorkspaceMenuSection, ...]) -> set[str]:
