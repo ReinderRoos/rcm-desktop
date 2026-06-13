@@ -164,6 +164,17 @@ class EntityGridPanel(QWidget):
     def table_model(self) -> EntityTableModel | None:
         return self._source_model
 
+    def selected_row_key(self) -> str | None:
+        if self._proxy is None or self._source_model is None:
+            return None
+        indexes = self._table.selectionModel().selectedRows()
+        if not indexes:
+            return None
+        src_index = self._proxy.mapToSource(indexes[0])
+        if not src_index.isValid():
+            return None
+        return self._source_model.row_key_at(src_index.row())
+
     def row_count(self) -> int:
         if self._source_model is None:
             return 0

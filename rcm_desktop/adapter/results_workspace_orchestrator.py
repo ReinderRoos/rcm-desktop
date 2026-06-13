@@ -131,6 +131,7 @@ class FmToolbarPlan:
     column_crop_visible: bool
     fm_inspector_visible: bool
     clear_fm_inspector: bool
+    delete_fm_visible: bool = False
     effect_nb_filter_visible: bool = True
     metric_combo_visible: bool = False
     horizon_lifecycle_visible: bool = False
@@ -313,6 +314,7 @@ def _plan_input_faalwijzen_chrome(profile: WorkspaceChromeProfile) -> FmToolbarP
         column_crop_visible=profile.shows_column_crop,
         fm_inspector_visible=False,
         clear_fm_inspector=False,
+        delete_fm_visible=profile.allows_delete_fm,
         effect_nb_filter_visible=profile.shows_nb_effect_filter,
     )
 
@@ -328,6 +330,7 @@ def _plan_output_fm_results_toolbar(
         column_crop_visible=profile.shows_column_crop,
         fm_inspector_visible=True,
         clear_fm_inspector=False,
+        delete_fm_visible=False,
         effect_nb_filter_visible=profile.shows_nb_effect_filter,
         metric_combo_visible=profile.shows_metric_combo,
         horizon_lifecycle_visible=True,

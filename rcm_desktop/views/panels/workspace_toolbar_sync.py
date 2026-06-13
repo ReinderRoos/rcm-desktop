@@ -13,6 +13,10 @@ from rcm_desktop.adapter.results_workspace_orchestrator import (
     LccToolbarVisibilityPlan,
     MeekoppelCollapsePlan,
 )
+from rcm_desktop.views.panels.input_entity_grid_binding import (
+    sync_delete_fm_button_enabled,
+    sync_new_fm_button_enabled,
+)
 from rcm_desktop.adapter.results_workspace_state import (
     METRIC_NIET_BESCHIKBAARHEID,
     MODE_LCC,
@@ -123,7 +127,11 @@ def apply_fm_toolbar(window: Any, toolbar: FmToolbarPlan) -> None:
     if hasattr(window, "new_fm_button"):
         window.new_fm_button.setVisible(toolbar.new_fm_visible)
         if toolbar.new_fm_visible:
-            window._sync_new_fm_button_enabled()
+            sync_new_fm_button_enabled(window)
+    if hasattr(window, "delete_fm_button"):
+        window.delete_fm_button.setVisible(toolbar.delete_fm_visible)
+        if toolbar.delete_fm_visible:
+            sync_delete_fm_button_enabled(window)
     if hasattr(window, "fm_inspector_container"):
         window.fm_inspector_container.setVisible(toolbar.fm_inspector_visible)
         if toolbar.clear_fm_inspector:

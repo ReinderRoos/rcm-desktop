@@ -486,6 +486,35 @@ COMPARE_MODELS_TABLE_HEADER_RESULT_DIFFS = "Resultaat Δ"
 COMPARE_MODELS_DETAIL_FIELD_HEADER = ("Veld", "A", "B")
 COMPARE_MODELS_DETAIL_RESULT_HEADER = ("Metric", "A", "B")
 
+# Monte Carlo presentatie (slice 95 issue 12).
+SIMULATION_RUN_MODE_LABEL = "Run-modus"
+SIMULATION_RUN_MODE_ANALYTICAL = "Analytisch"
+SIMULATION_RUN_MODE_MONTE_CARLO = "Monte Carlo"
+
+# Faalwijze verwijderen (slice 99 issue 13).
+FM_DELETE_BUTTON_LABEL = "Verwijder faalwijze"
+FM_DELETE_BUTTON_TOOLTIP = "Verwijder de geselecteerde faalwijze uit het project"
+FM_DELETE_CONFIRM_TITLE = "Faalwijze verwijderen"
+FM_DELETE_CONFIRM_BODY = (
+    "Faalwijze {fm_id} verwijderen?\n\n"
+    "Gekoppelde entiteiten:\n"
+    "• PM-taken: {pm_task_count}\n"
+    "• FM-effectlinks: {fm_effect_link_count}\n"
+    "• PM-effectlinks: {pm_effect_link_count}\n"
+    "• Taakgroepen: {task_group_count}"
+)
+FM_DELETE_NO_SELECTION = "Selecteer eerst een faalwijze om te verwijderen."
+
+# Uniformeren review (slice 95 issue 10).
+NORMALIZATION_REVIEW_TITLE = "Uniformeringsvoorstellen"
+NORMALIZATION_REVIEW_APPLY = "Toepassen (goedgekeurd)"
+NORMALIZATION_REVIEW_ROLLBACK = "Laatste patch terugdraaien"
+NORMALIZATION_REVIEW_SOURCE_A_TO_B = "A → B"
+NORMALIZATION_REVIEW_SOURCE_B_TO_A = "B → A"
+NORMALIZATION_REVIEW_AUDIT = "Audit trail: {count} patch(es) toegepast"
+NORMALIZATION_REVIEW_NO_APPROVED = "Geen goedgekeurde voorstellen om toe te passen."
+NORMALIZATION_REVIEW_TABLE_HEADERS = ("Goedkeuren", "FM A", "FM B", "Veld", "Bron", "Waarde")
+
 # LCC-planning (slice 28).
 WORKSPACE_LCC_FILTER_CM = "CM"
 WORKSPACE_LCC_FILTER_REV = "REV"

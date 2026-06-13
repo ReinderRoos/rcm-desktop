@@ -49,6 +49,7 @@ def test_orchestrator_fm_toolbar_matches_registry_on_input_faalwijzen() -> None:
     plan = ResultsWorkspaceOrchestrator.plan_ui_sync(None, snap)
     assert plan.fm_toolbar is not None
     assert plan.fm_toolbar.new_fm_visible is profile.allows_new_fm
+    assert plan.fm_toolbar.delete_fm_visible is profile.allows_delete_fm
     assert plan.fm_toolbar.batch_faalwijzen_visible is profile.shows_batch_faalwijzen
 
 

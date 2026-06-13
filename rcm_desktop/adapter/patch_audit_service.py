@@ -7,6 +7,8 @@ from dataclasses import dataclass, field
 
 from rcm_core.models import RCMProject
 
+from rcm_desktop.adapter.normalization_proposal_service import NormalizationProposalItem
+
 
 @dataclass(frozen=True)
 class NormalizationPatch:
@@ -57,3 +59,28 @@ def rollback_last_patch(project: RCMProject, audit: AuditTrail) -> RCMProject:
         setattr(fm, str(entry["field"]), entry["previous"])
     audit.entries.pop()
     return restored
+
+
+def apply_approved_normalization(
+    project: RCMProject,
+    proposal_items: tuple[NormalizationProposalItem, ...],
+    *,
+    approved_indices: frozenset[int],
+) -> tuple[RCMProject, AuditTrail]:
+    updated = project
+    combined = AuditTrail()
+    for index, item in enumerate(proposal_items):
+        if index not in approved_indices:
+            continue
+        target_fm = item.fm_id_a if item.source_side == "a_to_b" else item.fm_id_b
+        if target_fm is None:
+            continue
+        patch = NormalizationPatch(
+            target_fm_id=target_fm,
+            field=item.field,
+            new_value=item.proposed_value,
+            approved=True,
+        )
+        updated, audit = apply_patch(updated, patch)
+        combined.entries.extend(audit.entries)
+    return updated, combined

@@ -38,6 +38,7 @@ class WorkspaceChromeProfile:
     """Declaratief chrome-beleid per view (slice 95)."""
 
     allows_new_fm: bool = False
+    allows_delete_fm: bool = False
     shows_nb_effect_filter: bool = False
     shows_metric_combo: bool = False
     shows_batch_faalwijzen: bool = False
@@ -84,6 +85,7 @@ _CHROME_LCC = WorkspaceChromeProfile(
 _CHROME_FM_INPUT = WorkspaceChromeProfile(
     toolbar_family="fm",
     allows_new_fm=True,
+    allows_delete_fm=True,
     shows_batch_faalwijzen=True,
 )
 _CHROME_FM_OUTPUT = WorkspaceChromeProfile(

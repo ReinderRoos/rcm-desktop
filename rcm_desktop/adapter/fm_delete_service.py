@@ -6,6 +6,7 @@ from dataclasses import dataclass
 
 from rcm_core.editing.validation import normalize_key
 
+from rcm_desktop import messages
 from rcm_desktop.adapter.entity_edit_service import EntityEditService
 from rcm_desktop.adapter.input_revalidation_service import revalidate_input_buffer
 
@@ -52,6 +53,16 @@ def build_fm_delete_confirmation(service: EntityEditService, fm_id: str) -> FmDe
         fm_effect_link_count=fm_effect_count,
         pm_effect_link_count=pm_effect_count,
         task_group_count=len(task_group_ids),
+    )
+
+
+def format_fm_delete_confirmation_message(confirmation: FmDeleteConfirmation) -> str:
+    return messages.FM_DELETE_CONFIRM_BODY.format(
+        fm_id=confirmation.fm_id,
+        pm_task_count=confirmation.pm_task_count,
+        fm_effect_link_count=confirmation.fm_effect_link_count,
+        pm_effect_link_count=confirmation.pm_effect_link_count,
+        task_group_count=confirmation.task_group_count,
     )
 
 

@@ -22,7 +22,18 @@ from PySide6.QtWidgets import (
 )
 
 from rcm_desktop import messages
-from rcm_desktop.adapter.compare_session_service import load_compare_session
+from rcm_desktop.adapter.compare_balanced_presentation_service import build_compare_presentation
+from rcm_desktop.adapter.compare_session_service import CompareSession, load_compare_session
+from rcm_desktop.adapter.normalization_proposal_service import build_normalization_proposals
+from rcm_desktop.adapter.normalization_review_presentation_service import (
+    build_normalization_review_presentation,
+)
+from rcm_desktop.adapter.normalization_review_table_model import NormalizationReviewTableModel
+from rcm_desktop.adapter.patch_audit_service import (
+    AuditTrail,
+    apply_approved_normalization,
+    rollback_last_patch,
+)
 from rcm_desktop.adapter.compare_workspace_presentation_service import (
     CompareWorkspaceRow,
     build_compare_workspace_view_state,
@@ -39,7 +50,11 @@ class CompareModelsWindow(QMainWindow):
         self.setWindowTitle(messages.COMPARE_MODELS_WINDOW_TITLE)
         self._path_a: Path | None = None
         self._path_b: Path | None = None
+        self._compare_session: CompareSession | None = None
+        self._normalization_proposal_items: tuple = ()
+        self._audit_trail = AuditTrail()
         self._table_model = CompareWorkspaceTableModel()
+        self._normalization_model = NormalizationReviewTableModel(self)
         self._build_ui()
 
     def _build_ui(self) -> None:
@@ -101,11 +116,35 @@ class CompareModelsWindow(QMainWindow):
         splitter.setStretchFactor(1, 3)
         layout.addWidget(splitter)
 
+        norm_title = QLabel(messages.NORMALIZATION_REVIEW_TITLE)
+        layout.addWidget(norm_title)
+        self._normalization_table = QTableView()
+        self._normalization_table.setModel(self._normalization_model)
+        self._normalization_table.horizontalHeader().setSectionResizeMode(
+            QHeaderView.ResizeMode.Stretch
+        )
+        layout.addWidget(self._normalization_table)
+
+        norm_actions = QHBoxLayout()
+        self._normalization_apply_button = QPushButton(messages.NORMALIZATION_REVIEW_APPLY)
+        self._normalization_apply_button.clicked.connect(self._apply_normalization)
+        norm_actions.addWidget(self._normalization_apply_button)
+        self._normalization_rollback_button = QPushButton(messages.NORMALIZATION_REVIEW_ROLLBACK)
+        self._normalization_rollback_button.clicked.connect(self._rollback_normalization)
+        norm_actions.addWidget(self._normalization_rollback_button)
+        norm_actions.addStretch(1)
+        self._normalization_audit_label = QLabel("")
+        norm_actions.addWidget(self._normalization_audit_label)
+        layout.addLayout(norm_actions)
+
         self.setCentralWidget(central)
         self.resize(1100, 640)
 
     def table_model(self) -> CompareWorkspaceTableModel:
         return self._table_model
+
+    def normalization_model(self) -> NormalizationReviewTableModel:
+        return self._normalization_model
 
     def path_a_label(self) -> str:
         return self._path_a.name if self._path_a is not None else ""
@@ -153,6 +192,8 @@ class CompareModelsWindow(QMainWindow):
         try:
             session = load_compare_session(self._path_a, self._path_b)
             state = build_compare_workspace_view_state(session)
+            self._compare_session = session
+            self._load_normalization_review(session)
         except Exception as exc:  # noqa: BLE001 — user-facing adapter boundary
             QMessageBox.warning(
                 self,
@@ -210,6 +251,55 @@ class CompareModelsWindow(QMainWindow):
             field_model.set_rows(field_rows)
         if isinstance(result_model, _DiffTableModel):
             result_model.set_rows(result_rows)
+
+    def _load_normalization_review(self, session: CompareSession) -> None:
+        presentation = build_compare_presentation(session.project_a, session.project_b)
+        proposals = build_normalization_proposals(presentation, direction="a_to_b")
+        self._normalization_proposal_items = proposals.items
+        review = build_normalization_review_presentation(proposals)
+        self._normalization_model.set_presentation(review)
+        self._normalization_audit_label.setText("")
+
+    def _apply_normalization(self) -> None:
+        if self._compare_session is None or not self._normalization_proposal_items:
+            return
+        approved = self._normalization_model.approved_indices()
+        if not approved:
+            QMessageBox.information(
+                self,
+                messages.NORMALIZATION_REVIEW_TITLE,
+                messages.NORMALIZATION_REVIEW_NO_APPROVED,
+            )
+            return
+        updated, audit = apply_approved_normalization(
+            self._compare_session.project_a,
+            self._normalization_proposal_items,
+            approved_indices=approved,
+        )
+        self._compare_session = CompareSession(
+            path_a=self._compare_session.path_a,
+            path_b=self._compare_session.path_b,
+            project_a=updated,
+            project_b=self._compare_session.project_b,
+        )
+        self._audit_trail.entries.extend(audit.entries)
+        self._normalization_audit_label.setText(
+            messages.NORMALIZATION_REVIEW_AUDIT.format(count=self._audit_trail.patch_count)
+        )
+
+    def _rollback_normalization(self) -> None:
+        if self._compare_session is None or not self._audit_trail.entries:
+            return
+        restored = rollback_last_patch(self._compare_session.project_a, self._audit_trail)
+        self._compare_session = CompareSession(
+            path_a=self._compare_session.path_a,
+            path_b=self._compare_session.path_b,
+            project_a=restored,
+            project_b=self._compare_session.project_b,
+        )
+        self._normalization_audit_label.setText(
+            messages.NORMALIZATION_REVIEW_AUDIT.format(count=self._audit_trail.patch_count)
+        )
 
 
 def _format_value(value: object) -> str:

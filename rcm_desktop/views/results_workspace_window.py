@@ -147,7 +147,7 @@ from rcm_desktop.adapter.rcm_cost_parity_service import build_parity_view
 from rcm_desktop.adapter.view_core_facade import has_aw_benchmarks
 from rcm_desktop.views.portfolio_wizard_dialog import run_portfolio_wizard_with_root_picker
 from rcm_desktop.views.rcm_cost_parity_dialog import show_rcm_cost_parity_dialog
-from rcm_desktop.views.compare_models_window import CompareModelsWindow
+from rcm_desktop.views.panels.compare_models_workspace_binding import open_compare_models_window
 from rcm_desktop.views.compare_slot_column import set_compare_placeholder
 from rcm_desktop.views.panels.bijdragen_workspace_panel import (
     build_bijdragen_workspace_panel,
@@ -163,7 +163,16 @@ from rcm_desktop.views.panels.fm_results_filter_binding import (
     apply_fm_filter_row_to_proxy,
     bind_fm_filter_row,
 )
-from rcm_desktop.views.panels.input_entity_grid_binding import build_input_entity_grid_page
+from rcm_desktop.views.panels.input_entity_grid_binding import (
+    build_input_entity_grid_page,
+    sync_delete_fm_button_enabled,
+    sync_new_fm_button_enabled,
+    wire_entity_grid_delete_selection,
+)
+from rcm_desktop.views.panels.simulation_workspace_binding import (
+    add_simulation_widgets_to_validate_row,
+    wire_simulation_status_strip,
+)
 from rcm_desktop.views.panels.lcc_workspace_panel import build_lcc_workspace_panel
 from rcm_desktop.adapter.column_fit_policy import ColumnFitMode
 from rcm_desktop.adapter.column_fit_settings import (
@@ -321,7 +330,7 @@ class ResultsWorkspaceWindow(QMainWindow):
         self._report_runner.finished.connect(self._on_report_generation_finished)
         self._report_runner.failed.connect(self._on_report_generation_failed)
         self._editing_host = editing_host if editing_host is not None else EditingHost()
-        self._compare_models_window: CompareModelsWindow | None = None
+        self._compare_models_window = None
 
         self.workspace_state = ResultsWorkspaceState()
         self._last_workspace_snapshot_for_split_depth: WorkspaceStateSnapshot | None = None
@@ -419,7 +428,7 @@ class ResultsWorkspaceWindow(QMainWindow):
                 set_compare_scenario_pm=lambda: self._set_compare_scenario("pm"),
                 revalidate_input=self._revalidate_input,
                 open_faalwijzen_grid=self._open_batch_faalwijzen_grid,
-                open_compare_models=self._open_compare_models,
+                open_compare_models=lambda: open_compare_models_window(self),
                 open_model_settings=self._open_model_settings,
                 open_report_generation=self._open_report_generation,
                 pbs_select_prev_sibling=lambda: self._pbs_tree_navigate("prev_sibling"),
@@ -495,6 +504,7 @@ class ResultsWorkspaceWindow(QMainWindow):
         self.validate_summary_label = QLabel("")
         self.validate_summary_label.setWordWrap(True)
         self._apply_semantic_status_style(self.validate_status_label, "idle")
+        wire_simulation_status_strip(self)
 
     def _build_top10_subbar(self) -> None:
         build_and_wire_top10_subbar(self)
@@ -729,6 +739,7 @@ class ResultsWorkspaceWindow(QMainWindow):
         validate_row = QHBoxLayout()
         validate_row.addWidget(self.validate_status_label)
         validate_row.addWidget(self.validate_summary_label, stretch=1)
+        add_simulation_widgets_to_validate_row(validate_row, self)
 
         outer.addLayout(toolbar_row)
         outer.addLayout(validate_row)
@@ -791,7 +802,8 @@ class ResultsWorkspaceWindow(QMainWindow):
             scope_id = self._pbs_scope_from_tree_index(source_model, source_index)
             if scope_id is not None:
                 self.set_pbs_scope(scope_id)
-        self._sync_new_fm_button_enabled()
+        sync_new_fm_button_enabled(self)
+        sync_delete_fm_button_enabled(self)
         snapshot = self.workspace_state.snapshot()
         if snapshot.modus == MODE_LCC:
             self._clear_meekoppel_preview_gate()
@@ -1357,6 +1369,7 @@ class ResultsWorkspaceWindow(QMainWindow):
         self._entity_grid_panel.set_scope(self._pbs_scope_id, project)
         self._entity_grid_view_id = view_id
         self._entity_grid_hidden = hidden
+        wire_entity_grid_delete_selection(self)
 
     def _open_batch_faalwijzen_grid(self) -> None:
         session = self._project_session()
@@ -1469,68 +1482,6 @@ class ResultsWorkspaceWindow(QMainWindow):
         if not is_leaf_pbs(project, pbs_id):
             return None
         return pbs_id
-
-    def _sync_new_fm_button_enabled(self) -> None:
-        if not hasattr(self, "new_fm_button"):
-            return
-        leaf = self._selected_leaf_pbs_id_for_create()
-        has_project = self._project_session() is not None
-        self.new_fm_button.setEnabled(has_project and leaf is not None)
-
-    def _on_new_fm_clicked(self) -> None:
-        if self.workspace_state.snapshot().active_view_id != INPUT_FAALWIJZEN_VIEW:
-            return
-        session = self._project_session()
-        if session is None:
-            QMessageBox.information(
-                self,
-                messages.FM_EDITOR_VALIDATION_TITLE,
-                messages.FM_EDITOR_NO_PROJECT,
-            )
-            return
-        pbs_id = self._selected_leaf_pbs_id_for_create()
-        if pbs_id is None:
-            QMessageBox.information(
-                self,
-                messages.FM_EDITOR_VALIDATION_TITLE,
-                messages.FM_EDITOR_NEW_FM_NO_LEAF_PBS,
-            )
-            return
-        project = wss.editing_project(session)
-        host = self._editing_host
-        prev_save = host.swap_save_handler(self._commit_active_grid_edits)
-        try:
-            if resolve_grid_dirty_before_editor(self, host) == "cancel":
-                return
-            path = self.path_input.text().strip() or None
-            grid_svc = host.grid_service()
-            shared_session = None
-            if grid_svc is not None and grid_svc.is_active():
-                shared_session = grid_svc.editing_session
-            dialog = FmEditorDialog(
-                self,
-                project=project,
-                create_pbs_id=pbs_id,
-                project_path=path,
-                save_to_disk=bool(path),
-                editing_session=shared_session,
-            )
-            if dialog.exec() != QDialog.DialogCode.Accepted or dialog.commit_result is None:
-                return
-            result = dialog.commit_result
-            new_fm_id = dialog._fm_id
-            if result.project is not None:
-                self._state.set_last_project(
-                    result.project, path=path, preserve_workspace_ui=True
-                )
-            if result.run_result is not None:
-                self._state.set_last_run(result.run_result)
-                self._project_total_presentation = self._load_presentation_from_disk()
-                self._render_index.on_workspace_state_reset()
-                self._rerender_detail_for_current_scope()
-            self._entity_grid_panel.refresh_view()
-        finally:
-            host.set_save_handler(prev_save)
 
     def _select_fm_in_table(self, fm_id: str) -> None:
         model = self.fm_table_view.model()
@@ -2455,13 +2406,6 @@ class ResultsWorkspaceWindow(QMainWindow):
 
     def _update_report_button_enabled(self) -> None:
         self._update_report_menu_enabled()
-
-    def _open_compare_models(self) -> None:
-        if self._compare_models_window is None:
-            self._compare_models_window = CompareModelsWindow(self)
-        self._compare_models_window.show()
-        self._compare_models_window.raise_()
-        self._compare_models_window.activateWindow()
 
     def _open_report_generation(self) -> None:
         session = self._project_session()
