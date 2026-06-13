@@ -41,12 +41,15 @@ from rcm_desktop.adapter.workspace_detail_render_scope import (
     workspace_detail_split_render_depth,
 )
 from rcm_desktop.adapter.workspace_render_index import WorkspaceRenderIndex
+from rcm_desktop.adapter.workspace_navigation_policy import INPUT_FAALWIJZEN_VIEW
 from rcm_desktop.adapter.workspace_view_registry import (
     SIDE_INPUT,
     WORKSPACE_VIEW_REGISTRY,
     view_by_id,
     views_for_side,
 )
+
+OUTPUT_FM_RESULTS_VIEW = "output.fm_results"
 from rcm_desktop.adapter.workspace_view_service import (
     BijdragenView,
     FMDetailView,
@@ -126,6 +129,7 @@ class LccToolbarVisibilityPlan:
 class FmToolbarPlan:
     batch_faalwijzen_visible: bool
     new_fm_visible: bool
+    column_crop_visible: bool
     fm_inspector_visible: bool
     clear_fm_inspector: bool
     effect_nb_filter_visible: bool = True
@@ -303,11 +307,23 @@ def _plan_lcc_toolbar(snapshot: WorkspaceStateSnapshot) -> LccToolbarVisibilityP
     )
 
 
-def _plan_fm_toolbar(snapshot: WorkspaceStateSnapshot) -> FmToolbarPlan:
-    pres = snapshot.contribution_presentation
+def _plan_input_faalwijzen_chrome() -> FmToolbarPlan:
     return FmToolbarPlan(
         batch_faalwijzen_visible=True,
         new_fm_visible=True,
+        column_crop_visible=False,
+        fm_inspector_visible=False,
+        clear_fm_inspector=False,
+        effect_nb_filter_visible=False,
+    )
+
+
+def _plan_output_fm_results_toolbar(snapshot: WorkspaceStateSnapshot) -> FmToolbarPlan:
+    pres = snapshot.contribution_presentation
+    return FmToolbarPlan(
+        batch_faalwijzen_visible=False,
+        new_fm_visible=False,
+        column_crop_visible=True,
         fm_inspector_visible=True,
         clear_fm_inspector=False,
         effect_nb_filter_visible=True,
@@ -319,6 +335,15 @@ def _plan_fm_toolbar(snapshot: WorkspaceStateSnapshot) -> FmToolbarPlan:
         horizon_per_year_checked=pres.horizon == "per_year",
         year_choice=pres.year_choice,
     )
+
+
+def _plan_fm_toolbar(snapshot: WorkspaceStateSnapshot) -> FmToolbarPlan:
+    view_id = snapshot.active_view_id
+    if view_id == INPUT_FAALWIJZEN_VIEW:
+        return _plan_input_faalwijzen_chrome()
+    if view_id == OUTPUT_FM_RESULTS_VIEW:
+        return _plan_output_fm_results_toolbar(snapshot)
+    return _inactive_fm_toolbar()
 
 
 def _plan_compare_chrome(snapshot: WorkspaceStateSnapshot) -> CompareChromePlan:
@@ -408,6 +433,7 @@ def _inactive_fm_toolbar() -> FmToolbarPlan:
     return FmToolbarPlan(
         batch_faalwijzen_visible=False,
         new_fm_visible=False,
+        column_crop_visible=False,
         fm_inspector_visible=False,
         clear_fm_inspector=True,
         effect_nb_filter_visible=False,
@@ -438,11 +464,7 @@ class ResultsWorkspaceOrchestrator:
         current: WorkspaceStateSnapshot,
     ) -> WorkspaceUiSyncPlan:
         split_depth = workspace_detail_split_render_depth(previous, current)
-        fm_toolbar = (
-            _plan_fm_toolbar(current)
-            if current.modus == MODE_FM_DETAIL and _on_output_side(current)
-            else _inactive_fm_toolbar()
-        )
+        fm_toolbar = _plan_fm_toolbar(current)
         return WorkspaceUiSyncPlan(
             detail_page_modus=current.modus,
             modus_button=current.modus,

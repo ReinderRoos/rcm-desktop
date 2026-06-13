@@ -31,6 +31,7 @@ from rcm_desktop.adapter.results_workspace_state import (
     ResultsWorkspaceState,
     WorkspaceStateSnapshot,
 )
+from rcm_desktop.adapter.workspace_view_registry import SIDE_OUTPUT
 from rcm_desktop.adapter.run_service import build_run_result
 from rcm_desktop.adapter.workspace_render_index import WorkspaceRenderIndex
 
@@ -81,12 +82,17 @@ def test_lcc_toolbar_pm_filter_visible_only_for_kosten_metric() -> None:
 
 def test_modus_switch_lcc_to_fm_detail() -> None:
     prev = _snap(modus=MODE_LCC)
-    curr = _snap(modus=MODE_FM_DETAIL)
+    curr = _snap(
+        modus=MODE_FM_DETAIL,
+        active_view_id="output.fm_results",
+        workspace_side=SIDE_OUTPUT,
+    )
     plan = ResultsWorkspaceOrchestrator.plan_ui_sync(prev, curr)
 
     assert plan.lcc_toolbar is None
     assert plan.fm_toolbar is not None
-    assert plan.fm_toolbar.new_fm_visible is True
+    assert plan.fm_toolbar.new_fm_visible is False
+    assert plan.fm_toolbar.column_crop_visible is True
     assert plan.fm_toolbar.clear_fm_inspector is False
     assert plan.pbs_tree_extended_selection is False
     assert plan.collapse.kpi is not None
@@ -94,7 +100,11 @@ def test_modus_switch_lcc_to_fm_detail() -> None:
 
 
 def test_fm_detail_toolbar_shows_nb_effect_filter() -> None:
-    curr = _snap(modus=MODE_FM_DETAIL)
+    curr = _snap(
+        modus=MODE_FM_DETAIL,
+        active_view_id="output.fm_results",
+        workspace_side=SIDE_OUTPUT,
+    )
     plan = ResultsWorkspaceOrchestrator.plan_ui_sync(None, curr)
     assert plan.fm_toolbar is not None
     assert plan.fm_toolbar.effect_nb_filter_visible is True

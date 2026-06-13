@@ -33,7 +33,6 @@ from rcm_desktop.views.widgets.table_filter_row import TableFilterRowWidget
 class FmDetailWorkspacePanel:
     page: QWidget
     fm_detail_splitter: QSplitter
-    new_fm_button: QPushButton
     column_crop_button: QToolButton
     fm_table_filter_row: TableFilterRowWidget
     fm_filter_clear_button: QPushButton
@@ -63,9 +62,6 @@ def build_fm_detail_workspace_panel() -> FmDetailWorkspacePanel:
     table_layout = QVBoxLayout(table_host)
     table_layout.setContentsMargins(0, 0, 0, 0)
     fm_toolbar = QHBoxLayout()
-    new_fm_button = QPushButton(messages.FM_EDITOR_NEW_FM)
-    new_fm_button.setToolTip(messages.FM_EDITOR_NEW_FM_TOOLTIP)
-    fm_toolbar.addWidget(new_fm_button)
     column_crop_button = QToolButton()
     column_crop_button.setText(messages.WORKSPACE_FM_COLUMN_CROP)
     column_crop_button.setToolTip(messages.WORKSPACE_FM_COLUMN_CROP_TOOLTIP)
@@ -153,7 +149,6 @@ def build_fm_detail_workspace_panel() -> FmDetailWorkspacePanel:
     return FmDetailWorkspacePanel(
         page=page,
         fm_detail_splitter=fm_detail_splitter,
-        new_fm_button=new_fm_button,
         column_crop_button=column_crop_button,
         fm_table_filter_row=fm_table_filter_row,
         fm_filter_clear_button=fm_filter_clear_button,

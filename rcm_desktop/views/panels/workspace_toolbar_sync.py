@@ -117,7 +117,9 @@ def apply_fm_toolbar(window: Any, toolbar: FmToolbarPlan) -> None:
         faalwijzen_action.setVisible(toolbar.batch_faalwijzen_visible)
     crop_action = window._workspace_menu.actions_by_id.get("view.column_crop")
     if crop_action is not None:
-        crop_action.setVisible(toolbar.new_fm_visible)
+        crop_action.setVisible(toolbar.column_crop_visible)
+    if hasattr(window, "column_crop_button"):
+        window.column_crop_button.setVisible(toolbar.column_crop_visible)
     if hasattr(window, "new_fm_button"):
         window.new_fm_button.setVisible(toolbar.new_fm_visible)
         if toolbar.new_fm_visible:

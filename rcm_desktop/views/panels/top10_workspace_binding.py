@@ -5,9 +5,11 @@ from __future__ import annotations
 from typing import Any
 
 from rcm_desktop import messages
-from rcm_desktop.adapter import workspace_session_service as wss
 from rcm_desktop.adapter.view_core_facade import EffectNbFilterSet, RCMProject
-from rcm_desktop.adapter.workspace_derived_refresh import plan_nb_filter_refresh
+from rcm_desktop.adapter.workspace_derived_refresh import (
+    plan_contribution_year_refresh,
+    plan_nb_filter_refresh,
+)
 from rcm_desktop.views.panels.top10_subbar_panel import build_top10_subbar_panel
 
 
@@ -88,10 +90,9 @@ def refresh_contribution_year_combo(window: Any, project) -> None:
         messages.WORKSPACE_CONTRIBUTION_YEAR_AVERAGE,
         userData="average",
     )
-    session = window._project_session()
-    if session is not None:
-        for year in wss.calendar_years_for_session(session):
-            window.contribution_year_combo.addItem(str(year), userData=year)
+    rcm_project = project if isinstance(project, RCMProject) else None
+    for year in plan_contribution_year_refresh(rcm_project):
+        window.contribution_year_combo.addItem(str(year), userData=year)
     if current is not None:
         idx = window.contribution_year_combo.findData(current)
         if idx >= 0:

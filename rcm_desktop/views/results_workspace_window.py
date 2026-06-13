@@ -100,6 +100,7 @@ from rcm_desktop.adapter.lcc_type_filter import LCCTypeFilterSet
 from rcm_desktop.adapter.lcc_year_detail_table_model import PASSIVE_COLUMN
 from rcm_desktop.adapter.lcc_year_table_model import LCCYearTableModel
 from rcm_desktop.adapter.workspace_lcc_preset_service import effective_lcc_filters
+from rcm_desktop.adapter.workspace_navigation_policy import INPUT_FAALWIJZEN_VIEW
 from rcm_desktop.adapter.import_flow_service import gate_workbook, persist_wizard_result
 from rcm_desktop.adapter.isograph_export_flow_service import (
     ExportFlowBlocked,
@@ -161,7 +162,7 @@ from rcm_desktop.views.panels.fm_results_filter_binding import (
     apply_fm_filter_row_to_proxy,
     bind_fm_filter_row,
 )
-from rcm_desktop.views.panels.entity_grid_panel import EntityGridPanel
+from rcm_desktop.views.panels.input_entity_grid_binding import build_input_entity_grid_page
 from rcm_desktop.views.panels.lcc_workspace_panel import build_lcc_workspace_panel
 from rcm_desktop.adapter.column_fit_policy import ColumnFitMode
 from rcm_desktop.adapter.column_fit_settings import (
@@ -530,12 +531,7 @@ class ResultsWorkspaceWindow(QMainWindow):
         self.input_placeholder_page = self._build_placeholder_page(
             messages.WORKSPACE_INPUT_PLACEHOLDER
         )
-        self.input_entity_grid_page = QWidget()
-        input_grid_layout = QVBoxLayout(self.input_entity_grid_page)
-        input_grid_layout.setContentsMargins(0, 0, 0, 0)
-        self._entity_grid_panel = EntityGridPanel()
-        self._entity_grid_panel.set_hidden_columns_handler(self._on_entity_grid_columns_changed)
-        input_grid_layout.addWidget(self._entity_grid_panel)
+        self.input_entity_grid_page = build_input_entity_grid_page(self)
         self._entity_grid_view_id: str | None = None
         self._entity_grid_hidden: frozenset[str] = frozenset()
 
@@ -633,7 +629,7 @@ class ResultsWorkspaceWindow(QMainWindow):
     def _build_fm_detail_page(self) -> QWidget:
         panel = build_fm_detail_workspace_panel()
         self.fm_detail_splitter = panel.fm_detail_splitter
-        self.new_fm_button = panel.new_fm_button
+        self.column_crop_button = panel.column_crop_button
         panel.column_crop_button.setVisible(False)
         self.fm_table_view = panel.fm_table_view
         self._fm_table_filter_proxy = panel.fm_table_filter_proxy
@@ -651,7 +647,6 @@ class ResultsWorkspaceWindow(QMainWindow):
         self.fm_inspector_reconcile_label = panel.fm_inspector_reconcile_label
         self.fm_inspector_profile_missing_label = panel.fm_inspector_profile_missing_label
         self.fm_inspector_year_table_view = panel.fm_inspector_year_table_view
-        self.new_fm_button.clicked.connect(self._on_new_fm_clicked)
         sel = self.fm_table_view.selectionModel()
         if sel is not None:
             sel.selectionChanged.connect(self._on_fm_table_selection_changed)
@@ -1476,7 +1471,7 @@ class ResultsWorkspaceWindow(QMainWindow):
         self.new_fm_button.setEnabled(has_project and leaf is not None)
 
     def _on_new_fm_clicked(self) -> None:
-        if self.workspace_state.snapshot().modus != MODE_FM_DETAIL:
+        if self.workspace_state.snapshot().active_view_id != INPUT_FAALWIJZEN_VIEW:
             return
         session = self._project_session()
         if session is None:
@@ -1526,8 +1521,7 @@ class ResultsWorkspaceWindow(QMainWindow):
                 self._project_total_presentation = self._load_presentation_from_disk()
                 self._render_index.on_workspace_state_reset()
                 self._rerender_detail_for_current_scope()
-                self._select_fm_in_table(new_fm_id)
-                self._refresh_fm_inspector(new_fm_id)
+            self._entity_grid_panel.refresh_view()
         finally:
             host.set_save_handler(prev_save)
 
