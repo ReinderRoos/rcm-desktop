@@ -6,8 +6,8 @@ from typing import Any
 
 from rcm_desktop import messages
 from rcm_desktop.adapter import workspace_session_service as wss
-from rcm_desktop.adapter.nb_effect_filter_presentation import build_nb_effect_filter_presentation
 from rcm_desktop.adapter.view_core_facade import EffectNbFilterSet, RCMProject
+from rcm_desktop.adapter.workspace_derived_refresh import plan_nb_filter_refresh
 from rcm_desktop.views.panels.top10_subbar_panel import build_top10_subbar_panel
 
 
@@ -57,19 +57,19 @@ def on_nb_effect_filter_changed(window: Any, filt: EffectNbFilterSet) -> None:
 
 
 def refresh_nb_effect_filter_combo(window: Any, project: object) -> None:
-    if project is None:
+    rcm_project = project if isinstance(project, RCMProject) else None
+    session = window._project_session()
+    fm_results: tuple = ()
+    if session is not None and session.run is not None and session.run.fm_core_results:
+        fm_results = tuple(session.run.fm_core_results)
+    presentation = plan_nb_filter_refresh(rcm_project, fm_results)
+    if not presentation.entries:
         window.nb_effect_filter_combo.set_klassen(())
         return
-    if isinstance(project, RCMProject):
-        session = window._project_session()
-        fm_results: tuple = ()
-        if session.run is not None and session.run.fm_core_results:
-            fm_results = tuple(session.run.fm_core_results)
-        presentation = build_nb_effect_filter_presentation(project, fm_results)
-        window.nb_effect_filter_combo.set_presentation(presentation)
-        window.nb_effect_filter_combo.set_filter(
-            window.workspace_state.snapshot().effect_nb_filter
-        )
+    window.nb_effect_filter_combo.set_presentation(presentation)
+    window.nb_effect_filter_combo.set_filter(
+        window.workspace_state.snapshot().effect_nb_filter
+    )
 
 
 def on_contribution_year_combo_changed(window: Any, _idx: int) -> None:
