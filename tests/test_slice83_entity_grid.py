@@ -21,7 +21,6 @@ from rcm_desktop.adapter.entity_grid_config import (
     schema_columns_for_view,
     validate_entity_grid_configs,
 )
-from rcm_desktop.adapter.faalwijzen_edit_service import FaalwijzenEditService
 from rcm_desktop.adapter.results_workspace_orchestrator import ResultsWorkspaceOrchestrator
 from rcm_desktop.adapter.results_workspace_state import (
     ResultsWorkspaceState,
@@ -151,27 +150,22 @@ def test_workspace_column_choice_persists_per_view(sample_project, tmp_path, mon
     assert "pm_id" in read_hidden_entity_columns(settings, "input.rev_tasks")
 
 
-def test_entity_edit_apply_change_matches_faalwijzen_service(sample_project) -> None:
-    legacy = FaalwijzenEditService()
-    legacy.init(sample_project)
-    generic = EntityEditService.for_view("input.faalwijzen")
-    generic.init(sample_project)
-
-    legacy.apply_change("FM-001", "mttf_jaar", "20")
-    generic.apply_change("FM-001", "mttf_jaar", "20")
-
-    legacy_row = next(r for r in legacy.rows() if r.fm_id == "FM-001")
-    generic_row = next(r for r in generic.rows() if r.row_key == "FM-001")
-    assert legacy_row.mttf_jaar == generic_row.values["mttf_jaar"] == 20.0
-    assert legacy.has_errors() == generic.has_errors()
-
-
-def test_entity_edit_marks_dirty(sample_project) -> None:
+def test_entity_edit_apply_change_on_faalwijzen_view(sample_project) -> None:
     svc = EntityEditService.for_view("input.faalwijzen")
     svc.init(sample_project)
-    assert svc.is_dirty() is False
+    svc.apply_change("FM-001", "mttf_jaar", "20")
+    row = next(r for r in svc.rows() if r.row_key == "FM-001")
+    assert row.values["mttf_jaar"] == 20.0
+    assert not svc.has_errors()
+
+
+def test_entity_edit_marks_dirty_via_edit_dirty_global(sample_project) -> None:
+    svc = EntityEditService.for_view("input.faalwijzen")
+    svc.init(sample_project)
+    session = svc.editing_session.session
+    assert session.get("edit_dirty_global") is False
     svc.apply_change("FM-001", "mttf_jaar", "21")
-    assert svc.is_dirty() is True
+    assert session.get("edit_dirty_global") is True
 
 
 def _snap(**kwargs) -> WorkspaceStateSnapshot:

@@ -36,10 +36,8 @@ except ImportError:  # pragma: no cover - fallback for environments without QtCh
     HAS_QT_CHARTS = False
 
 from rcm_desktop import messages
-from rcm_desktop.adapter.faalwijzen_edit_service import (
-    FaalwijzenEditService,
-    FaalwijzenMaterializeBlockedError,
-)
+from rcm_desktop.adapter.entity_edit_service import EntityEditService
+from rcm_desktop.adapter.tabular_edit_types import MaterializeBlockedError
 from rcm_desktop.adapter.editing_host import EditingHost
 from rcm_desktop.views.validate_faalwijzen_panel import ValidateFaalwijzenPanel
 from rcm_desktop.adapter.compare_runner import CompareRunner
@@ -86,7 +84,6 @@ class ValidateWindow(QMainWindow):
         self._state.project_changed.connect(self._on_state_project_changed)
         self._state.run_changed.connect(self._render_run_result)
 
-        self._faalwijzen_edit = FaalwijzenEditService()
         self._faalwijzen_panel: ValidateFaalwijzenPanel | None = None
         self._active_project_path: Path | None = None
         self._loaded_path_mtime_ns: int | None = None
@@ -497,19 +494,26 @@ class ValidateWindow(QMainWindow):
         self.strip_validate_face.setVisible(not run_on)
         self.strip_run_face.setVisible(run_on)
 
+    def _grid_edit(self) -> EntityEditService | None:
+        return self._editing_host.grid_service()
+
+    def _buffer_dirty(self) -> bool:
+        return self._editing_host.is_grid_dirty()
+
     def _on_state_project_changed(self, _project: object) -> None:
         self._sync_faalwijzen_panel()
         self._update_run_button_enabled()
         self._sync_ltap_panel()
 
     def _tear_down_faalwijzen_panel(self) -> None:
-        self._faalwijzen_edit.bind_changed(None)
+        grid = self._grid_edit()
+        if grid is not None:
+            grid.bind_changed(None)
         if self._faalwijzen_panel is not None:
             self._faalwijzen_panel.detach()
         self._set_panel_visible("faalwijzen", False)
-        self._faalwijzen_edit.clear()
         host = self._editing_host
-        host.attach_grid(None)
+        host.clear_grid()
         host.set_save_handler(None)
         self._clear_ltap_view()
 
@@ -520,12 +524,11 @@ class ValidateWindow(QMainWindow):
         )
         project = self._state.last_project
         if validation_ok and project is not None:
-            self._faalwijzen_edit.reset(project)
-            self._faalwijzen_edit.bind_changed(self._on_faalwijzen_edit_changed)
+            grid = self._editing_host.ensure_grid(project)
+            grid.bind_changed(self._on_faalwijzen_edit_changed)
             if self._faalwijzen_panel is not None:
-                self._faalwijzen_panel.attach(self._faalwijzen_edit, project)
+                self._faalwijzen_panel.attach(grid, project)
             host = self._editing_host
-            host.attach_grid(self._faalwijzen_edit)
             host.set_save_handler(self._save_current)
             self._set_panel_visible("faalwijzen", True)
             self._sync_dirty_ui()
@@ -652,10 +655,10 @@ class ValidateWindow(QMainWindow):
     def _start_run(self) -> None:
         path = self.path_input.text().strip()
         project = self._state.last_project
-        if self._faalwijzen_edit.is_active():
+        if grid := self._grid_edit():
             try:
-                project = self._faalwijzen_edit.materialize_for_run()
-            except FaalwijzenMaterializeBlockedError as exc:
+                project = grid.materialize_for_run()
+            except MaterializeBlockedError as exc:
                 self._show_run_error(
                     UserFacingError(code="EDIT_VALIDATION_BLOCKED", message=str(exc)),
                 )
@@ -775,7 +778,8 @@ class ValidateWindow(QMainWindow):
             self._state.last_result is not None
             and self._state.last_result.status in {"valid", "valid_with_warnings"}
         )
-        edit_blocks = self._faalwijzen_edit.is_active() and self._faalwijzen_edit.has_errors()
+        grid = self._grid_edit()
+        edit_blocks = bool(grid and grid.is_active() and grid.has_errors())
         can_run = (
             validation_ok
             and self._state.last_project is not None
@@ -791,7 +795,7 @@ class ValidateWindow(QMainWindow):
     def _on_path_changed(self, _text: str) -> None:
         if self._suppress_path_change:
             return
-        if self._faalwijzen_edit.is_active() and self._faalwijzen_edit.is_dirty():
+        if self._buffer_dirty():
             if not self._confirm_unsaved_before_destructive_action():
                 if self._active_project_path is not None:
                     self._suppress_path_change = True
@@ -829,10 +833,10 @@ class ValidateWindow(QMainWindow):
             return
         path = self.path_input.text().strip()
         project = self._state.last_project
-        if self._faalwijzen_edit.is_active():
+        if grid := self._grid_edit():
             try:
-                project = self._faalwijzen_edit.materialize_for_run()
-            except FaalwijzenMaterializeBlockedError as exc:
+                project = grid.materialize_for_run()
+            except MaterializeBlockedError as exc:
                 self._show_run_error(UserFacingError(code="EDIT_VALIDATION_BLOCKED", message=str(exc)))
                 return
         self._clear_compare_view()
@@ -1224,8 +1228,8 @@ class ValidateWindow(QMainWindow):
 
     def _sync_save_buttons(self) -> None:
         can_save = (
-            self._faalwijzen_edit.is_active()
-            and self._faalwijzen_edit.is_dirty()
+            self._grid_edit() is not None
+            and self._buffer_dirty()
             and not self._run_runner.busy
             and not self._compare_runner.busy
         )
@@ -1233,7 +1237,7 @@ class ValidateWindow(QMainWindow):
         self.save_as_button.setEnabled(can_save)
 
     def _sync_dirty_ui(self) -> None:
-        dirty = self._faalwijzen_edit.is_active() and self._faalwijzen_edit.is_dirty()
+        dirty = self._buffer_dirty()
         title = "RCM2 desktop — validate tracer-bullet"
         self.setWindowTitle(f"{title}*" if dirty else title)
         self._sync_save_buttons()
@@ -1242,7 +1246,7 @@ class ValidateWindow(QMainWindow):
         if self._run_runner.busy:
             self.statusBar().showMessage(messages.SAVE_BLOCKED_WHILE_RUN, 3000)
             return False
-        if not self._faalwijzen_edit.is_active() or not self._faalwijzen_edit.is_dirty():
+        if not self._buffer_dirty():
             return True
         if self._active_project_path is None:
             return self._save_as()
@@ -1252,7 +1256,7 @@ class ValidateWindow(QMainWindow):
         if self._run_runner.busy:
             self.statusBar().showMessage(messages.SAVE_BLOCKED_WHILE_RUN, 3000)
             return False
-        if not self._faalwijzen_edit.is_active() or not self._faalwijzen_edit.is_dirty():
+        if not self._buffer_dirty():
             return True
         filename, _selected_filter = QFileDialog.getSaveFileName(
             self,
@@ -1265,8 +1269,11 @@ class ValidateWindow(QMainWindow):
         return self._persist_to_path(Path(filename), check_conflict=False)
 
     def _persist_to_path(self, target_path: Path, *, check_conflict: bool) -> bool:
+        grid = self._grid_edit()
+        if grid is None:
+            return False
         try:
-            project = self._faalwijzen_edit.materialize_for_save()
+            project = grid.materialize_for_save()
             success = save_project_atomically(
                 project,
                 target_path,
@@ -1285,13 +1292,13 @@ class ValidateWindow(QMainWindow):
         self._suppress_path_change = True
         self.path_input.setText(str(success.path))
         self._suppress_path_change = False
-        self._faalwijzen_edit.mark_saved()
+        grid.reset(project)
         self.statusBar().showMessage(messages.SAVE_SUCCESS_STATUS, 3000)
         self._sync_dirty_ui()
         return True
 
     def _confirm_unsaved_before_destructive_action(self) -> bool:
-        if not self._faalwijzen_edit.is_active() or not self._faalwijzen_edit.is_dirty():
+        if not self._buffer_dirty():
             return True
         choice = self._show_unsaved_dialog()
         if choice == "save":

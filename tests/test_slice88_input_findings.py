@@ -34,7 +34,7 @@ from rcm_desktop.adapter.entity_table_model import (
     cell_tooltip_for_errors,
 )
 from rcm_desktop.adapter.entity_grid_config import entity_grid_config_for_view
-from rcm_desktop.adapter.faalwijzen_edit_service import CellErrorView
+from rcm_desktop.adapter.tabular_edit_types import CellErrorView
 from rcm_desktop.adapter.input_grid_findings import inject_input_grid_findings
 from rcm_desktop.adapter.input_revalidation_service import revalidate_input_buffer
 from rcm_desktop.adapter.workspace_menu_spec import WORKSPACE_MENU_SPEC

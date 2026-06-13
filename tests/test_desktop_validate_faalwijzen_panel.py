@@ -9,7 +9,7 @@ pytest.importorskip("PySide6")
 from PySide6.QtWidgets import QApplication
 
 from rcm_core.persistence import load_project
-from rcm_desktop.adapter.faalwijzen_edit_service import FaalwijzenEditService
+from rcm_desktop.adapter.entity_edit_service import EntityEditService
 from rcm_desktop.views.validate_faalwijzen_panel import ValidateFaalwijzenPanel
 
 
@@ -27,7 +27,7 @@ def sample_project():
 
 def test_panel_mount_filter_and_bulk(sample_project):
     _ensure_app()
-    svc = FaalwijzenEditService()
+    svc = EntityEditService.for_view("input.faalwijzen")
     svc.init(sample_project)
     panel = ValidateFaalwijzenPanel()
     panel.attach(svc, sample_project)

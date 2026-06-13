@@ -136,7 +136,6 @@ from rcm_desktop.adapter.entity_grid_column_settings import (
     read_hidden_entity_columns,
     write_hidden_entity_columns,
 )
-from rcm_desktop.adapter.faalwijzen_edit_service import FaalwijzenEditService
 from rcm_desktop.views.fm_editor_dialog import FmEditorDialog
 from rcm_desktop.views.grid_dirty_guard import resolve_grid_dirty_before_editor
 from rcm_desktop.views.model_settings_dialog import ModelSettingsDialog
@@ -144,7 +143,7 @@ from rcm_desktop.views.validate_faalwijzen_panel import ValidateFaalwijzenPanel
 from rcm_desktop.views.import_wizard_dialog import ImportDialogInput, run_import_wizard
 from rcm_desktop.adapter.portfolio_wizard_service import persist_portfolio_wizard_result
 from rcm_desktop.adapter.rcm_cost_parity_service import build_parity_view
-from rcm_core.rcm_cost_benchmark import has_aw_benchmarks
+from rcm_desktop.adapter.view_core_facade import has_aw_benchmarks
 from rcm_desktop.views.portfolio_wizard_dialog import run_portfolio_wizard_with_root_picker
 from rcm_desktop.views.rcm_cost_parity_dialog import show_rcm_cost_parity_dialog
 from rcm_desktop.views.compare_slot_column import set_compare_placeholder
@@ -200,7 +199,11 @@ from rcm_desktop.views.panels.pbs_tree_navigation_binding import (
     pbs_tree_navigate,
     pbs_tree_reorder,
 )
-from rcm_desktop.views.panels.top10_subbar_panel import build_top10_subbar_panel
+from rcm_desktop.views.panels.top10_workspace_binding import (
+    build_and_wire_top10_subbar,
+    refresh_contribution_year_combo,
+    refresh_nb_effect_filter_combo,
+)
 from rcm_desktop.views.panels.workspace_shutdown_binding import (
     any_runner_busy,
     cancel_background_runners as cancel_window_background_runners,
@@ -237,7 +240,6 @@ from rcm_desktop.adapter.results_workspace_orchestrator import (
     WorkspaceUiSyncPlan,
     plan_compare_chrome,
 )
-from rcm_core.effect_impact_service import EffectNbFilterSet
 from rcm_desktop.adapter.results_workspace_state import (
     ALL_METRICS,
     METRIC_FAALMOMENTEN,
@@ -491,89 +493,13 @@ class ResultsWorkspaceWindow(QMainWindow):
         self._apply_semantic_status_style(self.validate_status_label, "idle")
 
     def _build_top10_subbar(self) -> None:
-        subbar = build_top10_subbar_panel()
-        self.top10_subbar = subbar.widget
-        self.metric_combo = subbar.metric_combo
-        self.nb_effect_filter_combo = subbar.nb_effect_filter_combo
-        self.horizon_button_group = subbar.horizon_button_group
-        self.horizon_lifecycle_button = subbar.horizon_lifecycle_button
-        self.horizon_per_year_button = subbar.horizon_per_year_button
-        self.contribution_year_combo = subbar.contribution_year_combo
-        self.nb_display_button_group = subbar.nb_display_button_group
-        self.nb_hours_button = subbar.nb_hours_button
-        self.nb_percent_button = subbar.nb_percent_button
-        self.metric_combo.currentIndexChanged.connect(self._on_metric_combo_changed)
-        self.nb_effect_filter_combo.filter_changed.connect(self._on_nb_effect_filter_changed)
-        self.horizon_lifecycle_button.clicked.connect(
-            lambda _c=False: self.workspace_state.set_contribution_horizon("lifecycle")
-        )
-        self.horizon_per_year_button.clicked.connect(
-            lambda _c=False: self.workspace_state.set_contribution_horizon("per_year")
-        )
-        self.contribution_year_combo.currentIndexChanged.connect(
-            self._on_contribution_year_combo_changed
-        )
-        self.nb_hours_button.clicked.connect(
-            lambda _c=False: self.workspace_state.set_unavailability_display("hours")
-        )
-        self.nb_percent_button.clicked.connect(
-            lambda _c=False: self.workspace_state.set_unavailability_display("percent")
-        )
-
-    def _on_metric_combo_changed(self, _idx: int) -> None:
-        metric = self.metric_combo.currentData()
-        if isinstance(metric, str):
-            self.workspace_state.set_metric(metric)
-
-    def _on_nb_effect_filter_changed(self, filt: EffectNbFilterSet) -> None:
-        self.workspace_state.set_effect_nb_filter(filt)
+        build_and_wire_top10_subbar(self)
 
     def _refresh_nb_effect_filter_combo(self, project: object) -> None:
-        if project is None:
-            self.nb_effect_filter_combo.set_klassen(())
-            return
-        from rcm_core.models import RCMProject
-
-        from rcm_desktop.adapter.nb_effect_filter_presentation import (
-            build_nb_effect_filter_presentation,
-        )
-
-        if isinstance(project, RCMProject):
-            session = self._project_session()
-            fm_results: tuple = ()
-            if session.run is not None and session.run.fm_core_results:
-                fm_results = tuple(session.run.fm_core_results)
-            presentation = build_nb_effect_filter_presentation(project, fm_results)
-            self.nb_effect_filter_combo.set_presentation(presentation)
-            self.nb_effect_filter_combo.set_filter(
-                self.workspace_state.snapshot().effect_nb_filter
-            )
-
-    def _on_contribution_year_combo_changed(self, _idx: int) -> None:
-        data = self.contribution_year_combo.currentData()
-        if data == "average":
-            self.workspace_state.set_contribution_year_choice("average")
-        elif isinstance(data, int):
-            self.workspace_state.set_contribution_year_choice(data)
+        refresh_nb_effect_filter_combo(self, project)
 
     def _refresh_contribution_year_combo(self, project) -> None:
-        """Vul kalenderjaren uit projectconfig (alleen bij geladen project)."""
-        blocker = self.contribution_year_combo.blockSignals(True)
-        current = self.contribution_year_combo.currentData()
-        self.contribution_year_combo.clear()
-        self.contribution_year_combo.addItem(
-            messages.WORKSPACE_CONTRIBUTION_YEAR_AVERAGE,
-            userData="average",
-        )
-        session = self._project_session()
-        if session is not None:
-            for year in wss.calendar_years_for_session(session):
-                self.contribution_year_combo.addItem(str(year), userData=year)
-        if current is not None:
-            idx = self.contribution_year_combo.findData(current)
-            if idx >= 0:
-                self.contribution_year_combo.setCurrentIndex(idx)
-        self.contribution_year_combo.blockSignals(blocker)
+        refresh_contribution_year_combo(self, project)
 
     def _build_pbs_sidebar(self) -> None:
         pbs = build_pbs_sidebar_panel()
@@ -1160,6 +1086,10 @@ class ResultsWorkspaceWindow(QMainWindow):
         self._rerender_detail_for_current_scope()
         self._refresh_kpi_table_view()
         self._update_report_button_enabled()
+        if isinstance(run_result, RunResult) and run_result.status == "done":
+            project = self._state.last_project
+            if project is not None:
+                self._refresh_nb_effect_filter_combo(project)
         if isinstance(run_result, RunResult) and run_result.error is not None:
             self._show_run_error(run_result.error)
 
@@ -1369,7 +1299,6 @@ class ResultsWorkspaceWindow(QMainWindow):
             self._state.set_last_project(result.project, path=path)
         if result.run_result is not None:
             self._state.set_last_run(result.run_result)
-        grid_svc.mark_saved()
         return True
 
     def _revalidate_input(self) -> None:

@@ -4,6 +4,7 @@ from PySide6.QtCore import QObject, Signal, Slot
 
 from rcm_desktop.adapter import preview_service
 from rcm_desktop.adapter import validate_service
+from rcm_desktop.adapter.adapter_error_handling import user_facing_from_exception
 from rcm_desktop.adapter.validate_service import DetailItem, UserFacingError, ValidateResult
 from rcm_desktop.adapter.qt.background_runner import BackgroundRunner
 
@@ -30,9 +31,12 @@ class _ValidateWorker(QObject):
                         message=str(exc),
                     )
                 ],
-                error=UserFacingError(
+                error=user_facing_from_exception(
+                    "rcm_desktop.adapter.validate_runner",
                     code="UNEXPECTED_ERROR",
                     message="Er ging iets mis tijdens valideren.",
+                    exc=exc,
+                    context="validate runner onverwachte fout",
                 ),
             )
             self.finished.emit(result, None, None)

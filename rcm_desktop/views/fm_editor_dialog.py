@@ -351,6 +351,7 @@ class FmEditorDialog(QDialog):
         self._refresh_aging_fields_visibility()
         self._refresh_consistency_warnings()
         self._refresh_results_tab()
+        self._dirty = False
 
     def _refresh_results_tab(self) -> None:
         if self._results_tab_index is None:

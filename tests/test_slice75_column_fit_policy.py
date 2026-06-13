@@ -42,7 +42,7 @@ def test_viewport_plan_stretch_on_text_columns_only() -> None:
 
     assert is_stretch_column(0) is False
 
-    assert is_stretch_column(2) is False
+    assert is_stretch_column(3) is False
 
     assert is_stretch_column(4) is False
 

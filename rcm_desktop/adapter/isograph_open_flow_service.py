@@ -16,6 +16,7 @@ from rcm_core.models import RCMProject
 from rcm_desktop.adapter.isograph_import_wizard_service import ImportWizardResult
 from rcm_desktop.adapter.project_path_resolution_service import ResolvedProjectPath
 from rcm_desktop.adapter.save_service import save_project_atomically
+from rcm_desktop.adapter.adapter_error_handling import user_facing_from_exception
 from rcm_desktop.adapter.validate_service import UserFacingError, ValidateResult
 from rcm_desktop.adapter.validation_orchestrator import validate_in_memory
 
@@ -43,10 +44,13 @@ def check_workbook_importable(path: Path) -> UserFacingError | None:
             code="FILE_IO_ERROR",
             message="Het Excel-bestand kon niet worden gelezen.",
         )
-    except Exception:
-        return UserFacingError(
+    except Exception as exc:
+        return user_facing_from_exception(
+            "rcm_desktop.adapter.isograph_open_flow_service",
             code="WORKBOOK_UNREADABLE",
             message="Het bestand is geen geldige RCM-Cost Excel-export.",
+            exc=exc,
+            context="workbook headers lezen mislukt",
         )
 
     missing_sheets = sorted(set(MUST_V1_SHEET_HEADERS) - set(headers))

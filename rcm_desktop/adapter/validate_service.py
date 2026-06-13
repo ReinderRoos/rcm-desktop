@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from rcm_core.models import RCMProject
+from rcm_desktop.adapter.adapter_error_handling import user_facing_from_exception
 from rcm_core.persistence import load_project
 from rcm_core.validators import ValidationError, validate_aannamen, validate_project
 
@@ -17,7 +18,7 @@ class DetailItem:
     context: str = ""
 
 
-@dataclass(frozen=True)
+@dataclass
 class UserFacingError:
     code: str
     message: str
@@ -64,13 +65,19 @@ def run(project_path: str | Path) -> tuple[ValidateResult, RCMProject | None]:
             ),
             None,
         )
-    except Exception:
+    except Exception as exc:
         return (
             ValidateResult(
                 status="error",
                 summary="Onverwachte fout tijdens laden van project.",
                 details=[],
-                error=UserFacingError(code="UNEXPECTED_ERROR", message="Er ging iets mis tijdens valideren."),
+                error=user_facing_from_exception(
+                    "rcm_desktop.adapter.validate_service",
+                    code="UNEXPECTED_ERROR",
+                    message="Er ging iets mis tijdens valideren.",
+                    exc=exc,
+                    context="onverwachte fout bij laden project",
+                ),
             ),
             None,
         )
@@ -89,9 +96,12 @@ def run(project_path: str | Path) -> tuple[ValidateResult, RCMProject | None]:
                         message=str(exc),
                     )
                 ],
-                error=UserFacingError(
+                error=user_facing_from_exception(
+                    "rcm_desktop.adapter.validate_service",
                     code="UNEXPECTED_ERROR",
                     message="Er ging iets mis tijdens valideren.",
+                    exc=exc,
+                    context="onverwachte fout tijdens validate_project",
                 ),
             ),
             None,

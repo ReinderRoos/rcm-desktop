@@ -6,7 +6,7 @@ from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QFontMetrics, QMouseEvent, QStandardItem, QStandardItemModel
 from PySide6.QtWidgets import QComboBox
 
-from rcm_core.effect_impact_service import EffectNbFilterSet
+from rcm_desktop.adapter.view_core_facade import EffectNbFilterSet
 
 from rcm_desktop.adapter.nb_effect_filter_presentation import (
     NbEffectFilterEntry,

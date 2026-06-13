@@ -66,8 +66,7 @@ def test_editing_host_commit_grid_triggers_incremental_run(
     assert result.project is not None
     assert result.project.faalwijzes["FM-001"].mttf_jaar == pytest.approx(44.0)
     mock_inc.assert_called_once()
-    grid.mark_saved()
-    assert not grid.is_dirty()
+    assert not host.is_grid_dirty()
 
 
 def test_fm_editor_dialog_reflects_shared_grid_failure_type(

@@ -1360,8 +1360,8 @@ def test_workspace_batch_grid_smoke_filter_and_edit(monkeypatch):
     host = window._editing_host
     svc = host.grid_service()
     assert svc is not None
-    row = next(r for r in svc.rows() if r.fm_id == "FM-001")
-    assert row.failure_type == "aging"
+    row = next(r for r in svc.rows() if r.row_key == "FM-001")
+    assert row.values["failure_type"] == "aging"
 
 
 def test_fm_editor_ok_updates_mttf_and_triggers_incremental_run(monkeypatch, tmp_path):

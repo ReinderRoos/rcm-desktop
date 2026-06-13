@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from PySide6.QtCore import QModelIndex, QSortFilterProxyModel
 
-from rcm_core.models import RCMProject
+from rcm_desktop.adapter.view_core_facade import RCMProject
 
 from rcm_desktop.adapter.entity_table_model import EntityTableModel
 from rcm_desktop.adapter.input_scope_policy import row_in_scope

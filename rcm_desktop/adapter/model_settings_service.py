@@ -10,6 +10,7 @@ from rcm_core.models import AgingDistribution, FailureType, RCMProject
 from rcm_core.validators import validate_project
 from rcm_core.incremental_run import run_incremental_analysis
 
+from rcm_desktop.adapter.adapter_error_handling import log_adapter_exception
 from rcm_desktop.adapter.run_service import RunResult, build_run_result
 from rcm_desktop.adapter.save_service import SaveConflictError, save_project_atomically
 
@@ -223,7 +224,12 @@ def commit_model_settings(
                 pbs_results=incremental.pbs_results,
                 summary_prefix="Modelinstellingen opgeslagen",
             )
-        except Exception:
+        except Exception as exc:
+            log_adapter_exception(
+                "rcm_desktop.adapter.model_settings_service",
+                exc,
+                context="incrementele analyse na modelinstellingen mislukt",
+            )
             return ModelSettingsCommitResult(
                 ok=False,
                 errors=("Incrementele analyse mislukt.",),

@@ -69,6 +69,10 @@ _COLLAPSE_EXPANDED = "▼"
 _COLLAPSE_COLLAPSED = "▶"
 
 
+def _on_output_side(snapshot: WorkspaceStateSnapshot) -> bool:
+    return snapshot.workspace_side != SIDE_INPUT
+
+
 @dataclass(frozen=True)
 class WorkspaceViewDropdownItem:
     view_id: str
@@ -255,7 +259,7 @@ def _plan_navigation(snapshot: WorkspaceStateSnapshot) -> WorkspaceNavigationPla
 def _plan_bijdragen_toolbar(
     snapshot: WorkspaceStateSnapshot,
 ) -> BijdragenToolbarPlan | None:
-    if snapshot.modus != MODE_BIJDRAGEN:
+    if not _on_output_side(snapshot) or snapshot.modus != MODE_BIJDRAGEN:
         return None
     pres = snapshot.contribution_presentation
     horizon_metric = snapshot.metric in (
@@ -411,6 +415,8 @@ def _inactive_fm_toolbar() -> FmToolbarPlan:
 
 
 def _plan_shared_toolbar(snapshot: WorkspaceStateSnapshot) -> SharedToolbarPlan:
+    if not _on_output_side(snapshot):
+        return SharedToolbarPlan(effect_nb_filter_in_shared_row=False)
     modus = snapshot.modus
     if modus == MODE_BIJDRAGEN:
         visible = snapshot.metric == METRIC_NIET_BESCHIKBAARHEID
@@ -434,7 +440,7 @@ class ResultsWorkspaceOrchestrator:
         split_depth = workspace_detail_split_render_depth(previous, current)
         fm_toolbar = (
             _plan_fm_toolbar(current)
-            if current.modus == MODE_FM_DETAIL
+            if current.modus == MODE_FM_DETAIL and _on_output_side(current)
             else _inactive_fm_toolbar()
         )
         return WorkspaceUiSyncPlan(
@@ -446,7 +452,9 @@ class ResultsWorkspaceOrchestrator:
             shared_toolbar=_plan_shared_toolbar(current),
             bijdragen=_plan_bijdragen_toolbar(current),
             lcc_toolbar=(
-                _plan_lcc_toolbar(current) if current.modus == MODE_LCC else None
+                _plan_lcc_toolbar(current)
+                if current.modus == MODE_LCC and _on_output_side(current)
+                else None
             ),
             fm_toolbar=fm_toolbar,
             compare=plan_compare_chrome(current),

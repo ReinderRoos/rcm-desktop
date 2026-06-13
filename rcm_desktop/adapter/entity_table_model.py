@@ -13,7 +13,7 @@ from rcm_core.models import RCMProject
 from rcm_desktop import messages
 from rcm_desktop.adapter.entity_cell_display import display_faalwijze_field
 from rcm_desktop.adapter.entity_edit_service import EntityEditService, EntityRowView
-from rcm_desktop.adapter.faalwijzen_edit_service import CellErrorView
+from rcm_desktop.adapter.tabular_edit_types import CellErrorView
 from rcm_desktop.adapter.entity_grid_config import EntityGridViewConfig
 from rcm_desktop.adapter.input_search_text import build_row_search_haystack
 from rcm_desktop.adapter.entity_grid_derived_values import (

@@ -14,6 +14,7 @@ from rcm_core.models import RCMProject
 
 from rcm_desktop.adapter.editing_session import EditingSession
 from rcm_desktop.adapter.fm_edit_bundle_service import FmEditBundle
+from rcm_desktop.adapter.adapter_error_handling import log_adapter_exception
 from rcm_desktop.adapter.run_service import RunResult, build_run_result
 from rcm_desktop.adapter.save_service import SaveConflictError, save_project_atomically
 
@@ -223,7 +224,12 @@ def commit_edits(
             path_obj,
             full_recompute=False,
         )
-    except Exception:
+    except Exception as exc:
+        log_adapter_exception(
+            "rcm_desktop.adapter.fm_edit_commit_service",
+            exc,
+            context="incrementele analyse na fm-edit commit mislukt",
+        )
         return FmEditCommitResult(
             ok=False,
             errors=("Incrementele analyse mislukt.",),

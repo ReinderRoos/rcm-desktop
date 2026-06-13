@@ -3,8 +3,6 @@
 from __future__ import annotations
 
 import copy
-import hashlib
-import json
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 from typing import Any
@@ -15,15 +13,18 @@ from rcm_core.editing.validation import normalize_key
 from rcm_core.models import RCMProject
 
 from rcm_desktop.adapter.editing_session import EditingSession
+from rcm_desktop.adapter.input_revalidation_service import revalidate_input_buffer
 from rcm_desktop.adapter.entity_grid_config import (
     EntityGridViewConfig,
     entity_grid_config_for_view,
 )
-from rcm_desktop.adapter.faalwijzen_edit_service import (
+from rcm_desktop.adapter.tabular_edit_types import (
     BulkChangeResult,
     CellErrorView,
-    FaalwijzenMaterializeBlockedError,
+    MaterializeBlockedError,
 )
+
+FaalwijzenMaterializeBlockedError = MaterializeBlockedError
 
 
 @dataclass(frozen=True)
@@ -47,7 +48,6 @@ class EntityEditService:
         self._editable = config.editable_columns
         self._editing = EditingSession()
         self._changed = changed
-        self._saved_digest = ""
         self._rows_cache: list[EntityRowView] | None = None
 
     @classmethod
@@ -67,7 +67,6 @@ class EntityEditService:
 
     def attach_editing_session(self, session: EditingSession) -> None:
         self._editing = session
-        self._saved_digest = _session_content_digest(self._session, self._entity)
         self._invalidate_rows_cache()
 
     def bind_changed(self, callback: Callable[[], None] | None) -> None:
@@ -82,7 +81,6 @@ class EntityEditService:
 
     def clear(self) -> None:
         self._editing = EditingSession()
-        self._saved_digest = ""
         self._invalidate_rows_cache()
 
     def init(self, project: RCMProject) -> None:
@@ -91,26 +89,14 @@ class EntityEditService:
     def reset(self, project: RCMProject) -> None:
         self._editing = EditingSession()
         self._editing.load_project(project)
-        self._saved_digest = _session_content_digest(self._session, self._entity)
         self._invalidate_rows_cache()
-
-    def is_dirty(self) -> bool:
-        if not self._editing.is_loaded:
-            return False
-        return _session_content_digest(self._session, self._entity) != self._saved_digest
-
-    def mark_saved(self) -> None:
-        if not self._editing.is_loaded:
-            return
-        self._saved_digest = _session_content_digest(self._session, self._entity)
 
     def discard_changes(self) -> None:
         if not self._editing.is_loaded:
             return
         original = copy.deepcopy(self._session.get("edit_original", {}).get(self._entity, []))
         self._editing.apply_entity_rows(self._entity, original)
-        self._editing.validate()
-        self._saved_digest = _session_content_digest(self._session, self._entity)
+        revalidate_input_buffer(self._editing)
         self._invalidate_rows_cache()
         if self._changed:
             self._changed()
@@ -180,17 +166,19 @@ class EntityEditService:
 
         original_rows = copy.deepcopy(self._session["edit_current"][self._entity])
         self._editing.apply_entity_rows(self._entity, rows)
-        self._editing.validate()
+        revalidate_input_buffer(self._editing)
         msgs: list[str] = []
         for rk in row_keys:
             key = normalize_key(rk)
             fe = _errors_for_row(self._session, self._entity, key)
             if field in fe:
-                msgs.append(f"{key}/{field}: {fe[field][0].message}")
+                blocking = [e for e in fe[field] if e.severity == "error"]
+                if blocking:
+                    msgs.append(f"{key}/{field}: {blocking[0].message}")
 
         if msgs:
             self._editing.apply_entity_rows(self._entity, original_rows)
-            self._editing.validate()
+            revalidate_input_buffer(self._editing)
             return BulkChangeResult(ok=False, errors=tuple(msgs), applied_count=0)
 
         self._invalidate_rows_cache()
@@ -250,7 +238,7 @@ class EntityEditService:
         if not self._editing.is_loaded:
             raise RuntimeError("EntityEditService is not initialized")
         if blocking_edit_error_count(self._session) > 0:
-            raise FaalwijzenMaterializeBlockedError(
+            raise MaterializeBlockedError(
                 "Los eerst de bewerkingsfouten op voordat je een analyse start."
             )
         return self._editing.build_project()
@@ -294,14 +282,6 @@ def _errors_for_row(
             for e in arr
         )
     return out
-
-
-def _session_content_digest(session: dict[str, Any], entity: str) -> str:
-    rows = session.get("edit_current", {}).get(entity, [])
-    payload = json.dumps(rows, sort_keys=True, default=str)
-    return hashlib.sha256(payload.encode()).hexdigest()
-
-
 def _row_to_view(
     row: dict[str, Any],
     session: dict[str, Any],

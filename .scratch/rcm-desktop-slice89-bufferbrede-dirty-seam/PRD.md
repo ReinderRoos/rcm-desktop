@@ -1,6 +1,6 @@
-# PRD: Buffer-brede dirty-seam op EditingHost (slice 89)
+﻿# PRD: Buffer-brede dirty-seam op EditingHost (slice 89)
 
-**Triage-label:** `ready-for-agent`
+**Triage-label:** `done`
 
 ## Problem Statement
 

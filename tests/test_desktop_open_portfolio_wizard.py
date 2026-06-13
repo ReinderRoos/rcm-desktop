@@ -57,6 +57,11 @@ def test_open_portfolio_wizard_smoke(monkeypatch, qtbot, tmp_path: Path) -> None
         "rcm_desktop.views.results_workspace_window.QFileDialog.getSaveFileName",
         lambda *args, **kwargs: (str(save_path), ""),
     )
+    monkeypatch.setattr(
+        ResultsWorkspaceWindow,
+        "_start_validate",
+        lambda self: None,
+    )
 
     window = ResultsWorkspaceWindow()
     qtbot.addWidget(window)

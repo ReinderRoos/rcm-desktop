@@ -10,6 +10,7 @@ from rcm_core.models import FMResult, PBSResult, RCMProject
 from rcm_desktop.adapter.planning_overlay_state import PlanningOverlayState
 from rcm_desktop.adapter.planning_run_materializer import materialize_project_for_overlay
 from rcm_desktop.adapter.result_view_service import FMResultRow, PBSResultRow, build_pbs_rows, build_rows
+from rcm_desktop.adapter.adapter_error_handling import user_facing_from_exception
 from rcm_desktop.adapter.validate_service import UserFacingError
 
 
@@ -127,16 +128,19 @@ def run(
             parallel=parallel,
             scenario_key=scenario_key,
         )
-    except Exception:
+    except Exception as exc:
         return RunResult(
             status="error",
             summary="Run mislukt door een interne fout.",
             metrics=RunMetrics(fm_result_count=0, total_lifecycle_faalmomenten=0.0, total_cost_eur=0.0),
             rows=[],
             pbs_rows=[],
-            error=UserFacingError(
+            error=user_facing_from_exception(
+                "rcm_desktop.adapter.run_service",
                 code="RUN_INTERNAL_ERROR",
                 message="Er ging iets mis tijdens de analyse-run.",
+                exc=exc,
+                context="run_incremental_analysis mislukt",
             ),
             fm_core_results=tuple(),
         )

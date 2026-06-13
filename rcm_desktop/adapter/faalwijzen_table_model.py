@@ -1,4 +1,4 @@
-"""Qt table model + delegates over FaalwijzenEditService."""
+"""Qt table model + delegates over EntityEditService (faalwijzen view)."""
 
 from __future__ import annotations
 
@@ -9,12 +9,8 @@ from PySide6.QtGui import QColor
 from PySide6.QtWidgets import QAbstractItemView, QComboBox, QStyledItemDelegate, QStyleOptionViewItem, QWidget
 
 from rcm_desktop import messages
-from rcm_desktop.adapter.faalwijzen_edit_service import (
-    EDITABLE_FIELDS,
-    FaalwijzenEditService,
-    FaalwijzenRowView,
-    SLICE_FIELD_KEYS,
-)
+from rcm_desktop.adapter.entity_edit_service import EntityEditService, EntityRowView
+from rcm_desktop.adapter.faalwijzen_grid_contract import EDITABLE_FIELDS, SLICE_FIELD_KEYS
 from rcm_desktop.formatting import format_float
 from rcm_core.models import RCMProject
 
@@ -61,7 +57,7 @@ class FaalwijzenTableModel(QAbstractTableModel):
     )
     _READONLY_COLS = frozenset({0, 1})
 
-    def __init__(self, service: FaalwijzenEditService, project: RCMProject, parent: QWidget | None = None) -> None:
+    def __init__(self, service: EntityEditService, project: RCMProject, parent: QWidget | None = None) -> None:
         super().__init__(parent)
         self._service = service
         self._project = project
@@ -94,15 +90,18 @@ class FaalwijzenTableModel(QAbstractTableModel):
             return base
         return base | Qt.ItemIsEditable
 
-    def _row_at(self, row_index: int) -> FaalwijzenRowView:
+    def _row_at(self, row_index: int) -> EntityRowView:
         rows = self._service.rows()
         return rows[row_index]
+
+    def _field_value(self, row_v: EntityRowView, field: str) -> Any:
+        return row_v.values.get(field)
 
     def _column_field(self, col: int) -> str:
         return self._COLUMNS[col]
 
     def fm_id_at(self, row_index: int) -> str:
-        return self._row_at(row_index).fm_id
+        return self._row_at(row_index).row_key
 
     def data(self, index: QModelIndex, role: int = Qt.DisplayRole):
         if not index.isValid():
@@ -130,33 +129,30 @@ class FaalwijzenTableModel(QAbstractTableModel):
 
         return self._display_value(row_v, field)
 
-    def _edit_value(self, row_v: FaalwijzenRowView, field: str) -> Any:
+    def _edit_value(self, row_v: EntityRowView, field: str) -> Any:
         if field == "fm_id":
-            return row_v.fm_id
+            return row_v.row_key
         if field == "pbs_id":
-            return row_v.pbs_id
+            return str(row_v.values.get("pbs_id") or "")
         if field == "failure_type":
-            return row_v.failure_type
+            return str(row_v.values.get("failure_type") or "random")
         if field == "is_evident":
-            return not row_v.is_evident
+            return not bool(row_v.values.get("is_evident", True))
         if field == "aging_distribution":
-            return row_v.aging_distribution
+            return str(row_v.values.get("aging_distribution") or "normal")
         if field == "faalwijze_omschrijving":
-            return row_v.faalwijze_omschrijving
+            return str(row_v.values.get("faalwijze_omschrijving") or "")
         if field == "functie_id":
-            return row_v.functie_id
-        if field == "mttf_jaar":
-            return self._float_edit_string(row_v.mttf_jaar)
-        if field == "sigma_jaar":
-            return self._float_edit_string(row_v.sigma_jaar)
-        if field == "beta_jaar":
-            return self._float_edit_string(row_v.beta_jaar)
-        if field == "repair_quality":
-            return self._float_edit_string(row_v.repair_quality)
-        if field == "cost_cm_eur":
-            return self._float_edit_string(row_v.cost_cm_eur)
-        if field == "p_ongewenste_gebeurtenis":
-            return self._float_edit_string(row_v.p_ongewenste_gebeurtenis)
+            return str(row_v.values.get("functie_id") or "")
+        if field in {
+            "mttf_jaar",
+            "sigma_jaar",
+            "beta_jaar",
+            "repair_quality",
+            "cost_cm_eur",
+            "p_ongewenste_gebeurtenis",
+        }:
+            return self._float_edit_string(row_v.values.get(field))
         return None
 
     def _float_edit_string(self, value: Any) -> str:
@@ -166,21 +162,23 @@ class FaalwijzenTableModel(QAbstractTableModel):
             return str(int(value))
         return str(value)
 
-    def _display_value(self, row_v: FaalwijzenRowView, field: str) -> str:
+    def _display_value(self, row_v: EntityRowView, field: str) -> str:
         if field == "fm_id":
-            return row_v.fm_id
+            return row_v.row_key
         if field == "pbs_id":
-            return row_v.pbs_id
+            return str(row_v.values.get("pbs_id") or "")
+        failure_type = str(row_v.values.get("failure_type") or "random")
         if field == "failure_type":
-            return _FAILURE_TYPE_LABELS.get(row_v.failure_type, row_v.failure_type)
+            return _FAILURE_TYPE_LABELS.get(failure_type, failure_type)
+        aging = str(row_v.values.get("aging_distribution") or "normal")
         if field == "aging_distribution":
-            return _AGING_DISTRIBUTION_LABELS.get(row_v.aging_distribution, row_v.aging_distribution)
+            return _AGING_DISTRIBUTION_LABELS.get(aging, aging)
         if field == "is_evident":
-            return _nmf_display(row_v.is_evident)
+            return _nmf_display(bool(row_v.values.get("is_evident", True)))
         if field == "faalwijze_omschrijving":
-            return row_v.faalwijze_omschrijving
+            return str(row_v.values.get("faalwijze_omschrijving") or "")
         if field == "functie_id":
-            fid = _normalize_display_key(row_v.functie_id)
+            fid = _normalize_display_key(row_v.values.get("functie_id"))
             if not fid:
                 return ""
             fn = self._project.functies.get(fid)
@@ -196,7 +194,7 @@ class FaalwijzenTableModel(QAbstractTableModel):
             "p_ongewenste_gebeurtenis",
         ):
             if field == num_field:
-                val = getattr(row_v, field)
+                val = row_v.values.get(num_field)
                 if val is None:
                     return ""
                 try:
@@ -218,7 +216,7 @@ class FaalwijzenTableModel(QAbstractTableModel):
             raw = str(value)
         else:
             raw = value if isinstance(value, str) else str(value) if value is not None else ""
-        self._service.apply_change(row_v.fm_id, field, raw)
+        self._service.apply_change(row_v.row_key, field, raw)
         return True
 
     def emit_grid_refresh(self) -> None:

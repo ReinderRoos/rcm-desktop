@@ -19,8 +19,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from rcm_core.models import FMResult, RCMProject
-from rcm_core.rcm_cost_benchmark import ParityVerdict
+from rcm_desktop.adapter.view_core_facade import FMResult, ParityVerdict, RCMProject
 from rcm_desktop import messages
 from rcm_desktop.adapter.failure_validation_export_service import export_validation_excel
 from rcm_desktop.adapter.rcm_cost_parity_service import ParityView, ParityViewRow

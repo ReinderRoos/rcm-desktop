@@ -1,9 +1,9 @@
-# PRD — Slice 87: Input entiteiten-grid — PBS-scope, zoekbalk en performance
+﻿# PRD — Slice 87: Input entiteiten-grid — PBS-scope, zoekbalk en performance
 
-**Status:** ready-for-agent
+**Status:** done
 **Voorganger:** slice 83 (generiek entiteiten-grid), slice 81 (tabel-filterrij), slice 86 (PBS-navigatie)
 **Datum:** 2026-06-11
-**Triage:** `ready-for-agent`
+**Triage:** `done`
 
 > Synthese van de `/grill-with-docs`-sessies (2026-06-11), inclusief ADR-0014
 > en technische uitwerking. Vervangt de per-kolom filterrij op Input door

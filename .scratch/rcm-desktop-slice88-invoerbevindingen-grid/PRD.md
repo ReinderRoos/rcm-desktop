@@ -1,9 +1,9 @@
-# PRD — Slice 88: Invoerbevindingen in het entiteiten-grid
+﻿# PRD — Slice 88: Invoerbevindingen in het entiteiten-grid
 
-**Status:** ready-for-agent
+**Status:** done
 **Voorganger:** slice 83/87 (entiteiten-grid + performance), slice 49 (FM-editor consistentie-bevindingen), slice 46 (batch-grid)
 **Datum:** 2026-06-12
-**Triage:** `ready-for-agent`
+**Triage:** `done`
 
 > Synthese van de `/grill-with-docs`-sessie (2026-06-12). Vastgelegd in
 > `CONTEXT.md` (termen **Invoerbevinding**, **Controleer invoer**) en

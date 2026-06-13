@@ -33,8 +33,10 @@ from rcm_core.effect_impact_service import EffectNbFilterSet
 from rcm_desktop.adapter.lcc_type_filter import LCCTypeFilterSet
 
 from rcm_desktop.adapter.planning_overlay_state import PlanningOverlayState
+from rcm_desktop.adapter.workspace_navigation_policy import resolve_view_for_side_switch
 from rcm_desktop.adapter.workspace_view_registry import (
     DEFAULT_VIEW_BY_SIDE,
+    SIDE_INPUT,
     SIDE_OUTPUT,
     WORKSPACE_VIEW_REGISTRY,
     view_by_id,
@@ -288,6 +290,8 @@ class ResultsWorkspaceState:
 
         self._sticky_view_by_side: dict[str, str] = dict(DEFAULT_VIEW_BY_SIDE)
 
+        self._first_input_visit_pending = True
+
 
 
     def snapshot(self) -> WorkspaceStateSnapshot:
@@ -383,8 +387,10 @@ class ResultsWorkspaceState:
             raise ValueError(f"Onbekende werkruimte-zijde: {side!r}")
         if side == self._snapshot.workspace_side:
             return
-        sticky_view_id = self._sticky_view_by_side.get(
-            side, DEFAULT_VIEW_BY_SIDE[side]
+        sticky_view_id, self._first_input_visit_pending = resolve_view_for_side_switch(
+            side=side,
+            sticky_view_by_side=self._sticky_view_by_side,
+            first_input_visit_pending=self._first_input_visit_pending,
         )
         entry = view_by_id(WORKSPACE_VIEW_REGISTRY, sticky_view_id)
         if entry is None:
@@ -690,6 +696,9 @@ class ResultsWorkspaceState:
             MODE_BIJDRAGEN: SOURCE_FAALWIJZE,
             **{modus: SOURCE_PBS for modus in ALL_MODES if modus != MODE_BIJDRAGEN},
         }
+
+        self._sticky_view_by_side[SIDE_INPUT] = DEFAULT_VIEW_BY_SIDE[SIDE_INPUT]
+        self._first_input_visit_pending = True
 
         if self._snapshot == _DEFAULT_SNAPSHOT:
 
