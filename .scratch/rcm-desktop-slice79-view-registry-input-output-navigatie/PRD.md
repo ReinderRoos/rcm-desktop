@@ -1,9 +1,9 @@
 # PRD — Slice 79: View-registry + Input/Output-navigatie
 
-**Status:** ready-for-agent
+**Status:** done
 **Voorganger:** slice 76 (werkruimte-menubalk), slice 62 (werkruimte-panelen)
 **Datum:** 2026-06-11
-**Triage:** `ready-for-agent`
+**Triage:** `done`
 
 > Synthese van de `/grill-with-docs`-sessie (2026-06-11), besluiten 1 en 2.
 > **Tracer bullet** van de reeks 79–86: alle volgende slices registreren hun

@@ -1,6 +1,6 @@
 # PRD: Consolidatie & edit-unificatie (slice 90)
 
-**Triage-label:** `ready-for-agent`
+**Triage-label:** `done`
 
 Dit PRD bundelt *alle* aanbevelingen uit de architectuurreview van juni 2026
 (assen: performance, security, stabiliteit, architectuur). Conclusie van die
@@ -37,8 +37,8 @@ betrouwbaarheid op drie punten kwetsbaar is:
    runtime-imports van `rcm_core.*` in `views/` de UI/kern-decoupling-MUST uit
    AGENTS.md.
 
-Tot slot loopt de issue-tracker achter (slices 87–89 staan op
-`ready-for-agent` terwijl code en tests al gecommit zijn) en vervuilen
+Tot slot loopt de issue-tracker achter (slices 87–89 stonden op
+`ready-for-agent` terwijl code en tests al gecommit waren) en vervuilen
 gegenereerde cache-/bak-bestanden de git-status.
 
 ## Solution

@@ -24,7 +24,7 @@
     },
     "Kruisen 0-20% functieverlies": {
       "aanname_gevolg_kosten": "",
-      "aw_effect_type": "Kruisen",
+      "aw_effect_type": null,
       "categorie": "beschikbaarheid",
       "cost_gevolg_eur": 0.0,
       "functie_id": "06H-350.1.1.1.1.1",
@@ -2758,11 +2758,11 @@
       "cost_cm_eur": 4500.0,
       "downtime_per_failure": {
         "unit": "uur",
-        "value": 76024.4660691919
+        "value": 76024.47
       },
       "eindgevolg": "Niet",
       "faalwijze_omschrijving": "Veroudering bebording/bewegwijzering (statisch); MTTF=25 jr zonder SVO; niet merkbaar falen\nIA = 1980",
-      "failure_type": "aging",
+      "failure_type": "random",
       "fm_id": "06H-350.3.2.1.A.1",
       "functie_id": "06H-350.3.2.1",
       "is_evident": true,
@@ -2771,7 +2771,7 @@
       "notes": "",
       "p_ongewenste_gebeurtenis": 1.0,
       "pbs_id": "06H-350.3.2",
-      "repair_quality": 0.0,
+      "repair_quality": 1.0,
       "sigma_jaar": 3.75
     },
     "06H-350.3.20.3.1.A.1": {
@@ -10213,7 +10213,8 @@
       "object_naam": "Gaarkeukensluis",
       "ontwerpleeftijd_jaar": 0.0,
       "parent_pbs_id": null,
-      "pbs_id": "06H-350"
+      "pbs_id": "06H-350",
+      "volgorde": 0
     },
     "06H-350.1": {
       "aanname_leeftijd": "",
@@ -10228,7 +10229,8 @@
       "object_naam": "02 Schutsluis, HLD 047,2km, Gaarkeukensluis [06H-350-02]",
       "ontwerpleeftijd_jaar": 0.0,
       "parent_pbs_id": "06H-350",
-      "pbs_id": "06H-350.1"
+      "pbs_id": "06H-350.1",
+      "volgorde": 0
     },
     "06H-350.1.1": {
       "aanname_leeftijd": "",
@@ -10243,7 +10245,8 @@
       "object_naam": "Aandrijving en bewegingswerk, deuren",
       "ontwerpleeftijd_jaar": 0.0,
       "parent_pbs_id": "06H-350.1",
-      "pbs_id": "06H-350.1.1"
+      "pbs_id": "06H-350.1.1",
+      "volgorde": 0
     },
     "06H-350.1.1.1": {
       "aanname_leeftijd": "",
@@ -10258,7 +10261,8 @@
       "object_naam": "Aandrijving en bewegingswerk, elektrohydraulisch, deurplaatsnrs. 01 en 02, BEHO Brugkelder_101_Aandrijving en bewegingswerk (elektrohydraulisch)_ (BEHO en BOHO: n=4)",
       "ontwerpleeftijd_jaar": 0.0,
       "parent_pbs_id": "06H-350.1.1",
-      "pbs_id": "06H-350.1.1.1"
+      "pbs_id": "06H-350.1.1.1",
+      "volgorde": 0
     },
     "06H-350.1.1.1.1": {
       "aanname_leeftijd": "",
@@ -10273,7 +10277,8 @@
       "object_naam": "Buisleiding, rubber_1331_",
       "ontwerpleeftijd_jaar": 0.0,
       "parent_pbs_id": "06H-350.1.1.1",
-      "pbs_id": "06H-350.1.1.1.1"
+      "pbs_id": "06H-350.1.1.1.1",
+      "volgorde": 0
     },
     "06H-350.1.1.1.11": {
       "aanname_leeftijd": "",
@@ -10288,7 +10293,8 @@
       "object_naam": "Smeersysteem vetpomp 1, deurplaats 01_1497_",
       "ontwerpleeftijd_jaar": 0.0,
       "parent_pbs_id": "06H-350.1.1.1",
-      "pbs_id": "06H-350.1.1.1.11"
+      "pbs_id": "06H-350.1.1.1.11",
+      "volgorde": 1
     },
     "06H-350.1.1.1.13": {
       "aanname_leeftijd": "",
@@ -10303,7 +10309,8 @@
       "object_naam": "Trekduwstang, deurplaats 01_1556_",
       "ontwerpleeftijd_jaar": 0.0,
       "parent_pbs_id": "06H-350.1.1.1",
-      "pbs_id": "06H-350.1.1.1.13"
+      "pbs_id": "06H-350.1.1.1.13",
+      "volgorde": 2
     },
     "06H-350.1.1.1.2": {
       "aanname_leeftijd": "",
@@ -10318,7 +10325,8 @@
       "object_naam": "Buisleiding, staal_1331_",
       "ontwerpleeftijd_jaar": 0.0,
       "parent_pbs_id": "06H-350.1.1.1",
-      "pbs_id": "06H-350.1.1.1.2"
+      "pbs_id": "06H-350.1.1.1.2",
+      "volgorde": 3
     },
     "06H-350.1.1.1.3": {
       "aanname_leeftijd": "",
@@ -10333,7 +10341,8 @@
       "object_naam": "Cilinder, deurplaats 01_1119_",
       "ontwerpleeftijd_jaar": 0.0,
       "parent_pbs_id": "06H-350.1.1.1",
-      "pbs_id": "06H-350.1.1.1.3"
+      "pbs_id": "06H-350.1.1.1.3",
+      "volgorde": 4
     },
     "06H-350.1.1.1.5": {
       "aanname_leeftijd": "",
@@ -10348,7 +10357,8 @@
       "object_naam": "Draaipunt, deurplaats 01_1164_",
       "ontwerpleeftijd_jaar": 0.0,
       "parent_pbs_id": "06H-350.1.1.1",
-      "pbs_id": "06H-350.1.1.1.5"
+      "pbs_id": "06H-350.1.1.1.5",
+      "volgorde": 5
     },
     "06H-350.1.1.1.9": {
       "aanname_leeftijd": "",
@@ -10363,7 +10373,8 @@
       "object_naam": "Hydraulisch aggregaat deurplaatsnrs. 01 en 02, Brugkelder_1260_",
       "ontwerpleeftijd_jaar": 0.0,
       "parent_pbs_id": "06H-350.1.1.1",
-      "pbs_id": "06H-350.1.1.1.9"
+      "pbs_id": "06H-350.1.1.1.9",
+      "volgorde": 6
     },
     "06H-350.1.12": {
       "aanname_leeftijd": "",
@@ -10378,7 +10389,8 @@
       "object_naam": "Kerende constructie, Algemeen - Gaarkeukensluis",
       "ontwerpleeftijd_jaar": 0.0,
       "parent_pbs_id": "06H-350.1",
-      "pbs_id": "06H-350.1.12"
+      "pbs_id": "06H-350.1.12",
+      "volgorde": 1
     },
     "06H-350.1.12.1": {
       "aanname_leeftijd": "",
@@ -10393,7 +10405,8 @@
       "object_naam": "Kerende constructie (geen beheer RWS)_157_Kerende constructie_ (opgebost)",
       "ontwerpleeftijd_jaar": 0.0,
       "parent_pbs_id": "06H-350.1.12",
-      "pbs_id": "06H-350.1.12.1"
+      "pbs_id": "06H-350.1.12.1",
+      "volgorde": 0
     },
     "06H-350.1.12.1.1": {
       "aanname_leeftijd": "",
@@ -10408,7 +10421,8 @@
       "object_naam": "Damwand_1133_ (opgebost voor het hele complex)",
       "ontwerpleeftijd_jaar": 0.0,
       "parent_pbs_id": "06H-350.1.12.1",
-      "pbs_id": "06H-350.1.12.1.1"
+      "pbs_id": "06H-350.1.12.1.1",
+      "volgorde": 0
     },
     "06H-350.1.16": {
       "aanname_leeftijd": "",
@@ -10423,7 +10437,8 @@
       "object_naam": "Pompinstallatie, Kabel- en leidingentunnel (LK01-02) benedenhoofd_186_Pompinstallatie_",
       "ontwerpleeftijd_jaar": 0.0,
       "parent_pbs_id": "06H-350.1",
-      "pbs_id": "06H-350.1.16"
+      "pbs_id": "06H-350.1.16",
+      "volgorde": 2
     },
     "06H-350.1.16.4": {
       "aanname_leeftijd": "",
@@ -10438,7 +10453,8 @@
       "object_naam": "Pompinstallatie, Algemeen_1435_-",
       "ontwerpleeftijd_jaar": 0.0,
       "parent_pbs_id": "06H-350.1.16",
-      "pbs_id": "06H-350.1.16.4"
+      "pbs_id": "06H-350.1.16.4",
+      "volgorde": 0
     },
     "06H-350.1.18": {
       "aanname_leeftijd": "",
@@ -10453,7 +10469,8 @@
       "object_naam": "Sluisdeur - Hout --> inclusief 2 reservedeuren",
       "ontwerpleeftijd_jaar": 0.0,
       "parent_pbs_id": "06H-350.1",
-      "pbs_id": "06H-350.1.18"
+      "pbs_id": "06H-350.1.18",
+      "volgorde": 3
     },
     "06H-350.1.18.1": {
       "aanname_leeftijd": "",
@@ -10468,7 +10485,8 @@
       "object_naam": "Sluisdeur (hef, punt, rol), Sluisdeur (hef, punt, rol), hout, deurplaatsnr. 01_198_Sluisdeur (hef, punt, rol)_",
       "ontwerpleeftijd_jaar": 0.0,
       "parent_pbs_id": "06H-350.1.18",
-      "pbs_id": "06H-350.1.18.1"
+      "pbs_id": "06H-350.1.18.1",
+      "volgorde": 0
     },
     "06H-350.1.18.1.1": {
       "aanname_leeftijd": "",
@@ -10483,7 +10501,8 @@
       "object_naam": "Aanslag, deurnr. 01_1010_",
       "ontwerpleeftijd_jaar": 0.0,
       "parent_pbs_id": "06H-350.1.18.1",
-      "pbs_id": "06H-350.1.18.1.1"
+      "pbs_id": "06H-350.1.18.1.1",
+      "volgorde": 0
     },
     "06H-350.1.18.1.4": {
       "aanname_leeftijd": "",
@@ -10498,7 +10517,8 @@
       "object_naam": "Draaipunt, onderdraaipunt, taatsschoen, deurnr. 01_1164_",
       "ontwerpleeftijd_jaar": 0.0,
       "parent_pbs_id": "06H-350.1.18.1",
-      "pbs_id": "06H-350.1.18.1.4"
+      "pbs_id": "06H-350.1.18.1.4",
+      "volgorde": 1
     },
     "06H-350.1.18.1.6": {
       "aanname_leeftijd": "",
@@ -10513,7 +10533,8 @@
       "object_naam": "Puntdeur, deurnr. 01_1445_",
       "ontwerpleeftijd_jaar": 0.0,
       "parent_pbs_id": "06H-350.1.18.1",
-      "pbs_id": "06H-350.1.18.1.6"
+      "pbs_id": "06H-350.1.18.1.6",
+      "volgorde": 2
     },
     "06H-350.1.18.1.8": {
       "aanname_leeftijd": "",
@@ -10528,7 +10549,8 @@
       "object_naam": "Schuifgeleiding, opgebost (2x), deurnr. 01_1994_",
       "ontwerpleeftijd_jaar": 0.0,
       "parent_pbs_id": "06H-350.1.18.1",
-      "pbs_id": "06H-350.1.18.1.8"
+      "pbs_id": "06H-350.1.18.1.8",
+      "volgorde": 3
     },
     "06H-350.1.19": {
       "aanname_leeftijd": "",
@@ -10543,7 +10565,8 @@
       "object_naam": "Sluisdeur - Staal",
       "ontwerpleeftijd_jaar": 0.0,
       "parent_pbs_id": "06H-350.1",
-      "pbs_id": "06H-350.1.19"
+      "pbs_id": "06H-350.1.19",
+      "volgorde": 4
     },
     "06H-350.1.19.1": {
       "aanname_leeftijd": "",
@@ -10558,7 +10581,8 @@
       "object_naam": "Sluisdeur (hef, punt, rol), Sluisdeur (hef, punt, rol), staal, deurplaatsnr. 02_198_Sluisdeur (hef, punt, rol)_",
       "ontwerpleeftijd_jaar": 0.0,
       "parent_pbs_id": "06H-350.1.19",
-      "pbs_id": "06H-350.1.19.1"
+      "pbs_id": "06H-350.1.19.1",
+      "volgorde": 0
     },
     "06H-350.1.19.1.1": {
       "aanname_leeftijd": "",
@@ -10573,7 +10597,8 @@
       "object_naam": "Aanslag, deurnr. 02_1010_",
       "ontwerpleeftijd_jaar": 0.0,
       "parent_pbs_id": "06H-350.1.19.1",
-      "pbs_id": "06H-350.1.19.1.1"
+      "pbs_id": "06H-350.1.19.1.1",
+      "volgorde": 0
     },
     "06H-350.1.19.1.4": {
       "aanname_leeftijd": "",
@@ -10588,7 +10613,8 @@
       "object_naam": "Draaipunt, onderdraaipunt, taatsschoen, deurnr. 02_1164_",
       "ontwerpleeftijd_jaar": 0.0,
       "parent_pbs_id": "06H-350.1.19.1",
-      "pbs_id": "06H-350.1.19.1.4"
+      "pbs_id": "06H-350.1.19.1.4",
+      "volgorde": 1
     },
     "06H-350.1.19.1.6": {
       "aanname_leeftijd": "",
@@ -10603,7 +10629,8 @@
       "object_naam": "Puntdeur, deurnr. 02_1445_",
       "ontwerpleeftijd_jaar": 0.0,
       "parent_pbs_id": "06H-350.1.19.1",
-      "pbs_id": "06H-350.1.19.1.6"
+      "pbs_id": "06H-350.1.19.1.6",
+      "volgorde": 2
     },
     "06H-350.1.19.1.8": {
       "aanname_leeftijd": "",
@@ -10618,7 +10645,8 @@
       "object_naam": "Schuifgeleiding, opgebost (2x), deurnr. 02_1994_",
       "ontwerpleeftijd_jaar": 0.0,
       "parent_pbs_id": "06H-350.1.19.1",
-      "pbs_id": "06H-350.1.19.1.8"
+      "pbs_id": "06H-350.1.19.1.8",
+      "volgorde": 3
     },
     "06H-350.1.2": {
       "aanname_leeftijd": "",
@@ -10633,7 +10661,8 @@
       "object_naam": "Aandrijving en bewegingswerk, Rinketten",
       "ontwerpleeftijd_jaar": 0.0,
       "parent_pbs_id": "06H-350.1",
-      "pbs_id": "06H-350.1.2"
+      "pbs_id": "06H-350.1.2",
+      "volgorde": 5
     },
     "06H-350.1.2.1": {
       "aanname_leeftijd": "",
@@ -10648,7 +10677,8 @@
       "object_naam": "Aandrijving en bewegingswerk, elektrohydraulisch, Rinket 1 en 2, (1.1 en 1.2)  deurplaats 01_101_Aandrijving en bewegingswerk (elektrohydraulisch)_ (4 deuren met 2 rinketten)",
       "ontwerpleeftijd_jaar": 0.0,
       "parent_pbs_id": "06H-350.1.2",
-      "pbs_id": "06H-350.1.2.1"
+      "pbs_id": "06H-350.1.2.1",
+      "volgorde": 0
     },
     "06H-350.1.2.1.1": {
       "aanname_leeftijd": "",
@@ -10663,7 +10693,8 @@
       "object_naam": "Buisleiding, buitenopstelling_1331_",
       "ontwerpleeftijd_jaar": 0.0,
       "parent_pbs_id": "06H-350.1.2.1",
-      "pbs_id": "06H-350.1.2.1.1"
+      "pbs_id": "06H-350.1.2.1.1",
+      "volgorde": 0
     },
     "06H-350.1.2.1.2": {
       "aanname_leeftijd": "",
@@ -10678,7 +10709,8 @@
       "object_naam": "Cilinder 1_1119_",
       "ontwerpleeftijd_jaar": 0.0,
       "parent_pbs_id": "06H-350.1.2.1",
-      "pbs_id": "06H-350.1.2.1.2"
+      "pbs_id": "06H-350.1.2.1.2",
+      "volgorde": 1
     },
     "06H-350.1.2.1.6": {
       "aanname_leeftijd": "",
@@ -10693,7 +10725,8 @@
       "object_naam": "Hydraulisch aggregaat,  Rinket 2_1260_",
       "ontwerpleeftijd_jaar": 0.0,
       "parent_pbs_id": "06H-350.1.2.1",
-      "pbs_id": "06H-350.1.2.1.6"
+      "pbs_id": "06H-350.1.2.1.6",
+      "volgorde": 2
     },
     "06H-350.1.20": {
       "aanname_leeftijd": "",
@@ -10708,7 +10741,8 @@
       "object_naam": "Sluishoofd, Benedenhoofd_199_Sluishoofd_ (opgebost)",
       "ontwerpleeftijd_jaar": 0.0,
       "parent_pbs_id": "06H-350.1",
-      "pbs_id": "06H-350.1.20"
+      "pbs_id": "06H-350.1.20",
+      "volgorde": 6
     },
     "06H-350.1.20.1": {
       "aanname_leeftijd": "",
@@ -10723,7 +10757,8 @@
       "object_naam": "Achterloopheidscherm, benedenhoofd_1021_",
       "ontwerpleeftijd_jaar": 0.0,
       "parent_pbs_id": "06H-350.1.20",
-      "pbs_id": "06H-350.1.20.1"
+      "pbs_id": "06H-350.1.20.1",
+      "volgorde": 0
     },
     "06H-350.1.20.13": {
       "aanname_leeftijd": "",
@@ -10738,7 +10773,8 @@
       "object_naam": "Luik, opgebost (2x)_1347_",
       "ontwerpleeftijd_jaar": 0.0,
       "parent_pbs_id": "06H-350.1.20",
-      "pbs_id": "06H-350.1.20.13"
+      "pbs_id": "06H-350.1.20.13",
+      "volgorde": 1
     },
     "06H-350.1.20.17": {
       "aanname_leeftijd": "",
@@ -10753,7 +10789,8 @@
       "object_naam": "Taats, incl. taatskap bij deurplaats 01_1704_",
       "ontwerpleeftijd_jaar": 0.0,
       "parent_pbs_id": "06H-350.1.20",
-      "pbs_id": "06H-350.1.20.17"
+      "pbs_id": "06H-350.1.20.17",
+      "volgorde": 2
     },
     "06H-350.1.20.20": {
       "aanname_leeftijd": "",
@@ -10768,7 +10805,8 @@
       "object_naam": "Wand, benedenhoofd, opgebost (2x)_1619_",
       "ontwerpleeftijd_jaar": 0.0,
       "parent_pbs_id": "06H-350.1.20",
-      "pbs_id": "06H-350.1.20.20"
+      "pbs_id": "06H-350.1.20.20",
+      "volgorde": 3
     },
     "06H-350.1.20.4": {
       "aanname_leeftijd": "",
@@ -10783,7 +10821,8 @@
       "object_naam": "Dekzerkprofiel_1141_",
       "ontwerpleeftijd_jaar": 0.0,
       "parent_pbs_id": "06H-350.1.20",
-      "pbs_id": "06H-350.1.20.4"
+      "pbs_id": "06H-350.1.20.4",
+      "volgorde": 4
     },
     "06H-350.1.20.5": {
       "aanname_leeftijd": "",
@@ -10798,7 +10837,8 @@
       "object_naam": "Dilatatievoeg_1158_",
       "ontwerpleeftijd_jaar": 0.0,
       "parent_pbs_id": "06H-350.1.20",
-      "pbs_id": "06H-350.1.20.5"
+      "pbs_id": "06H-350.1.20.5",
+      "volgorde": 5
     },
     "06H-350.1.20.6": {
       "aanname_leeftijd": "",
@@ -10813,7 +10853,8 @@
       "object_naam": "Drempel, benedenhoofd_1168_",
       "ontwerpleeftijd_jaar": 0.0,
       "parent_pbs_id": "06H-350.1.20",
-      "pbs_id": "06H-350.1.20.6"
+      "pbs_id": "06H-350.1.20.6",
+      "volgorde": 6
     },
     "06H-350.1.20.7": {
       "aanname_leeftijd": "",
@@ -10828,7 +10869,8 @@
       "object_naam": "Halsbeugel, incl. lager bij deurplaats 01_2045_",
       "ontwerpleeftijd_jaar": 0.0,
       "parent_pbs_id": "06H-350.1.20",
-      "pbs_id": "06H-350.1.20.7"
+      "pbs_id": "06H-350.1.20.7",
+      "volgorde": 7
     },
     "06H-350.1.22": {
       "aanname_leeftijd": "",
@@ -10843,7 +10885,8 @@
       "object_naam": "Sluiskolk_200_Sluiskolk_",
       "ontwerpleeftijd_jaar": 0.0,
       "parent_pbs_id": "06H-350.1",
-      "pbs_id": "06H-350.1.22"
+      "pbs_id": "06H-350.1.22",
+      "volgorde": 7
     },
     "06H-350.1.22.3": {
       "aanname_leeftijd": "",
@@ -10858,7 +10901,8 @@
       "object_naam": "Dekzerkprofiel_1141_",
       "ontwerpleeftijd_jaar": 0.0,
       "parent_pbs_id": "06H-350.1.22",
-      "pbs_id": "06H-350.1.22.3"
+      "pbs_id": "06H-350.1.22.3",
+      "volgorde": 0
     },
     "06H-350.1.22.4": {
       "aanname_leeftijd": "",
@@ -10873,7 +10917,8 @@
       "object_naam": "Dilatatievoeg, opgebost (?x)_1158_",
       "ontwerpleeftijd_jaar": 0.0,
       "parent_pbs_id": "06H-350.1.22",
-      "pbs_id": "06H-350.1.22.4"
+      "pbs_id": "06H-350.1.22.4",
+      "volgorde": 1
     },
     "06H-350.1.22.5": {
       "aanname_leeftijd": "",
@@ -10888,7 +10933,8 @@
       "object_naam": "Haalkom, in kolkwanden, opgebost (32x)_1237_",
       "ontwerpleeftijd_jaar": 0.0,
       "parent_pbs_id": "06H-350.1.22",
-      "pbs_id": "06H-350.1.22.5"
+      "pbs_id": "06H-350.1.22.5",
+      "volgorde": 2
     },
     "06H-350.1.22.6": {
       "aanname_leeftijd": "",
@@ -10903,7 +10949,8 @@
       "object_naam": "Ladder, opgebost (28x)_1324_",
       "ontwerpleeftijd_jaar": 0.0,
       "parent_pbs_id": "06H-350.1.22",
-      "pbs_id": "06H-350.1.22.6"
+      "pbs_id": "06H-350.1.22.6",
+      "volgorde": 3
     },
     "06H-350.1.22.8": {
       "aanname_leeftijd": "",
@@ -10918,7 +10965,8 @@
       "object_naam": "Wand, opgebost (2x)_1619_",
       "ontwerpleeftijd_jaar": 0.0,
       "parent_pbs_id": "06H-350.1.22",
-      "pbs_id": "06H-350.1.22.8"
+      "pbs_id": "06H-350.1.22.8",
+      "volgorde": 4
     },
     "06H-350.1.3": {
       "aanname_leeftijd": "",
@@ -10933,7 +10981,8 @@
       "object_naam": "Afmeervoorzieningen schutsluis",
       "ontwerpleeftijd_jaar": 0.0,
       "parent_pbs_id": "06H-350.1",
-      "pbs_id": "06H-350.1.3"
+      "pbs_id": "06H-350.1.3",
+      "volgorde": 8
     },
     "06H-350.1.3.1": {
       "aanname_leeftijd": "",
@@ -10948,7 +10997,8 @@
       "object_naam": "Afmeervoorziening - Algemeen Gaarkeukensluis_106_Afmeervoorziening_ (opgebost)",
       "ontwerpleeftijd_jaar": 0.0,
       "parent_pbs_id": "06H-350.1.3",
-      "pbs_id": "06H-350.1.3.1"
+      "pbs_id": "06H-350.1.3.1",
+      "volgorde": 0
     },
     "06H-350.1.3.1.10": {
       "aanname_leeftijd": "",
@@ -10963,7 +11013,8 @@
       "object_naam": "Meerpaal (21,145)_1361_hout (75-12 = 63 hout)",
       "ontwerpleeftijd_jaar": 0.0,
       "parent_pbs_id": "06H-350.1.3.1",
-      "pbs_id": "06H-350.1.3.1.10"
+      "pbs_id": "06H-350.1.3.1.10",
+      "volgorde": 0
     },
     "06H-350.1.3.1.11": {
       "aanname_leeftijd": "",
@@ -10978,7 +11029,8 @@
       "object_naam": "Meerpaal (21,170)_1361_staal",
       "ontwerpleeftijd_jaar": 0.0,
       "parent_pbs_id": "06H-350.1.3.1",
-      "pbs_id": "06H-350.1.3.1.11"
+      "pbs_id": "06H-350.1.3.1.11",
+      "volgorde": 1
     },
     "06H-350.1.3.1.22": {
       "aanname_leeftijd": "",
@@ -10993,7 +11045,8 @@
       "object_naam": "Meerstoel (21,120)_1362_",
       "ontwerpleeftijd_jaar": 0.0,
       "parent_pbs_id": "06H-350.1.3.1",
-      "pbs_id": "06H-350.1.3.1.22"
+      "pbs_id": "06H-350.1.3.1.22",
+      "volgorde": 2
     },
     "06H-350.1.3.1.3": {
       "aanname_leeftijd": "",
@@ -11008,7 +11061,8 @@
       "object_naam": "Bolders, opgebost_1091_ (Schatting totaal, zie notes)",
       "ontwerpleeftijd_jaar": 0.0,
       "parent_pbs_id": "06H-350.1.3.1",
-      "pbs_id": "06H-350.1.3.1.3"
+      "pbs_id": "06H-350.1.3.1.3",
+      "volgorde": 3
     },
     "06H-350.1.6": {
       "aanname_leeftijd": "",
@@ -11023,7 +11077,8 @@
       "object_naam": "Bodembescherming_117_Bodembescherming_",
       "ontwerpleeftijd_jaar": 0.0,
       "parent_pbs_id": "06H-350.1",
-      "pbs_id": "06H-350.1.6"
+      "pbs_id": "06H-350.1.6",
+      "volgorde": 9
     },
     "06H-350.1.6.1": {
       "aanname_leeftijd": "",
@@ -11038,7 +11093,8 @@
       "object_naam": "Stortebed, benedenhoofd, oostzijde_1510_",
       "ontwerpleeftijd_jaar": 0.0,
       "parent_pbs_id": "06H-350.1.6",
-      "pbs_id": "06H-350.1.6.1"
+      "pbs_id": "06H-350.1.6.1",
+      "volgorde": 0
     },
     "06H-350.1.6.3": {
       "aanname_leeftijd": "",
@@ -11053,7 +11109,8 @@
       "object_naam": "Vloer, Slibvangbak voor bovenhoofd, westzijde_1605_",
       "ontwerpleeftijd_jaar": 0.0,
       "parent_pbs_id": "06H-350.1.6",
-      "pbs_id": "06H-350.1.6.3"
+      "pbs_id": "06H-350.1.6.3",
+      "volgorde": 1
     },
     "06H-350.1.7": {
       "aanname_leeftijd": "",
@@ -11068,7 +11125,8 @@
       "object_naam": "Compressorinstallatie, t.b.v. bellenscherm sluisdeuren_123_Compressorinstallatie_ (voor 4 deuren)",
       "ontwerpleeftijd_jaar": 0.0,
       "parent_pbs_id": "06H-350.1",
-      "pbs_id": "06H-350.1.7"
+      "pbs_id": "06H-350.1.7",
+      "volgorde": 10
     },
     "06H-350.1.7.10": {
       "aanname_leeftijd": "",
@@ -11083,7 +11141,8 @@
       "object_naam": "Compressorinstallatie, Algemeen_1123_-Rootes blower",
       "ontwerpleeftijd_jaar": 0.0,
       "parent_pbs_id": "06H-350.1.7",
-      "pbs_id": "06H-350.1.7.10"
+      "pbs_id": "06H-350.1.7.10",
+      "volgorde": 0
     },
     "06H-350.1.7.5": {
       "aanname_leeftijd": "",
@@ -11098,7 +11157,8 @@
       "object_naam": "Buisleiding blower 1, Deurplaats 01_1331_",
       "ontwerpleeftijd_jaar": 0.0,
       "parent_pbs_id": "06H-350.1.7",
-      "pbs_id": "06H-350.1.7.5"
+      "pbs_id": "06H-350.1.7.5",
+      "volgorde": 1
     },
     "06H-350.2": {
       "aanname_leeftijd": "",
@@ -11113,7 +11173,8 @@
       "object_naam": "03 Brug (beweegbaar), HLD 047,1km, Brug Gaarkeukensluis benedenhoofd [06H-350-03]",
       "ontwerpleeftijd_jaar": 0.0,
       "parent_pbs_id": "06H-350",
-      "pbs_id": "06H-350.2"
+      "pbs_id": "06H-350.2",
+      "volgorde": 1
     },
     "06H-350.2.1": {
       "aanname_leeftijd": "",
@@ -11128,7 +11189,8 @@
       "object_naam": "Aandrijving en bewegingswerk (elektrohydraulisch), grendelinrichting val. zuidzijde_101_Aandrijving en bewegingswerk (elektrohydraulisch)_",
       "ontwerpleeftijd_jaar": 0.0,
       "parent_pbs_id": "06H-350.2",
-      "pbs_id": "06H-350.2.1"
+      "pbs_id": "06H-350.2.1",
+      "volgorde": 0
     },
     "06H-350.2.1.1": {
       "aanname_leeftijd": "",
@@ -11143,7 +11205,8 @@
       "object_naam": "Buisleiding staal_1331_",
       "ontwerpleeftijd_jaar": 0.0,
       "parent_pbs_id": "06H-350.2.1",
-      "pbs_id": "06H-350.2.1.1"
+      "pbs_id": "06H-350.2.1.1",
+      "volgorde": 0
     },
     "06H-350.2.1.3": {
       "aanname_leeftijd": "",
@@ -11158,7 +11221,8 @@
       "object_naam": "Cilinder, 2.1 westzijde_1119_",
       "ontwerpleeftijd_jaar": 0.0,
       "parent_pbs_id": "06H-350.2.1",
-      "pbs_id": "06H-350.2.1.3"
+      "pbs_id": "06H-350.2.1.3",
+      "volgorde": 1
     },
     "06H-350.2.1.7": {
       "aanname_leeftijd": "",
@@ -11173,7 +11237,8 @@
       "object_naam": "Hydraulisch aggregaat_1260_",
       "ontwerpleeftijd_jaar": 0.0,
       "parent_pbs_id": "06H-350.2.1",
-      "pbs_id": "06H-350.2.1.7"
+      "pbs_id": "06H-350.2.1.7",
+      "volgorde": 2
     },
     "06H-350.2.1.7.1": {
       "aanname_leeftijd": "",
@@ -11188,7 +11253,8 @@
       "object_naam": "Aandrijving en bewegingswerk; electrohydraulisch, Algemeen_1006_-",
       "ontwerpleeftijd_jaar": 0.0,
       "parent_pbs_id": "06H-350.2.1.7",
-      "pbs_id": "06H-350.2.1.7.1"
+      "pbs_id": "06H-350.2.1.7.1",
+      "volgorde": 0
     },
     "06H-350.2.11": {
       "aanname_leeftijd": "",
@@ -11203,7 +11269,8 @@
       "object_naam": "Schampkant_193_Schampkant_",
       "ontwerpleeftijd_jaar": 0.0,
       "parent_pbs_id": "06H-350.2",
-      "pbs_id": "06H-350.2.11"
+      "pbs_id": "06H-350.2.11",
+      "volgorde": 1
     },
     "06H-350.2.11.1": {
       "aanname_leeftijd": "",
@@ -11218,7 +11285,8 @@
       "object_naam": "Schampkant, Algemeen, oostzijde_1477_",
       "ontwerpleeftijd_jaar": 0.0,
       "parent_pbs_id": "06H-350.2.11",
-      "pbs_id": "06H-350.2.11.1"
+      "pbs_id": "06H-350.2.11.1",
+      "volgorde": 0
     },
     "06H-350.2.12": {
       "aanname_leeftijd": "",
@@ -11233,7 +11301,8 @@
       "object_naam": "Slijtlaag_413_Slijtlaag_",
       "ontwerpleeftijd_jaar": 0.0,
       "parent_pbs_id": "06H-350.2",
-      "pbs_id": "06H-350.2.12"
+      "pbs_id": "06H-350.2.12",
+      "volgorde": 2
     },
     "06H-350.2.12.2": {
       "aanname_leeftijd": "",
@@ -11248,7 +11317,8 @@
       "object_naam": "Slijtlaag, Algemeen, aangebracht op rijdek van val_2209_",
       "ontwerpleeftijd_jaar": 0.0,
       "parent_pbs_id": "06H-350.2.12",
-      "pbs_id": "06H-350.2.12.2"
+      "pbs_id": "06H-350.2.12.2",
+      "volgorde": 0
     },
     "06H-350.2.14": {
       "aanname_leeftijd": "",
@@ -11263,7 +11333,8 @@
       "object_naam": "Verkeersregelinstallatie (VRI)_227_Verkeersregelinstallatie (VRI)_",
       "ontwerpleeftijd_jaar": 0.0,
       "parent_pbs_id": "06H-350.2",
-      "pbs_id": "06H-350.2.14"
+      "pbs_id": "06H-350.2.14",
+      "volgorde": 3
     },
     "06H-350.2.14.2": {
       "aanname_leeftijd": "",
@@ -11278,7 +11349,8 @@
       "object_naam": "Landverkeerssein, 5.1, fietspad NW_1327_",
       "ontwerpleeftijd_jaar": 0.0,
       "parent_pbs_id": "06H-350.2.14",
-      "pbs_id": "06H-350.2.14.2"
+      "pbs_id": "06H-350.2.14.2",
+      "volgorde": 0
     },
     "06H-350.2.15": {
       "aanname_leeftijd": "",
@@ -11293,7 +11365,8 @@
       "object_naam": "Voegovergang, STP01+02_233_Voegovergang_",
       "ontwerpleeftijd_jaar": 0.0,
       "parent_pbs_id": "06H-350.2",
-      "pbs_id": "06H-350.2.15"
+      "pbs_id": "06H-350.2.15",
+      "volgorde": 4
     },
     "06H-350.2.15.1": {
       "aanname_leeftijd": "",
@@ -11308,7 +11381,8 @@
       "object_naam": "Beëindigingsprofiel, STP01_1059_",
       "ontwerpleeftijd_jaar": 0.0,
       "parent_pbs_id": "06H-350.2.15",
-      "pbs_id": "06H-350.2.15.1"
+      "pbs_id": "06H-350.2.15.1",
+      "volgorde": 0
     },
     "06H-350.2.2": {
       "aanname_leeftijd": "",
@@ -11323,7 +11397,8 @@
       "object_naam": "Aandrijving en bewegingswerk, elektromechanisch, ophaalbrug oostzijde KKBM2_102_Aandrijving en bewegingswerk (elektromechanisch)_",
       "ontwerpleeftijd_jaar": 0.0,
       "parent_pbs_id": "06H-350.2",
-      "pbs_id": "06H-350.2.2"
+      "pbs_id": "06H-350.2.2",
+      "volgorde": 5
     },
     "06H-350.2.2.1": {
       "aanname_leeftijd": "",
@@ -11338,7 +11413,8 @@
       "object_naam": "Assenstelsel_1047_",
       "ontwerpleeftijd_jaar": 0.0,
       "parent_pbs_id": "06H-350.2.2",
-      "pbs_id": "06H-350.2.2.1"
+      "pbs_id": "06H-350.2.2.1",
+      "volgorde": 0
     },
     "06H-350.2.2.11": {
       "aanname_leeftijd": "",
@@ -11353,7 +11429,8 @@
       "object_naam": "Heugelstang_1250_",
       "ontwerpleeftijd_jaar": 0.0,
       "parent_pbs_id": "06H-350.2.2",
-      "pbs_id": "06H-350.2.2.11"
+      "pbs_id": "06H-350.2.2.11",
+      "volgorde": 1
     },
     "06H-350.2.2.14": {
       "aanname_leeftijd": "",
@@ -11368,7 +11445,8 @@
       "object_naam": "Reductiekast_1459_",
       "ontwerpleeftijd_jaar": 0.0,
       "parent_pbs_id": "06H-350.2.2",
-      "pbs_id": "06H-350.2.2.14"
+      "pbs_id": "06H-350.2.2.14",
+      "volgorde": 2
     },
     "06H-350.2.2.15": {
       "aanname_leeftijd": "",
@@ -11383,7 +11461,8 @@
       "object_naam": "Rem_1460_",
       "ontwerpleeftijd_jaar": 0.0,
       "parent_pbs_id": "06H-350.2.2",
-      "pbs_id": "06H-350.2.2.15"
+      "pbs_id": "06H-350.2.2.15",
+      "volgorde": 3
     },
     "06H-350.2.2.22": {
       "aanname_leeftijd": "",
@@ -11398,7 +11477,8 @@
       "object_naam": "Tandwieloverbrenging (open)_1001_",
       "ontwerpleeftijd_jaar": 0.0,
       "parent_pbs_id": "06H-350.2.2",
-      "pbs_id": "06H-350.2.2.22"
+      "pbs_id": "06H-350.2.2.22",
+      "volgorde": 4
     },
     "06H-350.2.2.23": {
       "aanname_leeftijd": "",
@@ -11413,7 +11493,8 @@
       "object_naam": "Toerenregelinstallatie (zie frequentieregelaar westzijde KKBM1)_1530_",
       "ontwerpleeftijd_jaar": 0.0,
       "parent_pbs_id": "06H-350.2.2",
-      "pbs_id": "06H-350.2.2.23"
+      "pbs_id": "06H-350.2.2.23",
+      "volgorde": 5
     },
     "06H-350.2.2.3": {
       "aanname_leeftijd": "",
@@ -11428,7 +11509,8 @@
       "object_naam": "Buffer_1106_",
       "ontwerpleeftijd_jaar": 0.0,
       "parent_pbs_id": "06H-350.2.2",
-      "pbs_id": "06H-350.2.2.3"
+      "pbs_id": "06H-350.2.2.3",
+      "volgorde": 6
     },
     "06H-350.2.2.9": {
       "aanname_leeftijd": "",
@@ -11443,7 +11525,8 @@
       "object_naam": "Elektromotor_1182_",
       "ontwerpleeftijd_jaar": 0.0,
       "parent_pbs_id": "06H-350.2.2",
-      "pbs_id": "06H-350.2.2.9"
+      "pbs_id": "06H-350.2.2.9",
+      "volgorde": 7
     },
     "06H-350.2.4": {
       "aanname_leeftijd": "",
@@ -11458,7 +11541,8 @@
       "object_naam": "Afsluitboominstallatie - Brug Gaarkeukensluis",
       "ontwerpleeftijd_jaar": 0.0,
       "parent_pbs_id": "06H-350.2",
-      "pbs_id": "06H-350.2.4"
+      "pbs_id": "06H-350.2.4",
+      "volgorde": 6
     },
     "06H-350.2.4.1": {
       "aanname_leeftijd": "",
@@ -11473,7 +11557,8 @@
       "object_naam": "Afsluitboominstallatie, ASB1 (AK6) Fietspad Noord_107_Afsluitboominstallatie_",
       "ontwerpleeftijd_jaar": 0.0,
       "parent_pbs_id": "06H-350.2.4",
-      "pbs_id": "06H-350.2.4.1"
+      "pbs_id": "06H-350.2.4.1",
+      "volgorde": 0
     },
     "06H-350.2.4.1.3": {
       "aanname_leeftijd": "",
@@ -11488,7 +11573,8 @@
       "object_naam": "Afsluitboominstallatie, Algemeen_1032_-",
       "ontwerpleeftijd_jaar": 0.0,
       "parent_pbs_id": "06H-350.2.4.1",
-      "pbs_id": "06H-350.2.4.1.3"
+      "pbs_id": "06H-350.2.4.1.3",
+      "volgorde": 0
     },
     "06H-350.2.6": {
       "aanname_leeftijd": "",
@@ -11503,7 +11589,8 @@
       "object_naam": "Hemelwaterafvoer (HWA), staal_144_Hemelwaterafvoer (HWA)_",
       "ontwerpleeftijd_jaar": 0.0,
       "parent_pbs_id": "06H-350.2",
-      "pbs_id": "06H-350.2.6"
+      "pbs_id": "06H-350.2.6",
+      "volgorde": 7
     },
     "06H-350.2.6.1": {
       "aanname_leeftijd": "",
@@ -11518,7 +11605,8 @@
       "object_naam": "Hemelwaterafvoer (HWA), Algemeen_1249_staal",
       "ontwerpleeftijd_jaar": 0.0,
       "parent_pbs_id": "06H-350.2.6",
-      "pbs_id": "06H-350.2.6.1"
+      "pbs_id": "06H-350.2.6.1",
+      "volgorde": 0
     },
     "06H-350.2.7": {
       "aanname_leeftijd": "",
@@ -11533,7 +11621,8 @@
       "object_naam": "Hoofddraagconstructie Algemeen - Brug Gaarkeuken",
       "ontwerpleeftijd_jaar": 0.0,
       "parent_pbs_id": "06H-350.2",
-      "pbs_id": "06H-350.2.7"
+      "pbs_id": "06H-350.2.7",
+      "volgorde": 8
     },
     "06H-350.2.7.2": {
       "aanname_leeftijd": "",
@@ -11548,7 +11637,8 @@
       "object_naam": "Hoofddraagconstructie (staal), Rijbaan_147_Hoofddraagconstructie_ (opgebost met HDC Fietspad)",
       "ontwerpleeftijd_jaar": 0.0,
       "parent_pbs_id": "06H-350.2.7",
-      "pbs_id": "06H-350.2.7.2"
+      "pbs_id": "06H-350.2.7.2",
+      "volgorde": 0
     },
     "06H-350.2.7.2.9": {
       "aanname_leeftijd": "",
@@ -11563,7 +11653,8 @@
       "object_naam": "Hoofddraagconstructie stalen val algemeen",
       "ontwerpleeftijd_jaar": 0.0,
       "parent_pbs_id": "06H-350.2.7.2",
-      "pbs_id": "06H-350.2.7.2.9"
+      "pbs_id": "06H-350.2.7.2.9",
+      "volgorde": 0
     },
     "06H-350.2.8": {
       "aanname_leeftijd": "",
@@ -11578,7 +11669,8 @@
       "object_naam": "Kelder, Technische ruimte noordzijde (STP 02)_251_Kelder_",
       "ontwerpleeftijd_jaar": 0.0,
       "parent_pbs_id": "06H-350.2",
-      "pbs_id": "06H-350.2.8"
+      "pbs_id": "06H-350.2.8",
+      "volgorde": 9
     },
     "06H-350.2.8.8": {
       "aanname_leeftijd": "",
@@ -11593,7 +11685,8 @@
       "object_naam": "Vloer_1605_",
       "ontwerpleeftijd_jaar": 0.0,
       "parent_pbs_id": "06H-350.2.8",
-      "pbs_id": "06H-350.2.8.8"
+      "pbs_id": "06H-350.2.8.8",
+      "volgorde": 0
     },
     "06H-350.2.9": {
       "aanname_leeftijd": "",
@@ -11608,7 +11701,8 @@
       "object_naam": "Oplegging_180_Oplegging_",
       "ontwerpleeftijd_jaar": 0.0,
       "parent_pbs_id": "06H-350.2",
-      "pbs_id": "06H-350.2.9"
+      "pbs_id": "06H-350.2.9",
+      "volgorde": 10
     },
     "06H-350.2.9.4": {
       "aanname_leeftijd": "",
@@ -11623,7 +11717,8 @@
       "object_naam": "Oplegstoel, Achteroplegging (STP 02), opgebost (3x)_1688_",
       "ontwerpleeftijd_jaar": 0.0,
       "parent_pbs_id": "06H-350.2.9",
-      "pbs_id": "06H-350.2.9.4"
+      "pbs_id": "06H-350.2.9.4",
+      "volgorde": 0
     },
     "06H-350.3": {
       "aanname_leeftijd": "",
@@ -11638,7 +11733,8 @@
       "object_naam": "05 Beheerobject Overstijgende Voorziening, HLD 047.2km, Gaarkeuken [06H-350-05]",
       "ontwerpleeftijd_jaar": 0.0,
       "parent_pbs_id": "06H-350",
-      "pbs_id": "06H-350.3"
+      "pbs_id": "06H-350.3",
+      "volgorde": 2
     },
     "06H-350.3.1": {
       "aanname_leeftijd": "",
@@ -11653,7 +11749,8 @@
       "object_naam": "Aarding- en bliksembeveiligingsinstallatie_105_Aarding- en bliksembeveiligingsinstallatie_",
       "ontwerpleeftijd_jaar": 0.0,
       "parent_pbs_id": "06H-350.3",
-      "pbs_id": "06H-350.3.1"
+      "pbs_id": "06H-350.3.1",
+      "volgorde": 0
     },
     "06H-350.3.1.2": {
       "aanname_leeftijd": "",
@@ -11668,7 +11765,8 @@
       "object_naam": "Aarding- en bliksembeveiligingsinstallatie, Algemeen_1016_-",
       "ontwerpleeftijd_jaar": 0.0,
       "parent_pbs_id": "06H-350.3.1",
-      "pbs_id": "06H-350.3.1.2"
+      "pbs_id": "06H-350.3.1.2",
+      "volgorde": 0
     },
     "06H-350.3.11": {
       "aanname_leeftijd": "",
@@ -11683,7 +11781,8 @@
       "object_naam": "Klimaatinstallatie, serverruimte begane grond_337_Klimaatinstallatie_",
       "ontwerpleeftijd_jaar": 0.0,
       "parent_pbs_id": "06H-350.3",
-      "pbs_id": "06H-350.3.11"
+      "pbs_id": "06H-350.3.11",
+      "volgorde": 1
     },
     "06H-350.3.11.1": {
       "aanname_leeftijd": "",
@@ -11698,7 +11797,8 @@
       "object_naam": "Koelmachine (buiten)_1313_",
       "ontwerpleeftijd_jaar": 0.0,
       "parent_pbs_id": "06H-350.3.11",
-      "pbs_id": "06H-350.3.11.1"
+      "pbs_id": "06H-350.3.11.1",
+      "volgorde": 0
     },
     "06H-350.3.11.2": {
       "aanname_leeftijd": "",
@@ -11713,7 +11813,8 @@
       "object_naam": "Warmtewisselaar (binnen)_1620_",
       "ontwerpleeftijd_jaar": 0.0,
       "parent_pbs_id": "06H-350.3.11",
-      "pbs_id": "06H-350.3.11.2"
+      "pbs_id": "06H-350.3.11.2",
+      "volgorde": 1
     },
     "06H-350.3.12": {
       "aanname_leeftijd": "",
@@ -11728,7 +11829,8 @@
       "object_naam": "Laagspanningsinstallatie (sluis/brug), brugkelder ophaalbrug benedenhoofd 06H-350-03_162_Laagspanningsinstallatie_",
       "ontwerpleeftijd_jaar": 0.0,
       "parent_pbs_id": "06H-350.3",
-      "pbs_id": "06H-350.3.12"
+      "pbs_id": "06H-350.3.12",
+      "volgorde": 2
     },
     "06H-350.3.12.2": {
       "aanname_leeftijd": "",
@@ -11743,7 +11845,8 @@
       "object_naam": "Hoofdverdeler Kast V1_1256_",
       "ontwerpleeftijd_jaar": 0.0,
       "parent_pbs_id": "06H-350.3.12",
-      "pbs_id": "06H-350.3.12.2"
+      "pbs_id": "06H-350.3.12.2",
+      "volgorde": 0
     },
     "06H-350.3.13": {
       "aanname_leeftijd": "",
@@ -11758,7 +11861,8 @@
       "object_naam": "Marifooninstallatie_168_Marifooninstallatie_",
       "ontwerpleeftijd_jaar": 0.0,
       "parent_pbs_id": "06H-350.3",
-      "pbs_id": "06H-350.3.13"
+      "pbs_id": "06H-350.3.13",
+      "volgorde": 3
     },
     "06H-350.3.13.4": {
       "aanname_leeftijd": "",
@@ -11773,7 +11877,8 @@
       "object_naam": "Marifooninstallatie, Algemeen_1356_-",
       "ontwerpleeftijd_jaar": 0.0,
       "parent_pbs_id": "06H-350.3.13",
-      "pbs_id": "06H-350.3.13.4"
+      "pbs_id": "06H-350.3.13.4",
+      "volgorde": 0
     },
     "06H-350.3.14": {
       "aanname_leeftijd": "",
@@ -11788,7 +11893,8 @@
       "object_naam": "Meetinstallatie_374_Meetinstallatie_",
       "ontwerpleeftijd_jaar": 0.0,
       "parent_pbs_id": "06H-350.3",
-      "pbs_id": "06H-350.3.14"
+      "pbs_id": "06H-350.3.14",
+      "volgorde": 4
     },
     "06H-350.3.14.3": {
       "aanname_leeftijd": "",
@@ -11803,7 +11909,8 @@
       "object_naam": "Sensor, Anemo meting_1490_",
       "ontwerpleeftijd_jaar": 0.0,
       "parent_pbs_id": "06H-350.3.14",
-      "pbs_id": "06H-350.3.14.3"
+      "pbs_id": "06H-350.3.14.3",
+      "volgorde": 0
     },
     "06H-350.3.14.4": {
       "aanname_leeftijd": "",
@@ -11818,7 +11925,8 @@
       "object_naam": "Sensor, Waterhoogtemeting, tpv Wachtplaats recreatievaart Gaarkeukensluis westzijde_1490_",
       "ontwerpleeftijd_jaar": 0.0,
       "parent_pbs_id": "06H-350.3.14",
-      "pbs_id": "06H-350.3.14.4"
+      "pbs_id": "06H-350.3.14.4",
+      "volgorde": 1
     },
     "06H-350.3.15": {
       "aanname_leeftijd": "",
@@ -11833,7 +11941,8 @@
       "object_naam": "Noodstroominstallatie (statisch)",
       "ontwerpleeftijd_jaar": 0.0,
       "parent_pbs_id": "06H-350.3",
-      "pbs_id": "06H-350.3.15"
+      "pbs_id": "06H-350.3.15",
+      "volgorde": 5
     },
     "06H-350.3.15.4": {
       "aanname_leeftijd": "",
@@ -11848,7 +11957,8 @@
       "object_naam": "Noodstroominstallatie, statisch, Algemeen_1379_-",
       "ontwerpleeftijd_jaar": 0.0,
       "parent_pbs_id": "06H-350.3.15",
-      "pbs_id": "06H-350.3.15.4"
+      "pbs_id": "06H-350.3.15.4",
+      "volgorde": 0
     },
     "06H-350.3.16": {
       "aanname_leeftijd": "",
@@ -11863,7 +11973,8 @@
       "object_naam": "Objectverlichting_173_Objectverlichting_",
       "ontwerpleeftijd_jaar": 0.0,
       "parent_pbs_id": "06H-350.3",
-      "pbs_id": "06H-350.3.16"
+      "pbs_id": "06H-350.3.16",
+      "volgorde": 6
     },
     "06H-350.3.16.1": {
       "aanname_leeftijd": "",
@@ -11878,7 +11989,8 @@
       "object_naam": "Armatuur, 2.1 t/m 2.38, opgebost (38x)_1042_",
       "ontwerpleeftijd_jaar": 0.0,
       "parent_pbs_id": "06H-350.3.16",
-      "pbs_id": "06H-350.3.16.1"
+      "pbs_id": "06H-350.3.16.1",
+      "volgorde": 0
     },
     "06H-350.3.16.2": {
       "aanname_leeftijd": "",
@@ -11893,7 +12005,8 @@
       "object_naam": "Armatuur_1042_-(hallogeen, keuze maken)",
       "ontwerpleeftijd_jaar": 0.0,
       "parent_pbs_id": "06H-350.3.16",
-      "pbs_id": "06H-350.3.16.2"
+      "pbs_id": "06H-350.3.16.2",
+      "volgorde": 1
     },
     "06H-350.3.16.3": {
       "aanname_leeftijd": "",
@@ -11908,7 +12021,8 @@
       "object_naam": "Armatuur_1042_-(led, keuze maken)",
       "ontwerpleeftijd_jaar": 0.0,
       "parent_pbs_id": "06H-350.3.16",
-      "pbs_id": "06H-350.3.16.3"
+      "pbs_id": "06H-350.3.16.3",
+      "volgorde": 2
     },
     "06H-350.3.17": {
       "aanname_leeftijd": "",
@@ -11923,7 +12037,8 @@
       "object_naam": "Omroepinstallatie_175_Omroepinstallatie_",
       "ontwerpleeftijd_jaar": 0.0,
       "parent_pbs_id": "06H-350.3",
-      "pbs_id": "06H-350.3.17"
+      "pbs_id": "06H-350.3.17",
+      "volgorde": 7
     },
     "06H-350.3.17.8": {
       "aanname_leeftijd": "",
@@ -11938,7 +12053,8 @@
       "object_naam": "Omroepinstallatie, Algemeen_1385_-",
       "ontwerpleeftijd_jaar": 0.0,
       "parent_pbs_id": "06H-350.3.17",
-      "pbs_id": "06H-350.3.17.8"
+      "pbs_id": "06H-350.3.17.8",
+      "volgorde": 0
     },
     "06H-350.3.18": {
       "aanname_leeftijd": "",
@@ -11953,7 +12069,8 @@
       "object_naam": "Reddingsmiddel_362_Reddingsmiddel_",
       "ontwerpleeftijd_jaar": 0.0,
       "parent_pbs_id": "06H-350.3",
-      "pbs_id": "06H-350.3.18"
+      "pbs_id": "06H-350.3.18",
+      "volgorde": 8
     },
     "06H-350.3.18.5": {
       "aanname_leeftijd": "",
@@ -11968,7 +12085,8 @@
       "object_naam": "Reddingsmiddel_362 (n=2)",
       "ontwerpleeftijd_jaar": 0.0,
       "parent_pbs_id": "06H-350.3.18",
-      "pbs_id": "06H-350.3.18.5"
+      "pbs_id": "06H-350.3.18.5",
+      "volgorde": 0
     },
     "06H-350.3.18.5.1": {
       "aanname_leeftijd": "",
@@ -11983,7 +12101,8 @@
       "object_naam": "Reddingsvest_2071",
       "ontwerpleeftijd_jaar": 0.0,
       "parent_pbs_id": "06H-350.3.18.5",
-      "pbs_id": "06H-350.3.18.5.1"
+      "pbs_id": "06H-350.3.18.5.1",
+      "volgorde": 0
     },
     "06H-350.3.19": {
       "aanname_leeftijd": "",
@@ -11998,7 +12117,8 @@
       "object_naam": "Scheepverkeersbeseining_195_Scheepverkeersbeseining_",
       "ontwerpleeftijd_jaar": 0.0,
       "parent_pbs_id": "06H-350.3",
-      "pbs_id": "06H-350.3.19"
+      "pbs_id": "06H-350.3.19",
+      "volgorde": 9
     },
     "06H-350.3.19.4": {
       "aanname_leeftijd": "",
@@ -12013,7 +12133,8 @@
       "object_naam": "Scheepverkeersbeseining, Algemeen_1481_-",
       "ontwerpleeftijd_jaar": 0.0,
       "parent_pbs_id": "06H-350.3.19",
-      "pbs_id": "06H-350.3.19.4"
+      "pbs_id": "06H-350.3.19.4",
+      "volgorde": 0
     },
     "06H-350.3.2": {
       "aanname_leeftijd": "",
@@ -12028,7 +12149,8 @@
       "object_naam": "Bebording en bewegwijzering (statisch)_111_Bebording en bewegwijzering (statisch)_ opgebost gemodelleerd bij OOV",
       "ontwerpleeftijd_jaar": 0.0,
       "parent_pbs_id": "06H-350.3",
-      "pbs_id": "06H-350.3.2"
+      "pbs_id": "06H-350.3.2",
+      "volgorde": 10
     },
     "06H-350.3.20": {
       "aanname_leeftijd": "",
@@ -12043,7 +12165,8 @@
       "object_naam": "Telefooninstallatie_206_Telefooninstallatie_",
       "ontwerpleeftijd_jaar": 0.0,
       "parent_pbs_id": "06H-350.3",
-      "pbs_id": "06H-350.3.20"
+      "pbs_id": "06H-350.3.20",
+      "volgorde": 11
     },
     "06H-350.3.20.3": {
       "aanname_leeftijd": "",
@@ -12058,7 +12181,8 @@
       "object_naam": "Telefooninstallatie, Algemeen_1521_-",
       "ontwerpleeftijd_jaar": 0.0,
       "parent_pbs_id": "06H-350.3.20",
-      "pbs_id": "06H-350.3.20.3"
+      "pbs_id": "06H-350.3.20.3",
+      "volgorde": 0
     },
     "06H-350.3.21": {
       "aanname_leeftijd": "",
@@ -12073,7 +12197,8 @@
       "object_naam": "Transmissie-installatie, IA Complex netwerk_124_Transmissie-installatie_",
       "ontwerpleeftijd_jaar": 0.0,
       "parent_pbs_id": "06H-350.3",
-      "pbs_id": "06H-350.3.21"
+      "pbs_id": "06H-350.3.21",
+      "volgorde": 12
     },
     "06H-350.3.21.8": {
       "aanname_leeftijd": "",
@@ -12088,7 +12213,8 @@
       "object_naam": "Transmissie installatie, algemeen",
       "ontwerpleeftijd_jaar": 0.0,
       "parent_pbs_id": "06H-350.3.21",
-      "pbs_id": "06H-350.3.21.8"
+      "pbs_id": "06H-350.3.21.8",
+      "volgorde": 0
     },
     "06H-350.3.23": {
       "aanname_leeftijd": "",
@@ -12103,7 +12229,8 @@
       "object_naam": "Vluchtweginstallatie, zowel sluis als brug_232_Vluchtweginstallatie_",
       "ontwerpleeftijd_jaar": 0.0,
       "parent_pbs_id": "06H-350.3",
-      "pbs_id": "06H-350.3.23"
+      "pbs_id": "06H-350.3.23",
+      "volgorde": 13
     },
     "06H-350.3.23.2": {
       "aanname_leeftijd": "",
@@ -12118,7 +12245,8 @@
       "object_naam": "Vluchtweginstallatie, Algemeen_1608_-(n=aanname)",
       "ontwerpleeftijd_jaar": 0.0,
       "parent_pbs_id": "06H-350.3.23",
-      "pbs_id": "06H-350.3.23.2"
+      "pbs_id": "06H-350.3.23.2",
+      "volgorde": 0
     },
     "06H-350.3.3": {
       "aanname_leeftijd": "",
@@ -12133,7 +12261,8 @@
       "object_naam": "Bedienings- en besturingssysteem_112",
       "ontwerpleeftijd_jaar": 0.0,
       "parent_pbs_id": "06H-350.3",
-      "pbs_id": "06H-350.3.3"
+      "pbs_id": "06H-350.3.3",
+      "volgorde": 14
     },
     "06H-350.3.3.1": {
       "aanname_leeftijd": "",
@@ -12148,7 +12277,8 @@
       "object_naam": "Bedienings- en besturingsinstallatie, Besturing en Koppelkastjes_112_Bedienings- en besturingsinstallatie_",
       "ontwerpleeftijd_jaar": 0.0,
       "parent_pbs_id": "06H-350.3.3",
-      "pbs_id": "06H-350.3.3.1"
+      "pbs_id": "06H-350.3.3.1",
+      "volgorde": 0
     },
     "06H-350.3.3.1.1": {
       "aanname_leeftijd": "",
@@ -12163,7 +12293,8 @@
       "object_naam": "Bedieningspaneel_1057_-(n=1)",
       "ontwerpleeftijd_jaar": 0.0,
       "parent_pbs_id": "06H-350.3.3.1",
-      "pbs_id": "06H-350.3.3.1.1"
+      "pbs_id": "06H-350.3.3.1.1",
+      "volgorde": 0
     },
     "06H-350.3.3.6": {
       "aanname_leeftijd": "",
@@ -12178,7 +12309,8 @@
       "object_naam": "Bedienings- en besturingssysteem, Algemeen_1056_-",
       "ontwerpleeftijd_jaar": 0.0,
       "parent_pbs_id": "06H-350.3.3",
-      "pbs_id": "06H-350.3.3.6"
+      "pbs_id": "06H-350.3.3.6",
+      "volgorde": 1
     },
     "06H-350.3.3.7": {
       "aanname_leeftijd": "",
@@ -12193,7 +12325,8 @@
       "object_naam": "Supervisory Control and Data Acquisition (SCADA-systeem)_1475_-(n=6) --> overgenomen uit bestaande model - controle met Ultimo",
       "ontwerpleeftijd_jaar": 0.0,
       "parent_pbs_id": "06H-350.3.3",
-      "pbs_id": "06H-350.3.3.7"
+      "pbs_id": "06H-350.3.3.7",
+      "volgorde": 2
     },
     "06H-350.3.5": {
       "aanname_leeftijd": "",
@@ -12208,7 +12341,8 @@
       "object_naam": "Closed Circuit TeleVision installatie (CCTV installatie)_122_Closed Circuit TeleVision installatie (CCTV)_",
       "ontwerpleeftijd_jaar": 0.0,
       "parent_pbs_id": "06H-350.3",
-      "pbs_id": "06H-350.3.5"
+      "pbs_id": "06H-350.3.5",
+      "volgorde": 15
     },
     "06H-350.3.5.2": {
       "aanname_leeftijd": "",
@@ -12223,7 +12357,8 @@
       "object_naam": "Camera (beweegbaar), Bedienpost toegang (CAM04)_2080_",
       "ontwerpleeftijd_jaar": 0.0,
       "parent_pbs_id": "06H-350.3.5",
-      "pbs_id": "06H-350.3.5.2"
+      "pbs_id": "06H-350.3.5.2",
+      "volgorde": 0
     },
     "06H-350.3.5.9": {
       "aanname_leeftijd": "",
@@ -12238,7 +12373,8 @@
       "object_naam": "Mast, opgebost (114x)_1358_",
       "ontwerpleeftijd_jaar": 0.0,
       "parent_pbs_id": "06H-350.3.5",
-      "pbs_id": "06H-350.3.5.9"
+      "pbs_id": "06H-350.3.5.9",
+      "volgorde": 1
     },
     "06H-350.3.6": {
       "aanname_leeftijd": "",
@@ -12253,7 +12389,8 @@
       "object_naam": "Dynamische bewegwijzering en informatie systemen_130_Dynamische bewegwijzering en informatie systemen_",
       "ontwerpleeftijd_jaar": 0.0,
       "parent_pbs_id": "06H-350.3",
-      "pbs_id": "06H-350.3.6"
+      "pbs_id": "06H-350.3.6",
+      "volgorde": 16
     },
     "06H-350.3.6.1": {
       "aanname_leeftijd": "",
@@ -12268,7 +12405,8 @@
       "object_naam": "Display, benedenhoofd_1160_",
       "ontwerpleeftijd_jaar": 0.0,
       "parent_pbs_id": "06H-350.3.6",
-      "pbs_id": "06H-350.3.6.1"
+      "pbs_id": "06H-350.3.6.1",
+      "volgorde": 0
     },
     "06H-350.3.6.2": {
       "aanname_leeftijd": "",
@@ -12283,7 +12421,8 @@
       "object_naam": "Dynamische bewegwijzering en informatiesystemen, Algemeen_1180",
       "ontwerpleeftijd_jaar": 0.0,
       "parent_pbs_id": "06H-350.3.6",
-      "pbs_id": "06H-350.3.6.2"
+      "pbs_id": "06H-350.3.6.2",
+      "volgorde": 1
     },
     "06H-350.3.6.3": {
       "aanname_leeftijd": "",
@@ -12298,7 +12437,8 @@
       "object_naam": "Verwerkingseenheid, ter sturing van matrixpaneel_1597_",
       "ontwerpleeftijd_jaar": 0.0,
       "parent_pbs_id": "06H-350.3.6",
-      "pbs_id": "06H-350.3.6.3"
+      "pbs_id": "06H-350.3.6.3",
+      "volgorde": 2
     },
     "06H-350.3.8": {
       "aanname_leeftijd": "",
@@ -12313,7 +12453,8 @@
       "object_naam": "Intercominstallatie_153_Intercominstallatie_",
       "ontwerpleeftijd_jaar": 0.0,
       "parent_pbs_id": "06H-350.3",
-      "pbs_id": "06H-350.3.8"
+      "pbs_id": "06H-350.3.8",
+      "volgorde": 17
     },
     "06H-350.3.8.2": {
       "aanname_leeftijd": "",
@@ -12328,7 +12469,8 @@
       "object_naam": "Intercominstallatie, Algemeen_1274_-",
       "ontwerpleeftijd_jaar": 0.0,
       "parent_pbs_id": "06H-350.3.8",
-      "pbs_id": "06H-350.3.8.2"
+      "pbs_id": "06H-350.3.8.2",
+      "volgorde": 0
     },
     "06H-350.3.8.3": {
       "aanname_leeftijd": "",
@@ -12343,7 +12485,8 @@
       "object_naam": "Intercompost, in bedieningsruimte, opgebost (6x)_1275_",
       "ontwerpleeftijd_jaar": 0.0,
       "parent_pbs_id": "06H-350.3.8",
-      "pbs_id": "06H-350.3.8.3"
+      "pbs_id": "06H-350.3.8.3",
+      "volgorde": 1
     },
     "06H-350.3.9": {
       "aanname_leeftijd": "",
@@ -12358,7 +12501,8 @@
       "object_naam": "Kabel, glasvezel inclusief patchpaneel_113_Kabel_",
       "ontwerpleeftijd_jaar": 0.0,
       "parent_pbs_id": "06H-350.3",
-      "pbs_id": "06H-350.3.9"
+      "pbs_id": "06H-350.3.9",
+      "volgorde": 18
     },
     "06H-350.3.9.1": {
       "aanname_leeftijd": "",
@@ -12373,7 +12517,8 @@
       "object_naam": "Glasvezelkabel_1222_",
       "ontwerpleeftijd_jaar": 0.0,
       "parent_pbs_id": "06H-350.3.9",
-      "pbs_id": "06H-350.3.9.1"
+      "pbs_id": "06H-350.3.9.1",
+      "volgorde": 0
     },
     "06H-350.4": {
       "aanname_leeftijd": "",
@@ -12388,7 +12533,8 @@
       "object_naam": "05 Infragebonden gebouw, HLD 047.2km, Gaarkeuken (Bediengebouw Poelweg 21) [06H-350-05]",
       "ontwerpleeftijd_jaar": 0.0,
       "parent_pbs_id": "06H-350",
-      "pbs_id": "06H-350.4"
+      "pbs_id": "06H-350.4",
+      "volgorde": 3
     },
     "06H-350.4.13": {
       "aanname_leeftijd": "",
@@ -12403,7 +12549,8 @@
       "object_naam": "Klimaatinstallatie_337_Klimaatinstallatie_",
       "ontwerpleeftijd_jaar": 0.0,
       "parent_pbs_id": "06H-350.4",
-      "pbs_id": "06H-350.4.13"
+      "pbs_id": "06H-350.4.13",
+      "volgorde": 0
     },
     "06H-350.4.13.3": {
       "aanname_leeftijd": "",
@@ -12418,7 +12565,8 @@
       "object_naam": "Koelmachine, airconditioning tbv bediening_1313_",
       "ontwerpleeftijd_jaar": 0.0,
       "parent_pbs_id": "06H-350.4.13",
-      "pbs_id": "06H-350.4.13.3"
+      "pbs_id": "06H-350.4.13.3",
+      "volgorde": 0
     },
     "06H-350.4.15": {
       "aanname_leeftijd": "",
@@ -12433,7 +12581,8 @@
       "object_naam": "Laagspanningsinstallatie, Infragebonden gebouw_162_Laagspanningsinstallatie_",
       "ontwerpleeftijd_jaar": 0.0,
       "parent_pbs_id": "06H-350.4",
-      "pbs_id": "06H-350.4.15"
+      "pbs_id": "06H-350.4.15",
+      "volgorde": 1
     },
     "06H-350.4.15.1": {
       "aanname_leeftijd": "",
@@ -12448,7 +12597,8 @@
       "object_naam": "Bekabeling_1062_",
       "ontwerpleeftijd_jaar": 0.0,
       "parent_pbs_id": "06H-350.4.15",
-      "pbs_id": "06H-350.4.15.1"
+      "pbs_id": "06H-350.4.15.1",
+      "volgorde": 0
     },
     "06H-350.4.20": {
       "aanname_leeftijd": "",
@@ -12463,7 +12613,8 @@
       "object_naam": "Vluchtweginstallatie_232_Vluchtweginstallatie_",
       "ontwerpleeftijd_jaar": 0.0,
       "parent_pbs_id": "06H-350.4",
-      "pbs_id": "06H-350.4.20"
+      "pbs_id": "06H-350.4.20",
+      "volgorde": 2
     },
     "06H-350.4.20.1": {
       "aanname_leeftijd": "",
@@ -12478,7 +12629,8 @@
       "object_naam": "Vluchtwegverlichting (dynamisch), opgebost (ca. 20x)_1609_",
       "ontwerpleeftijd_jaar": 0.0,
       "parent_pbs_id": "06H-350.4.20",
-      "pbs_id": "06H-350.4.20.1"
+      "pbs_id": "06H-350.4.20.1",
+      "volgorde": 0
     },
     "06H-350.4.3": {
       "aanname_leeftijd": "",
@@ -12493,7 +12645,8 @@
       "object_naam": "Binnenverlichting_173_Objectverlichting_",
       "ontwerpleeftijd_jaar": 0.0,
       "parent_pbs_id": "06H-350.4",
-      "pbs_id": "06H-350.4.3"
+      "pbs_id": "06H-350.4.3",
+      "volgorde": 3
     },
     "06H-350.4.3.2": {
       "aanname_leeftijd": "",
@@ -12508,7 +12661,8 @@
       "object_naam": "Binnenverlichting, Algemeen_1074_-",
       "ontwerpleeftijd_jaar": 0.0,
       "parent_pbs_id": "06H-350.4.3",
-      "pbs_id": "06H-350.4.3.2"
+      "pbs_id": "06H-350.4.3.2",
+      "volgorde": 0
     },
     "06H-350.4.4": {
       "aanname_leeftijd": "",
@@ -12523,7 +12677,8 @@
       "object_naam": "Brandblusinstallatie_119_Brandblusinstallatie_",
       "ontwerpleeftijd_jaar": 0.0,
       "parent_pbs_id": "06H-350.4",
-      "pbs_id": "06H-350.4.4"
+      "pbs_id": "06H-350.4.4",
+      "volgorde": 4
     },
     "06H-350.4.4.10": {
       "aanname_leeftijd": "",
@@ -12538,7 +12693,8 @@
       "object_naam": "Brandblussysteem, Algemeen_1101_-",
       "ontwerpleeftijd_jaar": 0.0,
       "parent_pbs_id": "06H-350.4.4",
-      "pbs_id": "06H-350.4.4.10"
+      "pbs_id": "06H-350.4.4.10",
+      "volgorde": 0
     },
     "06H-350.4.4.9": {
       "aanname_leeftijd": "",
@@ -12553,7 +12709,8 @@
       "object_naam": "Brandblusser_1100_-",
       "ontwerpleeftijd_jaar": 0.0,
       "parent_pbs_id": "06H-350.4.4",
-      "pbs_id": "06H-350.4.4.9"
+      "pbs_id": "06H-350.4.4.9",
+      "volgorde": 1
     },
     "06H-350.4.5": {
       "aanname_leeftijd": "",
@@ -12568,7 +12725,8 @@
       "object_naam": "Brandmeld- en ontruimingsinstallatie (BMI)_120_Brandmeld- en ontruimingsinstallatie (BMI)_",
       "ontwerpleeftijd_jaar": 0.0,
       "parent_pbs_id": "06H-350.4",
-      "pbs_id": "06H-350.4.5"
+      "pbs_id": "06H-350.4.5",
+      "volgorde": 5
     },
     "06H-350.4.5.1": {
       "aanname_leeftijd": "",
@@ -12583,7 +12741,8 @@
       "object_naam": "Brandmeld- en ontruimingsinstallatie (BMI), Algemeen_1102_-",
       "ontwerpleeftijd_jaar": 0.0,
       "parent_pbs_id": "06H-350.4.5",
-      "pbs_id": "06H-350.4.5.1"
+      "pbs_id": "06H-350.4.5.1",
+      "volgorde": 0
     },
     "06H-350.5": {
       "aanname_leeftijd": "",
@@ -12598,7 +12757,8 @@
       "object_naam": "05 Terrein, Gaarkeuken (Terrein) [06H-350-05]",
       "ontwerpleeftijd_jaar": 0.0,
       "parent_pbs_id": "06H-350",
-      "pbs_id": "06H-350.5"
+      "pbs_id": "06H-350.5",
+      "volgorde": 4
     },
     "06H-350.5.4": {
       "aanname_leeftijd": "",
@@ -12613,7 +12773,8 @@
       "object_naam": "Hemelwaterafvoer (HWA)_144_Hemelwaterafvoer (HWA)_",
       "ontwerpleeftijd_jaar": 0.0,
       "parent_pbs_id": "06H-350.5",
-      "pbs_id": "06H-350.5.4"
+      "pbs_id": "06H-350.5.4",
+      "volgorde": 0
     },
     "06H-350.5.4.2": {
       "aanname_leeftijd": "",
@@ -12628,7 +12789,8 @@
       "object_naam": "Hemelwaterafvoer (HWA), Algemeen_1249_staal",
       "ontwerpleeftijd_jaar": 0.0,
       "parent_pbs_id": "06H-350.5.4",
-      "pbs_id": "06H-350.5.4.2"
+      "pbs_id": "06H-350.5.4.2",
+      "volgorde": 0
     },
     "06H-350.5.7": {
       "aanname_leeftijd": "",
@@ -12643,7 +12805,8 @@
       "object_naam": "Verharding wegtype 5 (weg in woongebied), verharding bedoelt voor voertuigen_223_Verharding wegtype 5 (weg in woongebied)_",
       "ontwerpleeftijd_jaar": 0.0,
       "parent_pbs_id": "06H-350.5",
-      "pbs_id": "06H-350.5.7"
+      "pbs_id": "06H-350.5.7",
+      "volgorde": 1
     },
     "06H-350.5.7.1": {
       "aanname_leeftijd": "",
@@ -12658,7 +12821,8 @@
       "object_naam": "Betonverharding, stelconplaten, voor voertuigen over gehele terrein toegepast_1070_",
       "ontwerpleeftijd_jaar": 0.0,
       "parent_pbs_id": "06H-350.5.7",
-      "pbs_id": "06H-350.5.7.1"
+      "pbs_id": "06H-350.5.7.1",
+      "volgorde": 0
     },
     "06H-350.5.7.2": {
       "aanname_leeftijd": "",
@@ -12673,7 +12837,8 @@
       "object_naam": "Deklaag (dicht), voor voertuigen over gehele terrein toegepast_2173_",
       "ontwerpleeftijd_jaar": 0.0,
       "parent_pbs_id": "06H-350.5.7",
-      "pbs_id": "06H-350.5.7.2"
+      "pbs_id": "06H-350.5.7.2",
+      "volgorde": 1
     },
     "06H-350.5.7.3": {
       "aanname_leeftijd": "",
@@ -12688,7 +12853,8 @@
       "object_naam": "Elementenverharding, betonstraatsteen, voor voertuigen over gehele terrein toegepast_1184_",
       "ontwerpleeftijd_jaar": 0.0,
       "parent_pbs_id": "06H-350.5.7",
-      "pbs_id": "06H-350.5.7.3"
+      "pbs_id": "06H-350.5.7.3",
+      "volgorde": 2
     }
   },
   "pm_effect_links": {

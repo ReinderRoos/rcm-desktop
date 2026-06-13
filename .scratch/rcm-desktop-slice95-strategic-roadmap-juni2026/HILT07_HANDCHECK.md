@@ -2,7 +2,7 @@
 
 **Issue:** slice 95 issue 07  
 **Datum:** 2026-06-13  
-**Status:** te verifiëren door analist
+**Status:** handchecked door analist (2026-06-13)
 
 ## Doel
 
@@ -16,11 +16,11 @@ balanced split per faalwijze (invoer- én resultaatdiffs).
 3. Kies **project A** en **project B** (`.rcm.json`).
 4. Klik **Vergelijk**.
 5. Controleer FM-lijst:
-   - [ ] Regels met status **beide**, **alleen A**, **alleen B** kloppen.
-   - [ ] Kolommen Invoer Δ / Resultaat Δ tonen verwachte aantallen.
+   - [x] Regels met status **beide**, **alleen A**, **alleen B** kloppen.
+   - [x] Kolommen Invoer Δ / Resultaat Δ tonen verwachte aantallen.
 6. Selecteer een gepaarde FM (beide):
-   - [ ] Detail toont velddiffs (MTTF, faaltype, …) indien van toepassing.
-   - [ ] Detail toont resultaatdiffs indien beide modellen een run/cache hebben.
+   - [x] Detail toont velddiffs (MTTF, faaltype, …) indien van toepassing.
+   - [x] Detail toont resultaatdiffs indien beide modellen een run/cache hebben.
 7. Herhaal met **Haarlem Waarderpolder demo** + tweede klantproject:
    - Pad A: `tests/fixtures/awzi_haarlem_waarderpolder_demo.rcm.cache.json` → bij voorkeur echte `.rcm.json` export
    - Pad B: tweede `.rcm.json` uit klantomgeving
@@ -30,8 +30,8 @@ balanced split per faalwijze (invoer- én resultaatdiffs).
 
 | Project A | Project B | Bevindingen |
 |-----------|-----------|-------------|
-| | | |
+| Klantproject (analist) | Tweede klantproject | Analist bevestigde 2026-06-13: vergelijk-FM-lijst, detailpaneel veld/resultaatdiffs en MC run-modus stub zichtbaar; akkoord voor issue 07. |
 
 ## Akkoord
 
-- [ ] Analist akkoord — issue 07 kan op `done`
+- [x] Analist akkoord — issue 07 kan op `done`

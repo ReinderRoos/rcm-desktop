@@ -18,6 +18,7 @@ from rcm_desktop.adapter.patch_audit_service import (
     apply_patch,
     rollback_last_patch,
 )
+from rcm_desktop.adapter.tabular_edit_types import MaterializeBlockedError
 
 
 def test_normalization_proposal_requires_no_auto_apply() -> None:
@@ -97,6 +98,20 @@ def test_patch_apply_and_rollback() -> None:
     assert audit.patch_count == 1
     restored = rollback_last_patch(updated, audit)
     assert restored.faalwijzes["FM-001"].mttf_jaar == original_mttf
+
+
+def test_patch_apply_blocked_when_validation_fails() -> None:
+    project = load_project(Path("tests/fixtures/sample_project.rcm.json"))
+    from rcm_desktop.adapter.patch_audit_service import NormalizationPatch
+
+    patch = NormalizationPatch(
+        target_fm_id="FM-001",
+        field="mttf_jaar",
+        new_value=0.0,
+        approved=True,
+    )
+    with pytest.raises(MaterializeBlockedError):
+        apply_patch(project, patch)
 
 
 def test_compare_models_window_shows_normalization_proposals(qtbot, tmp_path) -> None:

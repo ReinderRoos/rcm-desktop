@@ -6,8 +6,10 @@ import copy
 from dataclasses import dataclass, field
 
 from rcm_core.models import RCMProject
+from rcm_core.validators import validate_project
 
 from rcm_desktop.adapter.normalization_proposal_service import NormalizationProposalItem
+from rcm_desktop.adapter.tabular_edit_types import MaterializeBlockedError
 
 
 @dataclass(frozen=True)
@@ -36,6 +38,11 @@ def apply_patch(project: RCMProject, patch: NormalizationPatch) -> tuple[RCMProj
         raise ValueError(f"Unknown FM: {patch.target_fm_id}")
     previous = getattr(fm, patch.field, None)
     setattr(fm, patch.field, patch.new_value)
+    validation_errors = validate_project(updated)
+    if validation_errors:
+        raise MaterializeBlockedError(
+            f"Patch geblokkeerd: {validation_errors[0].message}"
+        )
     audit = AuditTrail(
         entries=[
             {
