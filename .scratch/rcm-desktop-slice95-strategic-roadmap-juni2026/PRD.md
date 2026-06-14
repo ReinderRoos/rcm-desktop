@@ -1,9 +1,10 @@
 # PRD — Strategische roadmap RCM2 desktop (grill juni 2026)
 
-**Status:** ready-for-agent  
+**Status:** done  
 **Versie:** 1.0  
 **Datum:** 2026-06-13  
-**Triage:** `ready-for-agent`  
+**Triage:** `done`  
+**Merge:** PR #35 (`feat/workspace-rapportage-slice58`) — 2026-06-13  
 **Type:** Meta-roadmap + gefaseerde product- en architectuurslices  
 **Parent:** `/grill-with-docs` sessie open taken (2026-06-13); architectuurplan juni 2026; slices 87–94 (werkruimte-stabilisatie)  
 **Relatie:** slice 56/60 (A/B-compare), slice 79 (view-registry), slice 50/41 (orchestrator-ontvlechting), epic parity/portfolio/MC (`GRILL_DECISIONS.md`), ADR-0006/0007 (compare), ADR-0014/0015 (input-grid)
