@@ -34,6 +34,7 @@ from rcm_desktop.adapter.patch_audit_service import (
     apply_approved_normalization,
     rollback_last_patch,
 )
+from rcm_desktop.adapter.tabular_edit_types import MaterializeBlockedError
 from rcm_desktop.adapter.compare_workspace_presentation_service import (
     CompareWorkspaceRow,
     build_compare_workspace_view_state,
@@ -271,11 +272,19 @@ class CompareModelsWindow(QMainWindow):
                 messages.NORMALIZATION_REVIEW_NO_APPROVED,
             )
             return
-        updated, audit = apply_approved_normalization(
-            self._compare_session.project_a,
-            self._normalization_proposal_items,
-            approved_indices=approved,
-        )
+        try:
+            updated, audit = apply_approved_normalization(
+                self._compare_session.project_a,
+                self._normalization_proposal_items,
+                approved_indices=approved,
+            )
+        except MaterializeBlockedError as exc:
+            QMessageBox.warning(
+                self,
+                messages.NORMALIZATION_REVIEW_TITLE,
+                str(exc),
+            )
+            return
         self._compare_session = CompareSession(
             path_a=self._compare_session.path_a,
             path_b=self._compare_session.path_b,

@@ -179,6 +179,10 @@ def commit_edits(
     baseline_mtime_ns: int | None = None,
 ) -> FmEditCommitResult:
     session.validate()
+    if session.base_project is not None:
+        from rcm_desktop.adapter.input_grid_findings import inject_input_grid_findings
+
+        inject_input_grid_findings(session.session, base_project=session.base_project)
     if blocking_edit_error_count(session.session) > 0:
         err_msgs = _collect_error_messages(session)
         return FmEditCommitResult(

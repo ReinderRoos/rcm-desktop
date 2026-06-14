@@ -135,6 +135,7 @@ class EntityEditService:
         rows[idx][field] = adapted
 
         self._editing.apply_entity_rows(self._entity, rows)
+        revalidate_input_buffer(self._editing)
         self._invalidate_rows_cache()
         if self._changed:
             self._changed()

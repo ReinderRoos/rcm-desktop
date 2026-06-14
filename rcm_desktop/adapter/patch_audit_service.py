@@ -5,7 +5,7 @@ from __future__ import annotations
 import copy
 from dataclasses import dataclass, field
 
-from rcm_core.models import RCMProject
+from rcm_core.models import FailureType, RCMProject
 from rcm_core.validators import validate_project
 
 from rcm_desktop.adapter.normalization_proposal_service import NormalizationProposalItem
@@ -29,6 +29,19 @@ class AuditTrail:
         return len(self.entries)
 
 
+def _failure_type_value(value: object) -> str:
+    if isinstance(value, FailureType):
+        return value.value
+    return str(value).strip().lower()
+
+
+def _co_normalize_failure_type_dependents(fm: object, field: str, new_value: object) -> None:
+    if field != "failure_type":
+        return
+    if _failure_type_value(new_value) == FailureType.RANDOM.value:
+        fm.sigma_jaar = 0.0
+
+
 def apply_patch(project: RCMProject, patch: NormalizationPatch) -> tuple[RCMProject, AuditTrail]:
     if not patch.approved:
         raise ValueError("Patch requires approved=True")
@@ -38,6 +51,7 @@ def apply_patch(project: RCMProject, patch: NormalizationPatch) -> tuple[RCMProj
         raise ValueError(f"Unknown FM: {patch.target_fm_id}")
     previous = getattr(fm, patch.field, None)
     setattr(fm, patch.field, patch.new_value)
+    _co_normalize_failure_type_dependents(fm, patch.field, patch.new_value)
     validation_errors = validate_project(updated)
     if validation_errors:
         raise MaterializeBlockedError(
