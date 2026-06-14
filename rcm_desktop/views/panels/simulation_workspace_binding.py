@@ -50,6 +50,8 @@ def apply_simulation_presentation(window: Any, presentation: SimulationPresentat
     mc_mode = presentation.run_mode is RunMode.MONTE_CARLO
     label.setText(presentation.status_label)
     label.setVisible(mc_mode)
+    if hasattr(window, "run_analyse_button"):
+        window.run_analyse_button.setVisible(not mc_mode)
     if cancel_button is not None:
         busy = presentation.status == "running"
         cancel_button.setVisible(mc_mode and busy)

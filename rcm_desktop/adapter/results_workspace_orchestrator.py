@@ -519,7 +519,11 @@ class ResultsWorkspaceOrchestrator:
             has_mc_done = (
                 session.mc_run is not None and session.mc_run.status == "done"
             )
-            if not has_mc_done and not mc_fm_detail:
+            fm_analytical_without_run = (
+                current.modus == MODE_FM_DETAIL
+                and ctx.run_mode is RunMode.ANALYTICAL
+            )
+            if not has_mc_done and not mc_fm_detail and not fm_analytical_without_run:
                 return RenderPlan(kind="empty")
         if compare_view and not has_compare_data:
             return RenderPlan(kind="compare_placeholder")

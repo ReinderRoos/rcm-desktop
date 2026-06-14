@@ -125,6 +125,30 @@ def test_cancel_discards_result_and_clears_mc_slot(qapp, monkeypatch):
     assert session.mc_run is None
 
 
+def test_simulation_runner_emits_idle_after_done(qapp, monkeypatch):
+    project = _tiny_project()
+    states: list[str] = []
+
+    def fast_run(*_a, **_k):
+        return MCRunResult(status="done", seed=7, n_completed=10)
+
+    import rcm_desktop.adapter.simulation_runner as runner_mod
+
+    monkeypatch.setattr(runner_mod, "run_monte_carlo", fast_run)
+
+    runner = SimulationRunner()
+    runner.state_changed.connect(states.append)
+    assert runner.start(project, n=10, seed=7) is True
+
+    while runner.busy:
+        qapp.processEvents()
+
+    assert "done" in states
+    assert "idle" in states
+    assert states.index("done") < states.index("idle")
+    assert runner.busy is False
+
+
 def test_busy_guard_blocks_second_start(qapp, monkeypatch):
     project = _tiny_project()
     started = {"n": 0}

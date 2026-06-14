@@ -92,3 +92,17 @@ def test_monte_carlo_params_from_project_config():
     params = monte_carlo_params_from_project(project)
     assert params.n == 500
     assert params.seed is None
+
+
+def test_dispatch_compare_slot_run_returns_false_for_analytical():
+    from rcm_desktop.adapter.simulation_job_service import RunMode
+    from rcm_desktop.views.panels.simulation_run_binding import dispatch_compare_slot_run
+
+    class _Combo:
+        def currentData(self):
+            return RunMode.ANALYTICAL
+
+    class _Window:
+        simulation_run_mode_combo = _Combo()
+
+    assert dispatch_compare_slot_run(_Window(), "A") is False

@@ -104,8 +104,6 @@ class SimulationRunner(QObject):
         return self._active_job
 
     def _on_background_state(self, state: str) -> None:
-        if state == "idle" and self._active_job is not None:
-            return
         self.state_changed.emit(state)
 
     def start(

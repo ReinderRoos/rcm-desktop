@@ -1,8 +1,8 @@
 # HILT98 — Handcheck Monte Carlo engine v1
 
 **Issue:** slice 98 issue 12  
-**Datum:** 2026-06-14  
-**Status:** open — wacht op analist
+**Datum:** 2026-06-14 (hervat 2026-06-13)  
+**Status:** GO met kanttekening
 
 ## Doel
 
@@ -17,21 +17,26 @@ Visuele QA van MC Run-modus vóór merge: voortgang, seed, annuleren, FM-onzeker
 ## Stappen
 
 1. Run-modus **Monte Carlo** in validatiestrip.
-2. **Start analyse** — controleer:
-   - [ ] Voortgangspercentage zichtbaar in statusstrip
-   - [ ] Seed zichtbaar tijdens run
+   - [x] Start analyse verborgen; Run A/B beschikbaar (MC-dispatch)
+2. **Run → A** (MC-modus) — controleer:
+   - [x] Voortgangspercentage zichtbaar in statusstrip
+   - [x] Seed zichtbaar tijdens run
 3. Na voltooiing — **FM-resultaten**:
-   - [ ] P10/P50/P90 zichtbaar voor kosten, downtime, faalgebeurtenissen (P50 kolom + tooltip of band-layout)
+   - [x] P50 in kolom; tooltip toont P10 en P90 (geen P50 in tooltip)
 4. **Annuleren:** start opnieuw, klik **Annuleren** halverwege:
-   - [ ] Status geannuleerd; geen banden in FM-resultaten
+   - [x] Status geannuleerd; geen banden in FM-resultaten
 5. **Reproduceerbaarheid:**zelfde seed, opnieuw run:
-   - [ ] Banden stabiel (zelfde P50 binnen afronding)
+   - [x] Banden stabiel (zelfde P50 binnen afronding)
 6. Schakel Run-modus terug naar **Analytisch** (zonder herbereken):
-   - [ ] FM-resultaten tonen puntwaarden (geen MC-banden)
-   - [ ] Top 10 en LCC tonen analytische cijfers
+   - [x] FM-resultaten leeg wanneer geen prior analytische run (verwacht)
+   - [ ] Niet getest: puntwaarden na eerdere analytische run (geen prior run in sessie)
+
+## Kanttekening
+
+- Zonder eerdere analytische run zijn FM/Top10/LCC leeg na omschakeling naar Analytisch — verwacht gedrag, geen bug. Herbereken analyse vult views (niet opnieuw getest in deze sessie).
 
 ## Akkoord
 
 | Analist | Datum | GO / NO-GO | Opmerkingen |
 |---------|-------|------------|-------------|
-| | | | |
+| ReinderRoos | 2026-06-13 | GO met kanttekening | MC via Run A/B; tooltip P10/P90 OK; leeg analytisch zonder prior run |

@@ -817,6 +817,7 @@ def test_run_analyse_button_present_and_disabled_until_validated(monkeypatch):
     app.processEvents()
 
     assert window.run_analyse_button is not None
+    assert window.run_analyse_button.isVisible() is True
     assert window.run_analyse_button.isEnabled() is False
 
 
@@ -935,6 +936,43 @@ def test_run_analyse_enabled_after_validation(monkeypatch):
     app.processEvents()
 
     assert window.run_analyse_button.isEnabled() is True
+
+
+def test_run_analyse_reenabled_after_monte_carlo_completes(monkeypatch):
+    from rcm_desktop.adapter.simulation_engine_service import MCRunResult
+    from rcm_desktop.adapter.simulation_job_service import RunMode
+    from rcm_desktop.views.panels.simulation_run_binding import dispatch_start_analyse
+    import rcm_desktop.adapter.simulation_runner as runner_mod
+
+    def fast_run(*_a, **_k):
+        return MCRunResult(status="done", seed=1, n_completed=5)
+
+    monkeypatch.setattr(runner_mod, "run_monte_carlo", fast_run)
+
+    app = _ensure_app()
+    monkeypatch.setattr(QMessageBox, "critical", lambda *_a, **_k: QMessageBox.Ok)
+    window = ResultsWorkspaceWindow()
+    window.show()
+    project = _three_level_project()
+    window._state.set_last_result(
+        ValidateResult(status="valid", summary="ok", details=[])
+    )
+    window._state.set_last_project(project)
+
+    combo = window.simulation_run_mode_combo
+    mc_index = next(
+        i for i in range(combo.count()) if combo.itemData(i) is RunMode.MONTE_CARLO
+    )
+    combo.setCurrentIndex(mc_index)
+    app.processEvents()
+
+    assert dispatch_start_analyse(window) is True
+    while window._simulation_runner.busy:
+        app.processEvents()
+    app.processEvents()
+
+    assert window.run_analyse_button.isVisible() is False
+    assert window.run_slot_a_button.isEnabled() is True
 
 
 def test_lcc_page_never_shows_scenario_split_after_run(monkeypatch):

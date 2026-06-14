@@ -61,6 +61,7 @@ from rcm_desktop.adapter.presentation_lazy_service import (
 )
 from rcm_desktop.adapter.presentation_rebuild_runner import PresentationRebuildRunner
 from rcm_desktop.adapter.compare_run_config import CompareRunConfig
+from rcm_desktop.adapter.compare_mc_slot_state import CompareMcSlotState
 from rcm_desktop.adapter.compare_run_runner import CompareRunRunner
 from rcm_desktop.adapter.compare_run_service import CompareRunOutcome
 from rcm_desktop.adapter.compare_slot_label import build_compare_slot_label
@@ -171,6 +172,7 @@ from rcm_desktop.views.panels.input_entity_grid_binding import (
     wire_entity_grid_delete_selection,
 )
 from rcm_desktop.views.panels.simulation_run_binding import (
+    dispatch_compare_slot_run,
     dispatch_start_analyse,
     wire_simulation_run_handlers,
 )
@@ -325,6 +327,8 @@ class ResultsWorkspaceWindow(QMainWindow):
         self._render_index = WorkspaceRenderIndex()
         self._compare_slots = CompareSlotState()
         self._compare_slots.subscribe(self._on_compare_slots_changed)
+        self._compare_mc_slots = CompareMcSlotState()
+        self._pending_mc_compare_slot: str | None = None
         self._compare_run_runner = CompareRunRunner()
         self._compare_run_runner.state_changed.connect(self._on_compare_run_state_changed)
         self._compare_run_runner.slot_result_ready.connect(
@@ -379,7 +383,6 @@ class ResultsWorkspaceWindow(QMainWindow):
         self.run_analyse_button.setToolTip(messages.WORKSPACE_START_ANALYSE_BUTTON_TOOLTIP)
         self.run_analyse_button.setEnabled(False)
         self.run_analyse_button.clicked.connect(self._start_analyse)
-        self.run_analyse_button.setVisible(False)
         self.compare_scenario_combo = QComboBox()
         self.compare_scenario_combo.addItem(
             messages.WORKSPACE_COMPARE_SCENARIO_PROJECT, None
@@ -907,9 +910,15 @@ class ResultsWorkspaceWindow(QMainWindow):
         if plan.kind == "fm":
             if plan.fm is not None:
                 if plan.fm.is_mc_mode:
-                    self._render_mc_fm_rows(plan.fm.mc_rows, empty_message=plan.fm.empty_message)
+                    self._render_mc_fm_rows(
+                        plan.fm.mc_rows,
+                        empty_message=plan.fm.empty_message,
+                    )
                 else:
-                    self._render_fm_rows(plan.fm.fm_rows)
+                    self._render_fm_rows(
+                        plan.fm.fm_rows,
+                        empty_message=plan.fm.empty_message,
+                    )
             return
         if plan.kind == "bijdragen":
             self._apply_compare_chrome(plan_compare_chrome(snapshot))
@@ -1247,13 +1256,18 @@ class ResultsWorkspaceWindow(QMainWindow):
     def _render_mc_fm_rows(self, mc_rows, *, empty_message: str = "") -> None:
         model = FMMCResultsTableModel(list(mc_rows), self.fm_table_view)
         self._fm_table_filter_proxy.setSourceModel(model)
-        self.detail_empty_state_label.setText(empty_message)
-        self.detail_empty_state_label.setVisible(model.rowCount() == 0)
+        if model.rowCount() == 0:
+            self.detail_empty_state_label.setText(
+                empty_message or messages.WORKSPACE_DETAIL_EMPTY_STATE
+            )
+            self.detail_empty_state_label.setVisible(True)
+        else:
+            self.detail_empty_state_label.setVisible(False)
         if hasattr(self, "_fm_column_fit_mode"):
             self._apply_fm_column_fit_mode(self._fm_column_fit_mode)
         self._refresh_fm_filter_row_count()
 
-    def _render_fm_rows(self, fm_rows) -> None:
+    def _render_fm_rows(self, fm_rows, *, empty_message: str = "") -> None:
         prior_fm_id = self._selected_fm_id_from_table()
         model = FMResultsTableModel(list(fm_rows), self.fm_table_view)
         self._fm_table_filter_proxy.setSourceModel(model)
@@ -1263,7 +1277,13 @@ class ResultsWorkspaceWindow(QMainWindow):
             col = default_fm_sort_column(metric)
             self.fm_table_view.sortByColumn(col, Qt.DescendingOrder)
         self._apply_fm_optional_column_visibility()
-        self.detail_empty_state_label.setVisible(model.rowCount() == 0)
+        if model.rowCount() == 0:
+            self.detail_empty_state_label.setText(
+                empty_message or messages.WORKSPACE_DETAIL_EMPTY_STATE
+            )
+            self.detail_empty_state_label.setVisible(True)
+        else:
+            self.detail_empty_state_label.setVisible(False)
         if hasattr(self, "_fm_column_fit_mode"):
             self._apply_fm_column_fit_mode(self._fm_column_fit_mode)
         restore_row: int | None = None
@@ -2133,6 +2153,9 @@ class ResultsWorkspaceWindow(QMainWindow):
         session = self._project_session()
         if session is None:
             return
+        if dispatch_compare_slot_run(self, slot_key):
+            self._update_run_buttons_enabled()
+            return
         path = self.path_input.text().strip()
         if self._compare_run_runner.start(
             wss.editing_project(session),
@@ -2180,6 +2203,8 @@ class ResultsWorkspaceWindow(QMainWindow):
 
     def _clear_compare_slots(self) -> None:
         self._compare_slots.clear_all()
+        self._compare_mc_slots.clear_all()
+        self._pending_mc_compare_slot = None
         if self.workspace_state.snapshot().compare_mode:
             self.workspace_state.set_compare_mode(False)
         if hasattr(self, "compare_toggle_button"):

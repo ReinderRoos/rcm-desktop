@@ -74,7 +74,6 @@ class FMMCResultsTableModel(QAbstractTableModel):
                 return None
             return messages.FM_MC_RESULTS_BAND_TOOLTIP.format(
                 p10=format_float(band.p10),
-                p50=format_float(band.p50),
                 p90=format_float(band.p90),
             )
         if role != Qt.DisplayRole:

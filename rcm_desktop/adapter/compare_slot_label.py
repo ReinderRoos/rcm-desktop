@@ -29,3 +29,8 @@ def build_compare_slot_label(
     slot = "A" if slot_key == COMPARE_SLOT_A else "B"
     base = f"{slot} — {scenario}"
     return base + suffix if suffix else base
+
+
+def build_mc_compare_slot_label(slot_key: str, *, seed: int) -> str:
+    slot = "A" if slot_key == COMPARE_SLOT_A else "B"
+    return f"{slot} — MC (seed {seed})"

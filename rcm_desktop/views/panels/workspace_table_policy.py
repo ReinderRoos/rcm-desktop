@@ -88,6 +88,14 @@ class ElideTooltipTableDelegate(QStyledItemDelegate):
 
         if event.type() == QEvent.Type.ToolTip:
 
+            tip = index.data(Qt.ItemDataRole.ToolTipRole)
+
+            if tip:
+
+                QToolTip.showText(event.globalPos(), str(tip), view)
+
+                return True
+
             text = index.data(Qt.ItemDataRole.DisplayRole)
 
             if text:

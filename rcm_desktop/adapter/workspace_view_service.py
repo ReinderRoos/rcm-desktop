@@ -91,7 +91,12 @@ def build_fm_detail_view(
     source = fm_detail_source_for_run_mode(run_mode, session)
     if source == "analytical":
         if not session.has_completed_run():
-            return None
+            from rcm_desktop import messages
+
+            return FMDetailView(
+                is_mc_mode=False,
+                empty_message=messages.TOP10_LCC_NO_ANALYTICAL_RUN,
+            )
         project = session.loaded.core()
         run = session.run
         assert run is not None
