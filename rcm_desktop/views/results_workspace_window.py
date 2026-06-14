@@ -87,6 +87,7 @@ from rcm_desktop.adapter.fm_results_column_settings import (
     write_fm_hidden_optional_columns,
 )
 from rcm_desktop.adapter.fm_results_sort_policy import default_fm_sort_column
+from rcm_desktop.adapter.fm_mc_results_table_model import FMMCResultsTableModel
 from rcm_desktop.adapter.fm_results_table_model import FMResultsTableModel, RAW_ROLE
 from rcm_desktop.adapter.fm_verification_service import FMVerificationView
 from rcm_desktop.adapter.fm_verification_year_table_model import (
@@ -168,6 +169,10 @@ from rcm_desktop.views.panels.input_entity_grid_binding import (
     sync_delete_fm_button_enabled,
     sync_new_fm_button_enabled,
     wire_entity_grid_delete_selection,
+)
+from rcm_desktop.views.panels.simulation_run_binding import (
+    dispatch_start_analyse,
+    wire_simulation_run_handlers,
 )
 from rcm_desktop.views.panels.simulation_workspace_binding import (
     add_simulation_widgets_to_validate_row,
@@ -505,6 +510,7 @@ class ResultsWorkspaceWindow(QMainWindow):
         self.validate_summary_label.setWordWrap(True)
         self._apply_semantic_status_style(self.validate_status_label, "idle")
         wire_simulation_status_strip(self)
+        wire_simulation_run_handlers(self)
 
     def _build_top10_subbar(self) -> None:
         build_and_wire_top10_subbar(self)
@@ -851,12 +857,15 @@ class ResultsWorkspaceWindow(QMainWindow):
         self._persist_workspace_navigation_preferences(snapshot)
 
     def _render_context(self) -> WorkspaceRenderContext:
+        from rcm_desktop.views.panels.simulation_run_binding import current_run_mode
+
         return WorkspaceRenderContext(
             session=self._project_session(),
             compare_slots=self._compare_slots,
             project_total_presentation=self._project_total_presentation,
             render_index=self._render_index,
             prev_lcc_snapshot=self._last_lcc_render_snapshot,
+            run_mode=current_run_mode(self),
         )
 
     def _rerender_detail_for_current_scope(
@@ -897,7 +906,10 @@ class ResultsWorkspaceWindow(QMainWindow):
             return
         if plan.kind == "fm":
             if plan.fm is not None:
-                self._render_fm_rows(plan.fm.fm_rows)
+                if plan.fm.is_mc_mode:
+                    self._render_mc_fm_rows(plan.fm.mc_rows, empty_message=plan.fm.empty_message)
+                else:
+                    self._render_fm_rows(plan.fm.fm_rows)
             return
         if plan.kind == "bijdragen":
             self._apply_compare_chrome(plan_compare_chrome(snapshot))
@@ -1231,6 +1243,15 @@ class ResultsWorkspaceWindow(QMainWindow):
         write_fm_detail_column_fit_mode(QSettings("rcm2", "desktop"), mode)
         self._apply_fm_column_fit_mode(mode)
         self._sync_workspace_menu_check_states()
+
+    def _render_mc_fm_rows(self, mc_rows, *, empty_message: str = "") -> None:
+        model = FMMCResultsTableModel(list(mc_rows), self.fm_table_view)
+        self._fm_table_filter_proxy.setSourceModel(model)
+        self.detail_empty_state_label.setText(empty_message)
+        self.detail_empty_state_label.setVisible(model.rowCount() == 0)
+        if hasattr(self, "_fm_column_fit_mode"):
+            self._apply_fm_column_fit_mode(self._fm_column_fit_mode)
+        self._refresh_fm_filter_row_count()
 
     def _render_fm_rows(self, fm_rows) -> None:
         prior_fm_id = self._selected_fm_id_from_table()
@@ -2207,20 +2228,7 @@ class ResultsWorkspaceWindow(QMainWindow):
         column["chart"].setVisible(len(rows) > 0)
 
     def _start_analyse(self) -> None:
-        path = self.path_input.text().strip()
-        session = self._project_session()
-        if session is None:
-            return
-        overlay = self.workspace_state.snapshot().planning_overlay
-        path = self.path_input.text().strip()
-        force = bool(path and wss.fm_cache_available_for_session(session, path))
-        if self._run_runner.start(
-            wss.editing_project(session),
-            path,
-            planning_overlay=overlay,
-            force_recompute=force,
-        ):
-            self.run_analyse_button.setEnabled(False)
+        dispatch_start_analyse(self)
 
     def _on_run_state_changed(self, _state: str) -> None:
         self._update_run_buttons_enabled()
@@ -2491,6 +2499,10 @@ class ResultsWorkspaceWindow(QMainWindow):
             or self._presentation_rebuild_runner.busy
             or self._compare_run_runner.busy
             or self._report_runner.busy
+            or (
+                getattr(self, "_simulation_runner", None) is not None
+                and self._simulation_runner.busy
+            )
         )
         can_run = validation_ok and self._project_session() is not None and not busy
         if hasattr(self, "run_analyse_button"):

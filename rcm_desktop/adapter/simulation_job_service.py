@@ -93,7 +93,12 @@ def build_simulation_presentation(
         progress = job.progress
         status = job.status
         pct = int(progress * 100)
-        status_label = f"Monte Carlo seed {job.seed} — {status} ({pct}%)"
+        if status == "cancelled":
+            status_label = f"Monte Carlo seed {job.seed} — geannuleerd ({pct}%)"
+        elif status == "done":
+            status_label = f"Monte Carlo seed {job.seed} — voltooid ({pct}%)"
+        else:
+            status_label = f"Monte Carlo seed {job.seed} — {status} ({pct}%)"
         if run_mode is RunMode.ANALYTICAL:
             status_label = f"Analytische run — {status}"
     return SimulationPresentation(

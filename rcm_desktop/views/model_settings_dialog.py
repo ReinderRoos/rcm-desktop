@@ -168,22 +168,27 @@ class ModelSettingsDialog(QDialog):
         self._mc_n = QSpinBox()
         self._mc_n.setRange(100, 1_000_000)
         self._mc_n.setValue(int(cfg.monte_carlo_n))
-        self._mc_n.setEnabled(False)
-        self._mc_n.setToolTip(messages.MODEL_SETTINGS_MONTE_CARLO_DISABLED_TTIP)
-        seed_label = QLabel(str(cfg.monte_carlo_seed) if cfg.monte_carlo_seed is not None else "—")
-        seed_label.setEnabled(False)
-        seed_label.setToolTip(messages.MODEL_SETTINGS_MONTE_CARLO_DISABLED_TTIP)
+        self._mc_seed = QLineEdit()
+        self._mc_seed.setPlaceholderText(messages.MODEL_SETTINGS_MONTE_CARLO_SEED_EMPTY)
+        if cfg.monte_carlo_seed is not None:
+            self._mc_seed.setText(str(cfg.monte_carlo_seed))
+        self._mc_n.valueChanged.connect(self._sync_rerun_enabled)
+        self._mc_seed.textChanged.connect(self._sync_rerun_enabled)
         form.addRow(messages.MODEL_SETTINGS_MONTE_CARLO_N, self._mc_n)
-        form.addRow(messages.MODEL_SETTINGS_MONTE_CARLO_SEED, seed_label)
-        box.setToolTip(messages.MODEL_SETTINGS_MONTE_CARLO_DISABLED_TTIP)
+        form.addRow(messages.MODEL_SETTINGS_MONTE_CARLO_SEED, self._mc_seed)
         return box
 
     def _sync_beta_visibility(self) -> None:
         is_weibull = self._aging_distribution.currentData() == "weibull_2p"
         self._default_beta.setEnabled(is_weibull)
 
+    def _parse_mc_seed(self) -> int | None:
+        raw = self._mc_seed.text().strip()
+        if not raw or raw == "—":
+            return None
+        return int(raw)
+
     def _current_draft(self) -> ModelSettingsDraft:
-        cfg = self._working_project.config
         return ModelSettingsDraft(
             projectnaam=self._projectnaam.text().strip(),
             modelleur=self._modelleur.text().strip(),
@@ -194,8 +199,8 @@ class ModelSettingsDialog(QDialog):
             default_sigma_fraction=float(self._sigma_fraction.value()),
             default_aging_distribution=str(self._aging_distribution.currentData()),
             default_beta_jaar=float(self._default_beta.value()),
-            monte_carlo_n=int(cfg.monte_carlo_n),
-            monte_carlo_seed=cfg.monte_carlo_seed,
+            monte_carlo_n=int(self._mc_n.value()),
+            monte_carlo_seed=self._parse_mc_seed(),
         )
 
     def _sync_rerun_enabled(self) -> None:

@@ -74,7 +74,7 @@ def test_build_simulation_presentation_done_job_shows_full_progress() -> None:
     assert presentation.status == "done"
 
 
-def test_workspace_shows_mc_seed_in_status_label(qtbot, monkeypatch) -> None:
+def test_workspace_mc_mode_shows_idle_label_without_stub_job(qtbot, monkeypatch) -> None:
     pytest.importorskip("PySide6")
     from PySide6.QtWidgets import QMessageBox
 
@@ -88,4 +88,4 @@ def test_workspace_shows_mc_seed_in_status_label(qtbot, monkeypatch) -> None:
     idx = window.simulation_run_mode_combo.findData(RunMode.MONTE_CARLO)
     window.simulation_run_mode_combo.setCurrentIndex(idx)
     assert window.simulation_status_label.isVisible()
-    assert "42" in window.simulation_status_label.text()
+    assert "niet gestart" in window.simulation_status_label.text().lower()

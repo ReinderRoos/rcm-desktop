@@ -73,6 +73,8 @@ def validate_draft(draft: ModelSettingsDraft) -> tuple[str, ...]:
     valid_aging = {"normal", "truncated_normal_0", "weibull_2p"}
     if draft.default_aging_distribution not in valid_aging:
         errors.append("Ongeldige default verouderingsdistributie.")
+    if draft.monte_carlo_n < 100:
+        errors.append("monte_carlo_n moet minimaal 100 zijn.")
     if (
         draft.default_aging_distribution == "weibull_2p"
         and draft.default_beta_jaar <= 0
@@ -97,6 +99,8 @@ def compute_requires_rerun(
         "default_sigma_fraction",
         "default_aging_distribution",
         "default_beta_jaar",
+        "monte_carlo_n",
+        "monte_carlo_seed",
     )
     for name in motor_fields:
         if getattr(baseline, name) != getattr(draft, name):
@@ -115,6 +119,8 @@ def apply_draft_to_project(project: RCMProject, draft: ModelSettingsDraft) -> RC
     updated.config.default_sigma_fraction = float(draft.default_sigma_fraction)
     updated.config.default_aging_distribution = draft.default_aging_distribution
     updated.config.default_beta_jaar = float(draft.default_beta_jaar)
+    updated.config.monte_carlo_n = int(draft.monte_carlo_n)
+    updated.config.monte_carlo_seed = draft.monte_carlo_seed
     return updated
 
 

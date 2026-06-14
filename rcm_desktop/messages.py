@@ -490,6 +490,18 @@ COMPARE_MODELS_DETAIL_RESULT_HEADER = ("Metric", "A", "B")
 SIMULATION_RUN_MODE_LABEL = "Run-modus"
 SIMULATION_RUN_MODE_ANALYTICAL = "Analytisch"
 SIMULATION_RUN_MODE_MONTE_CARLO = "Monte Carlo"
+SIMULATION_RUN_MODE_ONBOARDING = (
+    "Standaard: Analytisch (deterministische puntwaarden). "
+    "Monte Carlo is opt-in voor FM-onzekerheidsbanden (P10/P50/P90)."
+)
+SIMULATION_CANCEL_BUTTON_LABEL = "Annuleer MC"
+SIMULATION_MC_FM_EMPTY_CANCELLED = "Monte Carlo geannuleerd — geen banden beschikbaar."
+SIMULATION_MC_FM_MODE_BADGE = "MC P50"
+FM_MC_RESULTS_BAND_TOOLTIP = "P10: {p10} | P50: {p50} | P90: {p90}"
+FM_MC_RESULTS_HEADER_FAALMOMENTEN = "Faalmomenten (MC P50)"
+FM_MC_RESULTS_HEADER_DOWNTIME_HR = "Downtime MC P50 (uur)"
+FM_MC_RESULTS_HEADER_TOTAL_COST_EUR = "Kosten MC P50 (EUR)"
+TOP10_LCC_NO_ANALYTICAL_RUN = "Geen analytische run — schakel naar Analytisch en start analyse."
 
 # Faalwijze verwijderen (slice 99 issue 13).
 FM_DELETE_BUTTON_LABEL = "Verwijder faalwijze"
@@ -979,6 +991,7 @@ MODEL_SETTINGS_APPLY_AGING_BETA_LINE = " Beta={beta:.2f}."
 MODEL_SETTINGS_MONTE_CARLO_N = "Aantal simulaties"
 MODEL_SETTINGS_MONTE_CARLO_SEED = "Random seed"
 MODEL_SETTINGS_MONTE_CARLO_DISABLED_TTIP = "Monte Carlo nog niet actief in desktop."
+MODEL_SETTINGS_MONTE_CARLO_SEED_EMPTY = "Leeg = willekeurig per run"
 MODEL_SETTINGS_RERUN_CHECKBOX = "Direct herberekenen"
 MODEL_SETTINGS_RERUN_REQUIRED = "Herbereken vereist — modelinstellingen zijn gewijzigd."
 MODEL_SETTINGS_VALIDATION_TITLE = "Modelinstellingen niet opgeslagen"

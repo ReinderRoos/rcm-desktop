@@ -312,6 +312,21 @@ Effectimpact uitgesplitst naar correctief (CM) versus preventief (PM). CM-deel
 is incidenten-equivalent; PM-deel is gedegradeerde uren. Presentatielaag
 combineert per effectcategorie tot één leesbare maat.
 
+## Rekenmodi (werkruimte)
+
+**Run-modus**
+Keuze per werkruimte-sessie: **analytisch** (deterministische motor, default) of
+**Monte Carlo** (stochastische herhalingen). In MC-modus vervangt de MC-run de
+analytische run; resultaten alleen in **FM-resultaten** (Top 10/LCC analytisch).
+N via `monte_carlo_n` in modelinstellingen; seed via `monte_carlo_seed` (leeg =
+willekeurig). MC draait op achtergrond met voortgang; annuleren gooit partial
+resultaten weg.
+
+**FM-onzekerheidsband**
+Presentatie van MC-uitkomsten per faalwijze: **P10 / P50 / P90** per FM-metriek
+(kosten, downtime, faalgebeurtenissen) over N simulatiepaden. Faalmomenten zijn
+stochastisch; kosten/downtime-parameters per pad deterministisch (v1).
+
 ## RCM-Cost round-trip (ADR-0011)
 
 **AW-bron-sidecar** (`<project>.rcm.source.xlsx`)

@@ -14,6 +14,9 @@ from rcm_desktop.adapter.result_view_service import (
     apply_presentation_scale_to_fm_rows,
     enrich_fm_rows_with_nmf_rf,
 )
+from rcm_desktop.adapter.simulation_engine_service import FMMCResultRow
+from rcm_desktop.adapter.simulation_job_service import RunMode
+from rcm_desktop.adapter.simulation_workspace_service import fm_detail_source_for_run_mode
 from rcm_desktop.adapter.results_workspace_state import (
     MODE_BIJDRAGEN,
     MODE_FM_DETAIL,
@@ -25,7 +28,10 @@ from rcm_desktop.adapter.workspace_render_index import SLOT_CURRENT, WorkspaceRe
 
 @dataclass(frozen=True)
 class FMDetailView:
-    fm_rows: tuple[FMResultRow, ...]
+    fm_rows: tuple[FMResultRow, ...] = ()
+    mc_rows: tuple[FMMCResultRow, ...] = ()
+    is_mc_mode: bool = False
+    empty_message: str = ""
 
 
 @dataclass(frozen=True)
@@ -79,24 +85,46 @@ def _contribution_cache_matches(
 def build_fm_detail_view(
     session: ProjectSession,
     snapshot: WorkspaceStateSnapshot,
+    *,
+    run_mode: RunMode = RunMode.ANALYTICAL,
 ) -> FMDetailView | None:
-    if not session.has_completed_run():
-        return None
-    project = session.loaded.core()
-    run = session.run
-    assert run is not None
-    view = filter_run_result(project, run, snapshot.scope_id)
-    rows = apply_presentation_scale_to_fm_rows(
-        project,
-        run.fm_core_results,
-        view.fm_rows,
-        presentation=snapshot.contribution_presentation,
-        nb_filter=snapshot.effect_nb_filter,
+    source = fm_detail_source_for_run_mode(run_mode, session)
+    if source == "analytical":
+        if not session.has_completed_run():
+            return None
+        project = session.loaded.core()
+        run = session.run
+        assert run is not None
+        view = filter_run_result(project, run, snapshot.scope_id)
+        rows = apply_presentation_scale_to_fm_rows(
+            project,
+            run.fm_core_results,
+            view.fm_rows,
+            presentation=snapshot.contribution_presentation,
+            nb_filter=snapshot.effect_nb_filter,
+        )
+        rows = enrich_fm_rows_with_nmf_rf(
+            project, out=rows, nb_filter=snapshot.effect_nb_filter
+        )
+        return FMDetailView(fm_rows=rows, is_mc_mode=False)
+
+    if source == "mc_bands":
+        assert session.mc_run is not None
+        from rcm_desktop import messages
+
+        return FMDetailView(
+            mc_rows=session.mc_run.rows,
+            is_mc_mode=True,
+            empty_message="",
+        )
+    from rcm_desktop import messages
+
+    empty_msg = (
+        messages.SIMULATION_MC_FM_EMPTY_CANCELLED
+        if source == "mc_cancelled"
+        else messages.SIMULATION_RUN_MODE_MONTE_CARLO + " — niet gestart"
     )
-    rows = enrich_fm_rows_with_nmf_rf(
-        project, out=rows, nb_filter=snapshot.effect_nb_filter
-    )
-    return FMDetailView(fm_rows=rows)
+    return FMDetailView(is_mc_mode=True, empty_message=empty_msg)
 
 
 def build_bijdragen_view(

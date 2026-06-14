@@ -24,6 +24,7 @@ from rcm_desktop.adapter.lcc_view_service import LCCView
 from rcm_desktop.adapter.workspace_lcc_preset_service import effective_lcc_filters
 from rcm_desktop.adapter.presentation_cache_service import PresentationProjectTotal
 from rcm_desktop.adapter.project_session import ProjectSession
+from rcm_desktop.adapter.simulation_job_service import RunMode
 from rcm_desktop.adapter.results_workspace_state import (
     METRIC_FAALMOMENTEN,
     METRIC_KOSTEN,
@@ -207,6 +208,7 @@ class WorkspaceRenderContext:
     project_total_presentation: PresentationProjectTotal | None
     render_index: WorkspaceRenderIndex
     prev_lcc_snapshot: WorkspaceStateSnapshot | None
+    run_mode: RunMode = RunMode.ANALYTICAL
 
 
 @dataclass(frozen=True)
@@ -509,8 +511,16 @@ class ResultsWorkspaceOrchestrator:
         has_compare_data = ctx.compare_slots.has(COMPARE_SLOT_A) or ctx.compare_slots.has(
             COMPARE_SLOT_B
         )
-        if not session.has_completed_run() and not (compare_view and has_compare_data):
-            return RenderPlan(kind="empty")
+        has_analytical = session.has_completed_run()
+        mc_fm_detail = (
+            ctx.run_mode is RunMode.MONTE_CARLO and current.modus == MODE_FM_DETAIL
+        )
+        if not has_analytical and not (compare_view and has_compare_data):
+            has_mc_done = (
+                session.mc_run is not None and session.mc_run.status == "done"
+            )
+            if not has_mc_done and not mc_fm_detail:
+                return RenderPlan(kind="empty")
         if compare_view and not has_compare_data:
             return RenderPlan(kind="compare_placeholder")
 
@@ -522,7 +532,10 @@ class ResultsWorkspaceOrchestrator:
         modus = current.modus
 
         if modus == MODE_FM_DETAIL and MODE_FM_DETAIL in required:
-            return RenderPlan(kind="fm", fm=build_fm_detail_view(session, current))
+            return RenderPlan(
+                kind="fm",
+                fm=build_fm_detail_view(session, current, run_mode=ctx.run_mode),
+            )
 
         if modus == MODE_BIJDRAGEN and MODE_BIJDRAGEN in required:
             layout = compute_compare_split_layout(
