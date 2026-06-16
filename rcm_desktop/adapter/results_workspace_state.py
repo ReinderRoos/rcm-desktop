@@ -219,7 +219,7 @@ class WorkspaceStateSnapshot:
 
     planning_overlay: PlanningOverlayState = PlanningOverlayState.inactive()
 
-    kpi_collapsed_in_lcc: bool = False
+    kpi_collapsed_in_lcc: bool = True
 
     meekoppel_collapsed_in_lcc: bool = False
 
@@ -259,7 +259,7 @@ _DEFAULT_SNAPSHOT = WorkspaceStateSnapshot(
 
     planning_overlay=PlanningOverlayState.inactive(),
 
-    kpi_collapsed_in_lcc=False,
+    kpi_collapsed_in_lcc=True,
 
     meekoppel_collapsed_in_lcc=False,
 

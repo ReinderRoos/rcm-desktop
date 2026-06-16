@@ -17,6 +17,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from PySide6.QtCore import (
+    QEvent,
     QItemSelection,
     QItemSelectionModel,
     QModelIndex,
@@ -44,6 +45,7 @@ from PySide6.QtWidgets import (
     QPushButton,
     QSplitter,
     QStackedWidget,
+    QStatusBar,
     QTableView,
     QToolButton,
     QTreeView,
@@ -61,15 +63,23 @@ from rcm_desktop.adapter.presentation_lazy_service import (
 )
 from rcm_desktop.adapter.presentation_rebuild_runner import PresentationRebuildRunner
 from rcm_desktop.adapter.compare_run_config import CompareRunConfig
-from rcm_desktop.adapter.compare_mc_slot_state import CompareMcSlotState
 from rcm_desktop.adapter.compare_run_runner import CompareRunRunner
 from rcm_desktop.adapter.compare_run_service import CompareRunOutcome
-from rcm_desktop.adapter.compare_slot_label import build_compare_slot_label
 from rcm_desktop.adapter.compare_slot_state import (
     COMPARE_SLOT_A,
     COMPARE_SLOT_B,
-    CompareSlotState,
 )
+from rcm_desktop.adapter.scenario_workflow_binding import (
+    apply_scenario_workflow_chrome,
+    capture_live_run_snapshot,
+    live_run_ready,
+    plan_scenario_workflow_chrome,
+)
+from rcm_desktop.adapter.scenario_workflow_invalidation import (
+    ScenarioInvalidationReason,
+    clear_scenarios_on_invalidation,
+)
+from rcm_desktop.adapter.scenario_workflow_service import ScenarioWorkflowService
 from rcm_desktop.adapter.compare_view_service import ComparePanel
 from rcm_desktop.adapter.compare_presentation_policy import (
     resolve_shared_calendar_year,
@@ -83,6 +93,12 @@ from rcm_desktop.adapter.report_runner import ReportRunner
 from rcm_desktop.adapter.run_runner import PHASE_MOTOR, PHASE_PRESENTATION, RunRunner
 from rcm_desktop.adapter.shutdown_planner import ShutdownStep, plan_shutdown
 from rcm_desktop.adapter.contribution_chart_service import build_contribution_rows
+from rcm_desktop.adapter.faalwijze_analyse_service import (
+    FM_COMPARE_VIEW_DIAGRAM,
+    FM_COMPARE_VIEW_TABLE,
+    build_faalwijze_compare_presentation,
+)
+from rcm_desktop.adapter.fm_compare_table_model import FMCompareTableModel
 from rcm_desktop.adapter.fm_results_column_settings import (
     read_fm_hidden_optional_columns,
     write_fm_hidden_optional_columns,
@@ -239,7 +255,15 @@ from rcm_desktop.views.panels.workspace_table_policy import (
     apply_column_fit_mode_to_table,
     apply_workspace_data_table_header_policy,
 )
-from rcm_desktop.adapter.preview_service import build as build_project_preview
+from rcm_desktop.adapter.scenario_compare_chrome import (
+    compare_header_stylesheet,
+    scenario_color_hex,
+)
+from rcm_desktop.theme.rcm2_theme import enable_stylesheet_background
+from rcm_desktop.theme.semantic_styles import (
+    apply_semantic_status_label,
+    apply_status_strip_semantic,
+)
 from rcm_desktop.adapter.project_paths import resolve_default_fixture_path
 from rcm_desktop.adapter.result_view_service import (
     build_pbs_tree,
@@ -325,9 +349,9 @@ class ResultsWorkspaceWindow(QMainWindow):
         self._suppress_path_change = False
         self._project_total_presentation: PresentationProjectTotal | None = None
         self._render_index = WorkspaceRenderIndex()
-        self._compare_slots = CompareSlotState()
+        self._scenario_workflow = ScenarioWorkflowService()
+        self._compare_slots = self._scenario_workflow.slots
         self._compare_slots.subscribe(self._on_compare_slots_changed)
-        self._compare_mc_slots = CompareMcSlotState()
         self._pending_mc_compare_slot: str | None = None
         self._compare_run_runner = CompareRunRunner()
         self._compare_run_runner.state_changed.connect(self._on_compare_run_state_changed)
@@ -352,6 +376,11 @@ class ResultsWorkspaceWindow(QMainWindow):
         self._build_layout()
         self._wire_pbs_tree_interaction()
         self._build_workspace_menu()
+        from PySide6.QtWidgets import QApplication
+
+        from rcm_desktop.theme.rcm2_theme import ensure_rcm2_theme
+
+        ensure_rcm2_theme(QApplication.instance())
         self._restore_fm_column_fit_preferences()
         self._restore_fm_optional_column_preferences()
         self._restore_workspace_navigation_preferences()
@@ -383,6 +412,11 @@ class ResultsWorkspaceWindow(QMainWindow):
         self.run_analyse_button.setToolTip(messages.WORKSPACE_START_ANALYSE_BUTTON_TOOLTIP)
         self.run_analyse_button.setEnabled(False)
         self.run_analyse_button.clicked.connect(self._start_analyse)
+        self.extra_scenario_button = QPushButton(messages.WORKSPACE_EXTRA_SCENARIO_BUTTON_LABEL)
+        self.extra_scenario_button.setToolTip(messages.WORKSPACE_EXTRA_SCENARIO_BUTTON_TOOLTIP)
+        self.extra_scenario_button.setEnabled(False)
+        self.extra_scenario_button.clicked.connect(self._on_extra_scenario)
+        self.extra_scenario_button.setVisible(True)
         self.compare_scenario_combo = QComboBox()
         self.compare_scenario_combo.addItem(
             messages.WORKSPACE_COMPARE_SCENARIO_PROJECT, None
@@ -399,6 +433,9 @@ class ResultsWorkspaceWindow(QMainWindow):
         self.run_slot_b_button = QPushButton(messages.WORKSPACE_RUN_SLOT_B_BUTTON_LABEL)
         self.run_slot_b_button.setToolTip(messages.WORKSPACE_RUN_SLOT_B_BUTTON_TOOLTIP)
         self.run_slot_b_button.clicked.connect(self._start_run_slot_b)
+        # Slice 100: Run → A/B vervangen door Start analyse + Extra scenario (issue 05).
+        self.run_slot_a_button.setVisible(False)
+        self.run_slot_b_button.setVisible(False)
         self.compare_toggle_button = QToolButton()
         self.compare_toggle_button.setText(messages.WORKSPACE_COMPARE_TOGGLE_LABEL)
         self.compare_toggle_button.setToolTip(messages.WORKSPACE_COMPARE_TOGGLE_TOOLTIP)
@@ -509,9 +546,11 @@ class ResultsWorkspaceWindow(QMainWindow):
 
     def _build_validate_status_strip(self) -> None:
         self.validate_status_label = QLabel(messages.status_label("idle"))
+        self.validate_status_label.setObjectName("ValidateStatusLabel")
         self.validate_summary_label = QLabel("")
+        self.validate_summary_label.setObjectName("ValidateSummaryLabel")
         self.validate_summary_label.setWordWrap(True)
-        self._apply_semantic_status_style(self.validate_status_label, "idle")
+        apply_semantic_status_label(self.validate_status_label, "idle")
         wire_simulation_status_strip(self)
         wire_simulation_run_handlers(self)
 
@@ -538,12 +577,12 @@ class ResultsWorkspaceWindow(QMainWindow):
         detail_layout = QVBoxLayout(self.detail_zone)
 
         self.kpi_placeholder = QLabel(messages.WORKSPACE_KPI_PLACEHOLDER)
-        self.kpi_placeholder.setStyleSheet("color: #757575; font-style: italic;")
+        self.kpi_placeholder.setObjectName("MutedHintLabel")
         self.kpi_placeholder.setVisible(False)
         detail_layout.addWidget(self.kpi_placeholder)
 
         self.scope_status_label = QLabel("")
-        self.scope_status_label.setStyleSheet("color: #424242;")
+        self.scope_status_label.setObjectName("MutedHintLabel")
         detail_layout.addWidget(self.scope_status_label)
 
         self.detail_stack = QStackedWidget()
@@ -650,6 +689,23 @@ class ResultsWorkspaceWindow(QMainWindow):
 
     def _build_fm_detail_page(self) -> QWidget:
         panel = build_fm_detail_workspace_panel()
+        self.fm_single_slot_pane = panel.fm_single_slot_pane
+        self.fm_compare_pane = panel.fm_compare_pane
+        self._fm_compare_col_a = panel.fm_compare_col_a
+        self._fm_compare_col_b = panel.fm_compare_col_b
+        self.fm_compare_view_button_group = panel.fm_compare_view_button_group
+        self.fm_compare_table_view_button = panel.fm_compare_table_view_button
+        self.fm_compare_diagram_view_button = panel.fm_compare_diagram_view_button
+        self.fm_compare_nmf_rf_toggle = panel.fm_compare_nmf_rf_toggle
+        self.fm_compare_columns_host = panel.fm_compare_columns_host
+        self.fm_compare_chart_scroll = panel.fm_compare_chart_scroll
+        self.fm_compare_chart = panel.fm_compare_chart
+        self._fm_compare_show_nmf_rf = False
+        self._fm_compare_view_mode = FM_COMPARE_VIEW_TABLE
+        panel.fm_compare_nmf_rf_toggle.toggled.connect(self._on_fm_compare_nmf_rf_toggled)
+        panel.fm_compare_table_view_button.toggled.connect(self._on_fm_compare_table_view_toggled)
+        panel.fm_compare_diagram_view_button.toggled.connect(self._on_fm_compare_diagram_view_toggled)
+        self.fm_compare_chart_scroll.viewport().installEventFilter(self)
         self.fm_detail_splitter = panel.fm_detail_splitter
         self.column_crop_button = panel.column_crop_button
         panel.column_crop_button.setVisible(False)
@@ -690,15 +746,39 @@ class ResultsWorkspaceWindow(QMainWindow):
         page_layout = QVBoxLayout(page)
         page_layout.setContentsMargins(0, 0, 0, 0)
         label = QLabel(text)
+        label.setObjectName("MutedHintLabel")
         label.setWordWrap(True)
-        label.setStyleSheet("color: #757575; font-style: italic;")
         page_layout.addWidget(label, stretch=1)
         return page
 
     def _build_layout(self) -> None:
         root = QWidget()
+        root.setObjectName("WorkspaceRoot")
+        enable_stylesheet_background(root)
         outer = QVBoxLayout(root)
-        toolbar_row = QHBoxLayout()
+        outer.setContentsMargins(0, 0, 0, 0)
+        outer.setSpacing(0)
+
+        self.app_topbar = QWidget()
+        self.app_topbar.setObjectName("AppTopbar")
+        enable_stylesheet_background(self.app_topbar)
+        topbar_layout = QHBoxLayout(self.app_topbar)
+        topbar_layout.setContentsMargins(12, 6, 12, 6)
+        self.app_logo_org = QLabel(messages.WORKSPACE_APP_WORDMARK_ORG)
+        self.app_logo_org.setObjectName("AppLogoOrg")
+        self.app_logo_product = QLabel(messages.WORKSPACE_APP_WORDMARK_PRODUCT)
+        self.app_logo_product.setObjectName("AppLogoProduct")
+        topbar_layout.addWidget(self.app_logo_org)
+        topbar_layout.addSpacing(8)
+        topbar_layout.addWidget(self.app_logo_product)
+        topbar_layout.addStretch(1)
+
+        self.workspace_toolbar = QWidget()
+        self.workspace_toolbar.setObjectName("WorkspaceToolbar")
+        enable_stylesheet_background(self.workspace_toolbar)
+        toolbar_row = QHBoxLayout(self.workspace_toolbar)
+        toolbar_row.setContentsMargins(8, 6, 8, 6)
+        toolbar_row.setSpacing(6)
         for w in (
             self.path_input,
             self.pick_button,
@@ -708,6 +788,7 @@ class ResultsWorkspaceWindow(QMainWindow):
             self.compare_scenario_combo,
             self.run_slot_a_button,
             self.run_slot_b_button,
+            self.extra_scenario_button,
             self.compare_toggle_button,
             self.clear_compare_button,
             self.run_analyse_button,
@@ -716,9 +797,21 @@ class ResultsWorkspaceWindow(QMainWindow):
         toolbar_row.addStretch(1)
         toolbar_row.addWidget(self.show_whole_project_button)
 
-        modus_row = QHBoxLayout()
-        modus_row.addWidget(self._workspace_navigation.widget)
-        modus_row.addStretch(1)
+        self.status_strip = QWidget()
+        self.status_strip.setObjectName("StatusStrip")
+        enable_stylesheet_background(self.status_strip)
+        status_strip_layout = QHBoxLayout(self.status_strip)
+        status_strip_layout.setContentsMargins(8, 4, 8, 4)
+        status_strip_layout.addWidget(self.validate_status_label)
+        status_strip_layout.addWidget(self.validate_summary_label, stretch=1)
+        add_simulation_widgets_to_validate_row(status_strip_layout, self)
+
+        self.subnav_row = QWidget()
+        self.subnav_row.setObjectName("WorkspaceSubNavRow")
+        enable_stylesheet_background(self.subnav_row)
+        subnav_layout = QHBoxLayout(self.subnav_row)
+        subnav_layout.setContentsMargins(12, 6, 12, 6)
+        subnav_layout.addWidget(self._workspace_navigation.widget, stretch=1)
 
         self.main_splitter = QSplitter(Qt.Horizontal)
         self.main_splitter.addWidget(self.pbs_sidebar)
@@ -729,8 +822,10 @@ class ResultsWorkspaceWindow(QMainWindow):
         self.main_splitter.setSizes([320, 720])
 
         self.kpi_panel = QWidget()
+        self.kpi_panel.setObjectName("KpiPanel")
+        enable_stylesheet_background(self.kpi_panel)
         kpi_panel_layout = QVBoxLayout(self.kpi_panel)
-        kpi_panel_layout.setContentsMargins(0, 0, 0, 0)
+        kpi_panel_layout.setContentsMargins(8, 4, 8, 4)
         kpi_panel_layout.setSpacing(2)
         kpi_header = QHBoxLayout()
         self.kpi_panel_title = QLabel(messages.WORKSPACE_KPI_PANEL_TITLE)
@@ -745,21 +840,27 @@ class ResultsWorkspaceWindow(QMainWindow):
         self.kpi_table_view.setMaximumHeight(140)
         kpi_panel_layout.addWidget(self.kpi_table_view)
 
-        validate_row = QHBoxLayout()
-        validate_row.addWidget(self.validate_status_label)
-        validate_row.addWidget(self.validate_summary_label, stretch=1)
-        add_simulation_widgets_to_validate_row(validate_row, self)
-
-        outer.addLayout(toolbar_row)
-        outer.addLayout(validate_row)
-        outer.addLayout(modus_row)
+        outer.addWidget(self.app_topbar)
+        outer.addWidget(self.workspace_toolbar)
+        outer.addWidget(self.status_strip)
+        outer.addWidget(self.subnav_row)
         outer.addWidget(self.top10_subbar)
         outer.addWidget(self.kpi_panel)
         outer.addWidget(self.main_splitter, stretch=1)
         self._refresh_kpi_table_view()
 
         self.setCentralWidget(root)
+        footer = QStatusBar()
+        footer.setObjectName("WorkspaceFooter")
+        self.setStatusBar(footer)
         self.resize(1100, 640)
+        self._apply_validate_status_chrome("idle")
+
+    def show_workspace_footer_message(self, text: str, timeout_ms: int = 3000) -> None:
+        """Kortdurende melding in Werkruimte-footer (slice 102-A)."""
+        bar = self.statusBar()
+        if bar is not None:
+            bar.showMessage(text, timeout_ms)
 
     def _wire_pbs_tree_interaction(self) -> None:
         selection = self.pbs_tree_view.selectionModel()
@@ -939,6 +1040,103 @@ class ResultsWorkspaceWindow(QMainWindow):
             self._apply_compare_chrome(plan_compare_chrome(snapshot))
             self._apply_lcc_compare_panels(plan.compare_panels or (), snapshot)
             return
+        if plan.kind == "fm_compare":
+            self._apply_compare_chrome(plan_compare_chrome(snapshot))
+            self._apply_fm_compare_panels(
+                plan.compare_panels or (),
+                snapshot,
+                faalwijze_compare=plan.faalwijze_compare,
+            )
+            return
+
+    def _apply_compare_column_chrome(self, column: dict, slot_key: str) -> None:
+        column["header"].setStyleSheet(compare_header_stylesheet(slot_key))
+
+    def _apply_fm_compare_panels(
+        self,
+        panels: tuple[ComparePanel, ...],
+        snapshot: WorkspaceStateSnapshot,
+        *,
+        faalwijze_compare=None,
+    ) -> None:
+        columns = {
+            COMPARE_SLOT_A: self._fm_compare_col_a,
+            COMPARE_SLOT_B: self._fm_compare_col_b,
+        }
+        slot_sides = {
+            COMPARE_SLOT_A: "s1",
+            COMPARE_SLOT_B: "s2",
+        }
+        if faalwijze_compare is None:
+            faalwijze_compare = build_faalwijze_compare_presentation(
+                panels,
+                metric=snapshot.metric,
+            )
+        show_nmf_rf = getattr(self, "_fm_compare_show_nmf_rf", False)
+        self.fm_compare_chart.set_presentation(faalwijze_compare)
+        for panel in panels:
+            col = columns[panel.slot_key]
+            self._apply_compare_column_chrome(col, panel.slot_key)
+            col["header"].setText(
+                messages.WORKSPACE_COMPARE_SLOT_HEADER.format(label=panel.label)
+            )
+            if not panel.filled or panel.fm is None:
+                set_compare_placeholder(col, slot_key=panel.slot_key)
+                continue
+            col["placeholder"].setVisible(False)
+            table = col["table"]
+            model = FMCompareTableModel(
+                faalwijze_compare,
+                slot_side=slot_sides[panel.slot_key],
+                show_nmf_rf=show_nmf_rf,
+                parent=table,
+            )
+            table.setModel(model)
+        self._sync_fm_compare_view_chrome(show_nmf_rf=show_nmf_rf)
+
+    def _layout_fm_compare_chart(self) -> None:
+        viewport = self.fm_compare_chart_scroll.viewport()
+        self.fm_compare_chart.set_content_width(viewport.width())
+
+    def _sync_fm_compare_view_chrome(self, *, show_nmf_rf: bool) -> None:
+        table_mode = self._fm_compare_view_mode == FM_COMPARE_VIEW_TABLE
+        self.fm_compare_columns_host.setVisible(table_mode)
+        self.fm_compare_chart_scroll.setVisible(not table_mode)
+        self.fm_compare_nmf_rf_toggle.setVisible(table_mode)
+        if table_mode:
+            for col in (self._fm_compare_col_a, self._fm_compare_col_b):
+                if col["placeholder"].isVisible():
+                    col["table"].setVisible(False)
+                else:
+                    col["table"].setVisible(True)
+        else:
+            self._layout_fm_compare_chart()
+
+    def _set_fm_compare_view_mode(self, mode: str) -> None:
+        if mode not in (FM_COMPARE_VIEW_TABLE, FM_COMPARE_VIEW_DIAGRAM):
+            return
+        self._fm_compare_view_mode = mode
+        blocker_table = self.fm_compare_table_view_button.blockSignals(True)
+        blocker_diagram = self.fm_compare_diagram_view_button.blockSignals(True)
+        self.fm_compare_table_view_button.setChecked(mode == FM_COMPARE_VIEW_TABLE)
+        self.fm_compare_diagram_view_button.setChecked(mode == FM_COMPARE_VIEW_DIAGRAM)
+        self.fm_compare_table_view_button.blockSignals(blocker_table)
+        self.fm_compare_diagram_view_button.blockSignals(blocker_diagram)
+        self._sync_fm_compare_view_chrome(
+            show_nmf_rf=getattr(self, "_fm_compare_show_nmf_rf", False),
+        )
+
+    def _on_fm_compare_table_view_toggled(self, checked: bool) -> None:
+        if checked:
+            self._set_fm_compare_view_mode(FM_COMPARE_VIEW_TABLE)
+
+    def _on_fm_compare_diagram_view_toggled(self, checked: bool) -> None:
+        if checked:
+            self._set_fm_compare_view_mode(FM_COMPARE_VIEW_DIAGRAM)
+
+    def _on_fm_compare_nmf_rf_toggled(self, checked: bool) -> None:
+        self._fm_compare_show_nmf_rf = checked
+        self._rerender_detail_for_current_scope()
 
     def _apply_bijdragen_compare_panels(
         self,
@@ -951,6 +1149,7 @@ class ResultsWorkspaceWindow(QMainWindow):
         }
         for panel in panels:
             col = columns[panel.slot_key]
+            self._apply_compare_column_chrome(col, panel.slot_key)
             col["header"].setText(
                 messages.WORKSPACE_COMPARE_SLOT_HEADER.format(label=panel.label)
             )
@@ -958,7 +1157,7 @@ class ResultsWorkspaceWindow(QMainWindow):
                 set_compare_placeholder(col, slot_key=panel.slot_key)
                 continue
             col["placeholder"].setVisible(False)
-            self._bind_bijdragen_column(col, panel.bijdragen, snapshot)
+            self._bind_bijdragen_column(col, panel.bijdragen, snapshot, panel.slot_key)
 
     def _apply_lcc_compare_panels(
         self,
@@ -972,6 +1171,7 @@ class ResultsWorkspaceWindow(QMainWindow):
         buckets_by_slot: dict[str, tuple] = {}
         for panel in panels:
             col = columns[panel.slot_key]
+            self._apply_compare_column_chrome(col, panel.slot_key)
             col["header"].setText(
                 messages.WORKSPACE_COMPARE_SLOT_HEADER.format(label=panel.label)
             )
@@ -979,6 +1179,7 @@ class ResultsWorkspaceWindow(QMainWindow):
                 set_compare_placeholder(col, slot_key=panel.slot_key)
                 col["chart"].set_buckets(())
                 col["chart"].set_scale_max(None)
+                col["chart"].set_scenario_palette(scenario_color_hex(panel.slot_key))
                 continue
             buckets = tuple(panel.lcc.curve.display_buckets)
             buckets_by_slot[panel.slot_key] = buckets
@@ -1001,6 +1202,7 @@ class ResultsWorkspaceWindow(QMainWindow):
                 continue
             col = columns[panel.slot_key]
             buckets = tuple(panel.lcc.curve.display_buckets)
+            col["chart"].set_scenario_palette(scenario_color_hex(panel.slot_key))
             col["chart"].set_scale_max(y_max if y_max > 0 else None)
             col["chart"].set_buckets(buckets)
             col["chart"].set_selected_year(shared_year)
@@ -1619,6 +1821,7 @@ class ResultsWorkspaceWindow(QMainWindow):
         curve = lcc_view.curve
         self._last_lcc_render_snapshot = snapshot
         if curve is None or not curve.display_buckets:
+            self.lcc_chart_widget.set_scenario_palette(None)
             self.lcc_chart_widget.set_buckets(())
             self.lcc_chart_widget.set_selected_year(None)
             self.lcc_table_view.setModel(None)
@@ -1626,14 +1829,26 @@ class ResultsWorkspaceWindow(QMainWindow):
             self.lcc_empty_state_label.setVisible(True)
             self.lcc_year_summary_label.setText("")
             return
-        run_result = session.run
-        assert run_result is not None
+        from rcm_desktop.adapter.simulation_workspace_service import resolve_live_run_result
+        from rcm_desktop.views.panels.simulation_run_binding import current_run_mode
+
+        run_result = resolve_live_run_result(session, current_run_mode(self))
+        if run_result is None:
+            self.lcc_chart_widget.set_scenario_palette(None)
+            self.lcc_chart_widget.set_buckets(())
+            self.lcc_chart_widget.set_selected_year(None)
+            self.lcc_table_view.setModel(None)
+            self._lcc_detail_model.set_view(None)
+            self.lcc_empty_state_label.setVisible(True)
+            self.lcc_year_summary_label.setText("")
+            return
         if scope == "detail_only":
             self.lcc_chart_widget.set_selected_year(snapshot.lcc_calendar_year)
             self._sync_lcc_chrome(snapshot)
             self._render_lcc_year_detail(session, run_result, snapshot, planning_curve=curve)
             return
         buckets = tuple(curve.display_buckets)
+        self.lcc_chart_widget.set_scenario_palette(None)
         self.lcc_chart_widget.set_buckets(buckets)
         self.lcc_chart_widget.set_selected_year(snapshot.lcc_calendar_year)
         self._sync_lcc_axis_labels(snapshot)
@@ -1957,6 +2172,7 @@ class ResultsWorkspaceWindow(QMainWindow):
             snapshot.metric,
             snapshot.contribution_presentation,
         )
+        self.bijdragen_chart_widget.set_bar_color_hex(None)
         self.bijdragen_chart_widget.set_rows(rows)
         self.bijdragen_chart_label.setVisible(len(rows) == 0)
 
@@ -2202,45 +2418,85 @@ class ResultsWorkspaceWindow(QMainWindow):
         self.workspace_state.set_compare_mode(checked)
 
     def _clear_compare_slots(self) -> None:
-        self._compare_slots.clear_all()
-        self._compare_mc_slots.clear_all()
+        clear_scenarios_on_invalidation(
+            self._scenario_workflow,
+            ScenarioInvalidationReason.PROJECT_CLEARED,
+        )
         self._pending_mc_compare_slot = None
         if self.workspace_state.snapshot().compare_mode:
             self.workspace_state.set_compare_mode(False)
         if hasattr(self, "compare_toggle_button"):
             self.compare_toggle_button.setChecked(False)
+        self._update_scenario_workflow_chrome()
 
-    def _maybe_auto_seed_baseline_slot_a(self) -> None:
-        """Vul slot A na eerste geslaagde run als baseline (slice 60)."""
-        if self._compare_slots.has(COMPARE_SLOT_A):
-            return
-        self._seed_last_run_into_slot(COMPARE_SLOT_A)
+    def _live_run_snapshot(self):
+        from rcm_desktop.views.panels.simulation_workspace_binding import current_run_mode
 
-    def _seed_last_run_into_slot(self, slot_key: str) -> None:
-        run = self._state.last_run
-        if run is None or run.status != "done":
-            return
+        session = self._project_session()
+        if session is None:
+            return None
         snapshot = self.workspace_state.snapshot()
-        scenario_key = self.compare_scenario_combo.currentData()
-        label = build_compare_slot_label(
-            slot_key,
-            scenario_key=scenario_key,
+        return capture_live_run_snapshot(
+            session,
+            run_mode=current_run_mode(self),
             overlay=snapshot.planning_overlay,
-        )
-        self._compare_slots.seed_from_last_run(
-            slot_key,
-            run_result=run,
+            scenario_key=self.compare_scenario_combo.currentData(),
             presentation=self._project_total_presentation,
-            scenario_key=scenario_key,
-            overlay_at_run=snapshot.planning_overlay,
-            label=label,
         )
+
+    def _apply_variant_run_after_live_success(self) -> None:
+        if not self._scenario_workflow.variant_mode:
+            return
+        live = self._live_run_snapshot()
+        if live is None:
+            return
+        try:
+            self._scenario_workflow.apply_variant_live_run(live)
+        except ValueError:
+            return
+        self._update_scenario_workflow_chrome()
+
+    def _on_extra_scenario(self) -> None:
+        live = self._live_run_snapshot()
+        if live is None:
+            return
+        self._scenario_workflow.enter_extra_scenario(live)
+        self._update_scenario_workflow_chrome()
+        self._rerender_detail_for_current_scope()
+
+    def _update_scenario_workflow_chrome(self) -> None:
+        from rcm_desktop.views.panels.simulation_workspace_binding import current_run_mode
+
+        validation_ok = (
+            self._state.last_result is not None
+            and self._state.last_result.status in {"valid", "valid_with_warnings"}
+        )
+        busy = (
+            self._run_runner.busy
+            or self._presentation_rebuild_runner.busy
+            or self._compare_run_runner.busy
+            or self._report_runner.busy
+            or (
+                getattr(self, "_simulation_runner", None) is not None
+                and self._simulation_runner.busy
+            )
+        )
+        session = self._project_session()
+        plan = plan_scenario_workflow_chrome(
+            validation_ok=validation_ok,
+            live_run_available_flag=live_run_ready(session, current_run_mode(self)),
+            both_filled=self._scenario_workflow.both_filled(),
+            has_any_scenario=self._scenario_workflow.has_any_scenario(),
+            busy=busy,
+        )
+        apply_scenario_workflow_chrome(self, plan)
 
     def _bind_bijdragen_column(
         self,
         column: dict,
         bijdragen_view,
         snapshot: WorkspaceStateSnapshot,
+        slot_key: str,
     ) -> None:
         rows = bijdragen_view.contribution_rows
         chart = column["chart"]
@@ -2248,6 +2504,7 @@ class ResultsWorkspaceWindow(QMainWindow):
             snapshot.metric,
             snapshot.contribution_presentation,
         )
+        chart.set_bar_color_hex(scenario_color_hex(slot_key))
         chart.set_rows(rows)
         column["placeholder"].setVisible(len(rows) == 0)
         column["chart"].setVisible(len(rows) > 0)
@@ -2298,7 +2555,8 @@ class ResultsWorkspaceWindow(QMainWindow):
         self._last_lcc_render_snapshot = None
         if plan.warmup_lcc and self.workspace_state.snapshot().modus == MODE_LCC:
             self._maybe_start_lcc_warmup()
-        self._maybe_auto_seed_baseline_slot_a()
+        self._apply_variant_run_after_live_success()
+        self._update_scenario_workflow_chrome()
         self._update_run_button_label()
 
     def _on_presentation_rebuild_state_changed(self, state: str) -> None:
@@ -2413,7 +2671,7 @@ class ResultsWorkspaceWindow(QMainWindow):
         self._project_total_presentation = (
             self._load_presentation_from_disk() if plan.load_presentation_from_disk else None
         )
-        self._maybe_auto_seed_baseline_slot_a()
+        self._update_scenario_workflow_chrome()
         self._update_run_button_label()
         if plan.start_presentation_rebuild:
             self._maybe_start_presentation_rebuild()
@@ -2422,7 +2680,7 @@ class ResultsWorkspaceWindow(QMainWindow):
         if state == "busy":
             self.validate_status_label.setText(messages.STATUS_BUSY_LOADING)
             self.validate_summary_label.clear()
-            self._apply_semantic_status_style(self.validate_status_label, "busy")
+            self._apply_validate_status_chrome("busy")
             return
         if state == "idle":
             self.validate_button.setEnabled(True)
@@ -2538,6 +2796,7 @@ class ResultsWorkspaceWindow(QMainWindow):
         ):
             if btn is not None:
                 btn.setEnabled(can_run)
+        self._update_scenario_workflow_chrome()
         self._update_report_button_enabled()
         self._update_parity_button_enabled()
 
@@ -2586,7 +2845,7 @@ class ResultsWorkspaceWindow(QMainWindow):
         self.validate_status_label.setText(messages.status_label("idle"))
         self.validate_summary_label.clear()
         self.validate_summary_label.setToolTip("")
-        self._apply_semantic_status_style(self.validate_status_label, "idle")
+        self._apply_validate_status_chrome("idle")
 
     def _render_validate_result(self, result: object) -> None:
         if not isinstance(result, ValidateResult):
@@ -2594,7 +2853,7 @@ class ResultsWorkspaceWindow(QMainWindow):
         status_text = messages.status_label(result.status)
         self.validate_status_label.setText(status_text)
         self.validate_summary_label.setText(result.summary)
-        self._apply_semantic_status_style(self.validate_status_label, result.status)
+        self._apply_validate_status_chrome(result.status)
         if result.details:
             self.validate_summary_label.setToolTip(self._format_validate_details(result.details))
         else:
@@ -2610,18 +2869,16 @@ class ResultsWorkspaceWindow(QMainWindow):
             lines.append(f"{item.severity.upper()} {item.code}{context}: {item.message}")
         return "\n".join(lines)
 
+    def _apply_validate_status_chrome(self, status: str) -> None:
+        if not hasattr(self, "validate_status_label"):
+            return
+        apply_semantic_status_label(self.validate_status_label, status)
+        if hasattr(self, "status_strip"):
+            apply_status_strip_semantic(self.status_strip, status)
+
     @staticmethod
     def _apply_semantic_status_style(label: QLabel, status: str) -> None:
-        colors = {
-            "valid": "#2E7D32",
-            "valid_with_warnings": "#ED6C02",
-            "invalid": "#D32F2F",
-            "error": "#D32F2F",
-            "busy": "#1565C0",
-            "idle": "#616161",
-            "done": "#2E7D32",
-        }
-        label.setStyleSheet(f"color: {colors.get(status, '#424242')}; font-weight: 600;")
+        apply_semantic_status_label(label, status)
 
     def _show_run_error(self, error: UserFacingError) -> None:
         QMessageBox.critical(self, messages.RUN_ERROR_DIALOG_TITLE, error.message)
@@ -2637,6 +2894,15 @@ class ResultsWorkspaceWindow(QMainWindow):
 
     def _confirm_busy_shutdown(self) -> bool:
         return confirm_busy_shutdown(self)
+
+    def eventFilter(self, watched, event):  # noqa: N802
+        if (
+            watched is self.fm_compare_chart_scroll.viewport()
+            and event.type() == QEvent.Type.Resize
+            and self._fm_compare_view_mode == FM_COMPARE_VIEW_DIAGRAM
+        ):
+            self._layout_fm_compare_chart()
+        return super().eventFilter(watched, event)
 
     def closeEvent(self, event: QCloseEvent) -> None:  # noqa: N802
         plan = plan_shutdown(

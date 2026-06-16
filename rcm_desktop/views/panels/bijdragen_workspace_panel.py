@@ -58,7 +58,7 @@ def build_bijdragen_workspace_panel() -> BijdragenWorkspacePanel:
 
     chart_label = QLabel(messages.WORKSPACE_BIJDRAGE_EMPTY_STATE)
 
-    chart_label.setStyleSheet("color: #9E9E9E;")
+    chart_label.setObjectName("MutedHintLabel")
 
     page_layout.addWidget(chart_label)
 

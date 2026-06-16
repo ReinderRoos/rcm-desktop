@@ -17,14 +17,18 @@ from rcm_desktop.adapter.compare_slot_state import (
 from rcm_desktop.adapter.compare_view_service import (
     ComparePanel,
     build_bijdragen_compare_panels,
+    build_fm_compare_panels,
     build_lcc_compare_panels,
 )
+from rcm_desktop.adapter.faalwijze_analyse_service import FaalwijzeComparePresentation
+from rcm_desktop.adapter.faalwijze_analyse_service import build_faalwijze_compare_presentation
 from rcm_desktop.adapter.lcc_type_filter import LCCTypeFilterSet
 from rcm_desktop.adapter.lcc_view_service import LCCView
 from rcm_desktop.adapter.workspace_lcc_preset_service import effective_lcc_filters
 from rcm_desktop.adapter.presentation_cache_service import PresentationProjectTotal
 from rcm_desktop.adapter.project_session import ProjectSession
 from rcm_desktop.adapter.simulation_job_service import RunMode
+from rcm_desktop.adapter.simulation_workspace_service import live_run_available
 from rcm_desktop.adapter.results_workspace_state import (
     METRIC_FAALMOMENTEN,
     METRIC_KOSTEN,
@@ -66,6 +70,7 @@ RenderKind = Literal[
     "lcc",
     "bijdragen_compare",
     "lcc_compare",
+    "fm_compare",
 ]
 
 _COLLAPSE_EXPANDED = "▼"
@@ -141,6 +146,8 @@ class FmToolbarPlan:
     horizon_lifecycle_checked: bool = True
     horizon_per_year_checked: bool = False
     year_choice: str | int = "average"
+    fm_compare_nmf_rf_toggle_visible: bool = False
+    fm_compare_view_toggle_visible: bool = False
 
 
 @dataclass(frozen=True)
@@ -152,6 +159,8 @@ class CompareChromePlan:
     lcc_single_visible: bool
     lcc_compare_visible: bool
     lcc_empty_state_visible: bool
+    fm_single_visible: bool = True
+    fm_compare_visible: bool = False
 
 
 @dataclass(frozen=True)
@@ -218,6 +227,7 @@ class RenderPlan:
     bijdragen: BijdragenView | None = None
     lcc: LCCView | None = None
     compare_panels: tuple[ComparePanel, ...] | None = None
+    faalwijze_compare: FaalwijzeComparePresentation | None = None
 
 
 @dataclass(frozen=True)
@@ -326,12 +336,15 @@ def _plan_output_fm_results_toolbar(
     profile: WorkspaceChromeProfile,
 ) -> FmToolbarPlan:
     pres = snapshot.contribution_presentation
+    fm_compare = snapshot.compare_mode and snapshot.modus == MODE_FM_DETAIL
     return FmToolbarPlan(
         batch_faalwijzen_visible=profile.shows_batch_faalwijzen,
         new_fm_visible=profile.allows_new_fm,
-        column_crop_visible=profile.shows_column_crop,
-        fm_inspector_visible=True,
-        clear_fm_inspector=False,
+        column_crop_visible=profile.shows_column_crop and not fm_compare,
+        fm_inspector_visible=not fm_compare,
+        clear_fm_inspector=fm_compare,
+        fm_compare_nmf_rf_toggle_visible=fm_compare,
+        fm_compare_view_toggle_visible=fm_compare,
         delete_fm_visible=False,
         effect_nb_filter_visible=profile.shows_nb_effect_filter,
         metric_combo_visible=profile.shows_metric_combo,
@@ -356,6 +369,7 @@ def _plan_fm_toolbar(snapshot: WorkspaceStateSnapshot) -> FmToolbarPlan:
 def _plan_compare_chrome(snapshot: WorkspaceStateSnapshot) -> CompareChromePlan:
     bijdragen_compare = snapshot.compare_mode and snapshot.modus == MODE_BIJDRAGEN
     lcc_compare = snapshot.compare_mode and snapshot.modus == MODE_LCC
+    fm_compare = snapshot.compare_mode and snapshot.modus == MODE_FM_DETAIL
     return CompareChromePlan(
         compare_mode_checked=snapshot.compare_mode,
         bijdragen_single_visible=not bijdragen_compare,
@@ -364,6 +378,8 @@ def _plan_compare_chrome(snapshot: WorkspaceStateSnapshot) -> CompareChromePlan:
         lcc_single_visible=not lcc_compare,
         lcc_compare_visible=lcc_compare,
         lcc_empty_state_visible=not lcc_compare,
+        fm_single_visible=not fm_compare,
+        fm_compare_visible=fm_compare,
     )
 
 
@@ -507,23 +523,19 @@ class ResultsWorkspaceOrchestrator:
         compare_view = current.compare_mode and current.modus in (
             MODE_BIJDRAGEN,
             MODE_LCC,
+            MODE_FM_DETAIL,
         )
-        has_compare_data = ctx.compare_slots.has(COMPARE_SLOT_A) or ctx.compare_slots.has(
-            COMPARE_SLOT_B
-        )
-        has_analytical = session.has_completed_run()
+        has_compare_data = ctx.compare_slots.both_filled()
+        has_live = live_run_available(session, ctx.run_mode)
         mc_fm_detail = (
             ctx.run_mode is RunMode.MONTE_CARLO and current.modus == MODE_FM_DETAIL
         )
-        if not has_analytical and not (compare_view and has_compare_data):
-            has_mc_done = (
-                session.mc_run is not None and session.mc_run.status == "done"
-            )
+        if not has_live and not (compare_view and has_compare_data):
             fm_analytical_without_run = (
                 current.modus == MODE_FM_DETAIL
                 and ctx.run_mode is RunMode.ANALYTICAL
             )
-            if not has_mc_done and not mc_fm_detail and not fm_analytical_without_run:
+            if not mc_fm_detail and not fm_analytical_without_run:
                 return RenderPlan(kind="empty")
         if compare_view and not has_compare_data:
             return RenderPlan(kind="compare_placeholder")
@@ -536,6 +548,24 @@ class ResultsWorkspaceOrchestrator:
         modus = current.modus
 
         if modus == MODE_FM_DETAIL and MODE_FM_DETAIL in required:
+            layout = compute_compare_split_layout(
+                compare_mode=current.compare_mode, modus=modus
+            )
+            if layout.compare_mode and has_compare_data:
+                panels = build_fm_compare_panels(
+                    session,
+                    current,
+                    slots=ctx.compare_slots,
+                )
+                faalwijze_compare = build_faalwijze_compare_presentation(
+                    panels,
+                    metric=current.metric,
+                )
+                return RenderPlan(
+                    kind="fm_compare",
+                    compare_panels=panels,
+                    faalwijze_compare=faalwijze_compare,
+                )
             return RenderPlan(
                 kind="fm",
                 fm=build_fm_detail_view(session, current, run_mode=ctx.run_mode),
@@ -561,6 +591,7 @@ class ResultsWorkspaceOrchestrator:
                     current,
                     render_index=ctx.render_index,
                     project_total_presentation=ctx.project_total_presentation,
+                    run_mode=ctx.run_mode,
                 ),
             )
 
@@ -584,6 +615,7 @@ class ResultsWorkspaceOrchestrator:
                     current,
                     render_index=ctx.render_index,
                     prev_snapshot=ctx.prev_lcc_snapshot,
+                    run_mode=ctx.run_mode,
                 ),
             )
 

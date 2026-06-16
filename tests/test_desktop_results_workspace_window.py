@@ -971,8 +971,8 @@ def test_run_analyse_reenabled_after_monte_carlo_completes(monkeypatch):
         app.processEvents()
     app.processEvents()
 
-    assert window.run_analyse_button.isVisible() is False
-    assert window.run_slot_a_button.isEnabled() is True
+    assert window.run_analyse_button.isVisible() is True
+    assert window.run_analyse_button.isEnabled() is True
 
 
 def test_lcc_page_never_shows_scenario_split_after_run(monkeypatch):

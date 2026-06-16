@@ -1,0 +1,20 @@
+"""Delta Pi producttokens voor RCM2 presentatielaag (slice 102)."""
+
+DP_NAVY = "#232851"
+DP_SURFACE = "#F0F2F5"
+DP_TEXT_ON_NAVY = "#FFFFFF"
+DP_TEXT_BODY = "#212121"
+DP_TEXT_MUTED = "#424242"
+DP_TEXT_SUBTLE = "#5C6370"
+DP_SCENARIO_1 = "#E6332A"
+DP_SCENARIO_2 = "#A3195B"
+DP_ROW_ALT = "#E8ECF2"
+DP_BORDER = "#D8DCE3"
+DP_WARNING_BG = "#FFF8E1"
+DP_WARNING_TEXT = "#B45309"
+DP_SUCCESS_TEXT = "#1B5E20"
+DP_ERROR_TEXT = "#C62828"
+DP_BUSY_TEXT = "#1565C0"
+
+FONT_DISPLAY = '"Calibri Light", Calibri, "Segoe UI", sans-serif'
+FONT_BODY = 'Calibri, "Segoe UI", sans-serif'

@@ -11,12 +11,12 @@ from rcm_desktop.adapter.simulation_engine_service import run_monte_carlo
 from rcm_desktop.adapter.simulation_job_service import RunMode
 from rcm_desktop.adapter.simulation_workspace_service import (
     fm_detail_source_for_run_mode,
+    live_run_available,
     monte_carlo_params_from_project,
     resolve_run_mode,
     session_has_analytical_points,
     session_has_mc_bands,
     start_analyse_uses_monte_carlo,
-    top10_lcc_reads_analytical_slot,
 )
 
 
@@ -67,11 +67,12 @@ def test_combo_change_alone_does_not_imply_fake_job():
     assert resolve_run_mode(None) is RunMode.ANALYTICAL
 
 
-def test_top10_lcc_ignore_mc_slot():
+def test_mc_only_session_has_live_run_in_mc_mode():
     project = _project()
     mc = run_monte_carlo(project, n=200, seed=2)
     session = ProjectSession.from_parts(LoadedProject.from_core(project), run=None, mc_run=mc)
-    assert top10_lcc_reads_analytical_slot(session) is False
+    assert live_run_available(session, RunMode.MONTE_CARLO)
+    assert not live_run_available(session, RunMode.ANALYTICAL)
     assert session_has_mc_bands(session)
 
 

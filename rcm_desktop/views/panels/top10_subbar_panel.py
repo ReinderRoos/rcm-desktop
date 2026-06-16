@@ -20,6 +20,7 @@ from rcm_desktop.adapter.results_workspace_state import (
     METRIC_KOSTEN,
     METRIC_NIET_BESCHIKBAARHEID,
 )
+from rcm_desktop.theme.rcm2_theme import enable_stylesheet_background
 from rcm_desktop.views.widgets.nb_effect_filter_combo import NbEffectFilterCombo
 
 
@@ -39,6 +40,8 @@ class Top10SubbarPanel:
 
 def build_top10_subbar_panel(parent: QWidget | None = None) -> Top10SubbarPanel:
     widget = QWidget(parent)
+    widget.setObjectName("AnalyseToolbar")
+    enable_stylesheet_background(widget)
     row = QHBoxLayout(widget)
     row.setContentsMargins(0, 0, 0, 0)
     row.addWidget(QLabel(messages.WORKSPACE_TOP10_SUBBAR_LABEL))

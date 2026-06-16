@@ -18,6 +18,10 @@ from rcm_desktop.adapter.presentation_cache_service import PresentationProjectTo
 
 from rcm_desktop.adapter.run_service import RunResult
 
+from rcm_desktop.adapter.simulation_engine_service import MCRunResult
+
+from rcm_desktop.adapter.simulation_job_service import RunMode
+
 from rcm_desktop.adapter.workspace_render_index import SLOT_A, SLOT_B
 
 
@@ -92,6 +96,10 @@ class CompareSlotSnapshot:
 
     label: str
 
+    run_mode: RunMode = RunMode.ANALYTICAL
+
+    mc_run: MCRunResult | None = None
+
 
 
     @classmethod
@@ -112,6 +120,8 @@ class CompareSlotSnapshot:
 
         label: str,
 
+        run_mode: RunMode = RunMode.ANALYTICAL,
+
     ) -> CompareSlotSnapshot:
 
         if run_result.status != "done":
@@ -129,6 +139,54 @@ class CompareSlotSnapshot:
             overlay_at_run=overlay_at_run,
 
             label=label,
+
+            run_mode=run_mode,
+
+        )
+
+
+
+    @classmethod
+
+    def from_mc_run(
+
+        cls,
+
+        *,
+
+        mc_run: MCRunResult,
+
+        run_result: RunResult,
+
+        presentation: PresentationProjectTotal | None,
+
+        scenario_key: str | None,
+
+        overlay_at_run: PlanningOverlayState,
+
+        label: str,
+
+    ) -> CompareSlotSnapshot:
+
+        if mc_run.status != "done":
+
+            raise ValueError("Alleen voltooide MC-runs kunnen in een compare-slot.")
+
+        return cls(
+
+            run_result=run_result,
+
+            presentation=presentation,
+
+            scenario_key=scenario_key,
+
+            overlay_at_run=overlay_at_run,
+
+            label=label,
+
+            run_mode=RunMode.MONTE_CARLO,
+
+            mc_run=mc_run,
 
         )
 

@@ -179,6 +179,78 @@ def apply_presentation_scale_to_fm_rows(
     return tuple(out)
 
 
+def apply_presentation_scale_to_mc_rows(
+    project: RCMProject,
+    mc: "MCRunResult",
+    rows: "Sequence[FMMCResultRow]",
+    *,
+    presentation: "ContributionPresentation",
+    nb_filter: EffectNbFilterSet | None,
+) -> "tuple[FMMCResultRow, ...]":
+    """Scale MC P50 band rows to match ``ContributionPresentation`` (slice 101)."""
+    from rcm_core.simulation_engine import MetricBand
+
+    from rcm_desktop.adapter.contribution_horizon_value_service import (
+        contribution_value_for_fm,
+        effect_presentation_for_contribution,
+        kosten_scalar_for_fm,
+    )
+    from rcm_desktop.adapter.results_workspace_state import METRIC_FAALMOMENTEN
+    from rcm_desktop.adapter.simulation_engine_service import (
+        FMMCResultRow,
+        fm_results_from_mc_p50,
+    )
+
+    filt = nb_filter or EffectNbFilterSet()
+    effect_pres = effect_presentation_for_contribution(project, presentation)
+    lifecycle_effect = effect_presentation_for_contribution(
+        project, replace(presentation, horizon="lifecycle")
+    )
+    fmr_by_id = {fmr.fm_id: fmr for fmr in fm_results_from_mc_p50(project, mc)}
+
+    def _scale_band(band: MetricBand, display: float, lifecycle: float) -> MetricBand:
+        if lifecycle <= 0.0:
+            return MetricBand(p10=0.0, p50=display, p90=0.0)
+        factor = display / lifecycle
+        return MetricBand(
+            p10=band.p10 * factor,
+            p50=display,
+            p90=band.p90 * factor,
+        )
+
+    out: list[FMMCResultRow] = []
+    for row in rows:
+        fmr = fmr_by_id.get(row.fm_id)
+        if fmr is None:
+            out.append(row)
+            continue
+        display_failures = contribution_value_for_fm(
+            project, fmr, metric=METRIC_FAALMOMENTEN, presentation=presentation
+        )
+        display_downtime = nb_scalar_for_fm(
+            project, fmr, nb_filter=filt, presentation=effect_pres
+        )
+        display_cost = kosten_scalar_for_fm(project, fmr, presentation)
+        lifecycle_downtime = nb_scalar_for_fm(
+            project, fmr, nb_filter=filt, presentation=lifecycle_effect
+        )
+        out.append(
+            replace(
+                row,
+                failures_band=_scale_band(
+                    row.failures_band, display_failures, float(fmr.expected_failures)
+                ),
+                downtime_band=_scale_band(
+                    row.downtime_band, display_downtime, lifecycle_downtime
+                ),
+                cost_band=_scale_band(
+                    row.cost_band, display_cost, float(fmr.total_cost_eur)
+                ),
+            )
+        )
+    return tuple(out)
+
+
 def apply_nb_filter_to_fm_rows(
     project: RCMProject,
     fm_results: Sequence[FMResult],

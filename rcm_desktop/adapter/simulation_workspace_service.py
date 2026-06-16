@@ -7,6 +7,8 @@ from dataclasses import dataclass
 from rcm_core.models import RCMProject
 
 from rcm_desktop.adapter.project_session import ProjectSession
+from rcm_desktop.adapter.run_service import RunResult
+from rcm_desktop.adapter.simulation_engine_service import build_run_result_from_mc_p50
 from rcm_desktop.adapter.simulation_job_service import RunMode
 
 
@@ -44,8 +46,29 @@ def session_has_analytical_points(session: ProjectSession | None) -> bool:
     return session is not None and session.has_completed_run()
 
 
+def resolve_live_run_result(
+    session: ProjectSession | None,
+    run_mode: RunMode,
+) -> RunResult | None:
+    """Live Top 10/LCC/FM analytical presentation source for the active Run-modus."""
+    if session is None:
+        return None
+    if run_mode is RunMode.MONTE_CARLO:
+        if not session_has_mc_bands(session):
+            return None
+        assert session.mc_run is not None
+        return build_run_result_from_mc_p50(session.loaded.core(), session.mc_run)
+    if session.has_completed_run():
+        return session.run
+    return None
+
+
+def live_run_available(session: ProjectSession | None, run_mode: RunMode) -> bool:
+    return resolve_live_run_result(session, run_mode) is not None
+
+
 def top10_lcc_reads_analytical_slot(session: ProjectSession | None) -> bool:
-    """Top 10 and LCC always use the analytical ``RunResult`` slot."""
+    """Deprecated alias — analytical slot only; prefer ``live_run_available``."""
     return session_has_analytical_points(session)
 
 

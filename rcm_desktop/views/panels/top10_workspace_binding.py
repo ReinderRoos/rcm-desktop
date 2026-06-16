@@ -62,8 +62,14 @@ def refresh_nb_effect_filter_combo(window: Any, project: object) -> None:
     rcm_project = project if isinstance(project, RCMProject) else None
     session = window._project_session()
     fm_results: tuple = ()
-    if session is not None and session.run is not None and session.run.fm_core_results:
-        fm_results = tuple(session.run.fm_core_results)
+    if session is not None:
+        from rcm_desktop.adapter.simulation_job_service import RunMode
+        from rcm_desktop.adapter.simulation_workspace_service import resolve_live_run_result
+        from rcm_desktop.views.panels.simulation_workspace_binding import current_run_mode
+
+        run = resolve_live_run_result(session, current_run_mode(window))
+        if run is not None and run.fm_core_results:
+            fm_results = tuple(run.fm_core_results)
     presentation = plan_nb_filter_refresh(rcm_project, fm_results)
     if not presentation.entries:
         window.nb_effect_filter_combo.set_klassen(())

@@ -7,15 +7,20 @@ from dataclasses import dataclass
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QAbstractItemView,
+    QButtonGroup,
     QHBoxLayout,
     QLabel,
     QPushButton,
+    QScrollArea,
     QSplitter,
     QTableView,
     QToolButton,
     QVBoxLayout,
     QWidget,
 )
+
+from rcm_desktop.views.compare_slot_column import build_fm_compare_column
+from rcm_desktop.views.widgets.faalwijze_compare_bar_chart import FaalwijzeCompareBarChartWidget
 
 from rcm_desktop import messages
 from rcm_desktop.adapter.fm_results_filter_policy import (
@@ -32,6 +37,18 @@ from rcm_desktop.views.widgets.table_filter_row import TableFilterRowWidget
 @dataclass
 class FmDetailWorkspacePanel:
     page: QWidget
+    fm_single_slot_pane: QWidget
+    fm_compare_pane: QWidget
+    fm_compare_toolbar: QWidget
+    fm_compare_view_button_group: QButtonGroup
+    fm_compare_table_view_button: QToolButton
+    fm_compare_diagram_view_button: QToolButton
+    fm_compare_nmf_rf_toggle: QToolButton
+    fm_compare_columns_host: QWidget
+    fm_compare_chart_scroll: QScrollArea
+    fm_compare_chart: FaalwijzeCompareBarChartWidget
+    fm_compare_col_a: dict
+    fm_compare_col_b: dict
     fm_detail_splitter: QSplitter
     column_crop_button: QToolButton
     fm_table_filter_row: TableFilterRowWidget
@@ -98,7 +115,7 @@ def build_fm_detail_workspace_panel() -> FmDetailWorkspacePanel:
 
     table_layout.addWidget(fm_table_view, stretch=1)
     detail_empty_state_label = QLabel(messages.WORKSPACE_DETAIL_EMPTY_STATE)
-    detail_empty_state_label.setStyleSheet("color: #9E9E9E;")
+    detail_empty_state_label.setObjectName("MutedHintLabel")
     table_layout.addWidget(detail_empty_state_label)
     fm_detail_splitter.addWidget(table_host)
 
@@ -109,7 +126,7 @@ def build_fm_detail_workspace_panel() -> FmDetailWorkspacePanel:
     inspector_title.setStyleSheet("font-weight: bold;")
     inspector_layout.addWidget(inspector_title)
     fm_inspector_empty_label = QLabel(messages.WORKSPACE_FM_INSPECTOR_EMPTY)
-    fm_inspector_empty_label.setStyleSheet("color: #9E9E9E;")
+    fm_inspector_empty_label.setObjectName("MutedHintLabel")
     inspector_layout.addWidget(fm_inspector_empty_label)
     fm_inspector_panel = QWidget()
     panel_layout = QVBoxLayout(fm_inspector_panel)
@@ -144,10 +161,75 @@ def build_fm_detail_workspace_panel() -> FmDetailWorkspacePanel:
     fm_detail_splitter.setStretchFactor(0, 2)
     fm_detail_splitter.setStretchFactor(1, 1)
 
-    page_layout.addWidget(fm_detail_splitter, stretch=1)
+    fm_single_slot_pane = QWidget()
+    single_layout = QVBoxLayout(fm_single_slot_pane)
+    single_layout.setContentsMargins(0, 0, 0, 0)
+    single_layout.addWidget(fm_detail_splitter, stretch=1)
+
+    fm_compare_pane = QWidget()
+    compare_layout = QVBoxLayout(fm_compare_pane)
+    compare_layout.setContentsMargins(0, 0, 0, 0)
+    fm_compare_toolbar = QWidget(fm_compare_pane)
+    compare_toolbar_layout = QHBoxLayout(fm_compare_toolbar)
+    compare_toolbar_layout.setContentsMargins(0, 0, 0, 0)
+    fm_compare_view_button_group = QButtonGroup(fm_compare_toolbar)
+    fm_compare_view_button_group.setExclusive(True)
+    fm_compare_table_view_button = QToolButton(fm_compare_toolbar)
+    fm_compare_table_view_button.setText(messages.WORKSPACE_FM_COMPARE_VIEW_TABLE)
+    fm_compare_table_view_button.setToolTip(messages.WORKSPACE_FM_COMPARE_VIEW_TOOLTIP)
+    fm_compare_table_view_button.setCheckable(True)
+    fm_compare_table_view_button.setChecked(True)
+    fm_compare_diagram_view_button = QToolButton(fm_compare_toolbar)
+    fm_compare_diagram_view_button.setText(messages.WORKSPACE_FM_COMPARE_VIEW_DIAGRAM)
+    fm_compare_diagram_view_button.setToolTip(messages.WORKSPACE_FM_COMPARE_VIEW_TOOLTIP)
+    fm_compare_diagram_view_button.setCheckable(True)
+    fm_compare_view_button_group.addButton(fm_compare_table_view_button)
+    fm_compare_view_button_group.addButton(fm_compare_diagram_view_button)
+    compare_toolbar_layout.addWidget(fm_compare_table_view_button)
+    compare_toolbar_layout.addWidget(fm_compare_diagram_view_button)
+    compare_toolbar_layout.addSpacing(12)
+    fm_compare_nmf_rf_toggle = QToolButton(fm_compare_toolbar)
+    fm_compare_nmf_rf_toggle.setText(messages.WORKSPACE_FM_COMPARE_NMF_RF)
+    fm_compare_nmf_rf_toggle.setToolTip(messages.WORKSPACE_FM_COMPARE_NMF_RF_TOOLTIP)
+    fm_compare_nmf_rf_toggle.setCheckable(True)
+    compare_toolbar_layout.addWidget(fm_compare_nmf_rf_toggle)
+    compare_toolbar_layout.addStretch(1)
+    compare_layout.addWidget(fm_compare_toolbar)
+    fm_compare_columns_host = QWidget(fm_compare_pane)
+    compare_columns = QHBoxLayout(fm_compare_columns_host)
+    compare_columns.setContentsMargins(0, 0, 0, 0)
+    fm_compare_col_a = build_fm_compare_column(fm_compare_columns_host)
+    fm_compare_col_b = build_fm_compare_column(fm_compare_columns_host)
+    compare_columns.addWidget(fm_compare_col_a["host"], stretch=1)
+    compare_columns.addWidget(fm_compare_col_b["host"], stretch=1)
+    compare_layout.addWidget(fm_compare_columns_host, stretch=1)
+    fm_compare_chart = FaalwijzeCompareBarChartWidget(fm_compare_pane)
+    fm_compare_chart_scroll = QScrollArea(fm_compare_pane)
+    fm_compare_chart_scroll.setWidgetResizable(False)
+    fm_compare_chart_scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+    fm_compare_chart_scroll.setFrameShape(QScrollArea.NoFrame)
+    fm_compare_chart_scroll.setWidget(fm_compare_chart)
+    fm_compare_chart_scroll.setVisible(False)
+    compare_layout.addWidget(fm_compare_chart_scroll, stretch=1)
+    fm_compare_pane.setVisible(False)
+
+    page_layout.addWidget(fm_single_slot_pane, stretch=1)
+    page_layout.addWidget(fm_compare_pane, stretch=1)
 
     return FmDetailWorkspacePanel(
         page=page,
+        fm_single_slot_pane=fm_single_slot_pane,
+        fm_compare_pane=fm_compare_pane,
+        fm_compare_toolbar=fm_compare_toolbar,
+        fm_compare_view_button_group=fm_compare_view_button_group,
+        fm_compare_table_view_button=fm_compare_table_view_button,
+        fm_compare_diagram_view_button=fm_compare_diagram_view_button,
+        fm_compare_nmf_rf_toggle=fm_compare_nmf_rf_toggle,
+        fm_compare_columns_host=fm_compare_columns_host,
+        fm_compare_chart_scroll=fm_compare_chart_scroll,
+        fm_compare_chart=fm_compare_chart,
+        fm_compare_col_a=fm_compare_col_a,
+        fm_compare_col_b=fm_compare_col_b,
         fm_detail_splitter=fm_detail_splitter,
         column_crop_button=column_crop_button,
         fm_table_filter_row=fm_table_filter_row,

@@ -1,9 +1,9 @@
 # PRD — Slice 98: Monte Carlo engine v1
 
-**Status:** ready-for-human (AFK 01–11 done; HILT 12 open)  
+**Status:** done (AFK 01–11 + HILT 12 completed 2026-06-16)  
 **Versie:** 1.0  
 **Datum:** 2026-06-14  
-**Triage:** `ready-for-human`  
+**Triage:** `done`  
 **Parent:** slice 95 (run-modus stub, job-DTO's) / ADR-0018  
 **Epic:** `.scratch/rcm-desktop-epic-parity-portfolio-mc/GRILL_DECISIONS.md` §3 (PR1+PR2)  
 **Voorganger:** slice 95 issues 11–12 (`simulation_job_service`, status-strip stub)  

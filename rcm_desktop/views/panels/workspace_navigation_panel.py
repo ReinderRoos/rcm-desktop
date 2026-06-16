@@ -8,6 +8,7 @@ from PySide6.QtWidgets import (
     QButtonGroup,
     QComboBox,
     QHBoxLayout,
+    QSizePolicy,
     QToolButton,
     QWidget,
 )
@@ -21,6 +22,7 @@ from rcm_desktop.adapter.workspace_view_registry import (
     WORKSPACE_VIEW_REGISTRY,
     views_for_side,
 )
+from rcm_desktop.theme.rcm2_theme import enable_stylesheet_background
 
 
 @dataclass(frozen=True)
@@ -35,14 +37,19 @@ def build_workspace_navigation_panel(
     workspace_state: ResultsWorkspaceState,
 ) -> WorkspaceNavigationPanel:
     widget = QWidget()
+    widget.setObjectName("WorkspaceSubNav")
+    widget.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
+    enable_stylesheet_background(widget)
     row = QHBoxLayout(widget)
     row.setContentsMargins(0, 0, 0, 0)
+    row.setSpacing(8)
 
     side_button_group = QButtonGroup(widget)
     side_button_group.setExclusive(True)
     side_buttons: dict[str, QToolButton] = {}
     for side_entry in WORKSPACE_SIDES:
         button = QToolButton()
+        button.setObjectName("WorkspaceSideTab")
         button.setText(side_entry.label)
         button.setCheckable(True)
         button.setToolTip(side_entry.shortcut)
@@ -56,6 +63,7 @@ def build_workspace_navigation_panel(
         row.addWidget(button)
 
     view_combo = QComboBox()
+    view_combo.setObjectName("WorkspaceViewCombo")
     view_combo.currentIndexChanged.connect(
         lambda _index: _on_view_combo_changed(view_combo, workspace_state)
     )

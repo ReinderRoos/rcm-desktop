@@ -196,7 +196,7 @@ def _legacy_cm_eur_per_fm(
             current_age=current_age,
             lifecycle_years=lifecycle_end,
             mttf=float(fm.mttf_jaar),
-            sigma=float(fm.effective_sigma(config.default_sigma_fraction)),
+            sigma=float(fm.effective_sigma(project.config.default_sigma_fraction)),
             aging_distribution=fm.aging_distribution.value,
             beta_jaar=float(fm.beta_jaar),
             repair_quality=float(fm.repair_quality),

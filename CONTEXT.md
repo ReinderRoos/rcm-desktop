@@ -316,11 +316,80 @@ combineert per effectcategorie tot één leesbare maat.
 
 **Run-modus**
 Keuze per werkruimte-sessie: **analytisch** (deterministische motor, default) of
-**Monte Carlo** (stochastische herhalingen). In MC-modus vervangt de MC-run de
-analytische run; resultaten alleen in **FM-resultaten** (Top 10/LCC analytisch).
-N via `monte_carlo_n` in modelinstellingen; seed via `monte_carlo_seed` (leeg =
-willekeurig). MC draait op achtergrond met voortgang; annuleren gooit partial
-resultaten weg.
+**Monte Carlo** (stochastische herhalingen). In MC-modus voedt de MC-run **Top 10,
+LCC (P50)** en **FM-resultaten (banden)**; analytische slot blijft apart beschikbaar
+bij terugschakelen. N via `monte_carlo_n`; seed via `monte_carlo_seed` (leeg =
+willekeurig). MC op achtergrond met voortgang; annuleren gooit partial resultaten weg.
+
+**Scenariovergelijking (werkruimte)**
+Twee bevroren scenario's (referentie + variant) binnen **één project**: **Start
+analyse** (live run) → **Extra scenario** (bevriest scenario 1, configureert variant)
+→ **Vergelijk scenario's** (Top 10, LCC, FM split). Maximaal twee scenario's; sessie-only.
+Gescheiden van **Vergelijk modellen…** (twee `.rcm.json`-bestanden).
+
+**RCM2 presentatielaag**
+Visuele en interactieve huid rond de resultatenwerkruimte: Delta Pi-huisstijl,
+layout-shell (topbar, navigatie, statusstrip, footer) en view-specifieke
+presentatieregels. Rekeneenheden en adapter-DTO's blijven leidend; geen parallel
+mock-datamodel. Dekking: **hele** resultatenwerkruimte (Input- én Output-views).
+KPI-overzicht start standaard ingeklapt (Beeld-menu). **ValidateWindow** blijft
+buiten scope tot slice 99 (retirement).
+
+**KPI-overzicht**
+Compacte tabel met project-KPI-totalen boven het werkblad. Inklapbaar via
+Beeld-menu. In RCM2-presentatielaag v1 **standaard ingeklapt** in alle modi.
+
+**StatusStrip**
+Persistente statusregel in de werkruimte: validatiestatus, MC-modus en
+run-voortgang. Blijft zichtbaar tijdens analyse; geen kortdurende toast-meldingen.
+
+**Werkruimte-footer**
+Kortdurende statusmeldingen onderaan het venster (opslaan, export, run voltooid,
+fout-toast). Persistente state blijft in de StatusStrip.
+
+**Faalwijze-analyse (UI-blauwdruk)**
+Werknaam uit de RCM2 UI-spec voor **FM-resultaten** tijdens **scenariovergelijking**:
+twee kolommen (scenario 1 / scenario 2), metric-gestuurde kolomkeuze, optionele
+tabel↔diagram-weergave, highlight bij grote verschillen. Geen aparte view in de
+view-registry — hergebruikt de FM-output-view plus compare-chrome. **FM-inspector**
+is in v1 niet beschikbaar tijdens scenariovergelijking; diepere faalwijze-inzage
+via single-run FM-resultaten.
+
+**Metric-gestuurde kolomkeuze**
+In scenariovergelijking op FM-resultaten toont elke scenario-kolom alleen de **actieve
+metriek** naast faalwijze-identificatie; overige metriek-kolommen zijn verborgen.
+Single-run FM blijft multi-kolom.
+
+**Optionele NMF/RF-kolommen**
+In Faalwijze-analyse kunnen **NMF**- en **RF**-kolommen naast identificatie en actieve
+metriek getoond worden; default **verborgen**, analist schakelt expliciet in.
+
+**Uitgelijnde scenario-rijen**
+In Faalwijze-analyse delen beide scenario-kolommen **dezelfde rijvolgorde** op basis
+van de unie van faalwijzen (S1 ∪ S2), gesorteerd op scenario-1-waarde van de actieve
+metriek. Ontbrekende waarden in één scenario tonen een lege cel; %-highlight geldt
+alleen waar beide scenario's een S1>0-waarde hebben.
+
+**Tabel↔diagram-weergave**
+In Faalwijze-analyse wisselt analist **exclusief** tussen uitgelijnde tabel (twee
+scenario-kolommen) en één gepaard horizontaal staafdiagram (S1/S2 per faalwijze).
+Default tabel; zelfde rijvolgorde en highlight-regels in beide modi.
+
+**Scenario-kleur**
+Vaste presentatiekleur per scenario in **scenariovergelijking**: scenario 1 =
+Delta Pi-rood, scenario 2 = Delta Pi-magenta. Geldt voor kolomkoppen en
+chart-series in Top 10, LCC en FM — visuele herkenning, geen rekeneenheid.
+
+**Delta Pi-huisstijl**
+Organisatie-palet en typografie voor de RCM2-presentatielaag (navy topbar,
+surface-grijs, scenario-kleuren). Tokens zijn productvast; technische toepassing
+via centraal Qt-thema in de desktop-app. Typografie: Calibri Light / Calibri met
+Segoe UI-fallback op systemen zonder Calibri.
+
+**App-wordmark**
+Organisatie- en productidentiteit links in de werkruimte-topbar (Delta Pi + RCM2).
+In v1 tekstlabels volgens huisstijl; latere logo-asset vervangt de labels zonder
+layout-contract te wijzigen.
 
 **FM-onzekerheidsband**
 Presentatie van MC-uitkomsten per faalwijze: **P10 / P50 / P90** per FM-metriek

@@ -22,15 +22,16 @@ from tests.test_desktop_results_workspace_window import (
 )
 
 
-def test_slice56_toolbar_exposes_run_ab_and_compare_toggle(monkeypatch) -> None:
+def test_slice56_toolbar_exposes_scenario_workflow_buttons(monkeypatch) -> None:
     app = _ensure_app()
     monkeypatch.setattr(QMessageBox, "critical", lambda *_a, **_k: QMessageBox.Ok)
     window = ResultsWorkspaceWindow()
     window.show()
     app.processEvents()
 
-    assert window.run_slot_a_button.text() == messages.WORKSPACE_RUN_SLOT_A_BUTTON_LABEL
-    assert window.run_slot_b_button.text() == messages.WORKSPACE_RUN_SLOT_B_BUTTON_LABEL
+    assert window.run_slot_a_button.isVisible() is False
+    assert window.run_slot_b_button.isVisible() is False
+    assert window.extra_scenario_button.isVisible() is True
     assert window.compare_toggle_button.text() == messages.WORKSPACE_COMPARE_TOGGLE_LABEL
     assert window.compare_toggle_button.isChecked() is False
     assert window.workspace_state.snapshot().compare_mode is False
@@ -41,8 +42,8 @@ def test_slice56_toolbar_exposes_run_ab_and_compare_toggle(monkeypatch) -> None:
     assert "WORKSPACE_SEED_SLOT_A_BUTTON_LABEL" not in source
 
 
-def test_slice56_auto_seed_baseline_slot_a_keeps_single_run_pane(monkeypatch) -> None:
-    """Na eerste run vult slot A automatisch; single-run UX blijft zonder compare-toggle."""
+def test_slice56_no_auto_seed_until_extra_scenario(monkeypatch) -> None:
+    """Slice 100: scenario-slots blijven leeg tot Extra scenario (geen auto-seed)."""
     app = _ensure_app()
     monkeypatch.setattr(QMessageBox, "critical", lambda *_a, **_k: QMessageBox.Ok)
     window = ResultsWorkspaceWindow()
@@ -54,25 +55,29 @@ def test_slice56_auto_seed_baseline_slot_a_keeps_single_run_pane(monkeypatch) ->
 
     assert window.compare_toggle_button.isChecked() is False
     assert window.workspace_state.snapshot().compare_mode is False
-    assert window._compare_slots.has(COMPARE_SLOT_A)
+    assert not window._compare_slots.has(COMPARE_SLOT_A)
     assert window.bijdragen_compare_pane.isVisible() is False
     assert window.bijdragen_single_slot_pane.isVisible() is True
     assert len(window.bijdragen_chart_widget.rows()) > 0
 
 
-def test_slice56_auto_seed_skips_when_slot_a_already_filled(monkeypatch) -> None:
+def test_slice56_extra_scenario_freeze_then_compare(monkeypatch) -> None:
+    from rcm_desktop.adapter.validate_service import ValidateResult
+
     app = _ensure_app()
     monkeypatch.setattr(QMessageBox, "critical", lambda *_a, **_k: QMessageBox.Ok)
     window = ResultsWorkspaceWindow()
     window.show()
     project = _three_level_project()
     window._state.set_last_project(project)
+    window._state.set_last_result(ValidateResult(status="valid", summary="ok", details=[]))
     _inject_run(window, project)
-    first_label = window._compare_slots.get(COMPARE_SLOT_A).label
+    window.extra_scenario_button.click()
+    app.processEvents()
+    assert window._compare_slots.has(COMPARE_SLOT_A)
     _inject_run(window, project)
     app.processEvents()
-
-    assert window._compare_slots.get(COMPARE_SLOT_A).label == first_label
+    assert window._compare_slots.has(COMPARE_SLOT_B)
 
 
 def test_slice56_compare_toggle_on_shows_placeholders_for_empty_slots(monkeypatch) -> None:

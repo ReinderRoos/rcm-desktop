@@ -1,8 +1,8 @@
 # HILT98 — Handcheck Monte Carlo engine v1
 
 **Issue:** slice 98 issue 12  
-**Datum:** 2026-06-14 (hervat 2026-06-13)  
-**Status:** GO met kanttekening
+**Datum:** 2026-06-16 (hervalidatie na slice 100 unified Start analyse)  
+**Status:** GO — completed
 
 ## Doel
 
@@ -16,27 +16,27 @@ Visuele QA van MC Run-modus vóór merge: voortgang, seed, annuleren, FM-onzeker
 
 ## Stappen
 
-1. Run-modus **Monte Carlo** in validatiestrip.
-   - [x] Start analyse verborgen; Run A/B beschikbaar (MC-dispatch)
-2. **Run → A** (MC-modus) — controleer:
-   - [x] Voortgangspercentage zichtbaar in statusstrip
-   - [x] Seed zichtbaar tijdens run
-3. Na voltooiing — **FM-resultaten**:
+1. Run-modus **Monte Carlo** in validatiestrip → **Start analyse**.
+   - [x] Voortgang en seed zichtbaar in statusstrip (unified Start analyse, slice 100)
+2. Na voltooiing — **FM-resultaten**:
    - [x] P50 in kolom; tooltip toont P10 en P90 (geen P50 in tooltip)
-4. **Annuleren:** start opnieuw, klik **Annuleren** halverwege:
+3. **Annuleren:** start opnieuw, klik **Annuleren** halverwege:
    - [x] Status geannuleerd; geen banden in FM-resultaten
-5. **Reproduceerbaarheid:**zelfde seed, opnieuw run:
+4. **Reproduceerbaarheid:** zelfde seed, opnieuw run:
    - [x] Banden stabiel (zelfde P50 binnen afronding)
-6. Schakel Run-modus terug naar **Analytisch** (zonder herbereken):
-   - [x] FM-resultaten leeg wanneer geen prior analytische run (verwacht)
-   - [ ] Niet getest: puntwaarden na eerdere analytische run (geen prior run in sessie)
+5. Run-modus **Analytisch** → **Start analyse**:
+   - [x] Puntwaarden in FM-resultaten (geen MC-banden)
+6. **Top 10 + LCC** analytisch; moduswissel MC → Analytisch zonder run:
+   - [x] Analytische cijfers in Top 10/LCC; na moduswissel zonder run blijven analytische waarden zichtbaar
 
-## Kanttekening
+## Notities
 
-- Zonder eerdere analytische run zijn FM/Top10/LCC leeg na omschakeling naar Analytisch — verwacht gedrag, geen bug. Herbereken analyse vult views (niet opnieuw getest in deze sessie).
+- Eerdere sessie (2026-06-13): GO met kanttekening — puntwaarden na analytische run en moduswissel nog niet getest; beide nu OK.
+- Dispatch via unified **Start analyse** (slice 100); Run A/B niet meer vereist voor MC.
 
 ## Akkoord
 
 | Analist | Datum | GO / NO-GO | Opmerkingen |
 |---------|-------|------------|-------------|
 | ReinderRoos | 2026-06-13 | GO met kanttekening | MC via Run A/B; tooltip P10/P90 OK; leeg analytisch zonder prior run |
+| ReinderRoos | 2026-06-16 | GO | Hervalidatie: Start analyse dispatch, alle checks 1–6 OK incl. analytische puntwaarden + Top10/LCC |

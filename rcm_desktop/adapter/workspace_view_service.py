@@ -12,11 +12,16 @@ from rcm_desktop.adapter.result_filter_service import filter_run_result
 from rcm_desktop.adapter.result_view_service import (
     FMResultRow,
     apply_presentation_scale_to_fm_rows,
+    apply_presentation_scale_to_mc_rows,
     enrich_fm_rows_with_nmf_rf,
 )
 from rcm_desktop.adapter.simulation_engine_service import FMMCResultRow
 from rcm_desktop.adapter.simulation_job_service import RunMode
-from rcm_desktop.adapter.simulation_workspace_service import fm_detail_source_for_run_mode
+from rcm_desktop.adapter.simulation_workspace_service import (
+    fm_detail_source_for_run_mode,
+    resolve_live_run_result,
+)
+from rcm_desktop.adapter.compare_slot_state import CompareSlotSnapshot
 from rcm_desktop.adapter.results_workspace_state import (
     MODE_BIJDRAGEN,
     MODE_FM_DETAIL,
@@ -115,10 +120,16 @@ def build_fm_detail_view(
 
     if source == "mc_bands":
         assert session.mc_run is not None
-        from rcm_desktop import messages
-
+        project = session.loaded.core()
+        mc_rows = apply_presentation_scale_to_mc_rows(
+            project,
+            session.mc_run,
+            session.mc_run.rows,
+            presentation=snapshot.contribution_presentation,
+            nb_filter=snapshot.effect_nb_filter,
+        )
         return FMDetailView(
-            mc_rows=session.mc_run.rows,
+            mc_rows=mc_rows,
             is_mc_mode=True,
             empty_message="",
         )
@@ -132,6 +143,45 @@ def build_fm_detail_view(
     return FMDetailView(is_mc_mode=True, empty_message=empty_msg)
 
 
+def build_fm_detail_view_for_compare_slot(
+    session: ProjectSession,
+    slot: CompareSlotSnapshot,
+    snapshot: WorkspaceStateSnapshot,
+) -> FMDetailView:
+    """FM compare panel: analytical point values or MC P50 + band rows per slot."""
+    if slot.run_mode is RunMode.MONTE_CARLO:
+        if slot.mc_run is None or not slot.mc_run.rows:
+            from rcm_desktop import messages
+
+            return FMDetailView(
+                is_mc_mode=True,
+                empty_message=messages.WORKSPACE_DETAIL_EMPTY_STATE,
+            )
+        project = session.loaded.core()
+        mc_rows = apply_presentation_scale_to_mc_rows(
+            project,
+            slot.mc_run,
+            slot.mc_run.rows,
+            presentation=snapshot.contribution_presentation,
+            nb_filter=snapshot.effect_nb_filter,
+        )
+        return FMDetailView(mc_rows=mc_rows, is_mc_mode=True)
+    run = slot.run_result
+    project = session.loaded.core()
+    view = filter_run_result(project, run, snapshot.scope_id)
+    rows = apply_presentation_scale_to_fm_rows(
+        project,
+        run.fm_core_results,
+        view.fm_rows,
+        presentation=snapshot.contribution_presentation,
+        nb_filter=snapshot.effect_nb_filter,
+    )
+    rows = enrich_fm_rows_with_nmf_rf(
+        project, out=rows, nb_filter=snapshot.effect_nb_filter
+    )
+    return FMDetailView(fm_rows=rows, is_mc_mode=False)
+
+
 def build_bijdragen_view(
     session: ProjectSession,
     snapshot: WorkspaceStateSnapshot,
@@ -139,11 +189,15 @@ def build_bijdragen_view(
     render_index: WorkspaceRenderIndex,
     project_total_presentation: PresentationProjectTotal | None,
     slot: str = SLOT_CURRENT,
+    run_mode: RunMode = RunMode.ANALYTICAL,
 ) -> BijdragenView | None:
-    if not session.has_completed_run():
+    run = resolve_live_run_result(session, run_mode)
+    if run is None:
         return None
     cache_modus = build_workspace_cache_modus_key(snapshot)
-    if _contribution_cache_matches(snapshot, project_total_presentation):
+    if run_mode is not RunMode.MONTE_CARLO and _contribution_cache_matches(
+        snapshot, project_total_presentation
+    ):
         assert project_total_presentation is not None
         rows = project_total_presentation.contribution_rows
         return BijdragenView(
@@ -152,8 +206,6 @@ def build_bijdragen_view(
             from_presentation_cache=True,
         )
     project = session.loaded.core()
-    run = session.run
-    assert run is not None
     rows = render_index.get_or_build(
         slot,
         snapshot.scope_id,
@@ -183,12 +235,12 @@ def build_lcc_view(
     render_index: WorkspaceRenderIndex,
     prev_snapshot: WorkspaceStateSnapshot | None,
     slot: str = SLOT_CURRENT,
+    run_mode: RunMode = RunMode.ANALYTICAL,
 ) -> LCCView | None:
-    if not session.has_completed_run():
+    run = resolve_live_run_result(session, run_mode)
+    if run is None:
         return None
     project = session.loaded.core()
-    run = session.run
-    assert run is not None
     return build_lcc_view_core(
         project,
         run,

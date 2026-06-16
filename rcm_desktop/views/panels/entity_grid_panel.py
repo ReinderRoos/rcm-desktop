@@ -73,8 +73,8 @@ class EntityGridPanel(QWidget):
         root.addLayout(toolbar)
 
         self._scope_status_label = QLabel()
+        self._scope_status_label.setObjectName("MutedHintLabel")
         self._scope_status_label.setVisible(False)
-        self._scope_status_label.setStyleSheet("color: palette(mid);")
         root.addWidget(self._scope_status_label)
 
         self._table = QTableView()

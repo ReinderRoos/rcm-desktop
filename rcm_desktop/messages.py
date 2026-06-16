@@ -457,14 +457,18 @@ WORKSPACE_RUN_SLOT_A_BUTTON_TOOLTIP = (
 WORKSPACE_RUN_SLOT_B_BUTTON_TOOLTIP = (
     "Voer analyse uit en bevries resultaat in slot B (variant)."
 )
-WORKSPACE_COMPARE_TOGGLE_LABEL = "Vergelijk A ↔ B"
+WORKSPACE_EXTRA_SCENARIO_BUTTON_LABEL = "Extra scenario"
+WORKSPACE_EXTRA_SCENARIO_BUTTON_TOOLTIP = (
+    "Bevries de huidige live run als scenario 1 en configureer een variant voor scenario 2."
+)
+WORKSPACE_COMPARE_TOGGLE_LABEL = "Vergelijk scenario's"
 WORKSPACE_COMPARE_TOGGLE_TOOLTIP = (
-    "Toon Top 10 en Tijdsplot naast elkaar voor gevulde slots. "
-    "Slot A wordt automatisch gevuld na de eerste geslaagde analyse; "
-    "gebruik Run → B voor een variant."
+    "Toon Top 10, Tijdsplot en FM-resultaten naast elkaar voor scenario 1 en 2."
 )
 WORKSPACE_CLEAR_COMPARE_BUTTON_LABEL = "Wis vergelijking"
-WORKSPACE_COMPARE_SLOT_PLACEHOLDER = "Nog geen run — gebruik Run → {slot}"
+WORKSPACE_COMPARE_SLOT_PLACEHOLDER = (
+    "Start analyse, daarna Extra scenario — slot {slot}"
+)
 WORKSPACE_COMPARE_SLOT_HEADER = "{label}"
 
 # Dual-project vergelijkingswerkruimte (slice 95 issue 07).
@@ -684,6 +688,8 @@ WORKSPACE_MEEKOPPEL_COLLAPSE_TOOLTIP = (
 )
 WORKSPACE_LCC_WHATIF_BAR_TITLE = "What-if planning & LCC-filters"
 WORKSPACE_KPI_PANEL_TITLE = "KPI — huidige analyse"
+WORKSPACE_APP_WORDMARK_ORG = "Delta Pi"
+WORKSPACE_APP_WORDMARK_PRODUCT = "RCM2"
 WORKSPACE_PM_MODE_REDIRECT = (
     "Planning en PM-inzicht zitten nu in de LCC-modus (filters en jaardetail)."
 )
@@ -695,6 +701,16 @@ WORKSPACE_FM_COLUMN_CROP_TOOLTIP = (
     "Regelomloop uit: celtekst op één regel (… + tooltip bij afkapping). "
     "Uit = tekst loopt over meerdere regels."
 )
+WORKSPACE_FM_COMPARE_NMF_RF = "NMF/RF"
+WORKSPACE_FM_COMPARE_NMF_RF_TOOLTIP = (
+    "Toon optionele kolommen NMF en RF in beide scenario-kolommen."
+)
+WORKSPACE_FM_COMPARE_VIEW_TABLE = "Tabel"
+WORKSPACE_FM_COMPARE_VIEW_DIAGRAM = "Diagram"
+WORKSPACE_FM_COMPARE_VIEW_TOOLTIP = (
+    "Wissel tussen uitgelijnde tabel en gepaard staafdiagram."
+)
+WORKSPACE_FM_COMPARE_DIAGRAM_EMPTY = "Geen faalwijzen om te tonen in het diagram."
 
 WORKSPACE_FM_INSPECTOR_EMPTY = "Selecteer een faalwijze in de tabel hierboven."
 WORKSPACE_FM_INSPECTOR_TITLE = "FM-inspector"

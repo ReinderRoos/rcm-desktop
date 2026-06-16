@@ -7,6 +7,7 @@ from PySide6.QtGui import QBrush, QColor, QPainter, QPen
 from PySide6.QtWidgets import QWidget
 
 from rcm_desktop import messages
+from rcm_desktop.theme.dp_tokens import DP_TEXT_SUBTLE
 from rcm_desktop.adapter.lcc_chart_service import LCCYearBucket
 
 
@@ -25,7 +26,19 @@ class LCCStackedBarChartWidget(QWidget):
         self._scale_max: float | None = None
         self._x_axis_label = messages.LCC_PLOT_AXIS_X_KALENDERJAREN
         self._y_axis_label = ""
+        self._scenario_primary_hex: str | None = None
         self.setMinimumHeight(220)
+
+    def set_scenario_palette(self, primary_hex: str | None) -> None:
+        """Override default CM/PM blues with scenario accent (compare, slice 102)."""
+        self._scenario_primary_hex = primary_hex
+        self.update()
+
+    def _stack_colors(self) -> tuple[QColor, QColor]:
+        if self._scenario_primary_hex:
+            primary = QColor(self._scenario_primary_hex)
+            return primary.lighter(140), primary
+        return self._CORRECTIEF_COLOR, self._PREVENTIEF_COLOR
 
     def set_buckets(self, buckets: tuple[LCCYearBucket, ...]) -> None:
         self._buckets = tuple(buckets)
@@ -86,7 +99,7 @@ class LCCStackedBarChartWidget(QWidget):
         rect = self.rect()
         painter.fillRect(rect, QColor("#FAFAFA"))
         if not self._buckets:
-            painter.setPen(QPen(QColor("#9E9E9E")))
+            painter.setPen(QPen(QColor(DP_TEXT_SUBTLE)))
             painter.drawText(rect, Qt.AlignCenter, messages.WORKSPACE_LCC_EMPTY_STATE)
             painter.end()
             return
@@ -98,7 +111,7 @@ class LCCStackedBarChartWidget(QWidget):
             else local_max
         )
         if max_value <= 0.0:
-            painter.setPen(QPen(QColor("#9E9E9E")))
+            painter.setPen(QPen(QColor(DP_TEXT_SUBTLE)))
             painter.drawText(rect, Qt.AlignCenter, messages.WORKSPACE_LCC_EMPTY_STATE)
             painter.end()
             return
@@ -107,6 +120,7 @@ class LCCStackedBarChartWidget(QWidget):
             self._layout_metrics(rect)
         )
         text_color = QColor("#212121")
+        correctief_color, preventief_color = self._stack_colors()
         for i, bucket in enumerate(self._buckets):
             x = left_margin + i * slot_w
             total = bucket.correctief_eur + bucket.preventief_eur
@@ -119,9 +133,9 @@ class LCCStackedBarChartWidget(QWidget):
                 painter.drawRect(
                     x - 1, baseline_y - corr_h - prev_h - 1, bar_w + 2, corr_h + prev_h + 2
                 )
-            painter.fillRect(x, baseline_y - corr_h, bar_w, corr_h, QBrush(self._CORRECTIEF_COLOR))
+            painter.fillRect(x, baseline_y - corr_h, bar_w, corr_h, QBrush(correctief_color))
             painter.fillRect(
-                x, baseline_y - corr_h - prev_h, bar_w, prev_h, QBrush(self._PREVENTIEF_COLOR)
+                x, baseline_y - corr_h - prev_h, bar_w, prev_h, QBrush(preventief_color)
             )
         painter.setPen(QPen(text_color))
         if self._y_axis_label:

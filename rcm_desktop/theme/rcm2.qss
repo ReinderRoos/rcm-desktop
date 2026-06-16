@@ -1,0 +1,328 @@
+/* RCM2 presentatielaag — Delta Pi (slice 102-A) */
+
+/* --- Shell --- */
+QWidget#AppTopbar {{
+    background-color: {dp_navy};
+    color: {dp_text_on_navy};
+}}
+
+QLabel#AppLogoOrg {{
+    font-family: {font_display};
+    font-size: 14pt;
+    color: {dp_text_on_navy};
+}}
+
+QLabel#AppLogoProduct {{
+    font-family: {font_body};
+    font-size: 11pt;
+    color: {dp_text_on_navy};
+}}
+
+QWidget#WorkspaceToolbar {{
+    background-color: #FFFFFF;
+    color: {dp_text_body};
+    border-bottom: 1px solid {dp_border};
+}}
+
+QWidget#StatusStrip {{
+    background-color: {dp_surface};
+    color: {dp_text_body};
+    border-bottom: 1px solid {dp_border};
+}}
+
+QWidget#StatusStrip[status="valid_with_warnings"] {{
+    background-color: {dp_warning_bg};
+}}
+
+QWidget#StatusStrip[status="invalid"],
+QWidget#StatusStrip[status="error"] {{
+    background-color: #FFEBEE;
+}}
+
+QLabel#ValidateStatusLabel {{
+    font-weight: 600;
+}}
+
+QLabel#ValidateSummaryLabel {{
+    color: {dp_text_muted};
+}}
+
+QWidget#WorkspaceRoot {{
+    background-color: #FFFFFF;
+    color: {dp_text_body};
+}}
+
+QWidget#KpiPanel {{
+    background-color: {dp_surface};
+    color: {dp_text_body};
+}}
+
+QWidget#WorkspaceSubNavRow {{
+    background-color: {dp_surface};
+    border-bottom: 1px solid {dp_border};
+}}
+
+QWidget#WorkspaceSubNav {{
+    background-color: transparent;
+    color: {dp_text_body};
+}}
+
+QWidget#AnalyseToolbar {{
+    background-color: #FFFFFF;
+    color: {dp_text_body};
+    border-bottom: 1px solid {dp_border};
+}}
+
+QStatusBar#WorkspaceFooter {{
+    background-color: {dp_surface};
+    color: {dp_text_muted};
+}}
+
+/* --- Subnav tabs --- */
+QToolButton#WorkspaceSideTab {{
+    color: {dp_text_body};
+    background-color: transparent;
+    border: none;
+    border-bottom: 2px solid transparent;
+    border-radius: 0;
+    padding: 6px 14px;
+    font-weight: 600;
+}}
+
+QToolButton#WorkspaceSideTab:checked {{
+    color: {dp_navy};
+    background-color: transparent;
+    border: none;
+    border-bottom: 2px solid {dp_navy};
+}}
+
+QToolButton#WorkspaceSideTab:hover {{
+    color: {dp_navy};
+    background-color: #E4E8EE;
+}}
+
+QToolButton#WorkspaceSideTab:checked:hover {{
+    background-color: transparent;
+}}
+
+/* --- Basistekst --- */
+QMainWindow {{
+    color: {dp_text_body};
+}}
+
+QMainWindow QLabel {{
+    color: {dp_text_body};
+}}
+
+QLabel#MutedHintLabel {{
+    color: {dp_text_subtle};
+    font-style: italic;
+}}
+
+/* --- Menu --- */
+QMenuBar {{
+    color: {dp_text_body};
+    background-color: #FFFFFF;
+    border-bottom: 1px solid {dp_border};
+}}
+
+QMenuBar::item {{
+    color: {dp_text_body};
+    background-color: transparent;
+    padding: 4px 10px;
+}}
+
+QMenuBar::item:selected {{
+    color: {dp_navy};
+    background-color: #E4E8EE;
+}}
+
+QMenu {{
+    color: {dp_text_body};
+    background-color: #FFFFFF;
+    border: 1px solid {dp_border};
+}}
+
+QMenu::item {{
+    color: {dp_text_body};
+    padding: 6px 24px;
+}}
+
+QMenu::item:selected {{
+    color: {dp_text_body};
+    background-color: #D6E4F0;
+}}
+
+QMenu::item:disabled {{
+    color: {dp_text_subtle};
+}}
+
+/* --- Knoppen --- */
+QMainWindow QPushButton {{
+    color: {dp_text_body};
+    background-color: #FFFFFF;
+    border: 1px solid {dp_border};
+    border-radius: 3px;
+    padding: 5px 12px;
+}}
+
+QMainWindow QPushButton:hover {{
+    color: {dp_navy};
+    background-color: #E4E8EE;
+    border-color: #B8BFC9;
+}}
+
+QMainWindow QPushButton:disabled {{
+    color: {dp_text_subtle};
+    background-color: {dp_surface};
+    border-color: {dp_border};
+}}
+
+QMainWindow QToolButton {{
+    color: {dp_text_body};
+    background-color: #FFFFFF;
+    border: 1px solid {dp_border};
+    border-radius: 3px;
+    padding: 5px 12px;
+}}
+
+QMainWindow QToolButton:hover {{
+    color: {dp_navy};
+    background-color: #E4E8EE;
+    border-color: #B8BFC9;
+}}
+
+QMainWindow QToolButton:checked {{
+    color: {dp_text_on_navy};
+    background-color: {dp_navy};
+    border: 1px solid {dp_navy};
+    font-weight: 600;
+}}
+
+QMainWindow QToolButton:disabled {{
+    color: {dp_text_subtle};
+    background-color: {dp_surface};
+    border-color: {dp_border};
+}}
+
+/* --- Comboboxen (alle dropdowns in werkruimte) --- */
+QMainWindow QComboBox {{
+    color: {dp_text_body};
+    background-color: #FFFFFF;
+    border: 1px solid {dp_border};
+    border-radius: 3px;
+    padding: 5px 10px;
+    min-height: 1.2em;
+}}
+
+QMainWindow QComboBox:hover {{
+    border-color: #B8BFC9;
+}}
+
+QMainWindow QComboBox:disabled {{
+    color: {dp_text_subtle};
+    background-color: {dp_surface};
+}}
+
+QMainWindow QComboBox QLineEdit {{
+    color: {dp_text_body};
+    background-color: transparent;
+    border: none;
+    selection-background-color: #D6E4F0;
+    selection-color: {dp_text_body};
+}}
+
+QMainWindow QComboBox::drop-down {{
+    subcontrol-origin: padding;
+    subcontrol-position: top right;
+    width: 22px;
+    border-left: 1px solid {dp_border};
+    background-color: #F7F8FA;
+}}
+
+QMainWindow QComboBox::down-arrow {{
+    width: 10px;
+    height: 10px;
+}}
+
+QMainWindow QComboBox QAbstractItemView,
+QMainWindow QComboBox QListView {{
+    color: {dp_text_body};
+    background-color: #FFFFFF;
+    border: 1px solid {dp_border};
+    selection-background-color: #D6E4F0;
+    selection-color: {dp_text_body};
+    outline: none;
+}}
+
+QMainWindow QComboBox QAbstractItemView::item,
+QMainWindow QComboBox QListView::item {{
+    color: {dp_text_body};
+    min-height: 1.4em;
+    padding: 4px 8px;
+}}
+
+QMainWindow QComboBox QAbstractItemView::item:disabled,
+QMainWindow QComboBox QListView::item:disabled {{
+    color: {dp_text_subtle};
+}}
+
+QMainWindow QComboBox QAbstractItemView::item:selected,
+QMainWindow QComboBox QListView::item:selected {{
+    color: {dp_text_body};
+    background-color: #D6E4F0;
+}}
+
+/* --- Invoervelden --- */
+QMainWindow QLineEdit {{
+    color: {dp_text_body};
+    background-color: #FFFFFF;
+    border: 1px solid {dp_border};
+    border-radius: 3px;
+    padding: 4px 8px;
+    selection-background-color: #D6E4F0;
+    selection-color: {dp_text_body};
+}}
+
+QMainWindow QLineEdit:disabled {{
+    color: {dp_text_subtle};
+    background-color: {dp_surface};
+}}
+
+QMainWindow QCheckBox {{
+    color: {dp_text_body};
+    spacing: 6px;
+}}
+
+QMainWindow QCheckBox:disabled {{
+    color: {dp_text_subtle};
+}}
+
+/* --- Datatabellen --- */
+QMainWindow QTableView {{
+    font-family: {font_body};
+    color: {dp_text_body};
+    background-color: #FFFFFF;
+    alternate-background-color: {dp_row_alt};
+    gridline-color: {dp_border};
+    selection-background-color: #D6E4F0;
+    selection-color: {dp_text_body};
+}}
+
+QMainWindow QHeaderView::section {{
+    background-color: {dp_navy};
+    color: {dp_text_on_navy};
+    font-weight: 600;
+    padding: 5px 8px;
+    border: none;
+    border-right: 1px solid #3A4068;
+}}
+
+QMainWindow QTreeView {{
+    font-family: {font_body};
+    color: {dp_text_body};
+    background-color: #FFFFFF;
+    alternate-background-color: {dp_row_alt};
+    selection-background-color: #D6E4F0;
+    selection-color: {dp_text_body};
+}}

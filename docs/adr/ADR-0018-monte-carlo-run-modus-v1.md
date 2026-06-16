@@ -18,9 +18,16 @@ bruikbare MC-product opleveren zonder Top 10/LCC te herontwerpen.
 
 - **Run-modus** op werkruimte-sessie: MC **vervangt** analytische run zolang MC
   geselecteerd is; terug naar analytisch = normale deterministische run.
-- **Presentatie v1:** alleen **FM-resultaten** tonen onzekerheid als **P10 / P50 /
-  P90** per metriek (kosten, downtime, faalgebeurtenissen). Top 10 en LCC
-  blijven analytisch.
+- **Presentatie v1 (slice 98):** **FM-resultaten** tonen onzekerheid als **P10 /
+  P50 / P90** per metriek (kosten, downtime, faalgebeurtenissen).
+- **Presentatie v1.1 (slice 100):** na MC-run vullen **Top 10** en **LCC** via
+  **P50-rollups** per faalwijze (zelfde grafiekstructuur als analytisch). FM-detail
+  blijft banden; aggregate views tonen P50-puntwaarden (geen P10/P90-envelop in
+  Top 10/LCC — **fase 2**).
+- **Presentatie v1.2 (slice 101):** FM MC-kolommen (single-run en compare) respecteren
+  de gedeelde **`ContributionPresentation`**-horizon (default Ø per jaar) — dezelfde
+  schaalpipeline als analytische FM via synthetische `FMResult`-rollups; P10/P90
+  tooltips schalen mee.
 - **N** via modelinstellingen (`monte_carlo_n`, default 10.000). **Seed** via
   `monte_carlo_seed` (leeg = willekeurig per run); getoond in statusstrip.
 - **UI:** MC op **achtergrondthread** met voortgang; **annuleren** stopt job en
@@ -50,6 +57,6 @@ bruikbare MC-product opleveren zonder Top 10/LCC te herontwerpen.
 - Slice 98 PRD/issues kunnen tracer bullets schrijven voor engine, FM-tabel
   percentielen, background job + cancel, en regressietests (seeded parity waar
   deterministisch).
-- HILT: demo-project met MC-run, voortgang, annuleren, P10/P50/P90 zichtbaar
-  in FM-resultaten; Top 10/LCC ongewijzigd analytisch.
-- PR3/PR4 en MC-banden in Top 10/LCC worden aparte follow-up (grill + PRD).
+- HILT slice 98: MC-run, voortgang, annuleren, P10/P50/P90 in FM-resultaten.
+- Slice 100: MC P50 in Top 10/LCC; dual namespace (analytisch + MC) blijft.
+- PR3/PR4 en MC-banden (P10/P90) in Top 10/LCC aggregate views: fase 2 (grill + PRD).

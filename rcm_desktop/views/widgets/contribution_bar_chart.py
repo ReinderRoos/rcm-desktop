@@ -7,7 +7,7 @@ from PySide6.QtGui import QBrush, QColor, QPainter, QPen
 from PySide6.QtWidgets import QWidget
 
 from rcm_desktop import messages
-from rcm_desktop.adapter.contribution_chart_service import ContributionRow
+from rcm_desktop.theme.dp_tokens import DP_TEXT_SUBTLE
 from rcm_desktop.adapter.contribution_display_service import format_contribution_bar_annotation
 from rcm_desktop.adapter.results_workspace_state import (
     ContributionPresentation,
@@ -23,7 +23,13 @@ class ContributionBarChartWidget(QWidget):
         self._rows: tuple[ContributionRow, ...] = ()
         self._metric: str = METRIC_NIET_BESCHIKBAARHEID
         self._presentation = ContributionPresentation()
+        self._bar_color_hex: str | None = None
         self.setMinimumHeight(180)
+
+    def set_bar_color_hex(self, color_hex: str | None) -> None:
+        """Override default bar color (scenario compare, slice 102)."""
+        self._bar_color_hex = color_hex
+        self.update()
 
     def set_display_context(
         self,
@@ -52,21 +58,21 @@ class ContributionBarChartWidget(QWidget):
         rect = self.rect()
         painter.fillRect(rect, QColor("#FAFAFA"))
         if not self._rows:
-            painter.setPen(QPen(QColor("#9E9E9E")))
+            painter.setPen(QPen(QColor(DP_TEXT_SUBTLE)))
             painter.drawText(rect, Qt.AlignCenter, messages.WORKSPACE_BIJDRAGE_EMPTY_STATE)
             painter.end()
             return
 
         max_value = max((r.value for r in self._rows), default=0.0)
         if max_value <= 0.0:
-            painter.setPen(QPen(QColor("#9E9E9E")))
+            painter.setPen(QPen(QColor(DP_TEXT_SUBTLE)))
             painter.drawText(rect, Qt.AlignCenter, messages.WORKSPACE_BIJDRAGE_EMPTY_STATE)
             painter.end()
             return
 
         n = len(self._rows)
         bar_height = max(12, (rect.height() - 12) // max(n, 1) - 4)
-        bar_color = QColor("#1976D2")
+        bar_color = QColor(self._bar_color_hex or "#1976D2")
         text_color = QColor("#212121")
         label_width = 220
         right_margin = 8

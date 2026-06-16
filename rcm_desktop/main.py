@@ -26,9 +26,13 @@ def main() -> int:
         )
         return 1
 
+    from rcm_desktop.desktop_tooltip import apply_desktop_tooltip_polish
+    from rcm_desktop.theme.rcm2_theme import apply_rcm2_theme
     from rcm_desktop.views.results_workspace_window import ResultsWorkspaceWindow
 
     app = QApplication(sys.argv)
+    apply_rcm2_theme(app)
+    apply_desktop_tooltip_polish(app)
     window = ResultsWorkspaceWindow()
     window.setWindowTitle("RCM2 — resultatenwerkruimte")
     app.aboutToQuit.connect(window.cancel_background_runners)

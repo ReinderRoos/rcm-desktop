@@ -124,6 +124,30 @@ def apply_fm_toolbar(window: Any, toolbar: FmToolbarPlan) -> None:
         crop_action.setVisible(toolbar.column_crop_visible)
     if hasattr(window, "column_crop_button"):
         window.column_crop_button.setVisible(toolbar.column_crop_visible)
+    if hasattr(window, "fm_compare_nmf_rf_toggle"):
+        from rcm_desktop.adapter.faalwijze_analyse_service import FM_COMPARE_VIEW_TABLE
+
+        nmf_visible = toolbar.fm_compare_nmf_rf_toggle_visible and getattr(
+            window, "_fm_compare_view_mode", FM_COMPARE_VIEW_TABLE
+        ) == FM_COMPARE_VIEW_TABLE
+        window.fm_compare_nmf_rf_toggle.setVisible(nmf_visible)
+        if not toolbar.fm_compare_nmf_rf_toggle_visible and window.fm_compare_nmf_rf_toggle.isChecked():
+            blocker = window.fm_compare_nmf_rf_toggle.blockSignals(True)
+            window.fm_compare_nmf_rf_toggle.setChecked(False)
+            window.fm_compare_nmf_rf_toggle.blockSignals(blocker)
+            window._fm_compare_show_nmf_rf = False
+    if hasattr(window, "fm_compare_table_view_button"):
+        view_toggle_visible = toolbar.fm_compare_view_toggle_visible
+        window.fm_compare_table_view_button.setVisible(view_toggle_visible)
+        window.fm_compare_diagram_view_button.setVisible(view_toggle_visible)
+        if not view_toggle_visible:
+            from rcm_desktop.adapter.faalwijze_analyse_service import FM_COMPARE_VIEW_TABLE
+
+            window._set_fm_compare_view_mode(FM_COMPARE_VIEW_TABLE)
+        elif hasattr(window, "_sync_fm_compare_view_chrome"):
+            window._sync_fm_compare_view_chrome(
+                show_nmf_rf=getattr(window, "_fm_compare_show_nmf_rf", False),
+            )
     if hasattr(window, "new_fm_button"):
         window.new_fm_button.setVisible(toolbar.new_fm_visible)
         if toolbar.new_fm_visible:
@@ -178,6 +202,10 @@ def apply_compare_chrome(window: Any, compare: CompareChromePlan) -> None:
         window.lcc_compare_pane.setVisible(compare.lcc_compare_visible)
         if compare.lcc_empty_state_visible:
             window.lcc_empty_state_label.setVisible(True)
+    if hasattr(window, "fm_single_slot_pane"):
+        window.fm_single_slot_pane.setVisible(compare.fm_single_visible)
+    if hasattr(window, "fm_compare_pane"):
+        window.fm_compare_pane.setVisible(compare.fm_compare_visible)
 
 
 def apply_collapse_panels(window: Any, collapse: CollapsePanelsPlan) -> None:
