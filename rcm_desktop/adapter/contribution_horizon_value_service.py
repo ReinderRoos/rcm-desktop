@@ -95,12 +95,20 @@ def _faalmomenten_scalar(
     buckets = faalmomenten_per_bucket(project, fmr)
     if not buckets:
         return 0.0
+    # Scale the analytical bucket distribution to fmr.expected_failures.
+    # For analytical FMResult: expected_failures ≈ sum(buckets) → scale ≈ 1 (no change).
+    # For MC compare slots: expected_failures is the slot-specific MC P50, but buckets
+    # are rebuilt from the live project (shared by both slots) → scale corrects the mismatch
+    # so each slot's display reflects its own MC run instead of the live-project analytical total.
+    bucket_total = float(sum(buckets))
+    expected = float(fmr.expected_failures)
+    scale = expected / bucket_total if bucket_total > 0.0 else 1.0
     if presentation.year_choice == "average":
-        return float(sum(buckets)) / len(buckets)
+        return expected / len(buckets)
     idx = _horizon_index_for_calendar_year(project, int(presentation.year_choice))
     if idx is None:
         return 0.0
-    return float(buckets[idx])
+    return float(buckets[idx]) * scale
 
 
 def effect_presentation_for_contribution(
