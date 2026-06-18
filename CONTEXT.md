@@ -151,8 +151,48 @@ view-checks.
 **Vergelijkingswerkruimte**
 Aparte workflow voor het naast elkaar laden en vergelijken van twee
 `.rcm.json`-bestanden (baseline A, scenario B). Balanced split per faalwijze:
-invoer én resultaten even zichtbaar. Niet de dagelijkse enkel-model navigatie
-(ADR-0016).
+invoer én resultaten even zichtbaar. Resultaatverschillen komen uit
+cache-hydrate of een expliciete analytische run (per kant of beide). In v1
+**read-only**: alleen detecteren en tonen — geen uniformeren-UI (dat hoort bij
+slice 97). Niet de dagelijkse enkel-model navigatie (ADR-0016).
+
+**FM-uitlijning**
+Koppelen van faalwijzen tussen model A en B in de vergelijkingswerkruimte.
+In compare **v1 (slice 96):** eerst op gelijke `fm_id`, daarna op **technische
+fingerprint** voor overgebleven unmatched. Handmatige mapping hoort niet bij
+compare v1. **Gepland (slice 97+):** primair op **`library_id`** wanneer beide
+kanten een waarde hebben; zie **Library-ID (faalwijze)**.
+
+**Library-ID (faalwijze)**
+Optioneel, analist-beheerd correlatieveld (`library_id`) op faalwijze — **los
+van** `library_ref`. `library_ref` wijst naar een bibliotheek-item *in dit
+project* (bron voor faalmodel/aannames); `library_id` identificeert dezelfde
+bibliotheekcomponent **over modelleringen en projecten heen** voor vergelijken
+en uniformeren. Bewerkbaar, maar bedoeld om **stabiel meegekopieerd** te worden
+(bij projectfork, scenario-kopie en meenemen in een specifieke modellering).
+Leeg = geen cross-model correlatie. Match op gelijke niet-lege `library_id` wordt
+de voorkeurs-uitlijning vóór fingerprint; daarna zijn **modelparameter-Δ**
+(invoer, geen output) leidend voor uniformeringsvoorstellen.
+
+**Technische fingerprint (faalwijze)**
+Semantische hash op faaltype, aging, genormaliseerde omschrijving — niet op
+MTTF/sigma. Hergebruikt voor bibliotheek-clustering; in compare v1 voor
+FM-uitlijning wanneer ids verschillen maar de faalwijze inhoudelijk overeenkomt.
+
+**Invoerverschil**
+Verschil in faalwijze-invoervelden tussen model A en B. In compare v1
+schema-gedreven uit de editing registry, met uitsluiting van sleutelvelden,
+metadata (`library_id`, `library_ref`, `notes`, `aanname_*`) en geneste structuren
+(`downtime_per_failure`). Geclassificeerd als inhoud, terminologie, structuur
+of parameterisatie. PM-taken (cross-entity via `pm_tasks`) vallen buiten
+compare v1.
+
+**Resultaatverschil**
+Verschil in analytische FM-output tussen model A en B. In compare v1 de
+US16-set: totale kosten (`total_cost_eur`), niet-beschikbaarheid
+(`expected_total_downtime_hr`) en risicobijdrage (`risk_contribution`).
+Waarden A en B staan naast elkaar zodra cache of run beschikbaar is — niet
+alleen bij Δ.
 
 **Uniformeringsvoorstel**
 Review-only voorstel om verschillen tussen twee modellen te harmoniseren, met

@@ -1,10 +1,11 @@
-"""Vergelijkingswerkruimte — dual-project compare UI (slice 95 issue 07)."""
+"""Vergelijkingswerkruimte — dual-project compare UI (slice 95 issue 07, slice 96)."""
 
 from __future__ import annotations
 
 from pathlib import Path
 
 from PySide6.QtCore import QAbstractTableModel, Qt
+from PySide6.QtGui import QColor
 from PySide6.QtWidgets import (
     QFormLayout,
     QHBoxLayout,
@@ -22,27 +23,25 @@ from PySide6.QtWidgets import (
 )
 
 from rcm_desktop import messages
-from rcm_desktop.adapter.compare_balanced_presentation_service import build_compare_presentation
+from rcm_desktop.adapter.compare_results_service import (
+    CompareResultsBundle,
+    hydrate_compare_results,
+    run_compare_analytical,
+)
 from rcm_desktop.adapter.compare_session_service import CompareSession, load_compare_session
-from rcm_desktop.adapter.normalization_proposal_service import build_normalization_proposals
-from rcm_desktop.adapter.normalization_review_presentation_service import (
-    build_normalization_review_presentation,
-)
-from rcm_desktop.adapter.normalization_review_table_model import NormalizationReviewTableModel
-from rcm_desktop.adapter.patch_audit_service import (
-    AuditTrail,
-    apply_approved_normalization,
-    rollback_last_patch,
-)
-from rcm_desktop.adapter.tabular_edit_types import MaterializeBlockedError
+from rcm_desktop.adapter.compare_visual_presentation_service import build_compare_visual_flags
 from rcm_desktop.adapter.compare_workspace_presentation_service import (
     CompareWorkspaceRow,
     build_compare_workspace_view_state,
 )
 from rcm_desktop.adapter.compare_workspace_table_model import (
     CompareWorkspaceTableModel,
+    HIGHLIGHT_ROLE,
     ROW_ROLE,
 )
+from rcm_desktop.adapter.scenario_compare_chrome import compare_header_stylesheet, scenario_color_hex
+from rcm_desktop.adapter.compare_slot_state import COMPARE_SLOT_A, COMPARE_SLOT_B
+from rcm_desktop.theme.dp_tokens import DP_WARNING_BG
 
 
 class CompareModelsWindow(QMainWindow):
@@ -52,10 +51,8 @@ class CompareModelsWindow(QMainWindow):
         self._path_a: Path | None = None
         self._path_b: Path | None = None
         self._compare_session: CompareSession | None = None
-        self._normalization_proposal_items: tuple = ()
-        self._audit_trail = AuditTrail()
+        self._results_bundle: CompareResultsBundle | None = None
         self._table_model = CompareWorkspaceTableModel()
-        self._normalization_model = NormalizationReviewTableModel(self)
         self._build_ui()
 
     def _build_ui(self) -> None:
@@ -89,6 +86,30 @@ class CompareModelsWindow(QMainWindow):
         load_row.addWidget(self._load_button)
         layout.addLayout(load_row)
 
+        run_row = QHBoxLayout()
+        self._run_a_button = QPushButton(messages.COMPARE_MODELS_RUN_A)
+        self._run_a_button.clicked.connect(lambda: self._run_side("a"))
+        run_row.addWidget(self._run_a_button)
+        self._run_b_button = QPushButton(messages.COMPARE_MODELS_RUN_B)
+        self._run_b_button.clicked.connect(lambda: self._run_side("b"))
+        run_row.addWidget(self._run_b_button)
+        self._run_both_button = QPushButton(messages.COMPARE_MODELS_RUN_BOTH)
+        self._run_both_button.clicked.connect(lambda: self._run_side("both"))
+        run_row.addWidget(self._run_both_button)
+        run_row.addStretch()
+        layout.addLayout(run_row)
+
+        status_row = QHBoxLayout()
+        self._run_status_strip = QLabel("")
+        self._run_status_a_label = QLabel("A")
+        self._run_status_b_label = QLabel("B")
+        self._run_status_a_label.setStyleSheet(compare_header_stylesheet(COMPARE_SLOT_A))
+        self._run_status_b_label.setStyleSheet(compare_header_stylesheet(COMPARE_SLOT_B))
+        status_row.addWidget(self._run_status_a_label)
+        status_row.addWidget(self._run_status_strip, stretch=1)
+        status_row.addWidget(self._run_status_b_label)
+        layout.addLayout(status_row)
+
         splitter = QSplitter(Qt.Orientation.Horizontal)
         self._fm_table = QTableView()
         self._fm_table.setModel(self._table_model)
@@ -117,35 +138,11 @@ class CompareModelsWindow(QMainWindow):
         splitter.setStretchFactor(1, 3)
         layout.addWidget(splitter)
 
-        norm_title = QLabel(messages.NORMALIZATION_REVIEW_TITLE)
-        layout.addWidget(norm_title)
-        self._normalization_table = QTableView()
-        self._normalization_table.setModel(self._normalization_model)
-        self._normalization_table.horizontalHeader().setSectionResizeMode(
-            QHeaderView.ResizeMode.Stretch
-        )
-        layout.addWidget(self._normalization_table)
-
-        norm_actions = QHBoxLayout()
-        self._normalization_apply_button = QPushButton(messages.NORMALIZATION_REVIEW_APPLY)
-        self._normalization_apply_button.clicked.connect(self._apply_normalization)
-        norm_actions.addWidget(self._normalization_apply_button)
-        self._normalization_rollback_button = QPushButton(messages.NORMALIZATION_REVIEW_ROLLBACK)
-        self._normalization_rollback_button.clicked.connect(self._rollback_normalization)
-        norm_actions.addWidget(self._normalization_rollback_button)
-        norm_actions.addStretch(1)
-        self._normalization_audit_label = QLabel("")
-        norm_actions.addWidget(self._normalization_audit_label)
-        layout.addLayout(norm_actions)
-
         self.setCentralWidget(central)
         self.resize(1100, 640)
 
     def table_model(self) -> CompareWorkspaceTableModel:
         return self._table_model
-
-    def normalization_model(self) -> NormalizationReviewTableModel:
-        return self._normalization_model
 
     def path_a_label(self) -> str:
         return self._path_a.name if self._path_a is not None else ""
@@ -192,22 +189,46 @@ class CompareModelsWindow(QMainWindow):
             return
         try:
             session = load_compare_session(self._path_a, self._path_b)
-            state = build_compare_workspace_view_state(session)
             self._compare_session = session
-            self._load_normalization_review(session)
+            self._results_bundle = hydrate_compare_results(session)
+            self._refresh_view()
         except Exception as exc:  # noqa: BLE001 — user-facing adapter boundary
             QMessageBox.warning(
                 self,
                 messages.COMPARE_MODELS_WINDOW_TITLE,
                 str(exc),
             )
+
+    def _run_side(self, side: str) -> None:
+        if self._compare_session is None:
             return
+        self._results_bundle = run_compare_analytical(
+            self._compare_session,
+            side=side,  # type: ignore[arg-type]
+            existing=self._results_bundle,
+        )
+        self._refresh_view()
+
+    def _refresh_view(self) -> None:
+        if self._compare_session is None:
+            return
+        state = build_compare_workspace_view_state(
+            self._compare_session,
+            results_bundle=self._results_bundle,
+        )
+        flags = build_compare_visual_flags(state)
         self._table_model.set_rows(state.rows)
         self._detail_title.setText(
             messages.COMPARE_MODELS_SUMMARY.format(
                 label_a=state.label_a,
                 label_b=state.label_b,
                 count=len(state.rows),
+            )
+        )
+        self._run_status_strip.setText(
+            messages.COMPARE_MODELS_RUN_STATUS.format(
+                status_a=flags.run_status_text_a,
+                status_b=flags.run_status_text_b,
             )
         )
         if state.rows:
@@ -228,8 +249,8 @@ class CompareModelsWindow(QMainWindow):
     def _show_row_detail(self, row: CompareWorkspaceRow | None) -> None:
         if row is None:
             self._detail_title.setText(messages.COMPARE_MODELS_DETAIL_PLACEHOLDER)
-            field_rows: tuple[tuple[str, str, str], ...] = ()
-            result_rows: tuple[tuple[str, str, str], ...] = ()
+            field_rows: tuple[_DiffRow, ...] = ()
+            result_rows: tuple[_DiffRow, ...] = ()
         else:
             self._detail_title.setText(
                 messages.COMPARE_MODELS_DETAIL_TITLE.format(
@@ -239,11 +260,21 @@ class CompareModelsWindow(QMainWindow):
                 )
             )
             field_rows = tuple(
-                (diff.field, _format_value(diff.value_a), _format_value(diff.value_b))
+                _DiffRow(
+                    label=diff.field,
+                    value_a=_format_value(diff.value_a),
+                    value_b=_format_value(diff.value_b),
+                    highlight=diff.is_different,
+                )
                 for diff in row.field_diffs
             )
             result_rows = tuple(
-                (diff.metric, _format_value(diff.value_a), _format_value(diff.value_b))
+                _DiffRow(
+                    label=diff.metric,
+                    value_a=_format_value(diff.value_a),
+                    value_b=_format_value(diff.value_b),
+                    highlight=diff.is_different,
+                )
                 for diff in row.result_diffs
             )
         field_model = self._field_table.model()
@@ -253,63 +284,6 @@ class CompareModelsWindow(QMainWindow):
         if isinstance(result_model, _DiffTableModel):
             result_model.set_rows(result_rows)
 
-    def _load_normalization_review(self, session: CompareSession) -> None:
-        presentation = build_compare_presentation(session.project_a, session.project_b)
-        proposals = build_normalization_proposals(presentation, direction="a_to_b")
-        self._normalization_proposal_items = proposals.items
-        review = build_normalization_review_presentation(proposals)
-        self._normalization_model.set_presentation(review)
-        self._normalization_audit_label.setText("")
-
-    def _apply_normalization(self) -> None:
-        if self._compare_session is None or not self._normalization_proposal_items:
-            return
-        approved = self._normalization_model.approved_indices()
-        if not approved:
-            QMessageBox.information(
-                self,
-                messages.NORMALIZATION_REVIEW_TITLE,
-                messages.NORMALIZATION_REVIEW_NO_APPROVED,
-            )
-            return
-        try:
-            updated, audit = apply_approved_normalization(
-                self._compare_session.project_a,
-                self._normalization_proposal_items,
-                approved_indices=approved,
-            )
-        except MaterializeBlockedError as exc:
-            QMessageBox.warning(
-                self,
-                messages.NORMALIZATION_REVIEW_TITLE,
-                str(exc),
-            )
-            return
-        self._compare_session = CompareSession(
-            path_a=self._compare_session.path_a,
-            path_b=self._compare_session.path_b,
-            project_a=updated,
-            project_b=self._compare_session.project_b,
-        )
-        self._audit_trail.entries.extend(audit.entries)
-        self._normalization_audit_label.setText(
-            messages.NORMALIZATION_REVIEW_AUDIT.format(count=self._audit_trail.patch_count)
-        )
-
-    def _rollback_normalization(self) -> None:
-        if self._compare_session is None or not self._audit_trail.entries:
-            return
-        restored = rollback_last_patch(self._compare_session.project_a, self._audit_trail)
-        self._compare_session = CompareSession(
-            path_a=self._compare_session.path_a,
-            path_b=self._compare_session.path_b,
-            project_a=restored,
-            project_b=self._compare_session.project_b,
-        )
-        self._normalization_audit_label.setText(
-            messages.NORMALIZATION_REVIEW_AUDIT.format(count=self._audit_trail.patch_count)
-        )
-
 
 def _format_value(value: object) -> str:
     if value is None:
@@ -317,13 +291,30 @@ def _format_value(value: object) -> str:
     return str(value)
 
 
+class _DiffRow:
+    __slots__ = ("label", "value_a", "value_b", "highlight")
+
+    def __init__(
+        self,
+        *,
+        label: str,
+        value_a: str,
+        value_b: str,
+        highlight: bool,
+    ) -> None:
+        self.label = label
+        self.value_a = value_a
+        self.value_b = value_b
+        self.highlight = highlight
+
+
 class _DiffTableModel(QAbstractTableModel):
     def __init__(self, headers: tuple[str, str, str], parent=None) -> None:
         super().__init__(parent)
         self._headers = headers
-        self._rows: tuple[tuple[str, str, str], ...] = ()
+        self._rows: tuple[_DiffRow, ...] = ()
 
-    def set_rows(self, rows: tuple[tuple[str, str, str], ...]) -> None:
+    def set_rows(self, rows: tuple[_DiffRow, ...]) -> None:
         self.beginResetModel()
         self._rows = rows
         self.endResetModel()
@@ -346,7 +337,25 @@ class _DiffTableModel(QAbstractTableModel):
         return self._headers[section]
 
     def data(self, index, role: int = Qt.DisplayRole):
-        if not index.isValid() or role != Qt.DisplayRole:
+        if not index.isValid():
             return None
         row = self._rows[index.row()]
-        return row[index.column()]
+        column = index.column()
+        if role == HIGHLIGHT_ROLE:
+            return row.highlight
+        if role == Qt.BackgroundRole and row.highlight:
+            return QColor(DP_WARNING_BG)
+        if role == Qt.ForegroundRole:
+            if column == 1:
+                return QColor(scenario_color_hex(COMPARE_SLOT_A))
+            if column == 2:
+                return QColor(scenario_color_hex(COMPARE_SLOT_B))
+        if role != Qt.DisplayRole:
+            return None
+        if column == 0:
+            return row.label
+        if column == 1:
+            return row.value_a
+        if column == 2:
+            return row.value_b
+        return None

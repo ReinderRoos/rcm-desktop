@@ -1,8 +1,8 @@
 # HILT105 — Handcheck werkruimte UX-polish
 
 **Issue:** slice 105 issue 13  
-**Laatste sessie:** 2026-06-18 re-check sessie 2 (issues 24–29)  
-**Status:** **GO met kanttekening** — gaps 25–29 open; issue 24 done
+**Laatste sessie:** 2026-06-18 re-HILT batch II op master (issues 26–33)  
+**Status:** **GO**
 
 ## Doel
 
@@ -209,6 +209,16 @@ shell/navigatie, LCC-presentatie.
 | Reinder | **NO-GO** — B1, D2–D4 open; B5 uit eerdere feedback | 2026-06-17 |
 | Reinder | **GO** — kanttekeningen a–g → issues 16–22 | 2026-06-18 |
 | Reinder | **GO met kanttekening** — gaps c,d,h → issues 18, 19, 23 | 2026-06-18 |
+| Reinder | **GO** — batch II (26–33) + validatiestrip/rail/libraries op master | 2026-06-18 |
+
+## Sessie 2026-06-18 — re-HILT batch II op master (103–105 combi)
+
+| Pad | Uitkomst | Notities |
+|-----|----------|----------|
+| Issue 30 | **OK** | Validatiestrip nergens zichtbaar |
+| Issue 31 | **OK** | View-navigatie via rechter rail |
+| Issues 32–33 | **OK** | Effectklassen- + REV-library in FM-editor |
+| Issues 26–29 | **OK** | Run-modus toolbar, geen Top10-subbar Output, geen Toon hele project, geen PBS Componenten |
 
 ## Agent-handoff (copy-paste)
 

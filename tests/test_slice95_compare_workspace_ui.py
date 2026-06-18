@@ -99,9 +99,13 @@ def test_compare_models_window_populates_detail_for_unmatched_fm(qtbot, unmatche
     result_model = window._result_table.model()
     assert field_model.rowCount() >= 1
     assert result_model.rowCount() >= 1
-    assert field_model.data(field_model.index(0, 0), Qt.DisplayRole) == "mttf_jaar"
-    assert field_model.data(field_model.index(0, 1), Qt.DisplayRole) not in ("", None)
-    assert field_model.data(field_model.index(0, 2), Qt.DisplayRole) == "—"
+    mttf_row = next(
+        i
+        for i in range(field_model.rowCount())
+        if field_model.data(field_model.index(i, 0), Qt.DisplayRole) == "mttf_jaar"
+    )
+    assert field_model.data(field_model.index(mttf_row, 1), Qt.DisplayRole) not in ("", None)
+    assert field_model.data(field_model.index(mttf_row, 2), Qt.DisplayRole) == "—"
     assert only_a_fm_id in window._detail_title.text()
 
 

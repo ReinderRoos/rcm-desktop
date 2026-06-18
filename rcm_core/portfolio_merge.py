@@ -6,7 +6,7 @@ import json
 from copy import deepcopy
 from dataclasses import dataclass, replace
 from pathlib import Path
-from typing import Any
+from typing import Any, TypeVar
 
 from rcm_core.config import RCMConfig
 from rcm_core.library_distill import (
@@ -92,14 +92,17 @@ def _remap_pbs_items(
     return out
 
 
-def _remap_dict_items[T](
-    items: dict[str, T],
+_TItem = TypeVar("_TItem")
+
+
+def _remap_dict_items(
+    items: dict[str, _TItem],
     netwerkschakel: str,
     *,
     id_attr: str,
     remap_fields: dict[str, str] | None = None,
-) -> dict[str, T]:
-    out: dict[str, T] = {}
+) -> dict[str, _TItem]:
+    out: dict[str, _TItem] = {}
     for key, item in items.items():
         orig_id = getattr(item, id_attr)
         new_id = prefix_entity_id(netwerkschakel, orig_id)

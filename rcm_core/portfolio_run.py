@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from copy import deepcopy
 from pathlib import Path
+from typing import TypeVar
 
 from rcm_core.cache import load_cache
 from rcm_core.models import FMResult, RCMProject
@@ -39,7 +40,10 @@ def fm_ids_for_source(
     return sorted(fm_id for fm_id in project.faalwijzes if fm_id.startswith(prefix))
 
 
-def _filter_prefixed[T](items: dict[str, T], prefix: str) -> dict[str, T]:
+_TDictVal = TypeVar("_TDictVal")
+
+
+def _filter_prefixed(items: dict[str, _TDictVal], prefix: str) -> dict[str, _TDictVal]:
     needle = f"{prefix}::"
     return {k: v for k, v in items.items() if k.startswith(needle)}
 

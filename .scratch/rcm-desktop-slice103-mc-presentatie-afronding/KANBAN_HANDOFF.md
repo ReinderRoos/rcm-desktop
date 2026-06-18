@@ -1,7 +1,7 @@
 # Kanban-handoff — slice 103 MC-presentatie afronding
 
-**Datum:** 2026-06-16  
-**Status:** NO-GO HILT103 — FM compare blocker (B4); issue 06 triage nodig  
+**Datum:** 2026-06-18  
+**Status:** **done** — HILT103 GO; issues 02/03/04/06 bevestigd op master  
 **Grill:** `/grill-with-docs` slice 103 — afgerond
 
 ## Queue
@@ -9,11 +9,11 @@
 | # | Issue | Type | Triage | Blocked by |
 |---|-------|------|--------|------------|
 | 01 | ADR-0018 v1.3 + CONTEXT glossary | AFK | done | — |
-| 02 | HILT103 gecombineerde handcheck | HITL | ready-for-human | — |
-| 03 | MC LCC/NB-jaarcurves (single-run + scenario compare) | AFK | needs-triage | 02 (pad A/B) |
-| 04 | Mixed compare LCC-slot zonder analytical session | AFK | needs-triage | 02 (pad C) |
-| 05 | RF-kolom align (conditional) | AFK | needs-triage | 02 (D1) |
-| 06 | FM compare geen verschil na scenario-2 wijziging | AFK | needs-triage | 02 (B4) |
+| 02 | HILT103 gecombineerde handcheck | HITL | **done** | — |
+| 03 | MC LCC/NB-jaarcurves (single-run + scenario compare) | AFK | **done** | HILT103 Pad A/B GO |
+| 04 | Mixed compare LCC-slot zonder analytical session | AFK | **done** | HILT103 Pad C GO |
+| 05 | RF-kolom align (conditional) | AFK | needs-triage | D1 optioneel niet getest |
+| 06 | FM compare geen verschil na scenario-2 wijziging | AFK | **done** | B4 opgelost; HILT103 GO |
 
 ## Start nu
 

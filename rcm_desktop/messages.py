@@ -484,6 +484,7 @@ COMPARE_MODELS_SUMMARY = "{label_a} ↔ {label_b} — {count} faalwijze-regels"
 COMPARE_MODELS_DETAIL_PLACEHOLDER = "Selecteer een faalwijze-regel voor invoer- en resultaatdiffs."
 COMPARE_MODELS_DETAIL_TITLE = "FM {fm_a} ↔ {fm_b} ({klasse})"
 COMPARE_MODELS_TABLE_HEADER_STATUS = "Status"
+COMPARE_MODELS_TABLE_HEADER_MATCH = "Match"
 COMPARE_MODELS_TABLE_HEADER_FM_A = "FM A"
 COMPARE_MODELS_TABLE_HEADER_FM_B = "FM B"
 COMPARE_MODELS_TABLE_HEADER_CLASS = "Klasse"
@@ -491,6 +492,10 @@ COMPARE_MODELS_TABLE_HEADER_FIELD_DIFFS = "Invoer Δ"
 COMPARE_MODELS_TABLE_HEADER_RESULT_DIFFS = "Resultaat Δ"
 COMPARE_MODELS_DETAIL_FIELD_HEADER = ("Veld", "A", "B")
 COMPARE_MODELS_DETAIL_RESULT_HEADER = ("Metric", "A", "B")
+COMPARE_MODELS_RUN_A = "Run A"
+COMPARE_MODELS_RUN_B = "Run B"
+COMPARE_MODELS_RUN_BOTH = "Run beide"
+COMPARE_MODELS_RUN_STATUS = "Resultaatbron: {status_a} | {status_b}"
 
 # Monte Carlo presentatie (slice 95 issue 12).
 SIMULATION_RUN_MODE_LABEL = "Run-modus"
