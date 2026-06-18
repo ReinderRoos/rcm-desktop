@@ -129,7 +129,9 @@ def test_workspace_has_view_tabs_not_dropdown(monkeypatch, qt_app, tmp_path) -> 
 
     nav = window._workspace_navigation
     assert not hasattr(nav, "view_combo")
-    assert len(nav.view_tab_buttons) == 3
+    assert len(nav.view_tab_buttons) == 4
+    labels = [btn.text() for btn in nav.view_tab_buttons.values()]
+    assert labels == ["KPI", "LCC", "LTAP", "TopX"]
     assert set(nav.side_buttons.keys()) == {SIDE_INPUT, SIDE_OUTPUT}
     assert nav.side_buttons[SIDE_OUTPUT].isChecked() is True
     QSettings("rcm2", "desktop").clear()
