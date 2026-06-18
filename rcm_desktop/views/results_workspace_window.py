@@ -1681,6 +1681,171 @@ class ResultsWorkspaceWindow(QMainWindow):
         finally:
             host.set_save_handler(prev_save)
 
+    def _commit_active_grid_edits(self) -> bool:
+        host = self._editing_host
+        grid_svc = host.grid_service()
+        if grid_svc is None or not grid_svc.is_active():
+            return True
+        if not grid_svc.is_dirty() or grid_svc.error_count() != 0:
+            return grid_svc.error_count() == 0
+        path = self.path_input.text().strip() or None
+        result = host.commit_grid_edits(path=path, save_to_disk=bool(path))
+        if not result.ok:
+            return False
+        if result.project is not None:
+            self._state.set_last_project(result.project, path=path)
+        if result.run_result is not None:
+            self._state.set_last_run(result.run_result)
+        grid_svc.mark_saved()
+        return True
+
+    def _open_batch_faalwijzen_grid(self) -> None:
+        session = self._project_session()
+        if session is None:
+            QMessageBox.information(
+                self,
+                messages.WORKSPACE_MENU_FAALWIJZEN_BATCH,
+                messages.WORKSPACE_FM_INSPECTOR_INPUTS_MISSING,
+            )
+            return
+        project = wss.editing_project(session)
+        host = self._editing_host
+        grid_svc = host.ensure_grid(project)
+        prev_save = host.swap_save_handler(self._commit_active_grid_edits)
+        dialog = QDialog(self)
+        dialog.setWindowTitle(messages.WORKSPACE_MENU_FAALWIJZEN_BATCH)
+        dialog.resize(960, 520)
+        layout = QVBoxLayout(dialog)
+        panel = ValidateFaalwijzenPanel()
+        panel.attach(grid_svc, project)
+        layout.addWidget(panel)
+        close_btn = QPushButton("Sluiten")
+        close_btn.clicked.connect(dialog.accept)
+        layout.addWidget(close_btn)
+        dialog.exec()
+        host.set_save_handler(prev_save)
+        if grid_svc.is_dirty() and grid_svc.error_count() == 0:
+            self._commit_active_grid_edits()
+
+    def _on_fm_table_double_clicked(self, index: QModelIndex) -> None:
+        if self.workspace_state.snapshot().modus != MODE_FM_DETAIL:
+            return
+        session = self._project_session()
+        if session is None:
+            QMessageBox.information(
+                self,
+                messages.FM_EDITOR_VALIDATION_TITLE,
+                messages.FM_EDITOR_NO_PROJECT,
+            )
+            return
+        model = self.fm_table_view.model()
+        if model is None:
+            return
+        src_index = index
+        proxy = self._fm_table_proxy
+        if model is proxy:
+            src_index = proxy.mapToSource(index)
+            src_model = proxy.sourceModel()
+        else:
+            src_model = model
+        if src_model is None:
+            return
+        fm_id = src_model.data(src_index, RAW_ROLE)
+        if not fm_id:
+            return
+        fm_key = str(fm_id)
+        if not wss.fm_exists(session, fm_key):
+            QMessageBox.warning(
+                self,
+                messages.FM_EDITOR_VALIDATION_TITLE,
+                messages.WORKSPACE_FM_INSPECTOR_INPUTS_MISSING,
+            )
+            return
+        project = wss.editing_project(session)
+        host = self._editing_host
+        prev_save = host.swap_save_handler(self._commit_active_grid_edits)
+        try:
+            if resolve_grid_dirty_before_editor(self, host) == "cancel":
+                return
+            path = self.path_input.text().strip() or None
+            grid_svc = host.grid_service()
+            shared_session = None
+            if grid_svc is not None and grid_svc.is_active():
+                shared_session = grid_svc.editing_session
+            dialog = FmEditorDialog(
+                self,
+                project=project,
+                fm_id=fm_key,
+                project_path=path,
+                save_to_disk=bool(path),
+                editing_session=shared_session,
+            )
+            if dialog.exec() != QDialog.DialogCode.Accepted or dialog.commit_result is None:
+                return
+            result = dialog.commit_result
+            if result.project is not None:
+                self._state.set_last_project(
+                    result.project, path=path, preserve_workspace_ui=True
+                )
+            if result.run_result is not None:
+                self._state.set_last_run(result.run_result)
+                self._project_total_presentation = self._load_presentation_from_disk()
+                self._render_index.on_workspace_state_reset()
+                self._rerender_detail_for_current_scope()
+                self._refresh_fm_inspector(str(fm_id))
+        finally:
+            host.set_save_handler(prev_save)
+
+    def _open_model_settings(self) -> None:
+        session = self._project_session()
+        if session is None:
+            QMessageBox.information(
+                self,
+                messages.MODEL_SETTINGS_BUTTON_LABEL,
+                messages.MODEL_SETTINGS_NO_PROJECT,
+            )
+            return
+        project = wss.editing_project(session)
+        host = self._editing_host
+        prev_save = host.swap_save_handler(self._commit_active_grid_edits)
+        try:
+            if resolve_grid_dirty_before_editor(self, host) == "cancel":
+                return
+            path = self.path_input.text().strip() or None
+            baseline_mtime = None
+            if path:
+                from rcm_desktop.adapter.save_service import current_mtime_ns
+                from pathlib import Path as PathCls
+
+                baseline_mtime = current_mtime_ns(PathCls(path))
+            dialog = ModelSettingsDialog(
+                self,
+                project=project,
+                project_path=path,
+                save_to_disk=bool(path),
+                baseline_mtime_ns=baseline_mtime,
+            )
+            if dialog.exec() != QDialog.DialogCode.Accepted or dialog.commit_result is None:
+                return
+            result = dialog.commit_result
+            if result.project is not None:
+                self._state.set_last_project(
+                    result.project, path=path, preserve_workspace_ui=True
+                )
+            if result.run_result is not None:
+                self._state.set_last_run(result.run_result)
+                self._project_total_presentation = self._load_presentation_from_disk()
+                self._render_index.on_workspace_state_reset()
+                self._rerender_detail_for_current_scope()
+                self.validate_summary_label.setText("")
+            elif result.requires_rerun:
+                self._state.set_last_run(None)
+                self.validate_summary_label.setText(messages.MODEL_SETTINGS_RERUN_REQUIRED)
+                self._refresh_kpi_table_view()
+                self._update_run_buttons_enabled()
+        finally:
+            host.set_save_handler(prev_save)
+
     def _fm_core_result_for_id(self, fm_id: str):
         run = self._state.last_run
         if run is None or run.status != "done":
@@ -1762,6 +1927,8 @@ class ResultsWorkspaceWindow(QMainWindow):
             self.lcc_empty_state_label.setVisible(True)
             self.lcc_year_summary_label.setText("")
             return
+        run_result = session.run
+        assert run_result is not None
         if scope == "detail_only":
             self.lcc_chart_widget.set_selected_year(snapshot.lcc_calendar_year)
             self._sync_lcc_chrome(snapshot)
@@ -1836,6 +2003,18 @@ class ResultsWorkspaceWindow(QMainWindow):
 
     def _on_meekoppel_window_changed(self, _value: int) -> None:
         on_meekoppel_window_changed(self, _value)
+
+    def _selected_meekoppel_location_group(self) -> MeekoppelLocationGroup | None:
+        sm = self.meekoppel_table_view.selectionModel()
+        if sm is None or not sm.hasSelection():
+            return None
+        panel_row = self._meekoppel_table_model.row_at(sm.currentIndex().row())
+        if panel_row is None:
+            return None
+        for group in self._meekoppel_location_groups:
+            if group.pbs_id == panel_row.pbs_id:
+                return group
+        return None
 
     def _on_meekoppel_preview(self) -> None:
         on_meekoppel_preview(self)
@@ -2003,6 +2182,31 @@ class ResultsWorkspaceWindow(QMainWindow):
         self.workspace_state.set_meekoppel_collapsed_in_lcc(
             not snapshot.meekoppel_collapsed_in_lcc
         )
+
+    def _sync_lcc_whatif_panel_visibility(self, snapshot: WorkspaceStateSnapshot) -> None:
+        if not hasattr(self, "lcc_whatif_collapse_button"):
+            return
+        lcc_active = snapshot.modus == MODE_LCC
+        collapsed = snapshot.lcc_whatif_collapsed_in_lcc if lcc_active else False
+        self.lcc_whatif_collapse_button.setVisible(lcc_active)
+        self.lcc_whatif_bar_title.setVisible(lcc_active)
+        self.lcc_whatif_content.setVisible(lcc_active and not collapsed)
+        self.lcc_whatif_collapse_button.setText("▼" if not collapsed else "▶")
+        self.lcc_whatif_collapse_button.setEnabled(lcc_active)
+
+    def _sync_meekoppel_panel_collapsed(self, snapshot: WorkspaceStateSnapshot) -> None:
+        if not hasattr(self, "meekoppel_collapse_button"):
+            return
+        lcc_active = snapshot.modus == MODE_LCC
+        collapsed = snapshot.meekoppel_collapsed_in_lcc if lcc_active else False
+        content_visible = lcc_active and not collapsed
+        was_visible = self.meekoppel_content.isVisible()
+        if content_visible and not was_visible:
+            self._ensure_whatif_for_meekoppel()
+        self.meekoppel_collapse_button.setVisible(lcc_active)
+        self.meekoppel_content.setVisible(content_visible)
+        self.meekoppel_collapse_button.setText("▼" if not collapsed else "▶")
+        self.meekoppel_collapse_button.setEnabled(lcc_active)
 
     def _on_lcc_bulk_rev_toggle(self) -> None:
         session = self._project_session()

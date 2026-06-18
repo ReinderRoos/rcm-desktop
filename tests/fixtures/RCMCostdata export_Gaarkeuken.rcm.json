@@ -6,8 +6,8 @@
     "default_beta_jaar": 0.0,
     "default_mttf_multiplier": 1.25,
     "default_sigma_fraction": 0.15,
-    "lifecycle_years": 50.0,
-    "modeljaar": 2026,
+    "lifecycle_years": 52.0,
+    "modeljaar": 2025,
     "monte_carlo_n": 5000,
     "monte_carlo_seed": 1
   },
@@ -168,7 +168,7 @@
       "cost_cm_eur": 5000.0,
       "downtime_per_failure": {
         "unit": "uur",
-        "value": 7.99952763603544
+        "value": 8.0
       },
       "eindgevolg": "Niet aandrijven - elektrohydraulisch",
       "faalwijze_omschrijving": "Drukverlies door breuk van slangen BINNEN door veroudering, MTTF=25 jr met SVO.\nIA = 2023",

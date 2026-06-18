@@ -178,6 +178,12 @@ def test_kpi_view_navigates_from_menu(monkeypatch) -> None:
     assert window.detail_stack.currentWidget() is window.kpi_overview_page
     assert window.kpi_table_view.isVisible() is True
 
+    window.kpi_collapse_button.click()
+    app.processEvents()
+
+    assert window.kpi_table_view.isVisible() is False
+    assert window.kpi_collapse_button.text() == "▶"
+
 
 def test_kpi_placeholder_not_visible_after_layout(monkeypatch):
     app = _ensure_app()

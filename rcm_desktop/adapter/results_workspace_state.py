@@ -251,6 +251,12 @@ class WorkspaceStateSnapshot:
 
     active_view_id: str = DEFAULT_VIEW_BY_SIDE[SIDE_OUTPUT]
 
+    meekoppel_collapsed_in_lcc: bool = False
+
+    lcc_whatif_collapsed_in_lcc: bool = False
+
+    compare_mode: bool = False
+
 
 
 
@@ -276,6 +282,10 @@ _DEFAULT_SNAPSHOT = WorkspaceStateSnapshot(
     lcc_calendar_year=None,
 
     planning_overlay=PlanningOverlayState.inactive(),
+
+    meekoppel_collapsed_in_lcc=False,
+
+    lcc_whatif_collapsed_in_lcc=False,
 
     meekoppel_collapsed_in_lcc=False,
 
