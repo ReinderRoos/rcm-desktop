@@ -8,7 +8,6 @@ from rcm_desktop import messages
 
 # state_source-waarden voor checkable menu-items (binding in issue 02).
 STATE_SOURCE_PBS_SIDEBAR_VISIBLE = "pbs_sidebar_visible"
-STATE_SOURCE_KPI_OVERVIEW_VISIBLE = "kpi_overview_visible"
 STATE_SOURCE_FM_COLUMN_CROP = "fm_column_crop"
 
 
@@ -71,13 +70,6 @@ WORKSPACE_MENU_SPEC: tuple[WorkspaceMenuSection, ...] = (
                 state_source=STATE_SOURCE_PBS_SIDEBAR_VISIBLE,
             ),
             WorkspaceMenuItem(
-                action_id="view.kpi_overview_visible",
-                label=messages.WORKSPACE_MENU_KPI_OVERVIEW,
-                checkable=True,
-                shortcut="Ctrl+K",
-                state_source=STATE_SOURCE_KPI_OVERVIEW_VISIBLE,
-            ),
-            WorkspaceMenuItem(
                 action_id="view.column_crop",
                 label=messages.WORKSPACE_FM_COLUMN_CROP,
                 checkable=True,
@@ -123,15 +115,21 @@ WORKSPACE_MENU_SPEC: tuple[WorkspaceMenuSection, ...] = (
         ),
     ),
     WorkspaceMenuSection(
-        menu_id="run",
-        label=messages.WORKSPACE_MENU_RUN,
+        menu_id="whatif",
+        label=messages.WORKSPACE_MENU_WHATIF,
         items=(
             WorkspaceMenuItem(
-                action_id="run.toggle_whatif",
+                action_id="whatif.toggle",
                 label=messages.WORKSPACE_MENU_TOGGLE_WHATIF,
                 checkable=False,
                 shortcut="Ctrl+Shift+W",
             ),
+        ),
+    ),
+    WorkspaceMenuSection(
+        menu_id="run",
+        label=messages.WORKSPACE_MENU_RUN,
+        items=(
             WorkspaceMenuItem(
                 action_id="run.slot_a",
                 label=messages.WORKSPACE_MENU_RUN_SLOT_A,
@@ -143,18 +141,6 @@ WORKSPACE_MENU_SPEC: tuple[WorkspaceMenuSection, ...] = (
                 label=messages.WORKSPACE_MENU_RUN_SLOT_B,
                 checkable=False,
                 shortcut="Ctrl+Shift+B",
-            ),
-            WorkspaceMenuItem(
-                action_id="run.scenario_cm",
-                label=messages.WORKSPACE_MENU_COMPARE_SCENARIO_CM,
-                checkable=False,
-                shortcut="Ctrl+Shift+M",
-            ),
-            WorkspaceMenuItem(
-                action_id="run.scenario_pm",
-                label=messages.WORKSPACE_MENU_COMPARE_SCENARIO_PM,
-                checkable=False,
-                shortcut="Ctrl+Shift+P",
             ),
         ),
     ),

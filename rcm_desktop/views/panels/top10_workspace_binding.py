@@ -16,6 +16,8 @@ from rcm_desktop.views.panels.top10_subbar_panel import build_top10_subbar_panel
 def build_and_wire_top10_subbar(window: Any) -> None:
     panel = build_top10_subbar_panel()
     window.top10_subbar = getattr(panel, "widget")
+    window._top10_subbar_layout = panel.row_layout
+    window.top10_subbar_label = panel.subbar_label
     window.metric_combo = panel.metric_combo
     window.nb_effect_filter_combo = panel.nb_effect_filter_combo
     window.horizon_button_group = panel.horizon_button_group

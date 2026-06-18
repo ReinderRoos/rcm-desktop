@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from PySide6.QtCore import QSize, Qt
-from PySide6.QtGui import QBrush, QColor, QPainter, QPen
+from PySide6.QtGui import QBrush, QColor, QFont, QPainter, QPen
 from PySide6.QtWidgets import QSizePolicy, QWidget
 
 from rcm_desktop import messages
@@ -22,14 +22,18 @@ from rcm_desktop.theme.dp_tokens import (
     DP_SCENARIO_2,
     DP_TEXT_BODY,
     DP_TEXT_SUBTLE,
+    DP_TEXT_ON_NAVY,
     DP_WARNING_BG,
 )
 
-_ROW_HEIGHT = 44
+ROW_HEIGHT = 56
 _LABEL_WIDTH = 240
-_VALUE_WIDTH = 88
 _BAR_GAP = 4
 _TOP_MARGIN = 8
+_VALUE_IN_BAR_MIN_WIDTH = 44
+_LABEL_FONT_POINT_SIZE = 10
+_VALUE_FONT_POINT_SIZE = 11
+_VALUE_LEFT_PAD = 10
 
 
 class FaalwijzeCompareBarChartWidget(QWidget):
@@ -82,7 +86,7 @@ class FaalwijzeCompareBarChartWidget(QWidget):
     def preferred_height(self) -> int:
         if not self._rows:
             return 180
-        return max(180, _TOP_MARGIN + len(self._rows) * _ROW_HEIGHT + _TOP_MARGIN)
+        return max(180, _TOP_MARGIN + len(self._rows) * ROW_HEIGHT + _TOP_MARGIN)
 
     def sizeHint(self) -> QSize:  # noqa: N802
         return QSize(self._content_width, self.preferred_height())
@@ -92,7 +96,7 @@ class FaalwijzeCompareBarChartWidget(QWidget):
 
     def _format_metric(self, value: float | None) -> str:
         if value is None:
-            return "—"
+            return ""
         if self._metric == METRIC_FAALMOMENTEN:
             return format_int(int(round(value)))
         if self._metric == METRIC_KOSTEN:
@@ -107,6 +111,44 @@ class FaalwijzeCompareBarChartWidget(QWidget):
             if row.s2 is not None:
                 values.append(row.s2)
         return max(values, default=0.0)
+
+    def _draw_value_label(
+        self,
+        painter: QPainter,
+        *,
+        x: int,
+        y: int,
+        width: int,
+        height: int,
+        text: str,
+        on_bar: bool,
+    ) -> None:
+        if not text:
+            return
+        if on_bar and width >= _VALUE_IN_BAR_MIN_WIDTH:
+            value_font = QFont(painter.font())
+            value_font.setPointSize(_VALUE_FONT_POINT_SIZE)
+            value_font.setBold(True)
+            painter.setFont(value_font)
+            painter.setPen(QPen(QColor(DP_TEXT_ON_NAVY)))
+            painter.drawText(
+                x + _VALUE_LEFT_PAD,
+                y,
+                max(0, width - _VALUE_LEFT_PAD),
+                height,
+                int(Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignLeft),
+                text,
+            )
+            return
+        painter.setPen(QPen(QColor(DP_TEXT_BODY)))
+        painter.drawText(
+            x + max(width, 0) + 6,
+            y,
+            120,
+            height,
+            int(Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignLeft),
+            text,
+        )
 
     def paintEvent(self, event):  # noqa: N802
         painter = QPainter(self)
@@ -126,41 +168,74 @@ class FaalwijzeCompareBarChartWidget(QWidget):
             painter.end()
             return
 
+        label_font = QFont(painter.font())
+        label_font.setPointSize(_LABEL_FONT_POINT_SIZE)
+        label_font.setBold(False)
         bar_area_x = _LABEL_WIDTH + 8
-        bar_max_width = max(20, rect.width() - bar_area_x - _VALUE_WIDTH - 12)
-        half_bar = max(8, (_ROW_HEIGHT - _BAR_GAP) // 2 - 2)
-        text_color = QColor(DP_TEXT_BODY)
+        bar_max_width = max(20, rect.width() - bar_area_x - 12)
+        half_bar = max(12, (ROW_HEIGHT - _BAR_GAP) // 2 - 2)
 
         for index, row in enumerate(self._rows):
-            y = _TOP_MARGIN + index * _ROW_HEIGHT
-            row_rect = rect.adjusted(0, y, 0, -(rect.height() - y - _ROW_HEIGHT))
+            y = _TOP_MARGIN + index * ROW_HEIGHT
+            row_rect = rect.adjusted(0, y, 0, -(rect.height() - y - ROW_HEIGHT))
             bg = self.row_background_color(row.highlight)
             if bg is not None:
                 painter.fillRect(row_rect, QBrush(bg))
 
             label = row.label or row.fm_id
-            painter.setPen(QPen(text_color))
+            painter.setFont(label_font)
+            painter.setPen(QPen(QColor(DP_TEXT_BODY)))
             painter.drawText(8, y + half_bar + 4, label[:36])
             if row.bouwdeel_naam:
                 painter.setPen(QPen(QColor(DP_TEXT_SUBTLE)))
                 painter.drawText(8, y + half_bar + 18, row.bouwdeel_naam[:28])
 
-            s1_y = y + 4
-            s2_y = y + 4 + half_bar + _BAR_GAP
             s1_w = 0 if row.s1 is None else int(bar_max_width * (row.s1 / scale_max))
-            s2_w = 0 if row.s2 is None else int(bar_max_width * (row.s2 / scale_max))
-            painter.fillRect(bar_area_x, s1_y, s1_w, half_bar, QBrush(self.scenario_color_s1()))
-            painter.fillRect(bar_area_x, s2_y, s2_w, half_bar, QBrush(self.scenario_color_s2()))
-            painter.setPen(QPen(text_color))
-            painter.drawText(
-                bar_area_x + bar_max_width + 8,
-                s1_y + half_bar - 2,
-                self._format_metric(row.s1),
-            )
-            painter.drawText(
-                bar_area_x + bar_max_width + 8,
-                s2_y + half_bar - 2,
-                self._format_metric(row.s2),
-            )
+            s1_text = self._format_metric(row.s1)
+
+            if row.s2 is None:
+                bar_h = ROW_HEIGHT - 8
+                s1_y = y + 4
+                painter.fillRect(
+                    bar_area_x, s1_y, s1_w, bar_h, QBrush(self.scenario_color_s1())
+                )
+                self._draw_value_label(
+                    painter,
+                    x=bar_area_x,
+                    y=s1_y,
+                    width=s1_w,
+                    height=bar_h,
+                    text=s1_text,
+                    on_bar=True,
+                )
+            else:
+                s1_y = y + 4
+                s2_y = y + 4 + half_bar + _BAR_GAP
+                s2_w = int(bar_max_width * (row.s2 / scale_max))
+                s2_text = self._format_metric(row.s2)
+                painter.fillRect(
+                    bar_area_x, s1_y, s1_w, half_bar, QBrush(self.scenario_color_s1())
+                )
+                painter.fillRect(
+                    bar_area_x, s2_y, s2_w, half_bar, QBrush(self.scenario_color_s2())
+                )
+                self._draw_value_label(
+                    painter,
+                    x=bar_area_x,
+                    y=s1_y,
+                    width=s1_w,
+                    height=half_bar,
+                    text=s1_text,
+                    on_bar=True,
+                )
+                self._draw_value_label(
+                    painter,
+                    x=bar_area_x,
+                    y=s2_y,
+                    width=s2_w,
+                    height=half_bar,
+                    text=s2_text,
+                    on_bar=True,
+                )
 
         painter.end()

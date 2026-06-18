@@ -5,8 +5,8 @@ from __future__ import annotations
 from typing import Any
 
 from rcm_desktop import messages
+from rcm_desktop.adapter.fm_lcc_plot_service import build_fm_inspector_plot_view
 from rcm_desktop.adapter.fm_verification_service import FMVerificationView
-from rcm_desktop.adapter.fm_verification_year_table_model import FMVerificationYearTableModel
 from rcm_desktop.adapter import workspace_session_service as wss
 from rcm_desktop.formatting import format_eur, format_float, format_int
 
@@ -24,13 +24,19 @@ def refresh_fm_inspector(window: Any, fm_id: str | None) -> None:
         window.fm_inspector_empty_label.setVisible(True)
         window.fm_inspector_panel.setVisible(False)
         return
+    snap = window.workspace_state.snapshot()
     view = wss.build_fm_verification_for_session(
-        session, fmr, nb_filter=window.workspace_state.snapshot().effect_nb_filter
+        session, fmr, nb_filter=snap.effect_nb_filter
     )
-    apply_fm_inspector_view(window, view)
+    apply_fm_inspector_view(window, view, metric=snap.metric)
 
 
-def apply_fm_inspector_view(window: Any, view: FMVerificationView) -> None:
+def apply_fm_inspector_view(
+    window: Any,
+    view: FMVerificationView,
+    *,
+    metric: str,
+) -> None:
     window.fm_inspector_empty_label.setVisible(False)
     window.fm_inspector_panel.setVisible(True)
     window.fm_inspector_identity_label.setText(
@@ -66,23 +72,40 @@ def apply_fm_inspector_view(window: Any, view: FMVerificationView) -> None:
         )
     else:
         window.fm_inspector_hash_label.setText(messages.WORKSPACE_FM_INSPECTOR_HASH_MISSING)
+    plot_view = build_fm_inspector_plot_view(view, metric=metric)
     if view.profile_missing:
         window.fm_inspector_profile_missing_label.setText(
             messages.WORKSPACE_FM_INSPECTOR_PROFILE_MISSING
         )
         window.fm_inspector_profile_missing_label.setVisible(True)
-        window.fm_inspector_year_table_view.setVisible(False)
-        window.fm_inspector_year_table_view.setModel(None)
+        window.fm_inspector_lcc_chart.setVisible(False)
+        window.fm_inspector_lcc_chart.set_buckets(())
         reconcile_prefix = messages.WORKSPACE_FM_INSPECTOR_RECONCILE_WARN
-    else:
+    elif plot_view is None:
         window.fm_inspector_profile_missing_label.setVisible(False)
-        window.fm_inspector_year_table_view.setVisible(True)
-        year_model = FMVerificationYearTableModel(view.year_rows)
-        window.fm_inspector_year_table_view.setModel(year_model)
+        window.fm_inspector_lcc_chart.setVisible(False)
+        window.fm_inspector_lcc_chart.set_buckets(())
         reconcile_prefix = (
             messages.WORKSPACE_FM_INSPECTOR_RECONCILE_OK
             if view.reconcile_ok
             else messages.WORKSPACE_FM_INSPECTOR_RECONCILE_WARN
         )
+    else:
+        window.fm_inspector_profile_missing_label.setVisible(False)
+        window.fm_inspector_lcc_chart.setVisible(True)
+        window.fm_inspector_lcc_chart.set_buckets(plot_view.buckets)
+        window.fm_inspector_lcc_chart.set_axis_labels(
+            x_label=messages.LCC_PLOT_AXIS_X_KALENDERJAREN,
+            y_label=plot_view.y_axis_label,
+        )
+        reconcile_prefix = (
+            messages.WORKSPACE_FM_INSPECTOR_RECONCILE_OK
+            if view.reconcile_ok
+            else messages.WORKSPACE_FM_INSPECTOR_RECONCILE_WARN
+        )
+    if hasattr(window, "fm_inspector_year_table_view"):
+        window.fm_inspector_year_table_view.setVisible(False)
     notes = "; ".join(view.reconcile_notes)
     window.fm_inspector_reconcile_label.setText(f"{reconcile_prefix} — {notes}")
+    if hasattr(window, "fm_inspector_edit_button"):
+        window.fm_inspector_edit_button.setEnabled(True)

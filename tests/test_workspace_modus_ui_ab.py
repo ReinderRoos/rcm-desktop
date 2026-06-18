@@ -83,9 +83,8 @@ def test_new_fm_button_only_visible_on_input_faalwijzen(monkeypatch):
     assert window.new_fm_button.isVisible() is False
 
 
-def test_entering_lcc_modus_collapses_kpi_meekoppel_and_whatif():
+def test_entering_lcc_modus_collapses_meekoppel_and_whatif():
     state = ResultsWorkspaceState()
-    state.set_kpi_collapsed_in_lcc(False)
     state.set_meekoppel_collapsed_in_lcc(False)
     state.set_lcc_whatif_collapsed_in_lcc(False)
 
@@ -93,7 +92,6 @@ def test_entering_lcc_modus_collapses_kpi_meekoppel_and_whatif():
     snap = state.snapshot()
 
     assert snap.modus == MODE_LCC
-    assert snap.kpi_collapsed_in_lcc is True
     assert snap.meekoppel_collapsed_in_lcc is True
     assert snap.lcc_whatif_collapsed_in_lcc is True
 

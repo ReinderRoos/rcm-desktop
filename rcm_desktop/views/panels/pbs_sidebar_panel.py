@@ -51,9 +51,6 @@ def build_pbs_sidebar_panel() -> PBSSidebarPanel:
     sidebar = QWidget()
     sidebar_layout = QVBoxLayout(sidebar)
     sidebar_layout.setContentsMargins(0, 0, 0, 0)
-    title = QLabel(messages.WORKSPACE_PBS_SIDEBAR_TITLE)
-    title.setStyleSheet("font-weight: 600;")
-    sidebar_layout.addWidget(title)
 
     filter_input = QLineEdit()
     filter_input.setPlaceholderText(messages.WORKSPACE_PBS_FILTER_PLACEHOLDER)

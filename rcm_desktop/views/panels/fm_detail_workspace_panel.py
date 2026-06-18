@@ -21,6 +21,7 @@ from PySide6.QtWidgets import (
 
 from rcm_desktop.views.compare_slot_column import build_fm_compare_column
 from rcm_desktop.views.widgets.faalwijze_compare_bar_chart import FaalwijzeCompareBarChartWidget
+from rcm_desktop.views.widgets.lcc_stacked_bar_chart import LCCStackedBarChartWidget
 
 from rcm_desktop import messages
 from rcm_desktop.adapter.fm_results_filter_policy import (
@@ -51,6 +52,14 @@ class FmDetailWorkspacePanel:
     fm_compare_col_b: dict
     fm_detail_splitter: QSplitter
     column_crop_button: QToolButton
+    fm_single_nmf_rf_toggle: QToolButton
+    fm_single_view_button_group: QButtonGroup
+    fm_single_table_view_button: QToolButton
+    fm_single_diagram_view_button: QToolButton
+    fm_metric_chrome_host: QWidget
+    fm_metric_chrome_layout: QHBoxLayout
+    fm_single_chart_scroll: QScrollArea
+    fm_single_chart: FaalwijzeCompareBarChartWidget
     fm_table_filter_row: TableFilterRowWidget
     fm_filter_clear_button: QPushButton
     fm_filter_row_count_label: QLabel
@@ -59,6 +68,8 @@ class FmDetailWorkspacePanel:
     fm_table_proxy: FMResultsSortProxy
     detail_empty_state_label: QLabel
     fm_inspector_container: QWidget
+    fm_inspector_close_button: QPushButton
+    fm_inspector_edit_button: QPushButton
     fm_inspector_empty_label: QLabel
     fm_inspector_panel: QWidget
     fm_inspector_identity_label: QLabel
@@ -66,6 +77,7 @@ class FmDetailWorkspacePanel:
     fm_inspector_hash_label: QLabel
     fm_inspector_reconcile_label: QLabel
     fm_inspector_profile_missing_label: QLabel
+    fm_inspector_lcc_chart: LCCStackedBarChartWidget
     fm_inspector_year_table_view: QTableView
 
 
@@ -84,8 +96,42 @@ def build_fm_detail_workspace_panel() -> FmDetailWorkspacePanel:
     column_crop_button.setToolTip(messages.WORKSPACE_FM_COLUMN_CROP_TOOLTIP)
     column_crop_button.setCheckable(True)
     fm_toolbar.addWidget(column_crop_button)
+    fm_single_nmf_rf_toggle = QToolButton()
+    fm_single_nmf_rf_toggle.setText(messages.WORKSPACE_FM_COMPARE_NMF_RF)
+    fm_single_nmf_rf_toggle.setToolTip(messages.WORKSPACE_FM_COMPARE_NMF_RF_TOOLTIP)
+    fm_single_nmf_rf_toggle.setCheckable(True)
+    fm_toolbar.addWidget(fm_single_nmf_rf_toggle)
+    fm_single_view_button_group = QButtonGroup(table_host)
+    fm_single_view_button_group.setExclusive(True)
+    fm_single_table_view_button = QToolButton()
+    fm_single_table_view_button.setText(messages.WORKSPACE_FM_COMPARE_VIEW_TABLE)
+    fm_single_table_view_button.setToolTip(messages.WORKSPACE_FM_COMPARE_VIEW_TOOLTIP)
+    fm_single_table_view_button.setCheckable(True)
+    fm_single_table_view_button.setChecked(True)
+    fm_single_diagram_view_button = QToolButton()
+    fm_single_diagram_view_button.setText(messages.WORKSPACE_FM_COMPARE_VIEW_DIAGRAM)
+    fm_single_diagram_view_button.setToolTip(messages.WORKSPACE_FM_COMPARE_VIEW_TOOLTIP)
+    fm_single_diagram_view_button.setCheckable(True)
+    fm_single_view_button_group.addButton(fm_single_table_view_button)
+    fm_single_view_button_group.addButton(fm_single_diagram_view_button)
+    fm_toolbar.addWidget(fm_single_table_view_button)
+    fm_toolbar.addWidget(fm_single_diagram_view_button)
+    fm_metric_chrome_host = QWidget(table_host)
+    fm_metric_chrome_layout = QHBoxLayout(fm_metric_chrome_host)
+    fm_metric_chrome_layout.setContentsMargins(0, 0, 0, 0)
+    fm_metric_chrome_layout.setSpacing(6)
+    fm_toolbar.addWidget(fm_metric_chrome_host, stretch=1)
     fm_toolbar.addStretch(1)
     table_layout.addLayout(fm_toolbar)
+
+    fm_single_chart = FaalwijzeCompareBarChartWidget(table_host)
+    fm_single_chart_scroll = QScrollArea(table_host)
+    fm_single_chart_scroll.setWidgetResizable(False)
+    fm_single_chart_scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+    fm_single_chart_scroll.setFrameShape(QScrollArea.NoFrame)
+    fm_single_chart_scroll.setWidget(fm_single_chart)
+    fm_single_chart_scroll.setVisible(False)
+    table_layout.addWidget(fm_single_chart_scroll)
 
     fm_table_view = QTableView()
     fm_table_view.setSortingEnabled(True)
@@ -122,9 +168,19 @@ def build_fm_detail_workspace_panel() -> FmDetailWorkspacePanel:
     fm_inspector_container = QWidget()
     inspector_layout = QVBoxLayout(fm_inspector_container)
     inspector_layout.setContentsMargins(4, 4, 4, 4)
+    inspector_header = QHBoxLayout()
     inspector_title = QLabel(messages.WORKSPACE_FM_INSPECTOR_TITLE)
     inspector_title.setStyleSheet("font-weight: bold;")
-    inspector_layout.addWidget(inspector_title)
+    inspector_header.addWidget(inspector_title)
+    inspector_header.addStretch(1)
+    fm_inspector_edit_button = QPushButton(messages.WORKSPACE_FM_INSPECTOR_EDIT)
+    fm_inspector_edit_button.setObjectName("FmInspectorEditButton")
+    fm_inspector_edit_button.setEnabled(False)
+    inspector_header.addWidget(fm_inspector_edit_button)
+    fm_inspector_close_button = QPushButton(messages.WORKSPACE_FM_INSPECTOR_CLOSE)
+    fm_inspector_close_button.setObjectName("FmInspectorCloseButton")
+    inspector_header.addWidget(fm_inspector_close_button)
+    inspector_layout.addLayout(inspector_header)
     fm_inspector_empty_label = QLabel(messages.WORKSPACE_FM_INSPECTOR_EMPTY)
     fm_inspector_empty_label.setObjectName("MutedHintLabel")
     inspector_layout.addWidget(fm_inspector_empty_label)
@@ -147,7 +203,11 @@ def build_fm_detail_workspace_panel() -> FmDetailWorkspacePanel:
     fm_inspector_profile_missing_label.setWordWrap(True)
     fm_inspector_profile_missing_label.setStyleSheet("color: #E65100;")
     panel_layout.addWidget(fm_inspector_profile_missing_label)
+    fm_inspector_lcc_chart = LCCStackedBarChartWidget()
+    fm_inspector_lcc_chart.setMinimumHeight(180)
+    panel_layout.addWidget(fm_inspector_lcc_chart, stretch=1)
     fm_inspector_year_table_view = QTableView()
+    fm_inspector_year_table_view.setVisible(False)
     fm_inspector_year_table_view.setAlternatingRowColors(True)
     fm_inspector_year_table_view.setToolTip(
         messages.WORKSPACE_FM_INSPECTOR_FAALMOMENTEN_PROXY_TOOLTIP
@@ -232,6 +292,14 @@ def build_fm_detail_workspace_panel() -> FmDetailWorkspacePanel:
         fm_compare_col_b=fm_compare_col_b,
         fm_detail_splitter=fm_detail_splitter,
         column_crop_button=column_crop_button,
+        fm_single_nmf_rf_toggle=fm_single_nmf_rf_toggle,
+        fm_single_view_button_group=fm_single_view_button_group,
+        fm_single_table_view_button=fm_single_table_view_button,
+        fm_single_diagram_view_button=fm_single_diagram_view_button,
+        fm_metric_chrome_host=fm_metric_chrome_host,
+        fm_metric_chrome_layout=fm_metric_chrome_layout,
+        fm_single_chart_scroll=fm_single_chart_scroll,
+        fm_single_chart=fm_single_chart,
         fm_table_filter_row=fm_table_filter_row,
         fm_filter_clear_button=fm_filter_clear_button,
         fm_filter_row_count_label=fm_filter_row_count_label,
@@ -240,6 +308,8 @@ def build_fm_detail_workspace_panel() -> FmDetailWorkspacePanel:
         fm_table_proxy=fm_table_proxy,
         detail_empty_state_label=detail_empty_state_label,
         fm_inspector_container=fm_inspector_container,
+        fm_inspector_close_button=fm_inspector_close_button,
+        fm_inspector_edit_button=fm_inspector_edit_button,
         fm_inspector_empty_label=fm_inspector_empty_label,
         fm_inspector_panel=fm_inspector_panel,
         fm_inspector_identity_label=fm_inspector_identity_label,
@@ -247,5 +317,6 @@ def build_fm_detail_workspace_panel() -> FmDetailWorkspacePanel:
         fm_inspector_hash_label=fm_inspector_hash_label,
         fm_inspector_reconcile_label=fm_inspector_reconcile_label,
         fm_inspector_profile_missing_label=fm_inspector_profile_missing_label,
+        fm_inspector_lcc_chart=fm_inspector_lcc_chart,
         fm_inspector_year_table_view=fm_inspector_year_table_view,
     )

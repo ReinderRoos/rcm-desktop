@@ -10,8 +10,7 @@ from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QApplication, QMessageBox
 
 from rcm_desktop import messages
-from rcm_desktop.adapter.fm_mc_results_table_model import FMMCResultsTableModel
-from rcm_desktop.adapter.fm_results_table_model import FMResultsTableModel
+from rcm_desktop.adapter.fm_single_run_table_model import FMSingleRunTableModel
 from rcm_desktop.adapter.results_workspace_state import MODE_FM_DETAIL
 from rcm_desktop.adapter.simulation_engine_service import run_monte_carlo
 from rcm_desktop.adapter.simulation_job_service import RunMode
@@ -51,16 +50,14 @@ def test_fm_table_switches_back_to_analytical_after_mc_mode(monkeypatch):
     _switch_run_mode(window, RunMode.MONTE_CARLO, app)
 
     mc_model = _fm_source_model(window)
-    assert isinstance(mc_model, FMMCResultsTableModel)
-    assert "MC P50" in str(mc_model.headerData(5, Qt.Horizontal, Qt.DisplayRole))
+    assert isinstance(mc_model, FMSingleRunTableModel)
+    assert mc_model.rowCount() > 0
 
     _switch_run_mode(window, RunMode.ANALYTICAL, app)
 
     fm_model = _fm_source_model(window)
-    assert isinstance(fm_model, FMResultsTableModel)
+    assert isinstance(fm_model, FMSingleRunTableModel)
     assert fm_model.rowCount() > 0
-    header = str(fm_model.headerData(5, Qt.Horizontal, Qt.DisplayRole))
-    assert "MC P50" not in header
     assert window.detail_empty_state_label.isVisible() is False
 
 
@@ -78,21 +75,20 @@ def test_fm_table_analytical_switch_without_run_clears_mc_model(monkeypatch):
     app.processEvents()
 
     _switch_run_mode(window, RunMode.MONTE_CARLO, app)
-    assert isinstance(_fm_source_model(window), FMMCResultsTableModel)
+    assert isinstance(_fm_source_model(window), FMSingleRunTableModel)
 
     _switch_run_mode(window, RunMode.ANALYTICAL, app)
 
     fm_model = _fm_source_model(window)
-    assert isinstance(fm_model, FMResultsTableModel)
+    assert isinstance(fm_model, FMSingleRunTableModel)
     assert fm_model.rowCount() == 0
     assert window.detail_empty_state_label.isVisible()
     assert window.detail_empty_state_label.text() == messages.TOP10_LCC_NO_ANALYTICAL_RUN
-    header = str(fm_model.headerData(5, Qt.Horizontal, Qt.DisplayRole))
-    assert "MC P50" not in header
 
 
 def test_fm_mc_band_tooltip_through_proxy_chain(qtbot):
     from rcm_core.simulation_engine import MetricBand
+    from rcm_desktop.adapter.fm_mc_results_table_model import FMMCResultsTableModel
     from rcm_desktop.adapter.fm_results_table_model import FMResultsSortProxy, RAW_ROLE
     from rcm_desktop.adapter.fm_results_filter_policy import (
         FM_FILTER_BOOL_COLUMNS,

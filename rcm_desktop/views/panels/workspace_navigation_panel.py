@@ -1,48 +1,60 @@
-"""Input/Output-zijde-schakelaar + view-dropdown (slice 79)."""
+"""Input/Output-zijde + view-tabs in navigatierail (slice 79 / 107)."""
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from PySide6.QtWidgets import (
     QButtonGroup,
-    QComboBox,
-    QHBoxLayout,
     QSizePolicy,
     QToolButton,
+    QVBoxLayout,
     QWidget,
 )
 
-from rcm_desktop import messages
 from rcm_desktop.adapter.results_workspace_state import ResultsWorkspaceState
 from rcm_desktop.adapter.workspace_view_registry import (
-    SIDE_INPUT,
     SIDE_OUTPUT,
+    WORKSPACE_NAV_RAIL_WIDTH_PX,
     WORKSPACE_SIDES,
     WORKSPACE_VIEW_REGISTRY,
-    views_for_side,
+    enabled_views_for_side,
+    rail_label_for_view,
+    view_by_id,
 )
 from rcm_desktop.theme.rcm2_theme import enable_stylesheet_background
 
 
 @dataclass(frozen=True)
+class ViewTabItem:
+    view_id: str
+    label: str
+    rail_label: str
+    enabled: bool
+
+
+@dataclass
 class WorkspaceNavigationPanel:
     widget: QWidget
     side_button_group: QButtonGroup
     side_buttons: dict[str, QToolButton]
-    view_combo: QComboBox
+    view_tab_group: QButtonGroup
+    view_tab_buttons: dict[str, QToolButton] = field(default_factory=dict)
+    view_tabs_container: QWidget | None = None
+    _view_tabs_layout: QVBoxLayout | None = None
 
 
 def build_workspace_navigation_panel(
     workspace_state: ResultsWorkspaceState,
 ) -> WorkspaceNavigationPanel:
     widget = QWidget()
-    widget.setObjectName("WorkspaceSubNav")
-    widget.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
+    widget.setObjectName("WorkspaceNavRail")
+    widget.setFixedWidth(WORKSPACE_NAV_RAIL_WIDTH_PX)
+    widget.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Expanding)
     enable_stylesheet_background(widget)
-    row = QHBoxLayout(widget)
-    row.setContentsMargins(0, 0, 0, 0)
-    row.setSpacing(8)
+    column = QVBoxLayout(widget)
+    column.setContentsMargins(8, 8, 8, 8)
+    column.setSpacing(6)
 
     side_button_group = QButtonGroup(widget)
     side_button_group.setExclusive(True)
@@ -60,55 +72,97 @@ def build_workspace_navigation_panel(
         )
         side_button_group.addButton(button)
         side_buttons[side_entry.side_id] = button
-        row.addWidget(button)
+        column.addWidget(button)
 
-    view_combo = QComboBox()
-    view_combo.setObjectName("WorkspaceViewCombo")
-    view_combo.currentIndexChanged.connect(
-        lambda _index: _on_view_combo_changed(view_combo, workspace_state)
-    )
-    row.addWidget(view_combo, stretch=1)
+    column.addSpacing(8)
 
-    _populate_view_combo(view_combo, SIDE_OUTPUT)
-    side_buttons[SIDE_OUTPUT].setChecked(True)
+    view_tabs_container = QWidget()
+    view_tabs_container.setObjectName("WorkspaceViewTabs")
+    view_tabs_layout = QVBoxLayout(view_tabs_container)
+    view_tabs_layout.setContentsMargins(0, 0, 0, 0)
+    view_tabs_layout.setSpacing(2)
+    column.addWidget(view_tabs_container, stretch=1)
 
-    return WorkspaceNavigationPanel(
+    view_tab_group = QButtonGroup(widget)
+    view_tab_group.setExclusive(True)
+
+    panel = WorkspaceNavigationPanel(
         widget=widget,
         side_button_group=side_button_group,
         side_buttons=side_buttons,
-        view_combo=view_combo,
+        view_tab_group=view_tab_group,
+        view_tabs_container=view_tabs_container,
+        _view_tabs_layout=view_tabs_layout,
     )
+    _rebuild_view_tabs(
+        panel,
+        workspace_state=workspace_state,
+        dropdown_items=tuple(
+            ViewTabItem(
+                view_id=entry.view_id,
+                label=entry.label,
+                rail_label=rail_label_for_view(entry),
+                enabled=entry.enabled,
+            )
+            for entry in enabled_views_for_side(WORKSPACE_VIEW_REGISTRY, SIDE_OUTPUT)
+        ),
+    )
+    side_buttons[SIDE_OUTPUT].setChecked(True)
+
+    return panel
 
 
-def _populate_view_combo(combo: QComboBox, side: str) -> None:
-    blocker = combo.blockSignals(True)
-    combo.clear()
-    for entry in views_for_side(WORKSPACE_VIEW_REGISTRY, side):
-        combo.addItem(entry.label, userData=entry.view_id)
-        model_item = combo.model().item(combo.count() - 1)
-        if model_item is not None:
-            model_item.setEnabled(entry.enabled)
-    combo.blockSignals(blocker)
-
-
-def _on_view_combo_changed(combo: QComboBox, workspace_state: ResultsWorkspaceState) -> None:
-    view_id = combo.currentData()
-    if not isinstance(view_id, str):
-        return
+def _on_view_tab_clicked(view_id: str, workspace_state: ResultsWorkspaceState) -> None:
     try:
         workspace_state.set_active_view(view_id)
     except ValueError:
-        snap = workspace_state.snapshot()
-        index = combo.findData(snap.active_view_id)
-        if index >= 0:
-            blocker = combo.blockSignals(True)
-            combo.setCurrentIndex(index)
-            combo.blockSignals(blocker)
+        return
+
+
+def _rebuild_view_tabs(
+    panel: WorkspaceNavigationPanel,
+    *,
+    workspace_state: ResultsWorkspaceState,
+    dropdown_items: tuple[object, ...],
+) -> None:
+    layout = panel._view_tabs_layout
+    if layout is None:
+        return
+    for button in panel.view_tab_buttons.values():
+        panel.view_tab_group.removeButton(button)
+        button.deleteLater()
+    panel.view_tab_buttons.clear()
+    while layout.count():
+        item = layout.takeAt(0)
+        child = item.widget()
+        if child is not None:
+            child.deleteLater()
+
+    for item in dropdown_items:
+        view_id = getattr(item, "view_id")
+        rail_label = getattr(item, "rail_label", None) or getattr(item, "label")
+        entry = view_by_id(WORKSPACE_VIEW_REGISTRY, view_id)
+        tooltip = entry.label if entry is not None else rail_label
+        button = QToolButton()
+        button.setObjectName("WorkspaceViewTab")
+        button.setText(rail_label)
+        button.setToolTip(tooltip)
+        button.setCheckable(True)
+        button.setEnabled(getattr(item, "enabled"))
+        button.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Fixed)
+        button.clicked.connect(
+            lambda _checked=False, vid=view_id: _on_view_tab_clicked(vid, workspace_state)
+        )
+        panel.view_tab_group.addButton(button)
+        panel.view_tab_buttons[view_id] = button
+        layout.addWidget(button)
+    layout.addStretch(1)
 
 
 def apply_workspace_navigation_plan(
     panel: WorkspaceNavigationPanel,
     *,
+    workspace_state: ResultsWorkspaceState,
     workspace_side: str,
     active_view_id: str,
     dropdown_items: tuple[object, ...],
@@ -119,18 +173,27 @@ def apply_workspace_navigation_plan(
             button.setChecked(checked)
 
     expected_ids = [getattr(item, "view_id") for item in dropdown_items]
-    combo = panel.view_combo
-    current_ids = [combo.itemData(i) for i in range(combo.count())]
+    current_ids = list(panel.view_tab_buttons.keys())
     if current_ids != expected_ids:
-        _populate_view_combo(combo, workspace_side)
+        _rebuild_view_tabs(
+            panel,
+            workspace_state=workspace_state,
+            dropdown_items=dropdown_items,
+        )
+    else:
+        for item in dropdown_items:
+            view_id = getattr(item, "view_id")
+            button = panel.view_tab_buttons.get(view_id)
+            if button is not None:
+                enabled = getattr(item, "enabled")
+                rail_label = getattr(item, "rail_label", None) or getattr(item, "label")
+                if button.isEnabled() != enabled:
+                    button.setEnabled(enabled)
+                if button.text() != rail_label:
+                    button.setText(rail_label)
 
-    index = combo.findData(active_view_id)
-    if index >= 0 and index != combo.currentIndex():
-        blocker = combo.blockSignals(True)
-        combo.setCurrentIndex(index)
-        combo.blockSignals(blocker)
-
-    for row_index, item in enumerate(dropdown_items):
-        model_item = combo.model().item(row_index)
-        if model_item is not None:
-            model_item.setEnabled(getattr(item, "enabled"))
+    active_button = panel.view_tab_buttons.get(active_view_id)
+    if active_button is not None and not active_button.isChecked():
+        blocker = active_button.blockSignals(True)
+        active_button.setChecked(True)
+        active_button.blockSignals(blocker)

@@ -93,19 +93,13 @@ from rcm_desktop.adapter.report_runner import ReportRunner
 from rcm_desktop.adapter.run_runner import PHASE_MOTOR, PHASE_PRESENTATION, RunRunner
 from rcm_desktop.adapter.shutdown_planner import ShutdownStep, plan_shutdown
 from rcm_desktop.adapter.contribution_chart_service import build_contribution_rows
-from rcm_desktop.adapter.faalwijze_analyse_service import (
-    FM_COMPARE_VIEW_DIAGRAM,
-    FM_COMPARE_VIEW_TABLE,
-    build_faalwijze_compare_presentation,
-)
-from rcm_desktop.adapter.fm_compare_table_model import FMCompareTableModel
 from rcm_desktop.adapter.fm_results_column_settings import (
     read_fm_hidden_optional_columns,
     write_fm_hidden_optional_columns,
 )
 from rcm_desktop.adapter.fm_results_sort_policy import default_fm_sort_column
 from rcm_desktop.adapter.fm_mc_results_table_model import FMMCResultsTableModel
-from rcm_desktop.adapter.fm_results_table_model import FMResultsTableModel, RAW_ROLE
+from rcm_desktop.adapter.fm_results_table_model import RAW_ROLE
 from rcm_desktop.adapter.fm_verification_service import FMVerificationView
 from rcm_desktop.adapter.fm_verification_year_table_model import (
     FMVerificationYearTableModel,
@@ -186,6 +180,7 @@ from rcm_desktop.views.panels.input_entity_grid_binding import (
     sync_delete_fm_button_enabled,
     sync_new_fm_button_enabled,
     wire_entity_grid_delete_selection,
+    wire_entity_grid_double_click_editor,
 )
 from rcm_desktop.views.panels.simulation_run_binding import (
     dispatch_compare_slot_run,
@@ -193,7 +188,7 @@ from rcm_desktop.views.panels.simulation_run_binding import (
     wire_simulation_run_handlers,
 )
 from rcm_desktop.views.panels.simulation_workspace_binding import (
-    add_simulation_widgets_to_validate_row,
+    add_simulation_widgets_to_toolbar,
     wire_simulation_status_strip,
 )
 from rcm_desktop.views.panels.lcc_workspace_panel import build_lcc_workspace_panel
@@ -214,6 +209,7 @@ from rcm_desktop.views.panels.workspace_navigation_panel import (
     apply_workspace_navigation_plan,
     build_workspace_navigation_panel,
 )
+from rcm_desktop.views.panels.fm_detail_bind_coordinator import FmDetailBindCoordinator
 from rcm_desktop.views.panels.fm_inspector_binding import (
     apply_fm_inspector_view,
     refresh_fm_inspector,
@@ -238,6 +234,12 @@ from rcm_desktop.views.panels.top10_workspace_binding import (
     refresh_contribution_year_combo,
     refresh_nb_effect_filter_combo,
 )
+from rcm_desktop.views.panels.workspace_view_title_binding import apply_view_title
+from rcm_desktop.views.panels.workspace_chrome_footer_binding import (
+    apply_chrome_footer_plan,
+    build_chrome_footer_zones,
+    _mount_top10_in_footer_middle,
+)
 from rcm_desktop.views.panels.workspace_shutdown_binding import (
     any_runner_busy,
     cancel_background_runners as cancel_window_background_runners,
@@ -245,10 +247,10 @@ from rcm_desktop.views.panels.workspace_shutdown_binding import (
     detach_table_models_before_close,
 )
 from rcm_desktop.views.panels.workspace_toolbar_sync import (
+    apply_status_strip_visibility,
     apply_bijdragen_toolbar,
     apply_collapse_panels,
     apply_compare_chrome,
-    apply_fm_toolbar,
     apply_lcc_toolbar,
 )
 from rcm_desktop.views.panels.workspace_table_policy import (
@@ -268,12 +270,12 @@ from rcm_desktop.adapter.project_paths import resolve_default_fixture_path
 from rcm_desktop.adapter.result_view_service import (
     build_pbs_tree,
 )
+from rcm_desktop.adapter.preview_service import build as build_project_preview
 from rcm_desktop.adapter.results_workspace_orchestrator import (
     BijdragenToolbarPlan,
     CollapsePanelPlan,
     CollapsePanelsPlan,
     CompareChromePlan,
-    FmToolbarPlan,
     LccToolbarVisibilityPlan,
     MeekoppelCollapsePlan,
     RenderPlan,
@@ -282,6 +284,7 @@ from rcm_desktop.adapter.results_workspace_orchestrator import (
     WorkspaceUiSyncPlan,
     plan_compare_chrome,
 )
+from rcm_desktop.adapter.workspace_view_registry import SIDE_INPUT
 from rcm_desktop.adapter.results_workspace_state import (
     ALL_METRICS,
     METRIC_FAALMOMENTEN,
@@ -289,6 +292,7 @@ from rcm_desktop.adapter.results_workspace_state import (
     METRIC_NIET_BESCHIKBAARHEID,
     MODE_BIJDRAGEN,
     MODE_FM_DETAIL,
+    MODE_KPI_OVERVIEW,
     MODE_LCC,
     SOURCE_FAALWIJZE,
     ResultsWorkspaceState,
@@ -427,6 +431,7 @@ class ResultsWorkspaceWindow(QMainWindow):
         self.compare_scenario_combo.addItem(
             messages.WORKSPACE_COMPARE_SCENARIO_PM, "pm"
         )
+        self.compare_scenario_combo.setVisible(False)
         self.run_slot_a_button = QPushButton(messages.WORKSPACE_RUN_SLOT_A_BUTTON_LABEL)
         self.run_slot_a_button.setToolTip(messages.WORKSPACE_RUN_SLOT_A_BUTTON_TOOLTIP)
         self.run_slot_a_button.clicked.connect(self._start_run_slot_a)
@@ -444,10 +449,6 @@ class ResultsWorkspaceWindow(QMainWindow):
         self.clear_compare_button = QPushButton(messages.WORKSPACE_CLEAR_COMPARE_BUTTON_LABEL)
         self.clear_compare_button.clicked.connect(self._clear_compare_slots)
 
-        self.show_whole_project_button = QPushButton(messages.WORKSPACE_SHOW_WHOLE_PROJECT_BUTTON)
-        self.show_whole_project_button.setToolTip(messages.WORKSPACE_SHOW_WHOLE_PROJECT_TOOLTIP)
-        self.show_whole_project_button.clicked.connect(self._on_show_whole_project_clicked)
-
         self._build_workspace_navigation()
         self._build_validate_status_strip()
 
@@ -464,13 +465,10 @@ class ResultsWorkspaceWindow(QMainWindow):
                 export_rcm_cost=self._export_rcm_cost_workbook,
                 quit=self.close,
                 set_pbs_sidebar_visible=self._set_pbs_sidebar_visible,
-                set_kpi_overview_visible=self._set_kpi_overview_visible,
                 set_fm_column_crop=self._on_fm_column_crop_toggled,
                 toggle_lcc_whatif=self._toggle_lcc_whatif_from_menu,
                 run_compare_slot_a=self._start_run_slot_a,
                 run_compare_slot_b=self._start_run_slot_b,
-                set_compare_scenario_cm=lambda: self._set_compare_scenario("cm"),
-                set_compare_scenario_pm=lambda: self._set_compare_scenario("pm"),
                 revalidate_input=self._revalidate_input,
                 open_faalwijzen_grid=self._open_batch_faalwijzen_grid,
                 open_compare_models=lambda: open_compare_models_window(self),
@@ -496,7 +494,6 @@ class ResultsWorkspaceWindow(QMainWindow):
         sync_workspace_menu_check_states(
             self._workspace_menu,
             pbs_sidebar_visible=not self.pbs_sidebar.isHidden(),
-            kpi_overview_visible=not snapshot.kpi_collapsed_in_lcc,
             fm_column_crop_checked=crop_checked,
             workspace_side=snapshot.workspace_side,
             active_view_id=snapshot.active_view_id,
@@ -525,9 +522,6 @@ class ResultsWorkspaceWindow(QMainWindow):
     def _set_pbs_sidebar_visible(self, visible: bool) -> None:
         self.pbs_sidebar.setVisible(visible)
         self._sync_workspace_menu_check_states()
-
-    def _set_kpi_overview_visible(self, visible: bool) -> None:
-        self.workspace_state.set_kpi_collapsed_in_lcc(not visible)
 
     def _report_menu_action(self):
         return self._workspace_menu.actions_by_id.get("analysis.generate_report")
@@ -575,6 +569,7 @@ class ResultsWorkspaceWindow(QMainWindow):
     def _build_detail_zone(self) -> None:
         self.detail_zone = QWidget()
         detail_layout = QVBoxLayout(self.detail_zone)
+        detail_layout.setContentsMargins(12, 8, 12, 12)
 
         self.kpi_placeholder = QLabel(messages.WORKSPACE_KPI_PLACEHOLDER)
         self.kpi_placeholder.setObjectName("MutedHintLabel")
@@ -596,17 +591,31 @@ class ResultsWorkspaceWindow(QMainWindow):
         self._entity_grid_view_id: str | None = None
         self._entity_grid_hidden: frozenset[str] = frozenset()
 
+        self.kpi_overview_page = self._build_kpi_overview_page()
+
         self._detail_pages: dict[str, QWidget] = {
             MODE_BIJDRAGEN: self.bijdragen_page,
             MODE_LCC: self.lcc_page,
             MODE_FM_DETAIL: self.fm_detail_page,
+            MODE_KPI_OVERVIEW: self.kpi_overview_page,
         }
-        for modus_key in (MODE_BIJDRAGEN, MODE_LCC, MODE_FM_DETAIL):
+        for modus_key in (MODE_BIJDRAGEN, MODE_LCC, MODE_FM_DETAIL, MODE_KPI_OVERVIEW):
             self.detail_stack.addWidget(self._detail_pages[modus_key])
         self.detail_stack.addWidget(self.input_placeholder_page)
         self.detail_stack.addWidget(self.input_entity_grid_page)
         detail_layout.addWidget(self.detail_stack, stretch=1)
 
+    def _build_kpi_overview_page(self) -> QWidget:
+        page = QWidget()
+        page_layout = QVBoxLayout(page)
+        page_layout.setContentsMargins(0, 0, 0, 0)
+        self.kpi_table_view = QTableView()
+        self.kpi_table_view.setAlternatingRowColors(True)
+        _apply_workspace_data_table_header_policy(self.kpi_table_view.horizontalHeader())
+        self.kpi_table_view.horizontalHeader().setSectionsClickable(False)
+        self.kpi_table_view.verticalHeader().setVisible(False)
+        page_layout.addWidget(self.kpi_table_view)
+        return page
 
     def _build_bijdragen_page(self) -> QWidget:
         panel = build_bijdragen_workspace_panel()
@@ -700,15 +709,20 @@ class ResultsWorkspaceWindow(QMainWindow):
         self.fm_compare_columns_host = panel.fm_compare_columns_host
         self.fm_compare_chart_scroll = panel.fm_compare_chart_scroll
         self.fm_compare_chart = panel.fm_compare_chart
-        self._fm_compare_show_nmf_rf = False
-        self._fm_compare_view_mode = FM_COMPARE_VIEW_TABLE
-        panel.fm_compare_nmf_rf_toggle.toggled.connect(self._on_fm_compare_nmf_rf_toggled)
-        panel.fm_compare_table_view_button.toggled.connect(self._on_fm_compare_table_view_toggled)
-        panel.fm_compare_diagram_view_button.toggled.connect(self._on_fm_compare_diagram_view_toggled)
+        self._fm_bind = FmDetailBindCoordinator(self)
+        self._fm_bind.wire_panel(panel)
         self.fm_compare_chart_scroll.viewport().installEventFilter(self)
         self.fm_detail_splitter = panel.fm_detail_splitter
         self.column_crop_button = panel.column_crop_button
         panel.column_crop_button.setVisible(False)
+        self.fm_single_nmf_rf_toggle = panel.fm_single_nmf_rf_toggle
+        self.fm_single_table_view_button = panel.fm_single_table_view_button
+        self.fm_single_diagram_view_button = panel.fm_single_diagram_view_button
+        self.fm_metric_chrome_host = panel.fm_metric_chrome_host
+        self.fm_metric_chrome_layout = panel.fm_metric_chrome_layout
+        self.fm_single_chart_scroll = panel.fm_single_chart_scroll
+        self.fm_single_chart = panel.fm_single_chart
+        self.fm_single_chart_scroll.viewport().installEventFilter(self)
         self.fm_table_view = panel.fm_table_view
         self._fm_table_filter_proxy = panel.fm_table_filter_proxy
         self._fm_table_proxy = panel.fm_table_proxy
@@ -717,6 +731,10 @@ class ResultsWorkspaceWindow(QMainWindow):
         self.fm_filter_row_count_label = panel.fm_filter_row_count_label
         self.detail_empty_state_label = panel.detail_empty_state_label
         self.fm_inspector_container = panel.fm_inspector_container
+        self.fm_inspector_close_button = panel.fm_inspector_close_button
+        self.fm_inspector_close_button.clicked.connect(self._dismiss_fm_inspector)
+        self.fm_inspector_edit_button = panel.fm_inspector_edit_button
+        self.fm_inspector_edit_button.clicked.connect(self._on_fm_inspector_edit_clicked)
         self.fm_inspector_empty_label = panel.fm_inspector_empty_label
         self.fm_inspector_panel = panel.fm_inspector_panel
         self.fm_inspector_identity_label = panel.fm_inspector_identity_label
@@ -724,11 +742,14 @@ class ResultsWorkspaceWindow(QMainWindow):
         self.fm_inspector_hash_label = panel.fm_inspector_hash_label
         self.fm_inspector_reconcile_label = panel.fm_inspector_reconcile_label
         self.fm_inspector_profile_missing_label = panel.fm_inspector_profile_missing_label
+        self.fm_inspector_lcc_chart = panel.fm_inspector_lcc_chart
         self.fm_inspector_year_table_view = panel.fm_inspector_year_table_view
         sel = self.fm_table_view.selectionModel()
         if sel is not None:
             sel.selectionChanged.connect(self._on_fm_table_selection_changed)
         self.fm_table_view.doubleClicked.connect(self._on_fm_table_double_clicked)
+        for col in (self._fm_compare_col_a, self._fm_compare_col_b):
+            col["table"].doubleClicked.connect(self._on_fm_compare_table_double_clicked)
         bind_fm_filter_row(
             self.fm_table_filter_row,
             self.fm_table_view,
@@ -795,7 +816,7 @@ class ResultsWorkspaceWindow(QMainWindow):
         ):
             toolbar_row.addWidget(w)
         toolbar_row.addStretch(1)
-        toolbar_row.addWidget(self.show_whole_project_button)
+        add_simulation_widgets_to_toolbar(toolbar_row, self)
 
         self.status_strip = QWidget()
         self.status_strip.setObjectName("StatusStrip")
@@ -804,48 +825,48 @@ class ResultsWorkspaceWindow(QMainWindow):
         status_strip_layout.setContentsMargins(8, 4, 8, 4)
         status_strip_layout.addWidget(self.validate_status_label)
         status_strip_layout.addWidget(self.validate_summary_label, stretch=1)
-        add_simulation_widgets_to_validate_row(status_strip_layout, self)
 
-        self.subnav_row = QWidget()
-        self.subnav_row.setObjectName("WorkspaceSubNavRow")
-        enable_stylesheet_background(self.subnav_row)
-        subnav_layout = QHBoxLayout(self.subnav_row)
-        subnav_layout.setContentsMargins(12, 6, 12, 6)
-        subnav_layout.addWidget(self._workspace_navigation.widget, stretch=1)
+        self.status_strip_layout = status_strip_layout
+
+        self.center_column = QWidget()
+        self.center_column.setObjectName("WorkspaceCenterColumn")
+        enable_stylesheet_background(self.center_column)
+        center_layout = QVBoxLayout(self.center_column)
+        center_layout.setContentsMargins(0, 0, 0, 0)
+        center_layout.setSpacing(0)
+        self.view_title_label = QLabel("")
+        self.view_title_label.setObjectName("WorkspaceViewTitle")
+        center_layout.addWidget(self.view_title_label)
+        center_layout.addWidget(self.detail_zone, stretch=1)
+
+        self.chrome_footer = QWidget()
+        self.chrome_footer.setObjectName("WorkspaceChromeFooter")
+        enable_stylesheet_background(self.chrome_footer)
+        chrome_footer_layout = QHBoxLayout(self.chrome_footer)
+        chrome_footer_layout.setContentsMargins(8, 4, 8, 4)
+        self.chrome_footer_context_label = QLabel("")
+        self.chrome_footer_context_label.setObjectName("WorkspaceChromeFooterContext")
+        chrome_footer_layout.addWidget(self.chrome_footer_context_label)
+        chrome_footer_layout.addStretch(1)
+        center_layout.addWidget(self.chrome_footer)
+
+        self.nav_rail = self._workspace_navigation.widget
+        build_chrome_footer_zones(self)
+        _mount_top10_in_footer_middle(self)
 
         self.main_splitter = QSplitter(Qt.Horizontal)
         self.main_splitter.addWidget(self.pbs_sidebar)
-        self.main_splitter.addWidget(self.detail_zone)
+        self.main_splitter.addWidget(self.center_column)
+        self.main_splitter.addWidget(self.nav_rail)
         self.main_splitter.setStretchFactor(0, 0)
         self.main_splitter.setStretchFactor(1, 1)
+        self.main_splitter.setStretchFactor(2, 0)
         self.main_splitter.setChildrenCollapsible(False)
-        self.main_splitter.setSizes([320, 720])
-
-        self.kpi_panel = QWidget()
-        self.kpi_panel.setObjectName("KpiPanel")
-        enable_stylesheet_background(self.kpi_panel)
-        kpi_panel_layout = QVBoxLayout(self.kpi_panel)
-        kpi_panel_layout.setContentsMargins(8, 4, 8, 4)
-        kpi_panel_layout.setSpacing(2)
-        kpi_header = QHBoxLayout()
-        self.kpi_panel_title = QLabel(messages.WORKSPACE_KPI_PANEL_TITLE)
-        kpi_header.addWidget(self.kpi_panel_title)
-        kpi_header.addStretch(1)
-        kpi_panel_layout.addLayout(kpi_header)
-        self.kpi_table_view = QTableView()
-        self.kpi_table_view.setAlternatingRowColors(True)
-        _apply_workspace_data_table_header_policy(self.kpi_table_view.horizontalHeader())
-        self.kpi_table_view.horizontalHeader().setSectionsClickable(False)
-        self.kpi_table_view.verticalHeader().setVisible(False)
-        self.kpi_table_view.setMaximumHeight(140)
-        kpi_panel_layout.addWidget(self.kpi_table_view)
+        self.main_splitter.setSizes([320, 720, 160])
 
         outer.addWidget(self.app_topbar)
         outer.addWidget(self.workspace_toolbar)
         outer.addWidget(self.status_strip)
-        outer.addWidget(self.subnav_row)
-        outer.addWidget(self.top10_subbar)
-        outer.addWidget(self.kpi_panel)
         outer.addWidget(self.main_splitter, stretch=1)
         self._refresh_kpi_table_view()
 
@@ -936,9 +957,6 @@ class ResultsWorkspaceWindow(QMainWindow):
                 pbs_ids.add(pbs_id)
         return frozenset(pbs_ids)
 
-    def _on_show_whole_project_clicked(self) -> None:
-        self.set_pbs_scope(None)
-
     def set_pbs_scope(self, scope_id: str | None) -> None:
         """Stel de actieve PBS-scope in; detailzone volgt via workspace_state."""
         self._pbs_scope_id = scope_id
@@ -1000,6 +1018,11 @@ class ResultsWorkspaceWindow(QMainWindow):
                     (self._bijdragen_compare_col_a, COMPARE_SLOT_A),
                     (self._bijdragen_compare_col_b, COMPARE_SLOT_B),
                 )
+            elif snapshot.modus == MODE_FM_DETAIL:
+                pairs = (
+                    (self._fm_compare_col_a, COMPARE_SLOT_A),
+                    (self._fm_compare_col_b, COMPARE_SLOT_B),
+                )
             else:
                 pairs = (
                     (self._lcc_compare_col_a, COMPARE_SLOT_A),
@@ -1009,17 +1032,7 @@ class ResultsWorkspaceWindow(QMainWindow):
                 set_compare_placeholder(col, slot_key=slot)
             return
         if plan.kind == "fm":
-            if plan.fm is not None:
-                if plan.fm.is_mc_mode:
-                    self._render_mc_fm_rows(
-                        plan.fm.mc_rows,
-                        empty_message=plan.fm.empty_message,
-                    )
-                else:
-                    self._render_fm_rows(
-                        plan.fm.fm_rows,
-                        empty_message=plan.fm.empty_message,
-                    )
+            self._fm_bind.apply_render(plan, snapshot)
             return
         if plan.kind == "bijdragen":
             self._apply_compare_chrome(plan_compare_chrome(snapshot))
@@ -1042,101 +1055,11 @@ class ResultsWorkspaceWindow(QMainWindow):
             return
         if plan.kind == "fm_compare":
             self._apply_compare_chrome(plan_compare_chrome(snapshot))
-            self._apply_fm_compare_panels(
-                plan.compare_panels or (),
-                snapshot,
-                faalwijze_compare=plan.faalwijze_compare,
-            )
+            self._fm_bind.apply_render(plan, snapshot)
             return
 
     def _apply_compare_column_chrome(self, column: dict, slot_key: str) -> None:
         column["header"].setStyleSheet(compare_header_stylesheet(slot_key))
-
-    def _apply_fm_compare_panels(
-        self,
-        panels: tuple[ComparePanel, ...],
-        snapshot: WorkspaceStateSnapshot,
-        *,
-        faalwijze_compare=None,
-    ) -> None:
-        columns = {
-            COMPARE_SLOT_A: self._fm_compare_col_a,
-            COMPARE_SLOT_B: self._fm_compare_col_b,
-        }
-        slot_sides = {
-            COMPARE_SLOT_A: "s1",
-            COMPARE_SLOT_B: "s2",
-        }
-        if faalwijze_compare is None:
-            faalwijze_compare = build_faalwijze_compare_presentation(
-                panels,
-                metric=snapshot.metric,
-            )
-        show_nmf_rf = getattr(self, "_fm_compare_show_nmf_rf", False)
-        self.fm_compare_chart.set_presentation(faalwijze_compare)
-        for panel in panels:
-            col = columns[panel.slot_key]
-            self._apply_compare_column_chrome(col, panel.slot_key)
-            col["header"].setText(
-                messages.WORKSPACE_COMPARE_SLOT_HEADER.format(label=panel.label)
-            )
-            if not panel.filled or panel.fm is None:
-                set_compare_placeholder(col, slot_key=panel.slot_key)
-                continue
-            col["placeholder"].setVisible(False)
-            table = col["table"]
-            model = FMCompareTableModel(
-                faalwijze_compare,
-                slot_side=slot_sides[panel.slot_key],
-                show_nmf_rf=show_nmf_rf,
-                parent=table,
-            )
-            table.setModel(model)
-        self._sync_fm_compare_view_chrome(show_nmf_rf=show_nmf_rf)
-
-    def _layout_fm_compare_chart(self) -> None:
-        viewport = self.fm_compare_chart_scroll.viewport()
-        self.fm_compare_chart.set_content_width(viewport.width())
-
-    def _sync_fm_compare_view_chrome(self, *, show_nmf_rf: bool) -> None:
-        table_mode = self._fm_compare_view_mode == FM_COMPARE_VIEW_TABLE
-        self.fm_compare_columns_host.setVisible(table_mode)
-        self.fm_compare_chart_scroll.setVisible(not table_mode)
-        self.fm_compare_nmf_rf_toggle.setVisible(table_mode)
-        if table_mode:
-            for col in (self._fm_compare_col_a, self._fm_compare_col_b):
-                if col["placeholder"].isVisible():
-                    col["table"].setVisible(False)
-                else:
-                    col["table"].setVisible(True)
-        else:
-            self._layout_fm_compare_chart()
-
-    def _set_fm_compare_view_mode(self, mode: str) -> None:
-        if mode not in (FM_COMPARE_VIEW_TABLE, FM_COMPARE_VIEW_DIAGRAM):
-            return
-        self._fm_compare_view_mode = mode
-        blocker_table = self.fm_compare_table_view_button.blockSignals(True)
-        blocker_diagram = self.fm_compare_diagram_view_button.blockSignals(True)
-        self.fm_compare_table_view_button.setChecked(mode == FM_COMPARE_VIEW_TABLE)
-        self.fm_compare_diagram_view_button.setChecked(mode == FM_COMPARE_VIEW_DIAGRAM)
-        self.fm_compare_table_view_button.blockSignals(blocker_table)
-        self.fm_compare_diagram_view_button.blockSignals(blocker_diagram)
-        self._sync_fm_compare_view_chrome(
-            show_nmf_rf=getattr(self, "_fm_compare_show_nmf_rf", False),
-        )
-
-    def _on_fm_compare_table_view_toggled(self, checked: bool) -> None:
-        if checked:
-            self._set_fm_compare_view_mode(FM_COMPARE_VIEW_TABLE)
-
-    def _on_fm_compare_diagram_view_toggled(self, checked: bool) -> None:
-        if checked:
-            self._set_fm_compare_view_mode(FM_COMPARE_VIEW_DIAGRAM)
-
-    def _on_fm_compare_nmf_rf_toggled(self, checked: bool) -> None:
-        self._fm_compare_show_nmf_rf = checked
-        self._rerender_detail_for_current_scope()
 
     def _apply_bijdragen_compare_panels(
         self,
@@ -1216,6 +1139,7 @@ class ResultsWorkspaceWindow(QMainWindow):
     ) -> None:
         apply_workspace_navigation_plan(
             self._workspace_navigation,
+            workspace_state=self.workspace_state,
             workspace_side=plan.navigation.workspace_side,
             active_view_id=plan.navigation.active_view_id,
             dropdown_items=plan.navigation.dropdown_items,
@@ -1240,7 +1164,6 @@ class ResultsWorkspaceWindow(QMainWindow):
             self.metric_combo.blockSignals(blocker)
         self._apply_bijdragen_toolbar(plan.bijdragen)
         self._apply_lcc_toolbar(plan.lcc_toolbar, snapshot)
-        self._apply_fm_toolbar(plan.fm_toolbar)
         self._apply_compare_chrome(plan.compare)
         if plan.pbs_tree_extended_selection:
             self.pbs_tree_view.setSelectionMode(QAbstractItemView.ExtendedSelection)
@@ -1249,6 +1172,11 @@ class ResultsWorkspaceWindow(QMainWindow):
         if plan.refresh_kpi and hasattr(self, "kpi_table_view"):
             self._refresh_kpi_table_view()
         self._apply_collapse_panels(plan.collapse)
+        apply_chrome_footer_plan(self, plan.chrome_footer)
+        apply_view_title(self, plan.view_title)
+        apply_status_strip_visibility(self, plan.status_strip_visible)
+        if plan.fm_toolbar is not None:
+            self._fm_bind.apply_toolbar(plan.fm_toolbar)
         if plan.scope_id != self._pbs_scope_id:
             self._pbs_scope_id = plan.scope_id
             self._update_scope_status_label()
@@ -1264,9 +1192,6 @@ class ResultsWorkspaceWindow(QMainWindow):
         snapshot: WorkspaceStateSnapshot,
     ) -> None:
         apply_lcc_toolbar(self, toolbar, snapshot)
-
-    def _apply_fm_toolbar(self, toolbar: FmToolbarPlan) -> None:
-        apply_fm_toolbar(self, toolbar)
 
     def _apply_compare_chrome(self, compare: CompareChromePlan) -> None:
         apply_compare_chrome(self, compare)
@@ -1388,25 +1313,14 @@ class ResultsWorkspaceWindow(QMainWindow):
         settings = QSettings("rcm2", "desktop")
         mode = read_fm_detail_column_fit_mode(settings)
         self._fm_column_fit_mode = mode
-        self._apply_fm_column_fit_mode(mode)
+        self._fm_bind.apply_column_fit_mode(mode)
         if hasattr(self, "_workspace_menu"):
             self._sync_workspace_menu_check_states()
 
     def _restore_fm_optional_column_preferences(self) -> None:
         settings = QSettings("rcm2", "desktop")
         self._fm_hidden_optional_columns = read_fm_hidden_optional_columns(settings)
-        self._apply_fm_optional_column_visibility()
-
-    def _apply_fm_optional_column_visibility(self) -> None:
-        if not hasattr(self, "fm_table_view"):
-            return
-        hidden = getattr(self, "_fm_hidden_optional_columns", frozenset({"pbs_id"}))
-        apply_fm_optional_column_visibility(
-            self.fm_table_view,
-            hidden_optional_columns=hidden,
-        )
-        if hasattr(self, "fm_table_filter_row"):
-            self.fm_table_filter_row._sync_column_widths()
+        self._fm_bind.apply_optional_column_visibility()
 
     def _on_fm_table_header_context_menu(self, pos) -> None:
         hidden = getattr(self, "_fm_hidden_optional_columns", frozenset({"pbs_id"}))
@@ -1429,7 +1343,7 @@ class ResultsWorkspaceWindow(QMainWindow):
             QSettings("rcm2", "desktop"),
             self._fm_hidden_optional_columns,
         )
-        self._apply_fm_optional_column_visibility()
+        self._fm_bind.apply_optional_column_visibility()
 
     def _restore_workspace_navigation_preferences(self) -> None:
         settings = QSettings("rcm2", "desktop")
@@ -1443,64 +1357,12 @@ class ResultsWorkspaceWindow(QMainWindow):
             sticky_by_side=self.workspace_state.sticky_views_by_side(),
         )
 
-    def _apply_fm_column_fit_mode(self, mode: ColumnFitMode) -> None:
-        if not hasattr(self, "fm_table_view"):
-            return
-        apply_column_fit_mode_to_table(self.fm_table_view, mode)
-
     def _on_fm_column_crop_toggled(self, checked: bool) -> None:
         mode = column_fit_mode_from_crop_checked(checked)
         self._fm_column_fit_mode = mode
         write_fm_detail_column_fit_mode(QSettings("rcm2", "desktop"), mode)
-        self._apply_fm_column_fit_mode(mode)
+        self._fm_bind.apply_column_fit_mode(mode)
         self._sync_workspace_menu_check_states()
-
-    def _render_mc_fm_rows(self, mc_rows, *, empty_message: str = "") -> None:
-        model = FMMCResultsTableModel(list(mc_rows), self.fm_table_view)
-        self._fm_table_filter_proxy.setSourceModel(model)
-        if model.rowCount() == 0:
-            self.detail_empty_state_label.setText(
-                empty_message or messages.WORKSPACE_DETAIL_EMPTY_STATE
-            )
-            self.detail_empty_state_label.setVisible(True)
-        else:
-            self.detail_empty_state_label.setVisible(False)
-        if hasattr(self, "_fm_column_fit_mode"):
-            self._apply_fm_column_fit_mode(self._fm_column_fit_mode)
-        self._refresh_fm_filter_row_count()
-
-    def _render_fm_rows(self, fm_rows, *, empty_message: str = "") -> None:
-        prior_fm_id = self._selected_fm_id_from_table()
-        model = FMResultsTableModel(list(fm_rows), self.fm_table_view)
-        self._fm_table_filter_proxy.setSourceModel(model)
-        metric = self.workspace_state.snapshot().metric
-        if getattr(self, "_fm_sort_metric", None) != metric:
-            self._fm_sort_metric = metric
-            col = default_fm_sort_column(metric)
-            self.fm_table_view.sortByColumn(col, Qt.DescendingOrder)
-        self._apply_fm_optional_column_visibility()
-        if model.rowCount() == 0:
-            self.detail_empty_state_label.setText(
-                empty_message or messages.WORKSPACE_DETAIL_EMPTY_STATE
-            )
-            self.detail_empty_state_label.setVisible(True)
-        else:
-            self.detail_empty_state_label.setVisible(False)
-        if hasattr(self, "_fm_column_fit_mode"):
-            self._apply_fm_column_fit_mode(self._fm_column_fit_mode)
-        restore_row: int | None = None
-        if prior_fm_id is not None:
-            for row in range(self._fm_table_proxy.rowCount()):
-                if self._fm_table_proxy.data(
-                    self._fm_table_proxy.index(row, 0), RAW_ROLE
-                ) == prior_fm_id:
-                    restore_row = row
-                    break
-        if restore_row is not None:
-            self.fm_table_view.selectRow(restore_row)
-        else:
-            self._refresh_fm_inspector(None)
-        self._refresh_fm_filter_row_count()
 
     def _refresh_fm_filter_row_count(self) -> None:
         if not hasattr(self, "fm_filter_row_count_label"):
@@ -1524,22 +1386,13 @@ class ResultsWorkspaceWindow(QMainWindow):
         deselected: QItemSelection,
     ) -> None:
         del selected, deselected
-        if self.workspace_state.snapshot().modus != MODE_FM_DETAIL:
+        snap = self.workspace_state.snapshot()
+        if snap.modus != MODE_FM_DETAIL or not snap.fm_inspector_mode:
             return
-        model = self.fm_table_view.model()
-        if model is None:
-            self._refresh_fm_inspector(None)
+        fm_id = snap.fm_inspector_fm_id
+        if fm_id is None:
             return
-        sel_model = self.fm_table_view.selectionModel()
-        if sel_model is None:
-            self._refresh_fm_inspector(None)
-            return
-        indexes = sel_model.selectedRows()
-        if not indexes:
-            self._refresh_fm_inspector(None)
-            return
-        fm_id = model.data(indexes[0], RAW_ROLE)
-        self._refresh_fm_inspector(str(fm_id) if fm_id is not None else None)
+        self._refresh_fm_inspector(fm_id)
 
     def _commit_active_grid_edits(self) -> bool:
         host = self._editing_host
@@ -1613,6 +1466,7 @@ class ResultsWorkspaceWindow(QMainWindow):
         self._entity_grid_view_id = view_id
         self._entity_grid_hidden = hidden
         wire_entity_grid_delete_selection(self)
+        wire_entity_grid_double_click_editor(self)
 
     def _open_batch_faalwijzen_grid(self) -> None:
         session = self._project_session()
@@ -1642,9 +1496,27 @@ class ResultsWorkspaceWindow(QMainWindow):
         if host.is_grid_dirty() and grid_svc.error_count() == 0:
             self._commit_active_grid_edits()
 
-    def _on_fm_table_double_clicked(self, index: QModelIndex) -> None:
-        if self.workspace_state.snapshot().modus != MODE_FM_DETAIL:
-            return
+    def _fm_id_for_model_row(self, model, index: QModelIndex) -> str | None:
+        if model is None or not index.isValid():
+            return None
+        mapped = index
+        if isinstance(model, QSortFilterProxyModel):
+            mapped = model.mapToSource(index)
+            model = model.sourceModel()
+        if model is None:
+            return None
+        id_index = model.index(mapped.row(), 0, mapped.parent())
+        fm_id = model.data(id_index, RAW_ROLE)
+        if fm_id is None:
+            fm_id = model.data(id_index, Qt.DisplayRole)
+        if fm_id is None:
+            return None
+        return str(fm_id)
+
+    def _fm_id_for_table_row(self, index: QModelIndex) -> str | None:
+        return self._fm_id_for_model_row(self.fm_table_view.model(), index)
+
+    def _open_fm_editor(self, fm_key: str) -> None:
         session = self._project_session()
         if session is None:
             QMessageBox.information(
@@ -1653,22 +1525,6 @@ class ResultsWorkspaceWindow(QMainWindow):
                 messages.FM_EDITOR_NO_PROJECT,
             )
             return
-        model = self.fm_table_view.model()
-        if model is None:
-            return
-        src_index = index
-        proxy = self._fm_table_proxy
-        if model is proxy:
-            src_index = proxy.mapToSource(index)
-            src_model = proxy.sourceModel()
-        else:
-            src_model = model
-        if src_model is None:
-            return
-        fm_id = src_model.data(src_index, RAW_ROLE)
-        if not fm_id:
-            return
-        fm_key = str(fm_id)
         if not wss.fm_exists(session, fm_key):
             QMessageBox.warning(
                 self,
@@ -1707,9 +1563,39 @@ class ResultsWorkspaceWindow(QMainWindow):
                 self._project_total_presentation = self._load_presentation_from_disk()
                 self._render_index.on_workspace_state_reset()
                 self._rerender_detail_for_current_scope()
-                self._refresh_fm_inspector(str(fm_id))
+                self._refresh_fm_inspector(fm_key)
         finally:
             host.set_save_handler(prev_save)
+
+    def _on_fm_table_double_clicked(self, index: QModelIndex) -> None:
+        if self.workspace_state.snapshot().modus != MODE_FM_DETAIL:
+            return
+        fm_key = self._fm_id_for_table_row(index)
+        if not fm_key:
+            return
+        self.workspace_state.open_fm_inspector_mode(fm_key)
+        from rcm_desktop.views.panels.fm_detail_workspace_binding import (
+            sync_fm_table_inspector_context,
+        )
+
+        sync_fm_table_inspector_context(self)
+        self._select_fm_in_table(fm_key)
+        self._refresh_fm_inspector(fm_key)
+
+    def _on_fm_inspector_edit_clicked(self) -> None:
+        snap = self.workspace_state.snapshot()
+        if not snap.fm_inspector_mode or not snap.fm_inspector_fm_id:
+            return
+        self._open_fm_editor(snap.fm_inspector_fm_id)
+
+    def _on_fm_compare_table_double_clicked(self, index: QModelIndex) -> None:
+        snapshot = self.workspace_state.snapshot()
+        if snapshot.modus != MODE_FM_DETAIL or not snapshot.compare_mode:
+            return
+        fm_key = self._fm_id_for_model_row(index.model(), index)
+        if not fm_key:
+            return
+        self._open_fm_editor(fm_key)
 
     def _selected_leaf_pbs_id_for_create(self) -> str | None:
         pbs_ids = self._pbs_selected_ids_from_tree()
@@ -1805,10 +1691,44 @@ class ResultsWorkspaceWindow(QMainWindow):
         return None
 
     def _refresh_fm_inspector(self, fm_id: str | None) -> None:
+        if fm_id is None:
+            self._inspector_selection_fm_id = None
         refresh_fm_inspector(self, fm_id)
 
+    def keyPressEvent(self, event) -> None:  # noqa: N802
+        snap = self.workspace_state.snapshot()
+        if snap.fm_inspector_mode and event.key() in (Qt.Key.Key_Up, Qt.Key.Key_Down):
+            from rcm_desktop.views.panels.fm_detail_workspace_binding import (
+                ordered_fm_ids_from_table,
+                sync_fm_table_inspector_context,
+            )
+
+            delta = -1 if event.key() == Qt.Key.Key_Up else 1
+            ordered = ordered_fm_ids_from_table(self)
+            self.workspace_state.step_fm_inspector(delta, ordered)
+            fm_id = self.workspace_state.snapshot().fm_inspector_fm_id
+            if fm_id:
+                sync_fm_table_inspector_context(self)
+                self._select_fm_in_table(fm_id)
+                self._refresh_fm_inspector(fm_id)
+            event.accept()
+            return
+        super().keyPressEvent(event)
+
+    def _dismiss_fm_inspector(self) -> None:
+        self.workspace_state.close_fm_inspector_mode()
+        from rcm_desktop.views.panels.fm_detail_workspace_binding import (
+            sync_fm_table_inspector_context,
+        )
+
+        sync_fm_table_inspector_context(self)
+
     def _apply_fm_inspector_view(self, view: FMVerificationView) -> None:
-        apply_fm_inspector_view(self, view)
+        apply_fm_inspector_view(
+            self,
+            view,
+            metric=self.workspace_state.snapshot().metric,
+        )
 
     def _render_lcc_view(
         self,
@@ -2031,6 +1951,12 @@ class ResultsWorkspaceWindow(QMainWindow):
     def _on_lcc_whatif_toggled(self, checked: bool) -> None:
         overlay = self.workspace_state.snapshot().planning_overlay
         if checked:
+            snap = self.workspace_state.snapshot()
+            if snap.modus == MODE_LCC:
+                if snap.lcc_whatif_collapsed_in_lcc:
+                    self.workspace_state.set_lcc_whatif_collapsed_in_lcc(False)
+                if snap.metric != METRIC_KOSTEN:
+                    self.workspace_state.set_metric(METRIC_KOSTEN)
             self.workspace_state.set_planning_overlay(overlay.begin_what_if())
         else:
             self._lcc_passive_kept_after_run = False
@@ -2340,9 +2266,18 @@ class ResultsWorkspaceWindow(QMainWindow):
             self.validate_button.setEnabled(False)
 
     def _toggle_lcc_whatif_from_menu(self) -> None:
-        if self.workspace_state.snapshot().modus != MODE_LCC:
-            return
-        self.lcc_whatif_button.toggle()
+        snap = self.workspace_state.snapshot()
+        if snap.modus != MODE_LCC:
+            self.workspace_state.set_active_view("output.lcc_plot")
+        active = self.workspace_state.snapshot().planning_overlay.active
+        self._on_lcc_whatif_toggled(not active)
+        blocker = self.lcc_whatif_button.blockSignals(True)
+        try:
+            self.lcc_whatif_button.setChecked(
+                self.workspace_state.snapshot().planning_overlay.active
+            )
+        finally:
+            self.lcc_whatif_button.blockSignals(blocker)
 
     def _set_compare_scenario(self, scenario_key: str | None) -> None:
         for index in range(self.compare_scenario_combo.count()):
@@ -2713,7 +2648,7 @@ class ResultsWorkspaceWindow(QMainWindow):
                 messages.ERROR_EMPTY_PATH,
             )
             return
-        project = session.loaded.core()
+        project = session.project
         project_path = resolved.file_path
         default_path = resolved.default_report_output_path(project)
         if default_path is None:
@@ -2806,7 +2741,7 @@ class ResultsWorkspaceWindow(QMainWindow):
         session = self._project_session()
         run = self._state.last_run
         has_run = run is not None and run.status == "done" and bool(run.fm_core_results)
-        has_bench = session is not None and has_aw_benchmarks(session.loaded.core())
+        has_bench = session is not None and has_aw_benchmarks(session.project)
         busy = self._run_runner.busy or self._compare_run_runner.busy
         self.rcm_cost_parity_button.setEnabled(has_run and has_bench and not busy)
 
@@ -2820,7 +2755,7 @@ class ResultsWorkspaceWindow(QMainWindow):
                 messages.RCM_COST_PARITY_NO_RUN,
             )
             return
-        project = session.loaded.core()
+        project = session.project
         if not has_aw_benchmarks(project):
             QMessageBox.information(
                 self,
@@ -2896,12 +2831,10 @@ class ResultsWorkspaceWindow(QMainWindow):
         return confirm_busy_shutdown(self)
 
     def eventFilter(self, watched, event):  # noqa: N802
-        if (
-            watched is self.fm_compare_chart_scroll.viewport()
-            and event.type() == QEvent.Type.Resize
-            and self._fm_compare_view_mode == FM_COMPARE_VIEW_DIAGRAM
+        if hasattr(self, "_fm_bind") and self._fm_bind.handle_chart_viewport_resize(
+            watched, event
         ):
-            self._layout_fm_compare_chart()
+            return super().eventFilter(watched, event)
         return super().eventFilter(watched, event)
 
     def closeEvent(self, event: QCloseEvent) -> None:  # noqa: N802
@@ -2961,7 +2894,7 @@ class ResultsWorkspaceWindow(QMainWindow):
         if not save_path:
             return
         outcome = export_rcm_cost_project(
-            session.loaded.core(),
+            session.project,
             project_file_path=resolved.file_path,
             output_path=Path(save_path),
         )
@@ -2978,7 +2911,7 @@ class ResultsWorkspaceWindow(QMainWindow):
             if not located:
                 return
             outcome = export_rcm_cost_project(
-                session.loaded.core(),
+                session.project,
                 project_file_path=resolved.file_path,
                 output_path=Path(save_path),
                 located_source_path=Path(located),

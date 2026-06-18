@@ -55,25 +55,16 @@ def test_meekoppel_visible_after_whatif_activated(monkeypatch) -> None:
     assert window.meekoppel_panel.isVisible() is True
 
 
-def test_run_menu_shortcuts_select_scenario_and_toggle_whatif(monkeypatch) -> None:
+def test_whatif_menu_toggle_from_top_level(monkeypatch) -> None:
     app = _ensure_app()
     monkeypatch.setattr(QMessageBox, "critical", lambda *_a, **_k: QMessageBox.Ok)
     window = ResultsWorkspaceWindow()
     window.show()
     app.processEvents()
 
-    cm_action = _action(window, "run.scenario_cm")
-    assert cm_action.shortcut().toString() == "Ctrl+Shift+M"
-    cm_action.trigger()
-    assert window.compare_scenario_combo.currentData() == "cm"
-
-    pm_action = _action(window, "run.scenario_pm")
-    pm_action.trigger()
-    assert window.compare_scenario_combo.currentData() == "pm"
-
     switch_workspace_modus(window, MODE_LCC, app)
     app.processEvents()
-    whatif_action = _action(window, "run.toggle_whatif")
+    whatif_action = _action(window, "whatif.toggle")
     assert whatif_action.shortcut().toString() == "Ctrl+Shift+W"
     assert window.lcc_whatif_button.isChecked() is False
     whatif_action.trigger()

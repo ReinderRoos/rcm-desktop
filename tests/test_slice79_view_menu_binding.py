@@ -34,7 +34,7 @@ def test_beeld_menu_contains_view_submenus(monkeypatch, isolated_navigation_sett
     window.show()
     app.processEvents()
 
-    assert "view.output.top_10" in window._workspace_menu.actions_by_id
+    assert "view.output.top_10" not in window._workspace_menu.actions_by_id
     assert "view.input.faalwijzen" in window._workspace_menu.actions_by_id
     assert _action(window, "view.side.input") is not None
     assert _action(window, "view.side.output") is not None

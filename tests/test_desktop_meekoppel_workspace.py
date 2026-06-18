@@ -19,6 +19,7 @@ from rcm_desktop.adapter.meekoppel_workflow_service import WorkflowResult
 from rcm_desktop.adapter.meekoppel_suggestions_table_model import MeekoppelSuggestionsTableModel
 from rcm_desktop.adapter.planning_overlay_state import PlanningOverlayState
 from rcm_desktop.adapter.run_service import run as run_single
+import rcm_desktop.views.panels.meekoppel_workspace_binding as meekoppel_binding
 import rcm_desktop.views.results_workspace_window as workspace_window
 from rcm_desktop.views.results_workspace_window import ResultsWorkspaceWindow
 from tests.workspace_test_helpers import switch_workspace_modus
@@ -180,11 +181,15 @@ def test_meekoppel_apply_updates_overlay_after_preview(monkeypatch):
 
 
 def test_meekoppel_preview_uses_workflow_when_flag_enabled(monkeypatch):
+    from PySide6.QtWidgets import QDialog
+    from rcm_desktop.views import meekoppel_preview_dialog as mpd_mod
     app = _ensure_app()
     monkeypatch.setattr(QMessageBox, "critical", lambda *_a, **_k: QMessageBox.Ok)
     monkeypatch.setattr(QMessageBox, "warning", lambda *_a, **_k: QMessageBox.Ok)
     monkeypatch.setattr(QMessageBox, "information", lambda *_a, **_k: QMessageBox.Ok)
+    monkeypatch.setattr(meekoppel_binding, "meekoppel_workflow_v2_enabled", lambda: True)
     monkeypatch.setattr(workspace_window, "meekoppel_workflow_v2_enabled", lambda: True)
+    monkeypatch.setattr(mpd_mod.MeekoppelPreviewDialog, "exec", lambda self: QDialog.DialogCode.Rejected)
 
     called = {"preview": 0}
 
@@ -227,6 +232,7 @@ def test_meekoppel_preview_uses_legacy_when_flag_disabled(monkeypatch):
     monkeypatch.setattr(QMessageBox, "critical", lambda *_a, **_k: QMessageBox.Ok)
     monkeypatch.setattr(QMessageBox, "warning", lambda *_a, **_k: QMessageBox.Ok)
     monkeypatch.setattr(QMessageBox, "information", lambda *_a, **_k: QMessageBox.Ok)
+    monkeypatch.setattr(meekoppel_binding, "meekoppel_workflow_v2_enabled", lambda: False)
     monkeypatch.setattr(workspace_window, "meekoppel_workflow_v2_enabled", lambda: False)
 
     called = {"legacy": 0}
@@ -241,6 +247,7 @@ def test_meekoppel_preview_uses_legacy_when_flag_disabled(monkeypatch):
             blocked_reason=messages.WORKSPACE_MEEKOPPEL_SELECT_MIN_REV,
         )
 
+    monkeypatch.setattr(meekoppel_binding, "preview_meekoppel", _legacy_preview)
     monkeypatch.setattr(workspace_window, "preview_meekoppel", _legacy_preview)
 
     window = ResultsWorkspaceWindow()

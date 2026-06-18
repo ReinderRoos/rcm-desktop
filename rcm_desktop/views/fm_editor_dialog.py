@@ -18,11 +18,14 @@ from PySide6.QtWidgets import (
     QInputDialog,
     QLabel,
     QLineEdit,
+    QListWidget,
     QMessageBox,
     QProgressDialog,
     QPushButton,
+    QScrollArea,
+    QSizePolicy,
     QSpinBox,
-    QTabWidget,
+    QStackedWidget,
     QTableWidget,
     QTableWidgetItem,
     QTextEdit,
@@ -46,7 +49,17 @@ from rcm_desktop.adapter.fm_edit_commit_service import (
 )
 from rcm_desktop.adapter.fm_create_service import validate_fm_minimum
 from rcm_desktop.adapter.fm_editor_results_view_service import build_editor_results_view
-from rcm_desktop.adapter.fm_field_copy_service import copy_fields
+from rcm_desktop.adapter.fm_field_copy_service import (
+    copy_effect_scope,
+    copy_fields,
+    copy_preventief_scope,
+)
+from rcm_desktop.adapter.fm_library_fill_service import (
+    apply_effect_klassen_from_library,
+    apply_rev_tasks_from_library,
+    effect_klasse_library_choices,
+    rev_task_library_choices,
+)
 from rcm_desktop.adapter.pm_measure_link_service import apply_task_group_link
 from rcm_desktop.adapter.task_group_catalog_service import (
     allocate_task_group_id,
@@ -68,6 +81,56 @@ def _new_id(prefix: str, existing: set[str]) -> str:
         if candidate not in existing:
             return candidate
         n += 1
+
+
+class _FmEditorTabBarProxy:
+    """QTabBar-compat voor sidebar-navigatie (tests + scroll-gedrag)."""
+
+    def __init__(self, nav: QListWidget) -> None:
+        self._nav = nav
+
+    def usesScrollButtons(self) -> bool:
+        return False
+
+    def isVisible(self) -> bool:
+        return self._nav.isVisible()
+
+    def tabRect(self, index: int):
+        item = self._nav.item(index)
+        if item is None:
+            return self._nav.visualRect(self._nav.indexAt(0, 0))
+        return self._nav.visualItemRect(item)
+
+
+class _FmEditorSectionTabs:
+    """Verticale sectienavigatie i.p.v. horizontale QTabWidget-tabstrip."""
+
+    def __init__(self, nav: QListWidget, stack: QStackedWidget) -> None:
+        self._nav = nav
+        self._stack = stack
+        self._tab_bar = _FmEditorTabBarProxy(nav)
+        nav.currentRowChanged.connect(self._stack.setCurrentIndex)
+
+    def tabBar(self) -> _FmEditorTabBarProxy:
+        return self._tab_bar
+
+    def count(self) -> int:
+        return self._stack.count()
+
+    def tabText(self, index: int) -> str:
+        item = self._nav.item(index)
+        return item.text() if item is not None else ""
+
+    def setCurrentIndex(self, index: int) -> None:
+        self._nav.setCurrentRow(index)
+
+    def currentIndex(self) -> int:
+        return self._stack.currentIndex()
+
+    def addTab(self, widget: QWidget, label: str) -> int:
+        self._nav.addItem(label)
+        self._stack.addWidget(widget)
+        return self._stack.count() - 1
 
 
 class FmEditorDialog(QDialog):
@@ -114,7 +177,7 @@ class FmEditorDialog(QDialog):
             if self._create_mode
             else messages.FM_EDITOR_TITLE.format(fm_id=self._fm_id)
         )
-        self.setMinimumSize(720, 520)
+        self.setMinimumSize(720, 600)
 
         root = QVBoxLayout(self)
         intro = QLabel(
@@ -124,22 +187,35 @@ class FmEditorDialog(QDialog):
         intro.setWordWrap(True)
         root.addWidget(intro)
 
-        aux_row = QHBoxLayout()
-        self._fill_from_btn = QPushButton(messages.FM_EDITOR_FILL_FROM)
-        self._fill_from_btn.clicked.connect(self._on_fill_from)
-        aux_row.addWidget(self._fill_from_btn)
-        aux_row.addStretch(1)
-        root.addLayout(aux_row)
-
-        self._tabs = QTabWidget()
+        section_nav = QListWidget()
+        section_nav.setFixedWidth(168)
+        section_nav.setSpacing(2)
+        section_nav.setObjectName("FmEditorSectionNav")
+        section_stack = QStackedWidget()
+        section_stack.setMinimumHeight(400)
+        section_stack.setSizePolicy(
+            QSizePolicy.Policy.Expanding,
+            QSizePolicy.Policy.Expanding,
+        )
+        self._tabs = _FmEditorSectionTabs(section_nav, section_stack)
         self._tabs.addTab(self._build_basis_tab(), messages.FM_EDITOR_TAB_BASIS)
-        self._tabs.addTab(self._build_effecten_tab(), messages.FM_EDITOR_TAB_EFFECTEN)
+        self._tabs.addTab(
+            self._wrap_scroll_tab(self._build_effecten_tab()),
+            messages.FM_EDITOR_TAB_EFFECTEN,
+        )
         self._tabs.addTab(self._build_correctief_tab(), messages.FM_EDITOR_TAB_CORRECTIEF)
-        self._tabs.addTab(self._build_preventief_tab(), messages.FM_EDITOR_TAB_PREVENTIEF)
+        self._tabs.addTab(
+            self._wrap_scroll_tab(self._build_preventief_tab()),
+            messages.FM_EDITOR_TAB_PREVENTIEF,
+        )
         self._results_tab_index = self._tabs.addTab(
             self._build_results_tab(), messages.FM_EDITOR_TAB_RESULTATEN
         )
-        root.addWidget(self._tabs)
+        section_row = QHBoxLayout()
+        section_row.setSpacing(8)
+        section_row.addWidget(section_nav)
+        section_row.addWidget(section_stack, stretch=1)
+        root.addLayout(section_row, stretch=1)
 
         self._dirty = False
         self._stay_open_after_commit = False
@@ -155,6 +231,7 @@ class FmEditorDialog(QDialog):
         button_row.addWidget(self._save_close_btn)
         button_row.addWidget(self._cancel_btn)
         root.addLayout(button_row)
+        self.resize(860, 680)
         self._wire_dirty_tracking()
         self._update_results_tab()
 
@@ -251,6 +328,13 @@ class FmEditorDialog(QDialog):
             warn.setStyleSheet("color: #E65100;")
             form.addRow(warn)
 
+        fill_row = QHBoxLayout()
+        fill_basis = QPushButton(messages.FM_EDITOR_FILL_FROM)
+        fill_basis.clicked.connect(self._on_fill_from_basis)
+        fill_row.addWidget(fill_basis)
+        fill_row.addStretch(1)
+        form.addRow(fill_row)
+
         self._refresh_aging_fields_visibility()
         return page
 
@@ -284,6 +368,13 @@ class FmEditorDialog(QDialog):
             elif hasattr(widget, "stateChanged"):
                 widget.stateChanged.connect(_mark_dirty)  # type: ignore[union-attr]
         self._notes.textChanged.connect(_mark_dirty)
+        for table in (
+            self._fm_links_table,
+            self._pm_links_table,
+            self._effect_table,
+            self._pm_tasks_table,
+        ):
+            table.itemChanged.connect(_mark_dirty)
 
     def _reload_editor_from_session(self) -> None:
         self._bundle = load_fm_edit_scope(self._session, self._fm_id)
@@ -424,10 +515,29 @@ class FmEditorDialog(QDialog):
         form.addRow(messages.FM_EDITOR_AANNAME_DOWNTIME, self._aanname_downtime)
         return page
 
+    def _wrap_scroll_tab(self, page: QWidget) -> QScrollArea:
+        page.setMinimumHeight(300)
+        page.setSizePolicy(
+            QSizePolicy.Policy.Expanding,
+            QSizePolicy.Policy.Expanding,
+        )
+        scroll = QScrollArea()
+        scroll.setWidgetResizable(True)
+        scroll.setFrameShape(QScrollArea.Shape.NoFrame)
+        scroll.setWidget(page)
+        scroll.setMinimumHeight(300)
+        scroll.setSizePolicy(
+            QSizePolicy.Policy.Expanding,
+            QSizePolicy.Policy.Expanding,
+        )
+        return scroll
+
     def _make_table(self, headers: tuple[str, ...]) -> QTableWidget:
         table = QTableWidget(0, len(headers))
         table.setHorizontalHeaderLabels(list(headers))
         table.horizontalHeader().setStretchLastSection(True)
+        table.setMinimumHeight(80)
+        table.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         return table
 
     def _format_table_cell(self, col: str, val: Any) -> str:
@@ -473,6 +583,13 @@ class FmEditorDialog(QDialog):
         page = QWidget()
         layout = QVBoxLayout(page)
 
+        fill_row = QHBoxLayout()
+        fill_effecten = QPushButton(messages.FM_EDITOR_FILL_FROM_EFFECTEN)
+        fill_effecten.clicked.connect(self._on_fill_from_effecten)
+        fill_row.addWidget(fill_effecten)
+        fill_row.addStretch(1)
+        layout.addLayout(fill_row)
+
         fm_cols = ("link_id", "klasse_id", "fractie", "aanname_fractie")
         layout.addWidget(QLabel(messages.FM_EDITOR_FM_LINKS))
         self._fm_links_table = self._make_table(fm_cols)
@@ -485,7 +602,7 @@ class FmEditorDialog(QDialog):
         fm_btns.addWidget(add_fm)
         fm_btns.addWidget(rem_fm)
         fm_btns.addStretch(1)
-        layout.addWidget(self._fm_links_table)
+        layout.addWidget(self._fm_links_table, stretch=1)
         layout.addLayout(fm_btns)
 
         pm_cols = ("link_id", "pm_id", "klasse_id", "fractie", "aanname_fractie")
@@ -500,19 +617,27 @@ class FmEditorDialog(QDialog):
         pm_btns.addWidget(add_pm)
         pm_btns.addWidget(rem_pm)
         pm_btns.addStretch(1)
-        layout.addWidget(self._pm_links_table)
+        layout.addWidget(self._pm_links_table, stretch=1)
         layout.addLayout(pm_btns)
 
         ek_cols = ("klasse_id", "omschrijving", "categorie", "cost_gevolg_eur")
         layout.addWidget(QLabel(messages.FM_EDITOR_EFFECT_KLASSEN))
         self._effect_table = self._make_table(ek_cols)
         self._fill_table(self._effect_table, list(self._bundle.effect_klasse_rows), ek_cols)
-        layout.addWidget(self._effect_table)
+        layout.addWidget(self._effect_table, stretch=1)
         return page
 
     def _build_preventief_tab(self) -> QWidget:
         page = QWidget()
         layout = QVBoxLayout(page)
+
+        fill_row = QHBoxLayout()
+        fill_preventief = QPushButton(messages.FM_EDITOR_FILL_FROM_PREVENTIEF)
+        fill_preventief.clicked.connect(self._on_fill_from_preventief)
+        fill_row.addWidget(fill_preventief)
+        fill_row.addStretch(1)
+        layout.addLayout(fill_row)
+
         pm_cols = (
             "pm_id",
             "taak_type",
@@ -556,7 +681,7 @@ class FmEditorDialog(QDialog):
         pm_btns.addWidget(link_pm)
         pm_btns.addWidget(new_tg)
         pm_btns.addStretch(1)
-        layout.addWidget(self._pm_tasks_table)
+        layout.addWidget(self._pm_tasks_table, stretch=1)
         layout.addLayout(pm_btns)
 
         tg_form = QFormLayout()
@@ -669,40 +794,133 @@ class FmEditorDialog(QDialog):
         self._aanname_downtime.setText(str(row.get("aanname_downtime") or ""))
         self._refresh_aging_fields_visibility()
 
-    def _on_fill_from(self) -> None:
+    def _pick_source_fm_id(
+        self,
+        *,
+        title: str | None = None,
+        picker_label: str | None = None,
+        scope: str = "basis",
+    ) -> str | None:
         rows = self._session.session.get("edit_current", {}).get("faalwijzes", [])
+        current = self._session.session.get("edit_current", {})
         choices: list[str] = []
         id_by_label: dict[str, str] = {}
         for row in rows:
             fm_id = str(row.get("fm_id") or "")
             if fm_id == self._fm_id:
                 continue
-            label = f"{fm_id} — {row.get('faalwijze_omschrijving', '')}"
+            omschrijving = str(row.get("faalwijze_omschrijving") or "")
+            if scope == "effecten":
+                effect_count = sum(
+                    1
+                    for link in current.get("fm_effect_links", [])
+                    if str(link.get("fm_id") or "") == fm_id
+                ) + sum(
+                    1
+                    for link in current.get("pm_effect_links", [])
+                    if str(link.get("pm_id") or "") in {
+                        str(task.get("pm_id") or "")
+                        for task in current.get("pm_tasks", [])
+                        if str(task.get("fm_id") or "") == fm_id
+                    }
+                )
+                label = messages.FM_EDITOR_FILL_FROM_CHOICE_EFFECTEN.format(
+                    fm_id=fm_id,
+                    omschrijving=omschrijving,
+                    effect_count=effect_count,
+                )
+            elif scope == "preventief":
+                pm_count = sum(
+                    1
+                    for task in current.get("pm_tasks", [])
+                    if str(task.get("fm_id") or "") == fm_id
+                )
+                label = messages.FM_EDITOR_FILL_FROM_CHOICE_PREVENTIEF.format(
+                    fm_id=fm_id,
+                    omschrijving=omschrijving,
+                    pm_count=pm_count,
+                )
+            else:
+                label = f"{fm_id} — {omschrijving}"
             choices.append(label)
             id_by_label[label] = fm_id
         if not choices:
-            return
+            return None
+        default_picker = messages.FM_EDITOR_FILL_FROM_PICKER_FM
+        if scope == "effecten":
+            default_picker = messages.FM_EDITOR_FILL_FROM_PICKER_FM_EFFECTEN
+        elif scope == "preventief":
+            default_picker = messages.FM_EDITOR_FILL_FROM_PICKER_FM_PREVENTIEF
         picked, ok = QInputDialog.getItem(
             self,
-            messages.FM_EDITOR_FILL_FROM_TITLE,
-            "Faalwijze",
+            title or messages.FM_EDITOR_FILL_FROM_TITLE,
+            picker_label or default_picker,
             choices,
             0,
             False,
         )
         if not ok or not picked:
+            return None
+        return id_by_label[picked]
+
+    def _pick_library_ids(
+        self,
+        *,
+        choices: list[tuple[str, str]],
+        title: str,
+        label: str,
+    ) -> list[str]:
+        if not choices:
+            return []
+        dialog = QDialog(self)
+        dialog.setWindowTitle(title)
+        layout = QVBoxLayout(dialog)
+        layout.addWidget(QLabel(label))
+        list_widget = QListWidget()
+        list_widget.setSelectionMode(QListWidget.SelectionMode.ExtendedSelection)
+        id_by_row: list[str] = []
+        for choice_label, item_id in choices:
+            list_widget.addItem(choice_label)
+            id_by_row.append(item_id)
+        layout.addWidget(list_widget)
+        buttons = QDialogButtonBox(
+            QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel
+        )
+        buttons.accepted.connect(dialog.accept)
+        buttons.rejected.connect(dialog.reject)
+        layout.addWidget(buttons)
+        if dialog.exec() != QDialog.DialogCode.Accepted:
+            return []
+        selected: list[str] = []
+        for row in range(list_widget.count()):
+            item = list_widget.item(row)
+            if item is not None and item.isSelected():
+                selected.append(id_by_row[row])
+        return selected
+
+    def _confirm_fill_overwrite(self, *, title: str, message: str) -> bool:
+        if not self._dirty:
+            return True
+        answer = QMessageBox.question(
+            self,
+            title,
+            message,
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            QMessageBox.StandardButton.No,
+        )
+        return answer == QMessageBox.StandardButton.Yes
+
+    def _on_fill_from_basis(self) -> None:
+        source_fm_id = self._pick_source_fm_id()
+        if source_fm_id is None:
             return
-        if self._dirty:
-            answer = QMessageBox.question(
-                self,
-                messages.FM_EDITOR_FILL_FROM_TITLE,
-                messages.FM_EDITOR_FILL_FROM_CONFIRM.format(fm_id=id_by_label[picked]),
-                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
-                QMessageBox.StandardButton.No,
-            )
-            if answer != QMessageBox.StandardButton.Yes:
-                return
-        source_row = next(r for r in rows if str(r.get("fm_id")) == id_by_label[picked])
+        if not self._confirm_fill_overwrite(
+            title=messages.FM_EDITOR_FILL_FROM_TITLE,
+            message=messages.FM_EDITOR_FILL_FROM_CONFIRM.format(fm_id=source_fm_id),
+        ):
+            return
+        rows = self._session.session.get("edit_current", {}).get("faalwijzes", [])
+        source_row = next(r for r in rows if str(r.get("fm_id")) == source_fm_id)
         merged = copy_fields(source_row, self._bundle.faalwijze_row)
         self._bundle = FmEditBundle(
             fm_id=self._bundle.fm_id,
@@ -715,6 +933,122 @@ class FmEditorDialog(QDialog):
             effect_klasse_rows=self._bundle.effect_klasse_rows,
         )
         self._apply_faalwijze_row_to_basis_correctief(merged)
+        self._dirty = True
+
+    def _on_fill_from_effecten(self) -> None:
+        edit_current = self._session.session.get("edit_current", {})
+        choices = effect_klasse_library_choices(edit_current)
+        selected_ids = self._pick_library_ids(
+            choices=choices,
+            title=messages.FM_EDITOR_FILL_FROM_EFFECTEN_TITLE,
+            label=messages.FM_EDITOR_FILL_FROM_PICKER_EFFECT_KLASSEN,
+        )
+        if not selected_ids:
+            return
+        if not self._confirm_fill_overwrite(
+            title=messages.FM_EDITOR_FILL_FROM_EFFECTEN_TITLE,
+            message=messages.FM_EDITOR_FILL_FROM_EFFECTEN_CONFIRM.format(
+                effect_count=len(selected_ids),
+            ),
+        ):
+            return
+        existing_links = {
+            str(r.get("link_id"))
+            for r in self._bundle.fm_effect_rows + self._bundle.pm_effect_rows
+            if r.get("link_id")
+        }
+        copied = apply_effect_klassen_from_library(
+            edit_current,
+            target_fm_id=self._fm_id,
+            selected_klasse_ids=tuple(selected_ids),
+            existing_link_ids=existing_links,
+        )
+        merged_klassen = list(self._bundle.effect_klasse_rows)
+        seen = {str(r.get("klasse_id")) for r in merged_klassen if r.get("klasse_id")}
+        for row in copied.effect_klasse_rows:
+            kid = str(row.get("klasse_id") or "")
+            if kid and kid not in seen:
+                merged_klassen.append(row)
+                seen.add(kid)
+        self._bundle = FmEditBundle(
+            fm_id=self._bundle.fm_id,
+            faalwijze_row=self._bundle.faalwijze_row,
+            pbs_row=self._bundle.pbs_row,
+            fm_effect_rows=copied.fm_effect_rows,
+            pm_task_rows=self._bundle.pm_task_rows,
+            pm_effect_rows=copied.pm_effect_rows,
+            task_group_rows=self._bundle.task_group_rows,
+            effect_klasse_rows=tuple(merged_klassen),
+        )
+        fm_cols = ("link_id", "klasse_id", "fractie", "aanname_fractie")
+        self._fill_table(self._fm_links_table, list(copied.fm_effect_rows), fm_cols)
+        pm_cols = ("link_id", "pm_id", "klasse_id", "fractie", "aanname_fractie")
+        self._fill_table(self._pm_links_table, list(copied.pm_effect_rows), pm_cols)
+        ek_cols = ("klasse_id", "omschrijving", "categorie", "cost_gevolg_eur")
+        self._fill_table(self._effect_table, list(merged_klassen), ek_cols)
+        self._dirty = True
+
+    def _on_fill_from_preventief(self) -> None:
+        edit_current = self._session.session.get("edit_current", {})
+        choices = rev_task_library_choices(edit_current)
+        selected_ids = self._pick_library_ids(
+            choices=choices,
+            title=messages.FM_EDITOR_FILL_FROM_PREVENTIEF_TITLE,
+            label=messages.FM_EDITOR_FILL_FROM_PICKER_REV_TAKEN,
+        )
+        if not selected_ids:
+            return
+        if not self._confirm_fill_overwrite(
+            title=messages.FM_EDITOR_FILL_FROM_PREVENTIEF_TITLE,
+            message=messages.FM_EDITOR_FILL_FROM_PREVENTIEF_CONFIRM.format(
+                pm_count=len(selected_ids),
+            ),
+        ):
+            return
+        session_pm_ids = {
+            str(r.get("pm_id"))
+            for r in edit_current.get("pm_tasks", [])
+            if r.get("pm_id")
+        }
+        copied = apply_rev_tasks_from_library(
+            edit_current,
+            target_fm_id=self._fm_id,
+            selected_pm_ids=tuple(selected_ids),
+            existing_pm_ids=session_pm_ids,
+        )
+        self._bundle = FmEditBundle(
+            fm_id=self._bundle.fm_id,
+            faalwijze_row=self._bundle.faalwijze_row,
+            pbs_row=self._bundle.pbs_row,
+            fm_effect_rows=self._bundle.fm_effect_rows,
+            pm_task_rows=copied.pm_task_rows,
+            pm_effect_rows=(),
+            task_group_rows=(),
+            effect_klasse_rows=self._bundle.effect_klasse_rows,
+        )
+        pm_cols = (
+            "pm_id",
+            "taak_type",
+            "taak_omschrijving",
+            "interval_jaar",
+            "cost_eur",
+            "task_group_id",
+        )
+        rows = []
+        for row in copied.pm_task_rows:
+            flat = dict(row)
+            flat["taak_type"] = (
+                flat.get("taak_type", {}).get("value")
+                if isinstance(flat.get("taak_type"), dict)
+                else flat.get("taak_type", "")
+            )
+            rows.append(flat)
+        self._fill_table(self._pm_tasks_table, rows, pm_cols)
+        self._task_group_rows = {}
+        tg_ids: tuple[str, ...] = ()
+        self._pm_tasks_table.setItemDelegateForColumn(
+            5, PmTaskGroupDelegate(tg_ids, self._pm_tasks_table)
+        )
         self._dirty = True
 
     def _on_link_measure(self) -> None:
@@ -804,6 +1138,7 @@ class FmEditorDialog(QDialog):
         table.setItem(row, 2, QTableWidgetItem("1.0"))
         if table.columnCount() > 3:
             table.setItem(row, 3, QTableWidgetItem(""))
+        self._dirty = True
 
     def _add_pm_effect_row(self) -> None:
         pm_id = self._selected_pm_id()
@@ -822,6 +1157,7 @@ class FmEditorDialog(QDialog):
         self._pm_links_table.setItem(row, 2, QTableWidgetItem(""))
         self._pm_links_table.setItem(row, 3, QTableWidgetItem("1.0"))
         self._pm_links_table.setItem(row, 4, QTableWidgetItem(""))
+        self._dirty = True
 
     def _add_pm_task_row(self) -> None:
         existing = {
@@ -838,11 +1174,14 @@ class FmEditorDialog(QDialog):
         self._pm_tasks_table.setItem(row, 3, QTableWidgetItem("1.0"))
         self._pm_tasks_table.setItem(row, 4, QTableWidgetItem("0.0"))
         self._pm_tasks_table.setItem(row, 5, QTableWidgetItem(""))
+        self._dirty = True
 
     def _remove_selected_rows(self, table: QTableWidget) -> None:
         rows = sorted({idx.row() for idx in table.selectedIndexes()}, reverse=True)
         for r in rows:
             table.removeRow(r)
+        if rows:
+            self._dirty = True
 
     def _selected_pm_id(self) -> str:
         rows = self._pm_tasks_table.selectedIndexes()
@@ -861,6 +1200,7 @@ class FmEditorDialog(QDialog):
         self._last_mttf = float(new_mttf)
 
     def _on_pm_table_changed(self, _item: QTableWidgetItem) -> None:
+        self._dirty = True
         self._refresh_consistency_warnings()
 
     def _refresh_consistency_warnings(self) -> None:

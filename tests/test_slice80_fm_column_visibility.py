@@ -57,27 +57,17 @@ def _isolated_settings(tmp_path):
     yield
 
 
-def test_fm_table_hides_pbs_id_by_default(monkeypatch) -> None:
+def test_fm_table_compact_four_columns_by_default(monkeypatch) -> None:
     app, window = _window_in_fm_detail(monkeypatch)
-    header = window.fm_table_view.horizontalHeader()
-    assert header.isSectionHidden(FM_COL_PBS_ID) is True
+    del app
+    src = window._fm_table_filter_proxy.sourceModel()
+    assert src is not None
+    assert src.columnCount() == 4
 
 
-def test_fm_table_pbs_id_toggle_via_context_menu(monkeypatch) -> None:
+def test_fm_table_pbs_id_not_in_compact_layout(monkeypatch) -> None:
     app, window = _window_in_fm_detail(monkeypatch)
-    window._on_fm_optional_column_toggled("pbs_id", True)
-    app.processEvents()
-    header = window.fm_table_view.horizontalHeader()
-    assert header.isSectionHidden(FM_COL_PBS_ID) is False
-
-
-def test_fm_pbs_id_visibility_persists_across_window_rebuild(monkeypatch) -> None:
-    monkeypatch.setattr(QMessageBox, "critical", lambda *_a, **_k: QMessageBox.Ok)
-    app = QApplication.instance() or QApplication([])
-    window = ResultsWorkspaceWindow()
-    window._on_fm_optional_column_toggled("pbs_id", True)
-    app.processEvents()
-    rebuilt = ResultsWorkspaceWindow()
-    app.processEvents()
-    header = rebuilt.fm_table_view.horizontalHeader()
-    assert header.isSectionHidden(FM_COL_PBS_ID) is False
+    del app
+    src = window._fm_table_filter_proxy.sourceModel()
+    assert src is not None
+    assert src.columnCount() < FM_COL_PBS_ID + 1

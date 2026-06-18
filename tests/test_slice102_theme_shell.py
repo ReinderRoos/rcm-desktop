@@ -62,7 +62,7 @@ def test_shell_widgets_use_stylesheet_background(monkeypatch) -> None:
     window.show()
     app.processEvents()
 
-    for widget in (window.app_topbar, window.status_strip, window.kpi_panel):
+    for widget in (window.app_topbar, window.status_strip, window.chrome_footer):
         assert widget.testAttribute(Qt.WA_StyledBackground)
 
 
@@ -84,20 +84,15 @@ def test_workspace_shell_widgets_present(monkeypatch) -> None:
     assert window.statusBar().objectName() == "WorkspaceFooter"
 
 
-def test_kpi_starts_collapsed_in_all_modi(monkeypatch) -> None:
+def test_kpi_not_active_until_navigated(monkeypatch) -> None:
     app = _ensure_app()
     monkeypatch.setattr(QMessageBox, "critical", lambda *_a, **_k: QMessageBox.Ok)
     window = ResultsWorkspaceWindow()
     window.show()
     app.processEvents()
 
-    assert window.workspace_state.snapshot().kpi_collapsed_in_lcc is True
-    assert window.kpi_table_view.isVisible() is False
-
-    for modus in (MODE_BIJDRAGEN, MODE_LCC, MODE_FM_DETAIL):
-        window.workspace_state.set_modus(modus)
-        app.processEvents()
-        assert window.kpi_table_view.isVisible() is False
+    assert window.workspace_state.snapshot().active_view_id != "output.kpi_overview"
+    assert window.detail_stack.currentWidget() is not window.kpi_overview_page
 
 
 def test_workspace_footer_show_message(monkeypatch) -> None:

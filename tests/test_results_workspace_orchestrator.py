@@ -8,6 +8,7 @@ from rcm_core.persistence import load_project
 
 from rcm_desktop.adapter.compare_slot_state import (
     COMPARE_SLOT_A,
+    COMPARE_SLOT_B,
     CompareSlotSnapshot,
     CompareSlotState,
 )
@@ -45,7 +46,7 @@ def _snap(**kwargs) -> WorkspaceStateSnapshot:
 
 def test_modus_switch_bijdragen_to_lcc_toolbar_visibility() -> None:
     prev = _snap(modus=MODE_BIJDRAGEN)
-    curr = _snap(modus=MODE_LCC)
+    curr = _snap(modus=MODE_LCC, active_view_id="output.lcc_plot")
     plan = ResultsWorkspaceOrchestrator.plan_ui_sync(prev, curr)
 
     assert plan.detail_page_modus == MODE_LCC
@@ -65,14 +66,14 @@ def test_modus_switch_bijdragen_to_lcc_toolbar_visibility() -> None:
 
 
 def test_lcc_toolbar_pm_filter_visible_only_for_kosten_metric() -> None:
-    nb = _snap(modus=MODE_LCC, metric=METRIC_NIET_BESCHIKBAARHEID)
+    nb = _snap(modus=MODE_LCC, metric=METRIC_NIET_BESCHIKBAARHEID, active_view_id="output.lcc_plot")
     plan_nb = ResultsWorkspaceOrchestrator.plan_ui_sync(None, nb)
     assert plan_nb.lcc_toolbar is not None
     assert plan_nb.lcc_toolbar.filter_bar_visible is True
     assert plan_nb.lcc_toolbar.pm_type_filters_visible is False
     assert plan_nb.lcc_toolbar.effect_nb_filter_visible is True
 
-    kosten = _snap(modus=MODE_LCC, metric=METRIC_KOSTEN)
+    kosten = _snap(modus=MODE_LCC, metric=METRIC_KOSTEN, active_view_id="output.lcc_plot")
     plan_k = ResultsWorkspaceOrchestrator.plan_ui_sync(None, kosten)
     assert plan_k.lcc_toolbar is not None
     assert plan_k.lcc_toolbar.filter_bar_visible is True
@@ -170,7 +171,7 @@ def test_compare_chrome_per_modus() -> None:
 
 def test_lcc_filter_set_in_toolbar_plan() -> None:
     filters = LCCTypeFilterSet(cm=False, rev=True, in_task=False, tst=True, svo=True, wet=False)
-    snap = _snap(modus=MODE_LCC, lcc_filters=filters)
+    snap = _snap(modus=MODE_LCC, lcc_filters=filters, active_view_id="output.lcc_plot")
     plan = ResultsWorkspaceOrchestrator.plan_ui_sync(None, snap)
 
     assert plan.lcc_toolbar is not None
@@ -178,13 +179,14 @@ def test_lcc_filter_set_in_toolbar_plan() -> None:
 
 
 def test_meekoppel_panel_visible_only_when_whatif_active() -> None:
-    inactive = _snap(modus=MODE_LCC)
+    inactive = _snap(modus=MODE_LCC, active_view_id="output.lcc_plot")
     plan_off = ResultsWorkspaceOrchestrator.plan_ui_sync(None, inactive)
     assert plan_off.lcc_toolbar is not None
     assert plan_off.lcc_toolbar.meekoppel_panel_visible is False
 
     active = _snap(
         modus=MODE_LCC,
+        active_view_id="output.lcc_plot",
         planning_overlay=PlanningOverlayState.inactive().begin_what_if(),
     )
     plan_on = ResultsWorkspaceOrchestrator.plan_ui_sync(None, active)
@@ -311,16 +313,21 @@ def test_plan_render_bijdragen_compare_with_slot() -> None:
     session = _session_with_run()
     slots = CompareSlotState()
     overlay = PlanningOverlayState.inactive()
-    slots.put(
-        COMPARE_SLOT_A,
-        CompareSlotSnapshot.from_motor_run(
-            run_result=session.run,
-            presentation=None,
-            scenario_key="pm",
-            overlay_at_run=overlay,
-            label="A",
-        ),
+    slot_snap = CompareSlotSnapshot.from_motor_run(
+        run_result=session.run,
+        presentation=None,
+        scenario_key="pm",
+        overlay_at_run=overlay,
+        label="A",
     )
+    slots.put(COMPARE_SLOT_A, slot_snap)
+    slots.put(COMPARE_SLOT_B, CompareSlotSnapshot.from_motor_run(
+        run_result=session.run,
+        presentation=None,
+        scenario_key="pm",
+        overlay_at_run=overlay,
+        label="B",
+    ))
     plan = ResultsWorkspaceOrchestrator.plan_render(
         _snap(modus=MODE_BIJDRAGEN, compare_mode=True),
         _render_ctx(session=session, slots=slots),

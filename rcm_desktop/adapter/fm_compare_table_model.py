@@ -18,6 +18,7 @@ from rcm_desktop.adapter.results_workspace_state import (
     METRIC_KOSTEN,
     METRIC_NIET_BESCHIKBAARHEID,
 )
+from rcm_desktop.adapter.fm_results_table_model import RAW_ROLE
 from rcm_desktop.formatting import format_eur, format_float, format_int
 from rcm_desktop.theme.dp_tokens import DP_WARNING_BG
 
@@ -116,6 +117,8 @@ class FMCompareTableModel(QAbstractTableModel):
         cell = self._slot_cell(row)
         if role == Qt.BackgroundRole and row.highlight:
             return QColor(DP_WARNING_BG)
+        if role == RAW_ROLE and col == "fm_id":
+            return row.fm_id
         if role != Qt.DisplayRole:
             return None
         if col == "fm_id":

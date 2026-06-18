@@ -16,8 +16,8 @@ PANELS_DIR = (
 CONTEXT = Path(__file__).resolve().parent.parent / "CONTEXT.md"
 
 WORKSPACE_WINDOW_LINE_STRETCH_TARGET = 2000
-# Ratchet na slice 90 top10-extractie; 2734 regels + 10 marge.
-WORKSPACE_WINDOW_LINE_BASELINE = 2744
+# Ratchet na slice 105 (FM single-run, MC dispatch, chrome binding); 2992 regels + 10 marge.
+WORKSPACE_WINDOW_LINE_BASELINE = 3002
 # Vóór slice 62 PR0 (3033 regels); cumulatieve shrink-gate.
 SLICE62_START_LINE_BASELINE = 3033
 

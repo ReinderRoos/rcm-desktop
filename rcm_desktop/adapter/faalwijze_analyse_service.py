@@ -43,6 +43,37 @@ class FaalwijzeComparePresentation:
 
 
 @dataclass(frozen=True)
+class FaalwijzeSingleRunRow:
+    fm_id: str
+    label: str
+    bouwdeel_naam: str
+    metric_value: float
+    is_nmf: bool = False
+    rf: float = 0.0
+
+
+@dataclass(frozen=True)
+class FaalwijzeSingleRunPresentation:
+    rows: tuple[FaalwijzeSingleRunRow, ...]
+    metric: str
+
+
+@dataclass(frozen=True)
+class FaalwijzePresentationBundle:
+    """Unified FM-presentatie voor single-run en compare (slice 106-B)."""
+
+    single_run: FaalwijzeSingleRunPresentation | None = None
+    compare: FaalwijzeComparePresentation | None = None
+
+    def chart_presentation(self) -> FaalwijzeComparePresentation | None:
+        if self.compare is not None:
+            return self.compare
+        if self.single_run is not None:
+            return faalwijze_single_run_as_compare(self.single_run)
+        return None
+
+
+@dataclass(frozen=True)
 class _SlotFmEntry:
     fm_id: str
     label: str
@@ -56,6 +87,19 @@ def compute_fm_compare_highlight(s1: float, s2: float) -> bool:
     if s1 <= 0:
         return False
     return abs(s1 - s2) / s1 > HIGHLIGHT_RELATIVE_THRESHOLD
+
+
+def fm_table_context_row_indices(
+    filtered_fm_ids: tuple[str, ...],
+    selected_fm_id: str,
+) -> tuple[int, ...]:
+    """Max. drie rijen rond geselecteerde FM in gefilterde volgorde (slice 108)."""
+    if not filtered_fm_ids or selected_fm_id not in filtered_fm_ids:
+        return ()
+    idx = filtered_fm_ids.index(selected_fm_id)
+    start = max(0, idx - 1)
+    end = min(len(filtered_fm_ids), idx + 2)
+    return tuple(range(start, end))
 
 
 def metric_value_from_analytical(row: FMResultRow, metric: str) -> float:
@@ -166,3 +210,73 @@ def build_faalwijze_compare_presentation(
         )
     rows.sort(key=_sort_key_s1)
     return FaalwijzeComparePresentation(rows=tuple(rows), metric=metric)
+
+
+def _sort_key_single_run(row: FaalwijzeSingleRunRow) -> tuple[float, str]:
+    return (-row.metric_value, row.fm_id)
+
+
+def build_faalwijze_single_run_presentation(
+    fm: FMDetailView,
+    *,
+    metric: str,
+) -> FaalwijzeSingleRunPresentation:
+    entries = _entries_from_fm_view(fm, metric=metric)
+    rows = [
+        FaalwijzeSingleRunRow(
+            fm_id=entry.fm_id,
+            label=entry.label,
+            bouwdeel_naam=entry.bouwdeel_naam,
+            metric_value=entry.metric_value,
+            is_nmf=entry.is_nmf,
+            rf=entry.rf,
+        )
+        for entry in entries.values()
+    ]
+    rows.sort(key=_sort_key_single_run)
+    return FaalwijzeSingleRunPresentation(rows=tuple(rows), metric=metric)
+
+
+def faalwijze_single_run_as_compare(
+    presentation: FaalwijzeSingleRunPresentation,
+) -> FaalwijzeComparePresentation:
+    """Single-series chart: only S1 bars populated (slice 104)."""
+    rows: list[FaalwijzeCompareRow] = []
+    empty_cell = FaalwijzeCompareSlotCell(metric_value=None)
+    for row in presentation.rows:
+        cell = FaalwijzeCompareSlotCell(
+            metric_value=row.metric_value,
+            is_nmf=row.is_nmf,
+            rf=row.rf,
+        )
+        rows.append(
+            FaalwijzeCompareRow(
+                fm_id=row.fm_id,
+                label=row.label,
+                bouwdeel_naam=row.bouwdeel_naam,
+                s1=row.metric_value,
+                s2=None,
+                highlight=False,
+                s1_cell=cell,
+                s2_cell=empty_cell,
+            )
+        )
+    return FaalwijzeComparePresentation(rows=tuple(rows), metric=presentation.metric)
+
+
+def build_faalwijze_bundle_for_fm_view(
+    fm: FMDetailView,
+    *,
+    metric: str,
+) -> FaalwijzePresentationBundle:
+    single = build_faalwijze_single_run_presentation(fm, metric=metric)
+    return FaalwijzePresentationBundle(single_run=single)
+
+
+def build_faalwijze_bundle_for_compare(
+    panels: tuple[ComparePanel, ...],
+    *,
+    metric: str,
+) -> FaalwijzePresentationBundle:
+    compare = build_faalwijze_compare_presentation(panels, metric=metric)
+    return FaalwijzePresentationBundle(compare=compare)

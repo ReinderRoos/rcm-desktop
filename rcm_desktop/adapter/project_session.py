@@ -30,5 +30,9 @@ class ProjectSession:
     ) -> ProjectSession:
         return cls(path=path, loaded=loaded, run=run, mc_run=mc_run)
 
+    @property
+    def project(self):
+        return self.loaded.core()
+
     def has_completed_run(self) -> bool:
         return self.run is not None and self.run.status == "done"

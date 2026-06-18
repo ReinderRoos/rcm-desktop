@@ -4,7 +4,7 @@
       "bibliotheek_id": "BIB-AWZI-AGING-KLEP",
       "bron": "NIST/AWZI-HWP faalmodeltabel (demomodel slice 51); MTTF = 1,2 x OLT",
       "categorie": "aging_defaults",
-      "omschrijving": "AWZI klep / afsluiter — Weibull shape default",
+      "omschrijving": "AWZI klep / afsluiter â€” Weibull shape default",
       "toelichting": "Representatieve HWP-component; FM materialiseert beta_jaar.",
       "waarde": "Weibull 2p; beta=3.0; slijtage openingscycli"
     },
@@ -12,7 +12,7 @@
       "bibliotheek_id": "BIB-AWZI-AGING-MECH",
       "bron": "NIST/AWZI-HWP faalmodeltabel (demomodel slice 51); MTTF = 1,2 x OLT",
       "categorie": "aging_defaults",
-      "omschrijving": "AWZI mechanische aandrijving — Weibull shape default",
+      "omschrijving": "AWZI mechanische aandrijving â€” Weibull shape default",
       "toelichting": "Representatieve HWP-component; FM materialiseert beta_jaar.",
       "waarde": "Weibull 2p; beta=2.8; lagers/afdichtingen"
     },
@@ -20,7 +20,7 @@
       "bibliotheek_id": "BIB-AWZI-AGING-POMP",
       "bron": "NIST/AWZI-HWP faalmodeltabel (demomodel slice 51); MTTF = 1,2 x OLT",
       "categorie": "aging_defaults",
-      "omschrijving": "AWZI pomp / roerder — Weibull shape default",
+      "omschrijving": "AWZI pomp / roerder â€” Weibull shape default",
       "toelichting": "Representatieve HWP-component; FM materialiseert beta_jaar.",
       "waarde": "Weibull 2p; beta=2.5; wear-out mechanisch"
     },
@@ -34,7 +34,7 @@
     },
     "BIB-AWZI-NEREDA": {
       "bibliotheek_id": "BIB-AWZI-NEREDA",
-      "bron": "Systeembeschrijving AWZI HWP v0.2 (januari 2025), Hoogheemraadschap van Rijnland (slibgistingsinstallatie / systeemgrenzen Bijlage A.1). — Bijlage B",
+      "bron": "Systeembeschrijving AWZI HWP v0.2 (januari 2025), Hoogheemraadschap van Rijnland (slibgistingsinstallatie / systeemgrenzen Bijlage A.1). â€” Bijlage B",
       "categorie": "faalmodel",
       "omschrijving": "Nereda / SBR en waterlijn-risico's (samenvatting)",
       "toelichting": "Faalkansen in demomodel zijn generiek; uitwerking per FMECA volgt ontwerp.",
@@ -45,7 +45,7 @@
       "bron": "Klant-/projectmap PDF: Systeembeschrijving-AWZI-HWP-v0.2.pdf (map 03 - Systeembeschrijvingen / Overkoepelend).",
       "categorie": "leeftijd",
       "omschrijving": "Brondocument AWZI HWP demomodel",
-      "toelichting": "PBS-tags HWP-xx-xx en multipliciteiten volgen §2 en Bijlage A.1/A.2.",
+      "toelichting": "PBS-tags HWP-xx-xx en multipliciteiten volgen Â§2 en Bijlage A.1/A.2.",
       "waarde": "Systeembeschrijving AWZI HWP v0.2 (januari 2025), Hoogheemraadschap van Rijnland (slibgistingsinstallatie / systeemgrenzen Bijlage A.1)."
     }
   },
@@ -73,7 +73,7 @@
     },
     "EK-COST-02": {
       "aanname_gevolg_kosten": "Educated guess op basis van impact op operationele continuiteit, compliance en interventiekosten.",
-      "aw_effect_type": "",
+      "aw_effect_type": null,
       "categorie": "kosten",
       "cost_gevolg_eur": 14000.0,
       "functie_id": "FUNC-SYS-OTG-05",
@@ -153,7 +153,7 @@
     },
     "EK-OTG-05": {
       "aanname_gevolg_kosten": "Educated guess op basis van impact op operationele continuiteit, compliance en interventiekosten.",
-      "aw_effect_type": "",
+      "aw_effect_type": null,
       "categorie": "kosten",
       "cost_gevolg_eur": 30000.0,
       "functie_id": "FUNC-SYS-OTG-05",
@@ -1507,7 +1507,7 @@
       "fm_id": "FM-052",
       "functie_id": "FUNC-HWP-BG-03",
       "is_evident": true,
-      "library_ref": "",
+      "library_ref": "BIB-AWZI-AGING-MECH",
       "mttf_jaar": 18.0,
       "notes": "Demo veroudering: Scheurvorming met lekkage; oorspronkelijk random-faalmodel omgezet voor realistischer LCC-jaarprofiel in oefenproject.",
       "p_ongewenste_gebeurtenis": 0.9,
@@ -6000,7 +6000,7 @@
     },
     "FUNC-HWP-DS-04": {
       "functie_id": "FUNC-HWP-DS-04",
-      "functie_omschrijving": "Chemicaliëndosering NaOH/H2SO4 operationeel houden",
+      "functie_omschrijving": "ChemicaliÃ«ndosering NaOH/H2SO4 operationeel houden",
       "functioneel_gevolg": "",
       "is_evident": true,
       "notes": "",
@@ -6520,7 +6520,7 @@
     },
     "FUNC-HWP-WL-NRD-C": {
       "functie_id": "FUNC-HWP-WL-NRD-C",
-      "functie_omschrijving": "Nereda-controller (SBR-cycluscoördinatie) operationeel houden",
+      "functie_omschrijving": "Nereda-controller (SBR-cycluscoÃ¶rdinatie) operationeel houden",
       "functioneel_gevolg": "",
       "is_evident": true,
       "notes": "",
@@ -6586,15 +6586,15 @@
   "modelleur": "RCM2 demo",
   "pbs_items": {
     "HWP-BG": {
-      "aanname_leeftijd": "Combinatie renovatie (o.a. voorindikkers 2022–2024) en nieuwbouw fasering tot ca. 2032; per component representatief ontwerp/bouwjaar ingevuld conform demomodel.",
+      "aanname_leeftijd": "Combinatie renovatie (o.a. voorindikkers 2022â€“2024) en nieuwbouw fasering tot ca. 2032; per component representatief ontwerp/bouwjaar ingevuld conform demomodel.",
       "aanname_multipliciteit": "Exemplarenaantal en HWP-tag volgen Bijlage A.1 (of waterlijn Bijlage B waar expliciet gekoppeld aan HWP-BG-01).",
-      "bouwdeel_naam": "Biogas — subsysteem HWP-BG",
+      "bouwdeel_naam": "Biogas â€” subsysteem HWP-BG",
       "bouwjaar": 2026,
       "component_naam": "",
       "element_naam": "Biogas [HWP-BG]",
       "library_ref": "BIB-SYS-HWP-V02",
       "multiplicity": 1,
-      "notes": "Subsysteemknoop voor HWP-BG-01, HWP-BG-02, … (hiërarchie demomodel). Kind-PBS-items bevatten de gedetailleerde bouwdelen.",
+      "notes": "Subsysteemknoop voor HWP-BG-01, HWP-BG-02, â€¦ (hiÃ«rarchie demomodel). Kind-PBS-items bevatten de gedetailleerde bouwdelen.",
       "object_naam": "AWZI Haarlem Waarderpolder",
       "ontwerpleeftijd_jaar": 0.0,
       "parent_pbs_id": "PBS-AWZI-000",
@@ -6602,7 +6602,7 @@
       "volgorde": 0
     },
     "HWP-BG-01": {
-      "aanname_leeftijd": "Combinatie renovatie (o.a. voorindikkers 2022–2024) en nieuwbouw fasering tot ca. 2032; per component representatief ontwerp/bouwjaar ingevuld conform demomodel.",
+      "aanname_leeftijd": "Combinatie renovatie (o.a. voorindikkers 2022â€“2024) en nieuwbouw fasering tot ca. 2032; per component representatief ontwerp/bouwjaar ingevuld conform demomodel.",
       "aanname_multipliciteit": "Exemplarenaantal en HWP-tag volgen Bijlage A.1 (of waterlijn Bijlage B waar expliciet gekoppeld aan HWP-BG-01).",
       "bouwdeel_naam": "Gasafvoerleiding naar buffer/opwerking",
       "bouwjaar": 2026,
@@ -6610,7 +6610,7 @@
       "element_naam": "Biogas [HWP-BG]",
       "library_ref": "BIB-SYS-HWP-V02",
       "multiplicity": 3,
-      "notes": "§2 — 1 per toren. PBS-tag sluit aan op Systeembeschrijving AWZI HWP v0.2 (januari 2025), Hoogheemraadschap van Rijnland (slibgistingsinstallatie / systeemgrenzen Bijlage A.1).; numerieke faaldata is aanvullende inschatting.",
+      "notes": "Â§2 â€” 1 per toren. PBS-tag sluit aan op Systeembeschrijving AWZI HWP v0.2 (januari 2025), Hoogheemraadschap van Rijnland (slibgistingsinstallatie / systeemgrenzen Bijlage A.1).; numerieke faaldata is aanvullende inschatting.",
       "object_naam": "AWZI Haarlem Waarderpolder",
       "ontwerpleeftijd_jaar": 25.0,
       "parent_pbs_id": "HWP-BG",
@@ -6618,7 +6618,7 @@
       "volgorde": 0
     },
     "HWP-BG-02": {
-      "aanname_leeftijd": "Combinatie renovatie (o.a. voorindikkers 2022–2024) en nieuwbouw fasering tot ca. 2032; per component representatief ontwerp/bouwjaar ingevuld conform demomodel.",
+      "aanname_leeftijd": "Combinatie renovatie (o.a. voorindikkers 2022â€“2024) en nieuwbouw fasering tot ca. 2032; per component representatief ontwerp/bouwjaar ingevuld conform demomodel.",
       "aanname_multipliciteit": "Exemplarenaantal en HWP-tag volgen Bijlage A.1 (of waterlijn Bijlage B waar expliciet gekoppeld aan HWP-BG-02).",
       "bouwdeel_naam": "Condensaatpotten",
       "bouwjaar": 2026,
@@ -6626,7 +6626,7 @@
       "element_naam": "Biogas [HWP-BG]",
       "library_ref": "BIB-SYS-HWP-V02",
       "multiplicity": 8,
-      "notes": "Bijlage A.1 — 6–10; demo 8. PBS-tag sluit aan op Systeembeschrijving AWZI HWP v0.2 (januari 2025), Hoogheemraadschap van Rijnland (slibgistingsinstallatie / systeemgrenzen Bijlage A.1).; numerieke faaldata is aanvullende inschatting.",
+      "notes": "Bijlage A.1 â€” 6â€“10; demo 8. PBS-tag sluit aan op Systeembeschrijving AWZI HWP v0.2 (januari 2025), Hoogheemraadschap van Rijnland (slibgistingsinstallatie / systeemgrenzen Bijlage A.1).; numerieke faaldata is aanvullende inschatting.",
       "object_naam": "AWZI Haarlem Waarderpolder",
       "ontwerpleeftijd_jaar": 20.0,
       "parent_pbs_id": "HWP-BG",
@@ -6634,7 +6634,7 @@
       "volgorde": 1
     },
     "HWP-BG-03": {
-      "aanname_leeftijd": "Combinatie renovatie (o.a. voorindikkers 2022–2024) en nieuwbouw fasering tot ca. 2032; per component representatief ontwerp/bouwjaar ingevuld conform demomodel.",
+      "aanname_leeftijd": "Combinatie renovatie (o.a. voorindikkers 2022â€“2024) en nieuwbouw fasering tot ca. 2032; per component representatief ontwerp/bouwjaar ingevuld conform demomodel.",
       "aanname_multipliciteit": "Exemplarenaantal en HWP-tag volgen Bijlage A.1 (of waterlijn Bijlage B waar expliciet gekoppeld aan HWP-BG-03).",
       "bouwdeel_naam": "Gashouder primair",
       "bouwjaar": 2026,
@@ -6642,7 +6642,7 @@
       "element_naam": "Biogas [HWP-BG]",
       "library_ref": "BIB-SYS-HWP-V02",
       "multiplicity": 1,
-      "notes": "§3.6 — 660 m3 PBS-tag sluit aan op Systeembeschrijving AWZI HWP v0.2 (januari 2025), Hoogheemraadschap van Rijnland (slibgistingsinstallatie / systeemgrenzen Bijlage A.1).; numerieke faaldata is aanvullende inschatting.",
+      "notes": "Â§3.6 â€” 660 m3 PBS-tag sluit aan op Systeembeschrijving AWZI HWP v0.2 (januari 2025), Hoogheemraadschap van Rijnland (slibgistingsinstallatie / systeemgrenzen Bijlage A.1).; numerieke faaldata is aanvullende inschatting.",
       "object_naam": "AWZI Haarlem Waarderpolder",
       "ontwerpleeftijd_jaar": 30.0,
       "parent_pbs_id": "HWP-BG",
@@ -6650,7 +6650,7 @@
       "volgorde": 2
     },
     "HWP-BG-04": {
-      "aanname_leeftijd": "Combinatie renovatie (o.a. voorindikkers 2022–2024) en nieuwbouw fasering tot ca. 2032; per component representatief ontwerp/bouwjaar ingevuld conform demomodel.",
+      "aanname_leeftijd": "Combinatie renovatie (o.a. voorindikkers 2022â€“2024) en nieuwbouw fasering tot ca. 2032; per component representatief ontwerp/bouwjaar ingevuld conform demomodel.",
       "aanname_multipliciteit": "Exemplarenaantal en HWP-tag volgen Bijlage A.1 (of waterlijn Bijlage B waar expliciet gekoppeld aan HWP-BG-04).",
       "bouwdeel_naam": "Gashouder secundair",
       "bouwjaar": 2026,
@@ -6658,7 +6658,7 @@
       "element_naam": "Biogas [HWP-BG]",
       "library_ref": "BIB-SYS-HWP-V02",
       "multiplicity": 1,
-      "notes": "§3.6 PBS-tag sluit aan op Systeembeschrijving AWZI HWP v0.2 (januari 2025), Hoogheemraadschap van Rijnland (slibgistingsinstallatie / systeemgrenzen Bijlage A.1).; numerieke faaldata is aanvullende inschatting.",
+      "notes": "Â§3.6 PBS-tag sluit aan op Systeembeschrijving AWZI HWP v0.2 (januari 2025), Hoogheemraadschap van Rijnland (slibgistingsinstallatie / systeemgrenzen Bijlage A.1).; numerieke faaldata is aanvullende inschatting.",
       "object_naam": "AWZI Haarlem Waarderpolder",
       "ontwerpleeftijd_jaar": 30.0,
       "parent_pbs_id": "HWP-BG",
@@ -6666,7 +6666,7 @@
       "volgorde": 3
     },
     "HWP-BG-05": {
-      "aanname_leeftijd": "Combinatie renovatie (o.a. voorindikkers 2022–2024) en nieuwbouw fasering tot ca. 2032; per component representatief ontwerp/bouwjaar ingevuld conform demomodel.",
+      "aanname_leeftijd": "Combinatie renovatie (o.a. voorindikkers 2022â€“2024) en nieuwbouw fasering tot ca. 2032; per component representatief ontwerp/bouwjaar ingevuld conform demomodel.",
       "aanname_multipliciteit": "Exemplarenaantal en HWP-tag volgen Bijlage A.1 (of waterlijn Bijlage B waar expliciet gekoppeld aan HWP-BG-05).",
       "bouwdeel_naam": "Overdrukbeveiligingen",
       "bouwjaar": 2026,
@@ -6682,7 +6682,7 @@
       "volgorde": 4
     },
     "HWP-BG-06": {
-      "aanname_leeftijd": "Combinatie renovatie (o.a. voorindikkers 2022–2024) en nieuwbouw fasering tot ca. 2032; per component representatief ontwerp/bouwjaar ingevuld conform demomodel.",
+      "aanname_leeftijd": "Combinatie renovatie (o.a. voorindikkers 2022â€“2024) en nieuwbouw fasering tot ca. 2032; per component representatief ontwerp/bouwjaar ingevuld conform demomodel.",
       "aanname_multipliciteit": "Exemplarenaantal en HWP-tag volgen Bijlage A.1 (of waterlijn Bijlage B waar expliciet gekoppeld aan HWP-BG-06).",
       "bouwdeel_naam": "Onderdrukbeveiligingen",
       "bouwjaar": 2026,
@@ -6698,7 +6698,7 @@
       "volgorde": 5
     },
     "HWP-BG-07": {
-      "aanname_leeftijd": "Combinatie renovatie (o.a. voorindikkers 2022–2024) en nieuwbouw fasering tot ca. 2032; per component representatief ontwerp/bouwjaar ingevuld conform demomodel.",
+      "aanname_leeftijd": "Combinatie renovatie (o.a. voorindikkers 2022â€“2024) en nieuwbouw fasering tot ca. 2032; per component representatief ontwerp/bouwjaar ingevuld conform demomodel.",
       "aanname_multipliciteit": "Exemplarenaantal en HWP-tag volgen Bijlage A.1 (of waterlijn Bijlage B waar expliciet gekoppeld aan HWP-BG-07).",
       "bouwdeel_naam": "Vlamkerenden (PGS 25)",
       "bouwjaar": 2026,
@@ -6706,7 +6706,7 @@
       "element_naam": "Biogas [HWP-BG]",
       "library_ref": "BIB-SYS-HWP-V02",
       "multiplicity": 5,
-      "notes": "§2 PBS-tag sluit aan op Systeembeschrijving AWZI HWP v0.2 (januari 2025), Hoogheemraadschap van Rijnland (slibgistingsinstallatie / systeemgrenzen Bijlage A.1).; numerieke faaldata is aanvullende inschatting.",
+      "notes": "Â§2 PBS-tag sluit aan op Systeembeschrijving AWZI HWP v0.2 (januari 2025), Hoogheemraadschap van Rijnland (slibgistingsinstallatie / systeemgrenzen Bijlage A.1).; numerieke faaldata is aanvullende inschatting.",
       "object_naam": "AWZI Haarlem Waarderpolder",
       "ontwerpleeftijd_jaar": 25.0,
       "parent_pbs_id": "HWP-BG",
@@ -6714,7 +6714,7 @@
       "volgorde": 6
     },
     "HWP-BG-08": {
-      "aanname_leeftijd": "Combinatie renovatie (o.a. voorindikkers 2022–2024) en nieuwbouw fasering tot ca. 2032; per component representatief ontwerp/bouwjaar ingevuld conform demomodel.",
+      "aanname_leeftijd": "Combinatie renovatie (o.a. voorindikkers 2022â€“2024) en nieuwbouw fasering tot ca. 2032; per component representatief ontwerp/bouwjaar ingevuld conform demomodel.",
       "aanname_multipliciteit": "Exemplarenaantal en HWP-tag volgen Bijlage A.1 (of waterlijn Bijlage B waar expliciet gekoppeld aan HWP-BG-08).",
       "bouwdeel_naam": "Gasfakkel / noodafblaas",
       "bouwjaar": 2026,
@@ -6722,7 +6722,7 @@
       "element_naam": "Biogas [HWP-BG]",
       "library_ref": "BIB-SYS-HWP-V02",
       "multiplicity": 2,
-      "notes": "§3.6 PBS-tag sluit aan op Systeembeschrijving AWZI HWP v0.2 (januari 2025), Hoogheemraadschap van Rijnland (slibgistingsinstallatie / systeemgrenzen Bijlage A.1).; numerieke faaldata is aanvullende inschatting.",
+      "notes": "Â§3.6 PBS-tag sluit aan op Systeembeschrijving AWZI HWP v0.2 (januari 2025), Hoogheemraadschap van Rijnland (slibgistingsinstallatie / systeemgrenzen Bijlage A.1).; numerieke faaldata is aanvullende inschatting.",
       "object_naam": "AWZI Haarlem Waarderpolder",
       "ontwerpleeftijd_jaar": 22.0,
       "parent_pbs_id": "HWP-BG",
@@ -6730,7 +6730,7 @@
       "volgorde": 7
     },
     "HWP-BG-09": {
-      "aanname_leeftijd": "Combinatie renovatie (o.a. voorindikkers 2022–2024) en nieuwbouw fasering tot ca. 2032; per component representatief ontwerp/bouwjaar ingevuld conform demomodel.",
+      "aanname_leeftijd": "Combinatie renovatie (o.a. voorindikkers 2022â€“2024) en nieuwbouw fasering tot ca. 2032; per component representatief ontwerp/bouwjaar ingevuld conform demomodel.",
       "aanname_multipliciteit": "Exemplarenaantal en HWP-tag volgen Bijlage A.1 (of waterlijn Bijlage B waar expliciet gekoppeld aan HWP-BG-09).",
       "bouwdeel_naam": "Gascompressoren biogas",
       "bouwjaar": 2026,
@@ -6746,7 +6746,7 @@
       "volgorde": 8
     },
     "HWP-BG-10": {
-      "aanname_leeftijd": "Combinatie renovatie (o.a. voorindikkers 2022–2024) en nieuwbouw fasering tot ca. 2032; per component representatief ontwerp/bouwjaar ingevuld conform demomodel.",
+      "aanname_leeftijd": "Combinatie renovatie (o.a. voorindikkers 2022â€“2024) en nieuwbouw fasering tot ca. 2032; per component representatief ontwerp/bouwjaar ingevuld conform demomodel.",
       "aanname_multipliciteit": "Exemplarenaantal en HWP-tag volgen Bijlage A.1 (of waterlijn Bijlage B waar expliciet gekoppeld aan HWP-BG-10).",
       "bouwdeel_naam": "Condensaatafvoersysteem",
       "bouwjaar": 2026,
@@ -6754,7 +6754,7 @@
       "element_naam": "Biogas [HWP-BG]",
       "library_ref": "BIB-SYS-HWP-V02",
       "multiplicity": 1,
-      "notes": "§2 PBS-tag sluit aan op Systeembeschrijving AWZI HWP v0.2 (januari 2025), Hoogheemraadschap van Rijnland (slibgistingsinstallatie / systeemgrenzen Bijlage A.1).; numerieke faaldata is aanvullende inschatting.",
+      "notes": "Â§2 PBS-tag sluit aan op Systeembeschrijving AWZI HWP v0.2 (januari 2025), Hoogheemraadschap van Rijnland (slibgistingsinstallatie / systeemgrenzen Bijlage A.1).; numerieke faaldata is aanvullende inschatting.",
       "object_naam": "AWZI Haarlem Waarderpolder",
       "ontwerpleeftijd_jaar": 20.0,
       "parent_pbs_id": "HWP-BG",
@@ -6762,15 +6762,15 @@
       "volgorde": 9
     },
     "HWP-BS": {
-      "aanname_leeftijd": "Combinatie renovatie (o.a. voorindikkers 2022–2024) en nieuwbouw fasering tot ca. 2032; per component representatief ontwerp/bouwjaar ingevuld conform demomodel.",
+      "aanname_leeftijd": "Combinatie renovatie (o.a. voorindikkers 2022â€“2024) en nieuwbouw fasering tot ca. 2032; per component representatief ontwerp/bouwjaar ingevuld conform demomodel.",
       "aanname_multipliciteit": "Exemplarenaantal en HWP-tag volgen Bijlage A.1 (of waterlijn Bijlage B waar expliciet gekoppeld aan HWP-BS-01).",
-      "bouwdeel_naam": "Besturing — subsysteem HWP-BS",
+      "bouwdeel_naam": "Besturing â€” subsysteem HWP-BS",
       "bouwjaar": 2026,
       "component_naam": "",
       "element_naam": "Besturing [HWP-BS]",
       "library_ref": "BIB-SYS-HWP-V02",
       "multiplicity": 1,
-      "notes": "Subsysteemknoop voor HWP-BS-01, HWP-BS-02, … (hiërarchie demomodel). Kind-PBS-items bevatten de gedetailleerde bouwdelen.",
+      "notes": "Subsysteemknoop voor HWP-BS-01, HWP-BS-02, â€¦ (hiÃ«rarchie demomodel). Kind-PBS-items bevatten de gedetailleerde bouwdelen.",
       "object_naam": "AWZI Haarlem Waarderpolder",
       "ontwerpleeftijd_jaar": 0.0,
       "parent_pbs_id": "PBS-AWZI-000",
@@ -6778,7 +6778,7 @@
       "volgorde": 1
     },
     "HWP-BS-01": {
-      "aanname_leeftijd": "Combinatie renovatie (o.a. voorindikkers 2022–2024) en nieuwbouw fasering tot ca. 2032; per component representatief ontwerp/bouwjaar ingevuld conform demomodel.",
+      "aanname_leeftijd": "Combinatie renovatie (o.a. voorindikkers 2022â€“2024) en nieuwbouw fasering tot ca. 2032; per component representatief ontwerp/bouwjaar ingevuld conform demomodel.",
       "aanname_multipliciteit": "Exemplarenaantal en HWP-tag volgen Bijlage A.1 (of waterlijn Bijlage B waar expliciet gekoppeld aan HWP-BS-01).",
       "bouwdeel_naam": "PLC-kasten sliblijn",
       "bouwjaar": 2026,
@@ -6786,7 +6786,7 @@
       "element_naam": "Besturing [HWP-BS]",
       "library_ref": "BIB-SYS-HWP-V02",
       "multiplicity": 3,
-      "notes": "§2 HWP-BS-01. PBS-tag sluit aan op Systeembeschrijving AWZI HWP v0.2 (januari 2025), Hoogheemraadschap van Rijnland (slibgistingsinstallatie / systeemgrenzen Bijlage A.1).; numerieke faaldata is aanvullende inschatting.",
+      "notes": "Â§2 HWP-BS-01. PBS-tag sluit aan op Systeembeschrijving AWZI HWP v0.2 (januari 2025), Hoogheemraadschap van Rijnland (slibgistingsinstallatie / systeemgrenzen Bijlage A.1).; numerieke faaldata is aanvullende inschatting.",
       "object_naam": "AWZI Haarlem Waarderpolder",
       "ontwerpleeftijd_jaar": 12.0,
       "parent_pbs_id": "HWP-BS",
@@ -6794,7 +6794,7 @@
       "volgorde": 0
     },
     "HWP-BS-02": {
-      "aanname_leeftijd": "Combinatie renovatie (o.a. voorindikkers 2022–2024) en nieuwbouw fasering tot ca. 2032; per component representatief ontwerp/bouwjaar ingevuld conform demomodel.",
+      "aanname_leeftijd": "Combinatie renovatie (o.a. voorindikkers 2022â€“2024) en nieuwbouw fasering tot ca. 2032; per component representatief ontwerp/bouwjaar ingevuld conform demomodel.",
       "aanname_multipliciteit": "Exemplarenaantal en HWP-tag volgen Bijlage A.1 (of waterlijn Bijlage B waar expliciet gekoppeld aan HWP-BS-02).",
       "bouwdeel_naam": "SCADA-server redundant",
       "bouwjaar": 2026,
@@ -6802,7 +6802,7 @@
       "element_naam": "Besturing [HWP-BS]",
       "library_ref": "BIB-SYS-HWP-V02",
       "multiplicity": 2,
-      "notes": "§6 bron ICT Group. PBS-tag sluit aan op Systeembeschrijving AWZI HWP v0.2 (januari 2025), Hoogheemraadschap van Rijnland (slibgistingsinstallatie / systeemgrenzen Bijlage A.1).; numerieke faaldata is aanvullende inschatting.",
+      "notes": "Â§6 bron ICT Group. PBS-tag sluit aan op Systeembeschrijving AWZI HWP v0.2 (januari 2025), Hoogheemraadschap van Rijnland (slibgistingsinstallatie / systeemgrenzen Bijlage A.1).; numerieke faaldata is aanvullende inschatting.",
       "object_naam": "AWZI Haarlem Waarderpolder",
       "ontwerpleeftijd_jaar": 12.0,
       "parent_pbs_id": "HWP-BS",
@@ -6810,7 +6810,7 @@
       "volgorde": 1
     },
     "HWP-BS-03": {
-      "aanname_leeftijd": "Combinatie renovatie (o.a. voorindikkers 2022–2024) en nieuwbouw fasering tot ca. 2032; per component representatief ontwerp/bouwjaar ingevuld conform demomodel.",
+      "aanname_leeftijd": "Combinatie renovatie (o.a. voorindikkers 2022â€“2024) en nieuwbouw fasering tot ca. 2032; per component representatief ontwerp/bouwjaar ingevuld conform demomodel.",
       "aanname_multipliciteit": "Exemplarenaantal en HWP-tag volgen Bijlage A.1 (of waterlijn Bijlage B waar expliciet gekoppeld aan HWP-BS-03).",
       "bouwdeel_naam": "HMI bedienpanelen",
       "bouwjaar": 2026,
@@ -6818,7 +6818,7 @@
       "element_naam": "Besturing [HWP-BS]",
       "library_ref": "BIB-SYS-HWP-V02",
       "multiplicity": 4,
-      "notes": "§2. PBS-tag sluit aan op Systeembeschrijving AWZI HWP v0.2 (januari 2025), Hoogheemraadschap van Rijnland (slibgistingsinstallatie / systeemgrenzen Bijlage A.1).; numerieke faaldata is aanvullende inschatting.",
+      "notes": "Â§2. PBS-tag sluit aan op Systeembeschrijving AWZI HWP v0.2 (januari 2025), Hoogheemraadschap van Rijnland (slibgistingsinstallatie / systeemgrenzen Bijlage A.1).; numerieke faaldata is aanvullende inschatting.",
       "object_naam": "AWZI Haarlem Waarderpolder",
       "ontwerpleeftijd_jaar": 12.0,
       "parent_pbs_id": "HWP-BS",
@@ -6826,7 +6826,7 @@
       "volgorde": 2
     },
     "HWP-BS-04": {
-      "aanname_leeftijd": "Combinatie renovatie (o.a. voorindikkers 2022–2024) en nieuwbouw fasering tot ca. 2032; per component representatief ontwerp/bouwjaar ingevuld conform demomodel.",
+      "aanname_leeftijd": "Combinatie renovatie (o.a. voorindikkers 2022â€“2024) en nieuwbouw fasering tot ca. 2032; per component representatief ontwerp/bouwjaar ingevuld conform demomodel.",
       "aanname_multipliciteit": "Exemplarenaantal en HWP-tag volgen Bijlage A.1 (of waterlijn Bijlage B waar expliciet gekoppeld aan HWP-BS-04).",
       "bouwdeel_naam": "Netwerkinfrastructuur (industrial ethernet)",
       "bouwjaar": 2026,
@@ -6834,7 +6834,7 @@
       "element_naam": "Besturing [HWP-BS]",
       "library_ref": "BIB-SYS-HWP-V02",
       "multiplicity": 1,
-      "notes": "§4.4. PBS-tag sluit aan op Systeembeschrijving AWZI HWP v0.2 (januari 2025), Hoogheemraadschap van Rijnland (slibgistingsinstallatie / systeemgrenzen Bijlage A.1).; numerieke faaldata is aanvullende inschatting.",
+      "notes": "Â§4.4. PBS-tag sluit aan op Systeembeschrijving AWZI HWP v0.2 (januari 2025), Hoogheemraadschap van Rijnland (slibgistingsinstallatie / systeemgrenzen Bijlage A.1).; numerieke faaldata is aanvullende inschatting.",
       "object_naam": "AWZI Haarlem Waarderpolder",
       "ontwerpleeftijd_jaar": 14.0,
       "parent_pbs_id": "HWP-BS",
@@ -6842,7 +6842,7 @@
       "volgorde": 3
     },
     "HWP-BS-05": {
-      "aanname_leeftijd": "Combinatie renovatie (o.a. voorindikkers 2022–2024) en nieuwbouw fasering tot ca. 2032; per component representatief ontwerp/bouwjaar ingevuld conform demomodel.",
+      "aanname_leeftijd": "Combinatie renovatie (o.a. voorindikkers 2022â€“2024) en nieuwbouw fasering tot ca. 2032; per component representatief ontwerp/bouwjaar ingevuld conform demomodel.",
       "aanname_multipliciteit": "Exemplarenaantal en HWP-tag volgen Bijlage A.1 (of waterlijn Bijlage B waar expliciet gekoppeld aan HWP-BS-05).",
       "bouwdeel_naam": "UPS-systemen kritieke lasten",
       "bouwjaar": 2026,
@@ -6850,7 +6850,7 @@
       "element_naam": "Besturing [HWP-BS]",
       "library_ref": "BIB-SYS-HWP-V02",
       "multiplicity": 4,
-      "notes": "§2. PBS-tag sluit aan op Systeembeschrijving AWZI HWP v0.2 (januari 2025), Hoogheemraadschap van Rijnland (slibgistingsinstallatie / systeemgrenzen Bijlage A.1).; numerieke faaldata is aanvullende inschatting.",
+      "notes": "Â§2. PBS-tag sluit aan op Systeembeschrijving AWZI HWP v0.2 (januari 2025), Hoogheemraadschap van Rijnland (slibgistingsinstallatie / systeemgrenzen Bijlage A.1).; numerieke faaldata is aanvullende inschatting.",
       "object_naam": "AWZI Haarlem Waarderpolder",
       "ontwerpleeftijd_jaar": 12.0,
       "parent_pbs_id": "HWP-BS",
@@ -6858,15 +6858,15 @@
       "volgorde": 4
     },
     "HWP-DS": {
-      "aanname_leeftijd": "Combinatie renovatie (o.a. voorindikkers 2022–2024) en nieuwbouw fasering tot ca. 2032; per component representatief ontwerp/bouwjaar ingevuld conform demomodel.",
+      "aanname_leeftijd": "Combinatie renovatie (o.a. voorindikkers 2022â€“2024) en nieuwbouw fasering tot ca. 2032; per component representatief ontwerp/bouwjaar ingevuld conform demomodel.",
       "aanname_multipliciteit": "Exemplarenaantal en HWP-tag volgen Bijlage A.1 (of waterlijn Bijlage B waar expliciet gekoppeld aan HWP-DS-01).",
-      "bouwdeel_naam": "Deelstroom — subsysteem HWP-DS",
+      "bouwdeel_naam": "Deelstroom â€” subsysteem HWP-DS",
       "bouwjaar": 2026,
       "component_naam": "",
       "element_naam": "Deelstroom [HWP-DS]",
       "library_ref": "BIB-SYS-HWP-V02",
       "multiplicity": 1,
-      "notes": "Subsysteemknoop voor HWP-DS-01, HWP-DS-02, … (hiërarchie demomodel). Kind-PBS-items bevatten de gedetailleerde bouwdelen.",
+      "notes": "Subsysteemknoop voor HWP-DS-01, HWP-DS-02, â€¦ (hiÃ«rarchie demomodel). Kind-PBS-items bevatten de gedetailleerde bouwdelen.",
       "object_naam": "AWZI Haarlem Waarderpolder",
       "ontwerpleeftijd_jaar": 0.0,
       "parent_pbs_id": "PBS-AWZI-000",
@@ -6874,7 +6874,7 @@
       "volgorde": 2
     },
     "HWP-DS-01": {
-      "aanname_leeftijd": "Combinatie renovatie (o.a. voorindikkers 2022–2024) en nieuwbouw fasering tot ca. 2032; per component representatief ontwerp/bouwjaar ingevuld conform demomodel.",
+      "aanname_leeftijd": "Combinatie renovatie (o.a. voorindikkers 2022â€“2024) en nieuwbouw fasering tot ca. 2032; per component representatief ontwerp/bouwjaar ingevuld conform demomodel.",
       "aanname_multipliciteit": "Exemplarenaantal en HWP-tag volgen Bijlage A.1 (of waterlijn Bijlage B waar expliciet gekoppeld aan HWP-DS-01).",
       "bouwdeel_naam": "Luchtstripper rejectwater",
       "bouwjaar": 2026,
@@ -6882,7 +6882,7 @@
       "element_naam": "Deelstroom [HWP-DS]",
       "library_ref": "BIB-SYS-HWP-V02",
       "multiplicity": 1,
-      "notes": "§3.8 — NH4-strip. PBS-tag sluit aan op Systeembeschrijving AWZI HWP v0.2 (januari 2025), Hoogheemraadschap van Rijnland (slibgistingsinstallatie / systeemgrenzen Bijlage A.1).; numerieke faaldata is aanvullende inschatting.",
+      "notes": "Â§3.8 â€” NH4-strip. PBS-tag sluit aan op Systeembeschrijving AWZI HWP v0.2 (januari 2025), Hoogheemraadschap van Rijnland (slibgistingsinstallatie / systeemgrenzen Bijlage A.1).; numerieke faaldata is aanvullende inschatting.",
       "object_naam": "AWZI Haarlem Waarderpolder",
       "ontwerpleeftijd_jaar": 22.0,
       "parent_pbs_id": "HWP-DS",
@@ -6890,7 +6890,7 @@
       "volgorde": 0
     },
     "HWP-DS-02": {
-      "aanname_leeftijd": "Combinatie renovatie (o.a. voorindikkers 2022–2024) en nieuwbouw fasering tot ca. 2032; per component representatief ontwerp/bouwjaar ingevuld conform demomodel.",
+      "aanname_leeftijd": "Combinatie renovatie (o.a. voorindikkers 2022â€“2024) en nieuwbouw fasering tot ca. 2032; per component representatief ontwerp/bouwjaar ingevuld conform demomodel.",
       "aanname_multipliciteit": "Exemplarenaantal en HWP-tag volgen Bijlage A.1 (of waterlijn Bijlage B waar expliciet gekoppeld aan HWP-DS-02).",
       "bouwdeel_naam": "Luchtwasser / MAP-zuur",
       "bouwjaar": 2026,
@@ -6898,7 +6898,7 @@
       "element_naam": "Deelstroom [HWP-DS]",
       "library_ref": "BIB-SYS-HWP-V02",
       "multiplicity": 1,
-      "notes": "§3.8.3 ammoniumsulfaat. PBS-tag sluit aan op Systeembeschrijving AWZI HWP v0.2 (januari 2025), Hoogheemraadschap van Rijnland (slibgistingsinstallatie / systeemgrenzen Bijlage A.1).; numerieke faaldata is aanvullende inschatting.",
+      "notes": "Â§3.8.3 ammoniumsulfaat. PBS-tag sluit aan op Systeembeschrijving AWZI HWP v0.2 (januari 2025), Hoogheemraadschap van Rijnland (slibgistingsinstallatie / systeemgrenzen Bijlage A.1).; numerieke faaldata is aanvullende inschatting.",
       "object_naam": "AWZI Haarlem Waarderpolder",
       "ontwerpleeftijd_jaar": 22.0,
       "parent_pbs_id": "HWP-DS",
@@ -6906,7 +6906,7 @@
       "volgorde": 1
     },
     "HWP-DS-03": {
-      "aanname_leeftijd": "Combinatie renovatie (o.a. voorindikkers 2022–2024) en nieuwbouw fasering tot ca. 2032; per component representatief ontwerp/bouwjaar ingevuld conform demomodel.",
+      "aanname_leeftijd": "Combinatie renovatie (o.a. voorindikkers 2022â€“2024) en nieuwbouw fasering tot ca. 2032; per component representatief ontwerp/bouwjaar ingevuld conform demomodel.",
       "aanname_multipliciteit": "Exemplarenaantal en HWP-tag volgen Bijlage A.1 (of waterlijn Bijlage B waar expliciet gekoppeld aan HWP-DS-03).",
       "bouwdeel_naam": "Stripper-voedingspomp",
       "bouwjaar": 2026,
@@ -6922,15 +6922,15 @@
       "volgorde": 2
     },
     "HWP-DS-04": {
-      "aanname_leeftijd": "Combinatie renovatie (o.a. voorindikkers 2022–2024) en nieuwbouw fasering tot ca. 2032; per component representatief ontwerp/bouwjaar ingevuld conform demomodel.",
+      "aanname_leeftijd": "Combinatie renovatie (o.a. voorindikkers 2022â€“2024) en nieuwbouw fasering tot ca. 2032; per component representatief ontwerp/bouwjaar ingevuld conform demomodel.",
       "aanname_multipliciteit": "Exemplarenaantal en HWP-tag volgen Bijlage A.1 (of waterlijn Bijlage B waar expliciet gekoppeld aan HWP-DS-04).",
-      "bouwdeel_naam": "Chemicaliëndosering NaOH/H2SO4",
+      "bouwdeel_naam": "ChemicaliÃ«ndosering NaOH/H2SO4",
       "bouwjaar": 2026,
       "component_naam": "",
       "element_naam": "Deelstroom [HWP-DS]",
       "library_ref": "BIB-SYS-HWP-V02",
       "multiplicity": 1,
-      "notes": "§3.8. PBS-tag sluit aan op Systeembeschrijving AWZI HWP v0.2 (januari 2025), Hoogheemraadschap van Rijnland (slibgistingsinstallatie / systeemgrenzen Bijlage A.1).; numerieke faaldata is aanvullende inschatting.",
+      "notes": "Â§3.8. PBS-tag sluit aan op Systeembeschrijving AWZI HWP v0.2 (januari 2025), Hoogheemraadschap van Rijnland (slibgistingsinstallatie / systeemgrenzen Bijlage A.1).; numerieke faaldata is aanvullende inschatting.",
       "object_naam": "AWZI Haarlem Waarderpolder",
       "ontwerpleeftijd_jaar": 15.0,
       "parent_pbs_id": "HWP-DS",
@@ -6938,7 +6938,7 @@
       "volgorde": 3
     },
     "HWP-DS-05": {
-      "aanname_leeftijd": "Combinatie renovatie (o.a. voorindikkers 2022–2024) en nieuwbouw fasering tot ca. 2032; per component representatief ontwerp/bouwjaar ingevuld conform demomodel.",
+      "aanname_leeftijd": "Combinatie renovatie (o.a. voorindikkers 2022â€“2024) en nieuwbouw fasering tot ca. 2032; per component representatief ontwerp/bouwjaar ingevuld conform demomodel.",
       "aanname_multipliciteit": "Exemplarenaantal en HWP-tag volgen Bijlage A.1 (of waterlijn Bijlage B waar expliciet gekoppeld aan HWP-DS-05).",
       "bouwdeel_naam": "Effluent-/rejectbuffer deelstroom",
       "bouwjaar": 2026,
@@ -6946,7 +6946,7 @@
       "element_naam": "Deelstroom [HWP-DS]",
       "library_ref": "BIB-SYS-HWP-V02",
       "multiplicity": 1,
-      "notes": "§3.8. PBS-tag sluit aan op Systeembeschrijving AWZI HWP v0.2 (januari 2025), Hoogheemraadschap van Rijnland (slibgistingsinstallatie / systeemgrenzen Bijlage A.1).; numerieke faaldata is aanvullende inschatting.",
+      "notes": "Â§3.8. PBS-tag sluit aan op Systeembeschrijving AWZI HWP v0.2 (januari 2025), Hoogheemraadschap van Rijnland (slibgistingsinstallatie / systeemgrenzen Bijlage A.1).; numerieke faaldata is aanvullende inschatting.",
       "object_naam": "AWZI Haarlem Waarderpolder",
       "ontwerpleeftijd_jaar": 30.0,
       "parent_pbs_id": "HWP-DS",
@@ -6954,15 +6954,15 @@
       "volgorde": 4
     },
     "HWP-GG": {
-      "aanname_leeftijd": "Combinatie renovatie (o.a. voorindikkers 2022–2024) en nieuwbouw fasering tot ca. 2032; per component representatief ontwerp/bouwjaar ingevuld conform demomodel.",
+      "aanname_leeftijd": "Combinatie renovatie (o.a. voorindikkers 2022â€“2024) en nieuwbouw fasering tot ca. 2032; per component representatief ontwerp/bouwjaar ingevuld conform demomodel.",
       "aanname_multipliciteit": "Exemplarenaantal en HWP-tag volgen Bijlage A.1 (of waterlijn Bijlage B waar expliciet gekoppeld aan HWP-GG-01).",
-      "bouwdeel_naam": "Groengas — subsysteem HWP-GG",
+      "bouwdeel_naam": "Groengas â€” subsysteem HWP-GG",
       "bouwjaar": 2026,
       "component_naam": "",
       "element_naam": "Groengas [HWP-GG]",
       "library_ref": "BIB-SYS-HWP-V02",
       "multiplicity": 1,
-      "notes": "Subsysteemknoop voor HWP-GG-01, HWP-GG-02, … (hiërarchie demomodel). Kind-PBS-items bevatten de gedetailleerde bouwdelen.",
+      "notes": "Subsysteemknoop voor HWP-GG-01, HWP-GG-02, â€¦ (hiÃ«rarchie demomodel). Kind-PBS-items bevatten de gedetailleerde bouwdelen.",
       "object_naam": "AWZI Haarlem Waarderpolder",
       "ontwerpleeftijd_jaar": 0.0,
       "parent_pbs_id": "PBS-AWZI-000",
@@ -6970,7 +6970,7 @@
       "volgorde": 3
     },
     "HWP-GG-01": {
-      "aanname_leeftijd": "Combinatie renovatie (o.a. voorindikkers 2022–2024) en nieuwbouw fasering tot ca. 2032; per component representatief ontwerp/bouwjaar ingevuld conform demomodel.",
+      "aanname_leeftijd": "Combinatie renovatie (o.a. voorindikkers 2022â€“2024) en nieuwbouw fasering tot ca. 2032; per component representatief ontwerp/bouwjaar ingevuld conform demomodel.",
       "aanname_multipliciteit": "Exemplarenaantal en HWP-tag volgen Bijlage A.1 (of waterlijn Bijlage B waar expliciet gekoppeld aan HWP-GG-01).",
       "bouwdeel_naam": "Ontzwavelingsinstallatie biogas",
       "bouwjaar": 2026,
@@ -6978,7 +6978,7 @@
       "element_naam": "Groengas [HWP-GG]",
       "library_ref": "BIB-SYS-HWP-V02",
       "multiplicity": 1,
-      "notes": "§3.7.2 PBS-tag sluit aan op Systeembeschrijving AWZI HWP v0.2 (januari 2025), Hoogheemraadschap van Rijnland (slibgistingsinstallatie / systeemgrenzen Bijlage A.1).; numerieke faaldata is aanvullende inschatting.",
+      "notes": "Â§3.7.2 PBS-tag sluit aan op Systeembeschrijving AWZI HWP v0.2 (januari 2025), Hoogheemraadschap van Rijnland (slibgistingsinstallatie / systeemgrenzen Bijlage A.1).; numerieke faaldata is aanvullende inschatting.",
       "object_naam": "AWZI Haarlem Waarderpolder",
       "ontwerpleeftijd_jaar": 18.0,
       "parent_pbs_id": "HWP-GG",
@@ -6986,7 +6986,7 @@
       "volgorde": 0
     },
     "HWP-GG-02": {
-      "aanname_leeftijd": "Combinatie renovatie (o.a. voorindikkers 2022–2024) en nieuwbouw fasering tot ca. 2032; per component representatief ontwerp/bouwjaar ingevuld conform demomodel.",
+      "aanname_leeftijd": "Combinatie renovatie (o.a. voorindikkers 2022â€“2024) en nieuwbouw fasering tot ca. 2032; per component representatief ontwerp/bouwjaar ingevuld conform demomodel.",
       "aanname_multipliciteit": "Exemplarenaantal en HWP-tag volgen Bijlage A.1 (of waterlijn Bijlage B waar expliciet gekoppeld aan HWP-GG-02).",
       "bouwdeel_naam": "Gasopwerkingsinstallatie (CO2-scheiding)",
       "bouwjaar": 2026,
@@ -6994,7 +6994,7 @@
       "element_naam": "Groengas [HWP-GG]",
       "library_ref": "BIB-SYS-HWP-V02",
       "multiplicity": 1,
-      "notes": "§3.7.3 PBS-tag sluit aan op Systeembeschrijving AWZI HWP v0.2 (januari 2025), Hoogheemraadschap van Rijnland (slibgistingsinstallatie / systeemgrenzen Bijlage A.1).; numerieke faaldata is aanvullende inschatting.",
+      "notes": "Â§3.7.3 PBS-tag sluit aan op Systeembeschrijving AWZI HWP v0.2 (januari 2025), Hoogheemraadschap van Rijnland (slibgistingsinstallatie / systeemgrenzen Bijlage A.1).; numerieke faaldata is aanvullende inschatting.",
       "object_naam": "AWZI Haarlem Waarderpolder",
       "ontwerpleeftijd_jaar": 18.0,
       "parent_pbs_id": "HWP-GG",
@@ -7002,7 +7002,7 @@
       "volgorde": 1
     },
     "HWP-GG-03": {
-      "aanname_leeftijd": "Combinatie renovatie (o.a. voorindikkers 2022–2024) en nieuwbouw fasering tot ca. 2032; per component representatief ontwerp/bouwjaar ingevuld conform demomodel.",
+      "aanname_leeftijd": "Combinatie renovatie (o.a. voorindikkers 2022â€“2024) en nieuwbouw fasering tot ca. 2032; per component representatief ontwerp/bouwjaar ingevuld conform demomodel.",
       "aanname_multipliciteit": "Exemplarenaantal en HWP-tag volgen Bijlage A.1 (of waterlijn Bijlage B waar expliciet gekoppeld aan HWP-GG-03).",
       "bouwdeel_naam": "Compressoren groen gas",
       "bouwjaar": 2026,
@@ -7010,7 +7010,7 @@
       "element_naam": "Groengas [HWP-GG]",
       "library_ref": "BIB-SYS-HWP-V02",
       "multiplicity": 2,
-      "notes": "Bijlage A.1 — 1+1 PBS-tag sluit aan op Systeembeschrijving AWZI HWP v0.2 (januari 2025), Hoogheemraadschap van Rijnland (slibgistingsinstallatie / systeemgrenzen Bijlage A.1).; numerieke faaldata is aanvullende inschatting.",
+      "notes": "Bijlage A.1 â€” 1+1 PBS-tag sluit aan op Systeembeschrijving AWZI HWP v0.2 (januari 2025), Hoogheemraadschap van Rijnland (slibgistingsinstallatie / systeemgrenzen Bijlage A.1).; numerieke faaldata is aanvullende inschatting.",
       "object_naam": "AWZI Haarlem Waarderpolder",
       "ontwerpleeftijd_jaar": 16.0,
       "parent_pbs_id": "HWP-GG",
@@ -7018,7 +7018,7 @@
       "volgorde": 2
     },
     "HWP-GG-04": {
-      "aanname_leeftijd": "Combinatie renovatie (o.a. voorindikkers 2022–2024) en nieuwbouw fasering tot ca. 2032; per component representatief ontwerp/bouwjaar ingevuld conform demomodel.",
+      "aanname_leeftijd": "Combinatie renovatie (o.a. voorindikkers 2022â€“2024) en nieuwbouw fasering tot ca. 2032; per component representatief ontwerp/bouwjaar ingevuld conform demomodel.",
       "aanname_multipliciteit": "Exemplarenaantal en HWP-tag volgen Bijlage A.1 (of waterlijn Bijlage B waar expliciet gekoppeld aan HWP-GG-04).",
       "bouwdeel_naam": "Kwaliteitsanalysator groen gas",
       "bouwjaar": 2026,
@@ -7026,7 +7026,7 @@
       "element_naam": "Groengas [HWP-GG]",
       "library_ref": "BIB-SYS-HWP-V02",
       "multiplicity": 1,
-      "notes": "§3.7 PBS-tag sluit aan op Systeembeschrijving AWZI HWP v0.2 (januari 2025), Hoogheemraadschap van Rijnland (slibgistingsinstallatie / systeemgrenzen Bijlage A.1).; numerieke faaldata is aanvullende inschatting.",
+      "notes": "Â§3.7 PBS-tag sluit aan op Systeembeschrijving AWZI HWP v0.2 (januari 2025), Hoogheemraadschap van Rijnland (slibgistingsinstallatie / systeemgrenzen Bijlage A.1).; numerieke faaldata is aanvullende inschatting.",
       "object_naam": "AWZI Haarlem Waarderpolder",
       "ontwerpleeftijd_jaar": 12.0,
       "parent_pbs_id": "HWP-GG",
@@ -7034,7 +7034,7 @@
       "volgorde": 3
     },
     "HWP-GG-05": {
-      "aanname_leeftijd": "Combinatie renovatie (o.a. voorindikkers 2022–2024) en nieuwbouw fasering tot ca. 2032; per component representatief ontwerp/bouwjaar ingevuld conform demomodel.",
+      "aanname_leeftijd": "Combinatie renovatie (o.a. voorindikkers 2022â€“2024) en nieuwbouw fasering tot ca. 2032; per component representatief ontwerp/bouwjaar ingevuld conform demomodel.",
       "aanname_multipliciteit": "Exemplarenaantal en HWP-tag volgen Bijlage A.1 (of waterlijn Bijlage B waar expliciet gekoppeld aan HWP-GG-05).",
       "bouwdeel_naam": "CO2-liquefactie-installatie",
       "bouwjaar": 2026,
@@ -7042,7 +7042,7 @@
       "element_naam": "Groengas [HWP-GG]",
       "library_ref": "BIB-SYS-HWP-V02",
       "multiplicity": 1,
-      "notes": "§3.7.4 PBS-tag sluit aan op Systeembeschrijving AWZI HWP v0.2 (januari 2025), Hoogheemraadschap van Rijnland (slibgistingsinstallatie / systeemgrenzen Bijlage A.1).; numerieke faaldata is aanvullende inschatting.",
+      "notes": "Â§3.7.4 PBS-tag sluit aan op Systeembeschrijving AWZI HWP v0.2 (januari 2025), Hoogheemraadschap van Rijnland (slibgistingsinstallatie / systeemgrenzen Bijlage A.1).; numerieke faaldata is aanvullende inschatting.",
       "object_naam": "AWZI Haarlem Waarderpolder",
       "ontwerpleeftijd_jaar": 18.0,
       "parent_pbs_id": "HWP-GG",
@@ -7050,7 +7050,7 @@
       "volgorde": 4
     },
     "HWP-GG-06": {
-      "aanname_leeftijd": "Combinatie renovatie (o.a. voorindikkers 2022–2024) en nieuwbouw fasering tot ca. 2032; per component representatief ontwerp/bouwjaar ingevuld conform demomodel.",
+      "aanname_leeftijd": "Combinatie renovatie (o.a. voorindikkers 2022â€“2024) en nieuwbouw fasering tot ca. 2032; per component representatief ontwerp/bouwjaar ingevuld conform demomodel.",
       "aanname_multipliciteit": "Exemplarenaantal en HWP-tag volgen Bijlage A.1 (of waterlijn Bijlage B waar expliciet gekoppeld aan HWP-GG-06).",
       "bouwdeel_naam": "CO2-opslagtank(s)",
       "bouwjaar": 2026,
@@ -7066,7 +7066,7 @@
       "volgorde": 5
     },
     "HWP-GG-07": {
-      "aanname_leeftijd": "Combinatie renovatie (o.a. voorindikkers 2022–2024) en nieuwbouw fasering tot ca. 2032; per component representatief ontwerp/bouwjaar ingevuld conform demomodel.",
+      "aanname_leeftijd": "Combinatie renovatie (o.a. voorindikkers 2022â€“2024) en nieuwbouw fasering tot ca. 2032; per component representatief ontwerp/bouwjaar ingevuld conform demomodel.",
       "aanname_multipliciteit": "Exemplarenaantal en HWP-tag volgen Bijlage A.1 (of waterlijn Bijlage B waar expliciet gekoppeld aan HWP-GG-07).",
       "bouwdeel_naam": "Gasnetaansluiting",
       "bouwjaar": 2026,
@@ -7074,7 +7074,7 @@
       "element_naam": "Groengas [HWP-GG]",
       "library_ref": "BIB-SYS-HWP-V02",
       "multiplicity": 1,
-      "notes": "§3.7 PBS-tag sluit aan op Systeembeschrijving AWZI HWP v0.2 (januari 2025), Hoogheemraadschap van Rijnland (slibgistingsinstallatie / systeemgrenzen Bijlage A.1).; numerieke faaldata is aanvullende inschatting.",
+      "notes": "Â§3.7 PBS-tag sluit aan op Systeembeschrijving AWZI HWP v0.2 (januari 2025), Hoogheemraadschap van Rijnland (slibgistingsinstallatie / systeemgrenzen Bijlage A.1).; numerieke faaldata is aanvullende inschatting.",
       "object_naam": "AWZI Haarlem Waarderpolder",
       "ontwerpleeftijd_jaar": 40.0,
       "parent_pbs_id": "HWP-GG",
@@ -7082,7 +7082,7 @@
       "volgorde": 6
     },
     "HWP-GG-08": {
-      "aanname_leeftijd": "Combinatie renovatie (o.a. voorindikkers 2022–2024) en nieuwbouw fasering tot ca. 2032; per component representatief ontwerp/bouwjaar ingevuld conform demomodel.",
+      "aanname_leeftijd": "Combinatie renovatie (o.a. voorindikkers 2022â€“2024) en nieuwbouw fasering tot ca. 2032; per component representatief ontwerp/bouwjaar ingevuld conform demomodel.",
       "aanname_multipliciteit": "Exemplarenaantal en HWP-tag volgen Bijlage A.1 (of waterlijn Bijlage B waar expliciet gekoppeld aan HWP-GG-08).",
       "bouwdeel_naam": "Meetstation groen gas (fiscaal)",
       "bouwjaar": 2026,
@@ -7098,15 +7098,15 @@
       "volgorde": 7
     },
     "HWP-HS": {
-      "aanname_leeftijd": "Combinatie renovatie (o.a. voorindikkers 2022–2024) en nieuwbouw fasering tot ca. 2032; per component representatief ontwerp/bouwjaar ingevuld conform demomodel.",
+      "aanname_leeftijd": "Combinatie renovatie (o.a. voorindikkers 2022â€“2024) en nieuwbouw fasering tot ca. 2032; per component representatief ontwerp/bouwjaar ingevuld conform demomodel.",
       "aanname_multipliciteit": "Exemplarenaantal en HWP-tag volgen Bijlage A.1 (of waterlijn Bijlage B waar expliciet gekoppeld aan HWP-HS-01).",
-      "bouwdeel_naam": "Hulpsystemen — subsysteem HWP-HS",
+      "bouwdeel_naam": "Hulpsystemen â€” subsysteem HWP-HS",
       "bouwjaar": 2026,
       "component_naam": "",
       "element_naam": "Hulpsystemen [HWP-HS]",
       "library_ref": "BIB-SYS-HWP-V02",
       "multiplicity": 1,
-      "notes": "Subsysteemknoop voor HWP-HS-01, HWP-HS-02, … (hiërarchie demomodel). Kind-PBS-items bevatten de gedetailleerde bouwdelen.",
+      "notes": "Subsysteemknoop voor HWP-HS-01, HWP-HS-02, â€¦ (hiÃ«rarchie demomodel). Kind-PBS-items bevatten de gedetailleerde bouwdelen.",
       "object_naam": "AWZI Haarlem Waarderpolder",
       "ontwerpleeftijd_jaar": 0.0,
       "parent_pbs_id": "PBS-AWZI-000",
@@ -7114,7 +7114,7 @@
       "volgorde": 4
     },
     "HWP-HS-01": {
-      "aanname_leeftijd": "Combinatie renovatie (o.a. voorindikkers 2022–2024) en nieuwbouw fasering tot ca. 2032; per component representatief ontwerp/bouwjaar ingevuld conform demomodel.",
+      "aanname_leeftijd": "Combinatie renovatie (o.a. voorindikkers 2022â€“2024) en nieuwbouw fasering tot ca. 2032; per component representatief ontwerp/bouwjaar ingevuld conform demomodel.",
       "aanname_multipliciteit": "Exemplarenaantal en HWP-tag volgen Bijlage A.1 (of waterlijn Bijlage B waar expliciet gekoppeld aan HWP-HS-01).",
       "bouwdeel_naam": "Persluchtinstallatie",
       "bouwjaar": 2026,
@@ -7122,7 +7122,7 @@
       "element_naam": "Hulpsystemen [HWP-HS]",
       "library_ref": "BIB-SYS-HWP-V02",
       "multiplicity": 2,
-      "notes": "§2. PBS-tag sluit aan op Systeembeschrijving AWZI HWP v0.2 (januari 2025), Hoogheemraadschap van Rijnland (slibgistingsinstallatie / systeemgrenzen Bijlage A.1).; numerieke faaldata is aanvullende inschatting.",
+      "notes": "Â§2. PBS-tag sluit aan op Systeembeschrijving AWZI HWP v0.2 (januari 2025), Hoogheemraadschap van Rijnland (slibgistingsinstallatie / systeemgrenzen Bijlage A.1).; numerieke faaldata is aanvullende inschatting.",
       "object_naam": "AWZI Haarlem Waarderpolder",
       "ontwerpleeftijd_jaar": 18.0,
       "parent_pbs_id": "HWP-HS",
@@ -7130,7 +7130,7 @@
       "volgorde": 0
     },
     "HWP-HS-02": {
-      "aanname_leeftijd": "Combinatie renovatie (o.a. voorindikkers 2022–2024) en nieuwbouw fasering tot ca. 2032; per component representatief ontwerp/bouwjaar ingevuld conform demomodel.",
+      "aanname_leeftijd": "Combinatie renovatie (o.a. voorindikkers 2022â€“2024) en nieuwbouw fasering tot ca. 2032; per component representatief ontwerp/bouwjaar ingevuld conform demomodel.",
       "aanname_multipliciteit": "Exemplarenaantal en HWP-tag volgen Bijlage A.1 (of waterlijn Bijlage B waar expliciet gekoppeld aan HWP-HS-02).",
       "bouwdeel_naam": "Proceswater spoel/reiniging",
       "bouwjaar": 2026,
@@ -7138,7 +7138,7 @@
       "element_naam": "Hulpsystemen [HWP-HS]",
       "library_ref": "BIB-SYS-HWP-V02",
       "multiplicity": 1,
-      "notes": "§2. PBS-tag sluit aan op Systeembeschrijving AWZI HWP v0.2 (januari 2025), Hoogheemraadschap van Rijnland (slibgistingsinstallatie / systeemgrenzen Bijlage A.1).; numerieke faaldata is aanvullende inschatting.",
+      "notes": "Â§2. PBS-tag sluit aan op Systeembeschrijving AWZI HWP v0.2 (januari 2025), Hoogheemraadschap van Rijnland (slibgistingsinstallatie / systeemgrenzen Bijlage A.1).; numerieke faaldata is aanvullende inschatting.",
       "object_naam": "AWZI Haarlem Waarderpolder",
       "ontwerpleeftijd_jaar": 20.0,
       "parent_pbs_id": "HWP-HS",
@@ -7146,7 +7146,7 @@
       "volgorde": 1
     },
     "HWP-HS-03": {
-      "aanname_leeftijd": "Combinatie renovatie (o.a. voorindikkers 2022–2024) en nieuwbouw fasering tot ca. 2032; per component representatief ontwerp/bouwjaar ingevuld conform demomodel.",
+      "aanname_leeftijd": "Combinatie renovatie (o.a. voorindikkers 2022â€“2024) en nieuwbouw fasering tot ca. 2032; per component representatief ontwerp/bouwjaar ingevuld conform demomodel.",
       "aanname_multipliciteit": "Exemplarenaantal en HWP-tag volgen Bijlage A.1 (of waterlijn Bijlage B waar expliciet gekoppeld aan HWP-HS-03).",
       "bouwdeel_naam": "Geurbehandelingsinstallatie centraal",
       "bouwjaar": 2026,
@@ -7154,7 +7154,7 @@
       "element_naam": "Hulpsystemen [HWP-HS]",
       "library_ref": "BIB-SYS-HWP-V02",
       "multiplicity": 1,
-      "notes": "§3 parallel EVDB-strook (document). PBS-tag sluit aan op Systeembeschrijving AWZI HWP v0.2 (januari 2025), Hoogheemraadschap van Rijnland (slibgistingsinstallatie / systeemgrenzen Bijlage A.1).; numerieke faaldata is aanvullende inschatting.",
+      "notes": "Â§3 parallel EVDB-strook (document). PBS-tag sluit aan op Systeembeschrijving AWZI HWP v0.2 (januari 2025), Hoogheemraadschap van Rijnland (slibgistingsinstallatie / systeemgrenzen Bijlage A.1).; numerieke faaldata is aanvullende inschatting.",
       "object_naam": "AWZI Haarlem Waarderpolder",
       "ontwerpleeftijd_jaar": 18.0,
       "parent_pbs_id": "HWP-HS",
@@ -7162,7 +7162,7 @@
       "volgorde": 2
     },
     "HWP-HS-04": {
-      "aanname_leeftijd": "Combinatie renovatie (o.a. voorindikkers 2022–2024) en nieuwbouw fasering tot ca. 2032; per component representatief ontwerp/bouwjaar ingevuld conform demomodel.",
+      "aanname_leeftijd": "Combinatie renovatie (o.a. voorindikkers 2022â€“2024) en nieuwbouw fasering tot ca. 2032; per component representatief ontwerp/bouwjaar ingevuld conform demomodel.",
       "aanname_multipliciteit": "Exemplarenaantal en HWP-tag volgen Bijlage A.1 (of waterlijn Bijlage B waar expliciet gekoppeld aan HWP-HS-04).",
       "bouwdeel_naam": "Noodstroom dieselaggregaat",
       "bouwjaar": 2026,
@@ -7170,7 +7170,7 @@
       "element_naam": "Hulpsystemen [HWP-HS]",
       "library_ref": "BIB-SYS-HWP-V02",
       "multiplicity": 1,
-      "notes": "§2. PBS-tag sluit aan op Systeembeschrijving AWZI HWP v0.2 (januari 2025), Hoogheemraadschap van Rijnland (slibgistingsinstallatie / systeemgrenzen Bijlage A.1).; numerieke faaldata is aanvullende inschatting.",
+      "notes": "Â§2. PBS-tag sluit aan op Systeembeschrijving AWZI HWP v0.2 (januari 2025), Hoogheemraadschap van Rijnland (slibgistingsinstallatie / systeemgrenzen Bijlage A.1).; numerieke faaldata is aanvullende inschatting.",
       "object_naam": "AWZI Haarlem Waarderpolder",
       "ontwerpleeftijd_jaar": 20.0,
       "parent_pbs_id": "HWP-HS",
@@ -7178,7 +7178,7 @@
       "volgorde": 3
     },
     "HWP-HS-05": {
-      "aanname_leeftijd": "Combinatie renovatie (o.a. voorindikkers 2022–2024) en nieuwbouw fasering tot ca. 2032; per component representatief ontwerp/bouwjaar ingevuld conform demomodel.",
+      "aanname_leeftijd": "Combinatie renovatie (o.a. voorindikkers 2022â€“2024) en nieuwbouw fasering tot ca. 2032; per component representatief ontwerp/bouwjaar ingevuld conform demomodel.",
       "aanname_multipliciteit": "Exemplarenaantal en HWP-tag volgen Bijlage A.1 (of waterlijn Bijlage B waar expliciet gekoppeld aan HWP-HS-05).",
       "bouwdeel_naam": "Bluswater / sprinkler",
       "bouwjaar": 2026,
@@ -7186,7 +7186,7 @@
       "element_naam": "Hulpsystemen [HWP-HS]",
       "library_ref": "BIB-SYS-HWP-V02",
       "multiplicity": 1,
-      "notes": "§2. PBS-tag sluit aan op Systeembeschrijving AWZI HWP v0.2 (januari 2025), Hoogheemraadschap van Rijnland (slibgistingsinstallatie / systeemgrenzen Bijlage A.1).; numerieke faaldata is aanvullende inschatting.",
+      "notes": "Â§2. PBS-tag sluit aan op Systeembeschrijving AWZI HWP v0.2 (januari 2025), Hoogheemraadschap van Rijnland (slibgistingsinstallatie / systeemgrenzen Bijlage A.1).; numerieke faaldata is aanvullende inschatting.",
       "object_naam": "AWZI Haarlem Waarderpolder",
       "ontwerpleeftijd_jaar": 30.0,
       "parent_pbs_id": "HWP-HS",
@@ -7194,15 +7194,15 @@
       "volgorde": 4
     },
     "HWP-IN": {
-      "aanname_leeftijd": "Combinatie renovatie (o.a. voorindikkers 2022–2024) en nieuwbouw fasering tot ca. 2032; per component representatief ontwerp/bouwjaar ingevuld conform demomodel.",
+      "aanname_leeftijd": "Combinatie renovatie (o.a. voorindikkers 2022â€“2024) en nieuwbouw fasering tot ca. 2032; per component representatief ontwerp/bouwjaar ingevuld conform demomodel.",
       "aanname_multipliciteit": "Exemplarenaantal en HWP-tag volgen Bijlage A.1 (of waterlijn Bijlage B waar expliciet gekoppeld aan HWP-IN-01).",
-      "bouwdeel_naam": "Instrumentatie — subsysteem HWP-IN",
+      "bouwdeel_naam": "Instrumentatie â€” subsysteem HWP-IN",
       "bouwjaar": 2026,
       "component_naam": "",
       "element_naam": "Instrumentatie [HWP-IN]",
       "library_ref": "BIB-SYS-HWP-V02",
       "multiplicity": 1,
-      "notes": "Subsysteemknoop voor HWP-IN-01, HWP-IN-02, … (hiërarchie demomodel). Kind-PBS-items bevatten de gedetailleerde bouwdelen.",
+      "notes": "Subsysteemknoop voor HWP-IN-01, HWP-IN-02, â€¦ (hiÃ«rarchie demomodel). Kind-PBS-items bevatten de gedetailleerde bouwdelen.",
       "object_naam": "AWZI Haarlem Waarderpolder",
       "ontwerpleeftijd_jaar": 0.0,
       "parent_pbs_id": "PBS-AWZI-000",
@@ -7210,7 +7210,7 @@
       "volgorde": 5
     },
     "HWP-IN-01": {
-      "aanname_leeftijd": "Combinatie renovatie (o.a. voorindikkers 2022–2024) en nieuwbouw fasering tot ca. 2032; per component representatief ontwerp/bouwjaar ingevuld conform demomodel.",
+      "aanname_leeftijd": "Combinatie renovatie (o.a. voorindikkers 2022â€“2024) en nieuwbouw fasering tot ca. 2032; per component representatief ontwerp/bouwjaar ingevuld conform demomodel.",
       "aanname_multipliciteit": "Exemplarenaantal en HWP-tag volgen Bijlage A.1 (of waterlijn Bijlage B waar expliciet gekoppeld aan HWP-IN-01).",
       "bouwdeel_naam": "Temperatuursensor Pt100",
       "bouwjaar": 2026,
@@ -7218,7 +7218,7 @@
       "element_naam": "Instrumentatie [HWP-IN]",
       "library_ref": "BIB-SYS-HWP-V02",
       "multiplicity": 27,
-      "notes": "Bijlage A.2 — 25–30. PBS-tag sluit aan op Systeembeschrijving AWZI HWP v0.2 (januari 2025), Hoogheemraadschap van Rijnland (slibgistingsinstallatie / systeemgrenzen Bijlage A.1).; numerieke faaldata is aanvullende inschatting.",
+      "notes": "Bijlage A.2 â€” 25â€“30. PBS-tag sluit aan op Systeembeschrijving AWZI HWP v0.2 (januari 2025), Hoogheemraadschap van Rijnland (slibgistingsinstallatie / systeemgrenzen Bijlage A.1).; numerieke faaldata is aanvullende inschatting.",
       "object_naam": "AWZI Haarlem Waarderpolder",
       "ontwerpleeftijd_jaar": 10.0,
       "parent_pbs_id": "HWP-IN",
@@ -7226,7 +7226,7 @@
       "volgorde": 0
     },
     "HWP-IN-02": {
-      "aanname_leeftijd": "Combinatie renovatie (o.a. voorindikkers 2022–2024) en nieuwbouw fasering tot ca. 2032; per component representatief ontwerp/bouwjaar ingevuld conform demomodel.",
+      "aanname_leeftijd": "Combinatie renovatie (o.a. voorindikkers 2022â€“2024) en nieuwbouw fasering tot ca. 2032; per component representatief ontwerp/bouwjaar ingevuld conform demomodel.",
       "aanname_multipliciteit": "Exemplarenaantal en HWP-tag volgen Bijlage A.1 (of waterlijn Bijlage B waar expliciet gekoppeld aan HWP-IN-02).",
       "bouwdeel_naam": "pH-sensor",
       "bouwjaar": 2026,
@@ -7234,7 +7234,7 @@
       "element_naam": "Instrumentatie [HWP-IN]",
       "library_ref": "BIB-SYS-HWP-V02",
       "multiplicity": 14,
-      "notes": "Bijlage A.2 — 13–16. PBS-tag sluit aan op Systeembeschrijving AWZI HWP v0.2 (januari 2025), Hoogheemraadschap van Rijnland (slibgistingsinstallatie / systeemgrenzen Bijlage A.1).; numerieke faaldata is aanvullende inschatting.",
+      "notes": "Bijlage A.2 â€” 13â€“16. PBS-tag sluit aan op Systeembeschrijving AWZI HWP v0.2 (januari 2025), Hoogheemraadschap van Rijnland (slibgistingsinstallatie / systeemgrenzen Bijlage A.1).; numerieke faaldata is aanvullende inschatting.",
       "object_naam": "AWZI Haarlem Waarderpolder",
       "ontwerpleeftijd_jaar": 10.0,
       "parent_pbs_id": "HWP-IN",
@@ -7242,7 +7242,7 @@
       "volgorde": 1
     },
     "HWP-IN-03": {
-      "aanname_leeftijd": "Combinatie renovatie (o.a. voorindikkers 2022–2024) en nieuwbouw fasering tot ca. 2032; per component representatief ontwerp/bouwjaar ingevuld conform demomodel.",
+      "aanname_leeftijd": "Combinatie renovatie (o.a. voorindikkers 2022â€“2024) en nieuwbouw fasering tot ca. 2032; per component representatief ontwerp/bouwjaar ingevuld conform demomodel.",
       "aanname_multipliciteit": "Exemplarenaantal en HWP-tag volgen Bijlage A.1 (of waterlijn Bijlage B waar expliciet gekoppeld aan HWP-IN-03).",
       "bouwdeel_naam": "Niveaumeting",
       "bouwjaar": 2026,
@@ -7250,7 +7250,7 @@
       "element_naam": "Instrumentatie [HWP-IN]",
       "library_ref": "BIB-SYS-HWP-V02",
       "multiplicity": 21,
-      "notes": "Bijlage A.2 — 18–24. PBS-tag sluit aan op Systeembeschrijving AWZI HWP v0.2 (januari 2025), Hoogheemraadschap van Rijnland (slibgistingsinstallatie / systeemgrenzen Bijlage A.1).; numerieke faaldata is aanvullende inschatting.",
+      "notes": "Bijlage A.2 â€” 18â€“24. PBS-tag sluit aan op Systeembeschrijving AWZI HWP v0.2 (januari 2025), Hoogheemraadschap van Rijnland (slibgistingsinstallatie / systeemgrenzen Bijlage A.1).; numerieke faaldata is aanvullende inschatting.",
       "object_naam": "AWZI Haarlem Waarderpolder",
       "ontwerpleeftijd_jaar": 10.0,
       "parent_pbs_id": "HWP-IN",
@@ -7258,7 +7258,7 @@
       "volgorde": 2
     },
     "HWP-IN-04": {
-      "aanname_leeftijd": "Combinatie renovatie (o.a. voorindikkers 2022–2024) en nieuwbouw fasering tot ca. 2032; per component representatief ontwerp/bouwjaar ingevuld conform demomodel.",
+      "aanname_leeftijd": "Combinatie renovatie (o.a. voorindikkers 2022â€“2024) en nieuwbouw fasering tot ca. 2032; per component representatief ontwerp/bouwjaar ingevuld conform demomodel.",
       "aanname_multipliciteit": "Exemplarenaantal en HWP-tag volgen Bijlage A.1 (of waterlijn Bijlage B waar expliciet gekoppeld aan HWP-IN-04).",
       "bouwdeel_naam": "Drukmeting",
       "bouwjaar": 2026,
@@ -7266,7 +7266,7 @@
       "element_naam": "Instrumentatie [HWP-IN]",
       "library_ref": "BIB-SYS-HWP-V02",
       "multiplicity": 27,
-      "notes": "Bijlage A.2 — 23–32. PBS-tag sluit aan op Systeembeschrijving AWZI HWP v0.2 (januari 2025), Hoogheemraadschap van Rijnland (slibgistingsinstallatie / systeemgrenzen Bijlage A.1).; numerieke faaldata is aanvullende inschatting.",
+      "notes": "Bijlage A.2 â€” 23â€“32. PBS-tag sluit aan op Systeembeschrijving AWZI HWP v0.2 (januari 2025), Hoogheemraadschap van Rijnland (slibgistingsinstallatie / systeemgrenzen Bijlage A.1).; numerieke faaldata is aanvullende inschatting.",
       "object_naam": "AWZI Haarlem Waarderpolder",
       "ontwerpleeftijd_jaar": 10.0,
       "parent_pbs_id": "HWP-IN",
@@ -7274,7 +7274,7 @@
       "volgorde": 3
     },
     "HWP-IN-05": {
-      "aanname_leeftijd": "Combinatie renovatie (o.a. voorindikkers 2022–2024) en nieuwbouw fasering tot ca. 2032; per component representatief ontwerp/bouwjaar ingevuld conform demomodel.",
+      "aanname_leeftijd": "Combinatie renovatie (o.a. voorindikkers 2022â€“2024) en nieuwbouw fasering tot ca. 2032; per component representatief ontwerp/bouwjaar ingevuld conform demomodel.",
       "aanname_multipliciteit": "Exemplarenaantal en HWP-tag volgen Bijlage A.1 (of waterlijn Bijlage B waar expliciet gekoppeld aan HWP-IN-05).",
       "bouwdeel_naam": "Debietmeter slib (EM)",
       "bouwjaar": 2026,
@@ -7290,7 +7290,7 @@
       "volgorde": 4
     },
     "HWP-IN-06": {
-      "aanname_leeftijd": "Combinatie renovatie (o.a. voorindikkers 2022–2024) en nieuwbouw fasering tot ca. 2032; per component representatief ontwerp/bouwjaar ingevuld conform demomodel.",
+      "aanname_leeftijd": "Combinatie renovatie (o.a. voorindikkers 2022â€“2024) en nieuwbouw fasering tot ca. 2032; per component representatief ontwerp/bouwjaar ingevuld conform demomodel.",
       "aanname_multipliciteit": "Exemplarenaantal en HWP-tag volgen Bijlage A.1 (of waterlijn Bijlage B waar expliciet gekoppeld aan HWP-IN-06).",
       "bouwdeel_naam": "Gasdebietmeter",
       "bouwjaar": 2026,
@@ -7306,7 +7306,7 @@
       "volgorde": 5
     },
     "HWP-IN-07": {
-      "aanname_leeftijd": "Combinatie renovatie (o.a. voorindikkers 2022–2024) en nieuwbouw fasering tot ca. 2032; per component representatief ontwerp/bouwjaar ingevuld conform demomodel.",
+      "aanname_leeftijd": "Combinatie renovatie (o.a. voorindikkers 2022â€“2024) en nieuwbouw fasering tot ca. 2032; per component representatief ontwerp/bouwjaar ingevuld conform demomodel.",
       "aanname_multipliciteit": "Exemplarenaantal en HWP-tag volgen Bijlage A.1 (of waterlijn Bijlage B waar expliciet gekoppeld aan HWP-IN-07).",
       "bouwdeel_naam": "Gasanalysator biogas",
       "bouwjaar": 2026,
@@ -7322,7 +7322,7 @@
       "volgorde": 6
     },
     "HWP-IN-08": {
-      "aanname_leeftijd": "Combinatie renovatie (o.a. voorindikkers 2022–2024) en nieuwbouw fasering tot ca. 2032; per component representatief ontwerp/bouwjaar ingevuld conform demomodel.",
+      "aanname_leeftijd": "Combinatie renovatie (o.a. voorindikkers 2022â€“2024) en nieuwbouw fasering tot ca. 2032; per component representatief ontwerp/bouwjaar ingevuld conform demomodel.",
       "aanname_multipliciteit": "Exemplarenaantal en HWP-tag volgen Bijlage A.1 (of waterlijn Bijlage B waar expliciet gekoppeld aan HWP-IN-08).",
       "bouwdeel_naam": "Gasanalysator groengas",
       "bouwjaar": 2026,
@@ -7338,7 +7338,7 @@
       "volgorde": 7
     },
     "HWP-IN-09": {
-      "aanname_leeftijd": "Combinatie renovatie (o.a. voorindikkers 2022–2024) en nieuwbouw fasering tot ca. 2032; per component representatief ontwerp/bouwjaar ingevuld conform demomodel.",
+      "aanname_leeftijd": "Combinatie renovatie (o.a. voorindikkers 2022â€“2024) en nieuwbouw fasering tot ca. 2032; per component representatief ontwerp/bouwjaar ingevuld conform demomodel.",
       "aanname_multipliciteit": "Exemplarenaantal en HWP-tag volgen Bijlage A.1 (of waterlijn Bijlage B waar expliciet gekoppeld aan HWP-IN-09).",
       "bouwdeel_naam": "DS-meter drogestofgehalte",
       "bouwjaar": 2026,
@@ -7354,7 +7354,7 @@
       "volgorde": 8
     },
     "HWP-IN-10": {
-      "aanname_leeftijd": "Combinatie renovatie (o.a. voorindikkers 2022–2024) en nieuwbouw fasering tot ca. 2032; per component representatief ontwerp/bouwjaar ingevuld conform demomodel.",
+      "aanname_leeftijd": "Combinatie renovatie (o.a. voorindikkers 2022â€“2024) en nieuwbouw fasering tot ca. 2032; per component representatief ontwerp/bouwjaar ingevuld conform demomodel.",
       "aanname_multipliciteit": "Exemplarenaantal en HWP-tag volgen Bijlage A.1 (of waterlijn Bijlage B waar expliciet gekoppeld aan HWP-IN-10).",
       "bouwdeel_naam": "VVZ-/organische analysedoel groen+",
       "bouwjaar": 2026,
@@ -7370,7 +7370,7 @@
       "volgorde": 9
     },
     "HWP-IN-11": {
-      "aanname_leeftijd": "Combinatie renovatie (o.a. voorindikkers 2022–2024) en nieuwbouw fasering tot ca. 2032; per component representatief ontwerp/bouwjaar ingevuld conform demomodel.",
+      "aanname_leeftijd": "Combinatie renovatie (o.a. voorindikkers 2022â€“2024) en nieuwbouw fasering tot ca. 2032; per component representatief ontwerp/bouwjaar ingevuld conform demomodel.",
       "aanname_multipliciteit": "Exemplarenaantal en HWP-tag volgen Bijlage A.1 (of waterlijn Bijlage B waar expliciet gekoppeld aan HWP-IN-11).",
       "bouwdeel_naam": "H2S-detector ruimte (ATEX)",
       "bouwjaar": 2026,
@@ -7386,7 +7386,7 @@
       "volgorde": 10
     },
     "HWP-IN-12": {
-      "aanname_leeftijd": "Combinatie renovatie (o.a. voorindikkers 2022–2024) en nieuwbouw fasering tot ca. 2032; per component representatief ontwerp/bouwjaar ingevuld conform demomodel.",
+      "aanname_leeftijd": "Combinatie renovatie (o.a. voorindikkers 2022â€“2024) en nieuwbouw fasering tot ca. 2032; per component representatief ontwerp/bouwjaar ingevuld conform demomodel.",
       "aanname_multipliciteit": "Exemplarenaantal en HWP-tag volgen Bijlage A.1 (of waterlijn Bijlage B waar expliciet gekoppeld aan HWP-IN-12).",
       "bouwdeel_naam": "CH4-detector ruimte (ATEX)",
       "bouwjaar": 2026,
@@ -7402,7 +7402,7 @@
       "volgorde": 11
     },
     "HWP-IN-13": {
-      "aanname_leeftijd": "Combinatie renovatie (o.a. voorindikkers 2022–2024) en nieuwbouw fasering tot ca. 2032; per component representatief ontwerp/bouwjaar ingevuld conform demomodel.",
+      "aanname_leeftijd": "Combinatie renovatie (o.a. voorindikkers 2022â€“2024) en nieuwbouw fasering tot ca. 2032; per component representatief ontwerp/bouwjaar ingevuld conform demomodel.",
       "aanname_multipliciteit": "Exemplarenaantal en HWP-tag volgen Bijlage A.1 (of waterlijn Bijlage B waar expliciet gekoppeld aan HWP-IN-13).",
       "bouwdeel_naam": "Trillingssensor pompen/compressoren",
       "bouwjaar": 2026,
@@ -7418,7 +7418,7 @@
       "volgorde": 12
     },
     "HWP-IN-14": {
-      "aanname_leeftijd": "Combinatie renovatie (o.a. voorindikkers 2022–2024) en nieuwbouw fasering tot ca. 2032; per component representatief ontwerp/bouwjaar ingevuld conform demomodel.",
+      "aanname_leeftijd": "Combinatie renovatie (o.a. voorindikkers 2022â€“2024) en nieuwbouw fasering tot ca. 2032; per component representatief ontwerp/bouwjaar ingevuld conform demomodel.",
       "aanname_multipliciteit": "Exemplarenaantal en HWP-tag volgen Bijlage A.1 (of waterlijn Bijlage B waar expliciet gekoppeld aan HWP-IN-14).",
       "bouwdeel_naam": "Geleidbaarheidsmeter",
       "bouwjaar": 2026,
@@ -7434,7 +7434,7 @@
       "volgorde": 13
     },
     "HWP-IN-15": {
-      "aanname_leeftijd": "Combinatie renovatie (o.a. voorindikkers 2022–2024) en nieuwbouw fasering tot ca. 2032; per component representatief ontwerp/bouwjaar ingevuld conform demomodel.",
+      "aanname_leeftijd": "Combinatie renovatie (o.a. voorindikkers 2022â€“2024) en nieuwbouw fasering tot ca. 2032; per component representatief ontwerp/bouwjaar ingevuld conform demomodel.",
       "aanname_multipliciteit": "Exemplarenaantal en HWP-tag volgen Bijlage A.1 (of waterlijn Bijlage B waar expliciet gekoppeld aan HWP-IN-15).",
       "bouwdeel_naam": "CO2-detector CO2-liq ruimtes",
       "bouwjaar": 2026,
@@ -7450,7 +7450,7 @@
       "volgorde": 14
     },
     "HWP-IN-16": {
-      "aanname_leeftijd": "Combinatie renovatie (o.a. voorindikkers 2022–2024) en nieuwbouw fasering tot ca. 2032; per component representatief ontwerp/bouwjaar ingevuld conform demomodel.",
+      "aanname_leeftijd": "Combinatie renovatie (o.a. voorindikkers 2022â€“2024) en nieuwbouw fasering tot ca. 2032; per component representatief ontwerp/bouwjaar ingevuld conform demomodel.",
       "aanname_multipliciteit": "Exemplarenaantal en HWP-tag volgen Bijlage A.1 (of waterlijn Bijlage B waar expliciet gekoppeld aan HWP-IN-16).",
       "bouwdeel_naam": "O2-detector besloten ruimten",
       "bouwjaar": 2026,
@@ -7466,15 +7466,15 @@
       "volgorde": 15
     },
     "HWP-SA": {
-      "aanname_leeftijd": "Combinatie renovatie (o.a. voorindikkers 2022–2024) en nieuwbouw fasering tot ca. 2032; per component representatief ontwerp/bouwjaar ingevuld conform demomodel.",
+      "aanname_leeftijd": "Combinatie renovatie (o.a. voorindikkers 2022â€“2024) en nieuwbouw fasering tot ca. 2032; per component representatief ontwerp/bouwjaar ingevuld conform demomodel.",
       "aanname_multipliciteit": "Exemplarenaantal en HWP-tag volgen Bijlage A.1 (of waterlijn Bijlage B waar expliciet gekoppeld aan HWP-SA-01).",
-      "bouwdeel_naam": "Slibafvoer — subsysteem HWP-SA",
+      "bouwdeel_naam": "Slibafvoer â€” subsysteem HWP-SA",
       "bouwjaar": 2026,
       "component_naam": "",
       "element_naam": "Slibafvoer [HWP-SA]",
       "library_ref": "BIB-SYS-HWP-V02",
       "multiplicity": 1,
-      "notes": "Subsysteemknoop voor HWP-SA-01, HWP-SA-02, … (hiërarchie demomodel). Kind-PBS-items bevatten de gedetailleerde bouwdelen.",
+      "notes": "Subsysteemknoop voor HWP-SA-01, HWP-SA-02, â€¦ (hiÃ«rarchie demomodel). Kind-PBS-items bevatten de gedetailleerde bouwdelen.",
       "object_naam": "AWZI Haarlem Waarderpolder",
       "ontwerpleeftijd_jaar": 0.0,
       "parent_pbs_id": "PBS-AWZI-000",
@@ -7482,7 +7482,7 @@
       "volgorde": 6
     },
     "HWP-SA-01": {
-      "aanname_leeftijd": "Combinatie renovatie (o.a. voorindikkers 2022–2024) en nieuwbouw fasering tot ca. 2032; per component representatief ontwerp/bouwjaar ingevuld conform demomodel.",
+      "aanname_leeftijd": "Combinatie renovatie (o.a. voorindikkers 2022â€“2024) en nieuwbouw fasering tot ca. 2032; per component representatief ontwerp/bouwjaar ingevuld conform demomodel.",
       "aanname_multipliciteit": "Exemplarenaantal en HWP-tag volgen Bijlage A.1 (of waterlijn Bijlage B waar expliciet gekoppeld aan HWP-SA-01).",
       "bouwdeel_naam": "Slibopslagtank uitgegist",
       "bouwjaar": 2026,
@@ -7498,7 +7498,7 @@
       "volgorde": 0
     },
     "HWP-SA-02": {
-      "aanname_leeftijd": "Combinatie renovatie (o.a. voorindikkers 2022–2024) en nieuwbouw fasering tot ca. 2032; per component representatief ontwerp/bouwjaar ingevuld conform demomodel.",
+      "aanname_leeftijd": "Combinatie renovatie (o.a. voorindikkers 2022â€“2024) en nieuwbouw fasering tot ca. 2032; per component representatief ontwerp/bouwjaar ingevuld conform demomodel.",
       "aanname_multipliciteit": "Exemplarenaantal en HWP-tag volgen Bijlage A.1 (of waterlijn Bijlage B waar expliciet gekoppeld aan HWP-SA-02).",
       "bouwdeel_naam": "Slibafvoerpompen",
       "bouwjaar": 2026,
@@ -7514,7 +7514,7 @@
       "volgorde": 1
     },
     "HWP-SA-03": {
-      "aanname_leeftijd": "Combinatie renovatie (o.a. voorindikkers 2022–2024) en nieuwbouw fasering tot ca. 2032; per component representatief ontwerp/bouwjaar ingevuld conform demomodel.",
+      "aanname_leeftijd": "Combinatie renovatie (o.a. voorindikkers 2022â€“2024) en nieuwbouw fasering tot ca. 2032; per component representatief ontwerp/bouwjaar ingevuld conform demomodel.",
       "aanname_multipliciteit": "Exemplarenaantal en HWP-tag volgen Bijlage A.1 (of waterlijn Bijlage B waar expliciet gekoppeld aan HWP-SA-03).",
       "bouwdeel_naam": "Slibsilo vrachtbelading",
       "bouwjaar": 2026,
@@ -7530,7 +7530,7 @@
       "volgorde": 2
     },
     "HWP-SA-04": {
-      "aanname_leeftijd": "Combinatie renovatie (o.a. voorindikkers 2022–2024) en nieuwbouw fasering tot ca. 2032; per component representatief ontwerp/bouwjaar ingevuld conform demomodel.",
+      "aanname_leeftijd": "Combinatie renovatie (o.a. voorindikkers 2022â€“2024) en nieuwbouw fasering tot ca. 2032; per component representatief ontwerp/bouwjaar ingevuld conform demomodel.",
       "aanname_multipliciteit": "Exemplarenaantal en HWP-tag volgen Bijlage A.1 (of waterlijn Bijlage B waar expliciet gekoppeld aan HWP-SA-04).",
       "bouwdeel_naam": "Noodoverstort / calamiteit",
       "bouwjaar": 2026,
@@ -7538,7 +7538,7 @@
       "element_naam": "Slibafvoer [HWP-SA]",
       "library_ref": "BIB-SYS-HWP-V02",
       "multiplicity": 1,
-      "notes": "§2 PBS-tag sluit aan op Systeembeschrijving AWZI HWP v0.2 (januari 2025), Hoogheemraadschap van Rijnland (slibgistingsinstallatie / systeemgrenzen Bijlage A.1).; numerieke faaldata is aanvullende inschatting.",
+      "notes": "Â§2 PBS-tag sluit aan op Systeembeschrijving AWZI HWP v0.2 (januari 2025), Hoogheemraadschap van Rijnland (slibgistingsinstallatie / systeemgrenzen Bijlage A.1).; numerieke faaldata is aanvullende inschatting.",
       "object_naam": "AWZI Haarlem Waarderpolder",
       "ontwerpleeftijd_jaar": 35.0,
       "parent_pbs_id": "HWP-SA",
@@ -7546,15 +7546,15 @@
       "volgorde": 3
     },
     "HWP-SG": {
-      "aanname_leeftijd": "Combinatie renovatie (o.a. voorindikkers 2022–2024) en nieuwbouw fasering tot ca. 2032; per component representatief ontwerp/bouwjaar ingevuld conform demomodel.",
+      "aanname_leeftijd": "Combinatie renovatie (o.a. voorindikkers 2022â€“2024) en nieuwbouw fasering tot ca. 2032; per component representatief ontwerp/bouwjaar ingevuld conform demomodel.",
       "aanname_multipliciteit": "Exemplarenaantal en HWP-tag volgen Bijlage A.1 (of waterlijn Bijlage B waar expliciet gekoppeld aan HWP-SG-01).",
-      "bouwdeel_naam": "Slibgisting — subsysteem HWP-SG",
+      "bouwdeel_naam": "Slibgisting â€” subsysteem HWP-SG",
       "bouwjaar": 2026,
       "component_naam": "",
       "element_naam": "Slibgisting [HWP-SG]",
       "library_ref": "BIB-SYS-HWP-V02",
       "multiplicity": 1,
-      "notes": "Subsysteemknoop voor HWP-SG-01, HWP-SG-02, … (hiërarchie demomodel). Kind-PBS-items bevatten de gedetailleerde bouwdelen.",
+      "notes": "Subsysteemknoop voor HWP-SG-01, HWP-SG-02, â€¦ (hiÃ«rarchie demomodel). Kind-PBS-items bevatten de gedetailleerde bouwdelen.",
       "object_naam": "AWZI Haarlem Waarderpolder",
       "ontwerpleeftijd_jaar": 0.0,
       "parent_pbs_id": "PBS-AWZI-000",
@@ -7562,7 +7562,7 @@
       "volgorde": 7
     },
     "HWP-SG-01": {
-      "aanname_leeftijd": "Combinatie renovatie (o.a. voorindikkers 2022–2024) en nieuwbouw fasering tot ca. 2032; per component representatief ontwerp/bouwjaar ingevuld conform demomodel.",
+      "aanname_leeftijd": "Combinatie renovatie (o.a. voorindikkers 2022â€“2024) en nieuwbouw fasering tot ca. 2032; per component representatief ontwerp/bouwjaar ingevuld conform demomodel.",
       "aanname_multipliciteit": "Exemplarenaantal en HWP-tag volgen Bijlage A.1 (of waterlijn Bijlage B waar expliciet gekoppeld aan HWP-SG-01).",
       "bouwdeel_naam": "Slibgistingstoren SGT-1 (renovatie Ephyra)",
       "bouwjaar": 2026,
@@ -7570,7 +7570,7 @@
       "element_naam": "Slibgisting [HWP-SG]",
       "library_ref": "BIB-SYS-HWP-V02",
       "multiplicity": 1,
-      "notes": "§3.5.3 — status renovatie. PBS-tag sluit aan op Systeembeschrijving AWZI HWP v0.2 (januari 2025), Hoogheemraadschap van Rijnland (slibgistingsinstallatie / systeemgrenzen Bijlage A.1).; numerieke faaldata is aanvullende inschatting.",
+      "notes": "Â§3.5.3 â€” status renovatie. PBS-tag sluit aan op Systeembeschrijving AWZI HWP v0.2 (januari 2025), Hoogheemraadschap van Rijnland (slibgistingsinstallatie / systeemgrenzen Bijlage A.1).; numerieke faaldata is aanvullende inschatting.",
       "object_naam": "AWZI Haarlem Waarderpolder",
       "ontwerpleeftijd_jaar": 35.0,
       "parent_pbs_id": "HWP-SG",
@@ -7578,7 +7578,7 @@
       "volgorde": 0
     },
     "HWP-SG-02": {
-      "aanname_leeftijd": "Combinatie renovatie (o.a. voorindikkers 2022–2024) en nieuwbouw fasering tot ca. 2032; per component representatief ontwerp/bouwjaar ingevuld conform demomodel.",
+      "aanname_leeftijd": "Combinatie renovatie (o.a. voorindikkers 2022â€“2024) en nieuwbouw fasering tot ca. 2032; per component representatief ontwerp/bouwjaar ingevuld conform demomodel.",
       "aanname_multipliciteit": "Exemplarenaantal en HWP-tag volgen Bijlage A.1 (of waterlijn Bijlage B waar expliciet gekoppeld aan HWP-SG-02).",
       "bouwdeel_naam": "Slibgistingstoren SGT-2 (gerenoveerd 2022)",
       "bouwjaar": 2026,
@@ -7586,7 +7586,7 @@
       "element_naam": "Slibgisting [HWP-SG]",
       "library_ref": "BIB-SYS-HWP-V02",
       "multiplicity": 1,
-      "notes": "§3.5.3 PBS-tag sluit aan op Systeembeschrijving AWZI HWP v0.2 (januari 2025), Hoogheemraadschap van Rijnland (slibgistingsinstallatie / systeemgrenzen Bijlage A.1).; numerieke faaldata is aanvullende inschatting.",
+      "notes": "Â§3.5.3 PBS-tag sluit aan op Systeembeschrijving AWZI HWP v0.2 (januari 2025), Hoogheemraadschap van Rijnland (slibgistingsinstallatie / systeemgrenzen Bijlage A.1).; numerieke faaldata is aanvullende inschatting.",
       "object_naam": "AWZI Haarlem Waarderpolder",
       "ontwerpleeftijd_jaar": 35.0,
       "parent_pbs_id": "HWP-SG",
@@ -7594,7 +7594,7 @@
       "volgorde": 1
     },
     "HWP-SG-03": {
-      "aanname_leeftijd": "Combinatie renovatie (o.a. voorindikkers 2022–2024) en nieuwbouw fasering tot ca. 2032; per component representatief ontwerp/bouwjaar ingevuld conform demomodel.",
+      "aanname_leeftijd": "Combinatie renovatie (o.a. voorindikkers 2022â€“2024) en nieuwbouw fasering tot ca. 2032; per component representatief ontwerp/bouwjaar ingevuld conform demomodel.",
       "aanname_multipliciteit": "Exemplarenaantal en HWP-tag volgen Bijlage A.1 (of waterlijn Bijlage B waar expliciet gekoppeld aan HWP-SG-03).",
       "bouwdeel_naam": "Slibgistingstoren SGT-3 (nieuwbouw / USB buffer)",
       "bouwjaar": 2026,
@@ -7602,7 +7602,7 @@
       "element_naam": "Slibgisting [HWP-SG]",
       "library_ref": "BIB-SYS-HWP-V02",
       "multiplicity": 1,
-      "notes": "§3.5.3 PBS-tag sluit aan op Systeembeschrijving AWZI HWP v0.2 (januari 2025), Hoogheemraadschap van Rijnland (slibgistingsinstallatie / systeemgrenzen Bijlage A.1).; numerieke faaldata is aanvullende inschatting.",
+      "notes": "Â§3.5.3 PBS-tag sluit aan op Systeembeschrijving AWZI HWP v0.2 (januari 2025), Hoogheemraadschap van Rijnland (slibgistingsinstallatie / systeemgrenzen Bijlage A.1).; numerieke faaldata is aanvullende inschatting.",
       "object_naam": "AWZI Haarlem Waarderpolder",
       "ontwerpleeftijd_jaar": 35.0,
       "parent_pbs_id": "HWP-SG",
@@ -7610,7 +7610,7 @@
       "volgorde": 2
     },
     "HWP-SG-04": {
-      "aanname_leeftijd": "Combinatie renovatie (o.a. voorindikkers 2022–2024) en nieuwbouw fasering tot ca. 2032; per component representatief ontwerp/bouwjaar ingevuld conform demomodel.",
+      "aanname_leeftijd": "Combinatie renovatie (o.a. voorindikkers 2022â€“2024) en nieuwbouw fasering tot ca. 2032; per component representatief ontwerp/bouwjaar ingevuld conform demomodel.",
       "aanname_multipliciteit": "Exemplarenaantal en HWP-tag volgen Bijlage A.1 (of waterlijn Bijlage B waar expliciet gekoppeld aan HWP-SG-04).",
       "bouwdeel_naam": "Ephyra-compartimenten (propstroom)",
       "bouwjaar": 2026,
@@ -7618,7 +7618,7 @@
       "element_naam": "Slibgisting [HWP-SG]",
       "library_ref": "BIB-SYS-HWP-V02",
       "multiplicity": 10,
-      "notes": "Bijlage A.1 — 9–12 compartimenten totaal; demo 10. PBS-tag sluit aan op Systeembeschrijving AWZI HWP v0.2 (januari 2025), Hoogheemraadschap van Rijnland (slibgistingsinstallatie / systeemgrenzen Bijlage A.1).; numerieke faaldata is aanvullende inschatting.",
+      "notes": "Bijlage A.1 â€” 9â€“12 compartimenten totaal; demo 10. PBS-tag sluit aan op Systeembeschrijving AWZI HWP v0.2 (januari 2025), Hoogheemraadschap van Rijnland (slibgistingsinstallatie / systeemgrenzen Bijlage A.1).; numerieke faaldata is aanvullende inschatting.",
       "object_naam": "AWZI Haarlem Waarderpolder",
       "ontwerpleeftijd_jaar": 30.0,
       "parent_pbs_id": "HWP-SG",
@@ -7626,7 +7626,7 @@
       "volgorde": 3
     },
     "HWP-SG-05": {
-      "aanname_leeftijd": "Combinatie renovatie (o.a. voorindikkers 2022–2024) en nieuwbouw fasering tot ca. 2032; per component representatief ontwerp/bouwjaar ingevuld conform demomodel.",
+      "aanname_leeftijd": "Combinatie renovatie (o.a. voorindikkers 2022â€“2024) en nieuwbouw fasering tot ca. 2032; per component representatief ontwerp/bouwjaar ingevuld conform demomodel.",
       "aanname_multipliciteit": "Exemplarenaantal en HWP-tag volgen Bijlage A.1 (of waterlijn Bijlage B waar expliciet gekoppeld aan HWP-SG-05).",
       "bouwdeel_naam": "Slibvoedingspomp Ephyra-per lijn",
       "bouwjaar": 2026,
@@ -7642,7 +7642,7 @@
       "volgorde": 4
     },
     "HWP-SG-06": {
-      "aanname_leeftijd": "Combinatie renovatie (o.a. voorindikkers 2022–2024) en nieuwbouw fasering tot ca. 2032; per component representatief ontwerp/bouwjaar ingevuld conform demomodel.",
+      "aanname_leeftijd": "Combinatie renovatie (o.a. voorindikkers 2022â€“2024) en nieuwbouw fasering tot ca. 2032; per component representatief ontwerp/bouwjaar ingevuld conform demomodel.",
       "aanname_multipliciteit": "Exemplarenaantal en HWP-tag volgen Bijlage A.1 (of waterlijn Bijlage B waar expliciet gekoppeld aan HWP-SG-06).",
       "bouwdeel_naam": "Ephyra-controller",
       "bouwjaar": 2026,
@@ -7650,7 +7650,7 @@
       "element_naam": "Slibgisting [HWP-SG]",
       "library_ref": "BIB-SYS-HWP-V02",
       "multiplicity": 3,
-      "notes": "§3.5.4 PBS-tag sluit aan op Systeembeschrijving AWZI HWP v0.2 (januari 2025), Hoogheemraadschap van Rijnland (slibgistingsinstallatie / systeemgrenzen Bijlage A.1).; numerieke faaldata is aanvullende inschatting.",
+      "notes": "Â§3.5.4 PBS-tag sluit aan op Systeembeschrijving AWZI HWP v0.2 (januari 2025), Hoogheemraadschap van Rijnland (slibgistingsinstallatie / systeemgrenzen Bijlage A.1).; numerieke faaldata is aanvullende inschatting.",
       "object_naam": "AWZI Haarlem Waarderpolder",
       "ontwerpleeftijd_jaar": 12.0,
       "parent_pbs_id": "HWP-SG",
@@ -7658,7 +7658,7 @@
       "volgorde": 5
     },
     "HWP-SG-07": {
-      "aanname_leeftijd": "Combinatie renovatie (o.a. voorindikkers 2022–2024) en nieuwbouw fasering tot ca. 2032; per component representatief ontwerp/bouwjaar ingevuld conform demomodel.",
+      "aanname_leeftijd": "Combinatie renovatie (o.a. voorindikkers 2022â€“2024) en nieuwbouw fasering tot ca. 2032; per component representatief ontwerp/bouwjaar ingevuld conform demomodel.",
       "aanname_multipliciteit": "Exemplarenaantal en HWP-tag volgen Bijlage A.1 (of waterlijn Bijlage B waar expliciet gekoppeld aan HWP-SG-07).",
       "bouwdeel_naam": "Recirculatiepompen digestie",
       "bouwjaar": 2026,
@@ -7666,7 +7666,7 @@
       "element_naam": "Slibgisting [HWP-SG]",
       "library_ref": "BIB-SYS-HWP-V02",
       "multiplicity": 8,
-      "notes": "Bijlage A.1 — 6–9 stuks; demo 8. PBS-tag sluit aan op Systeembeschrijving AWZI HWP v0.2 (januari 2025), Hoogheemraadschap van Rijnland (slibgistingsinstallatie / systeemgrenzen Bijlage A.1).; numerieke faaldata is aanvullende inschatting.",
+      "notes": "Bijlage A.1 â€” 6â€“9 stuks; demo 8. PBS-tag sluit aan op Systeembeschrijving AWZI HWP v0.2 (januari 2025), Hoogheemraadschap van Rijnland (slibgistingsinstallatie / systeemgrenzen Bijlage A.1).; numerieke faaldata is aanvullende inschatting.",
       "object_naam": "AWZI Haarlem Waarderpolder",
       "ontwerpleeftijd_jaar": 16.0,
       "parent_pbs_id": "HWP-SG",
@@ -7674,7 +7674,7 @@
       "volgorde": 6
     },
     "HWP-SG-08": {
-      "aanname_leeftijd": "Combinatie renovatie (o.a. voorindikkers 2022–2024) en nieuwbouw fasering tot ca. 2032; per component representatief ontwerp/bouwjaar ingevuld conform demomodel.",
+      "aanname_leeftijd": "Combinatie renovatie (o.a. voorindikkers 2022â€“2024) en nieuwbouw fasering tot ca. 2032; per component representatief ontwerp/bouwjaar ingevuld conform demomodel.",
       "aanname_multipliciteit": "Exemplarenaantal en HWP-tag volgen Bijlage A.1 (of waterlijn Bijlage B waar expliciet gekoppeld aan HWP-SG-08).",
       "bouwdeel_naam": "Interne mengvoorzieningen (gasinblazing)",
       "bouwjaar": 2026,
@@ -7682,7 +7682,7 @@
       "element_naam": "Slibgisting [HWP-SG]",
       "library_ref": "BIB-SYS-HWP-V02",
       "multiplicity": 3,
-      "notes": "§3.5 gasinblazing menging. PBS-tag sluit aan op Systeembeschrijving AWZI HWP v0.2 (januari 2025), Hoogheemraadschap van Rijnland (slibgistingsinstallatie / systeemgrenzen Bijlage A.1).; numerieke faaldata is aanvullende inschatting.",
+      "notes": "Â§3.5 gasinblazing menging. PBS-tag sluit aan op Systeembeschrijving AWZI HWP v0.2 (januari 2025), Hoogheemraadschap van Rijnland (slibgistingsinstallatie / systeemgrenzen Bijlage A.1).; numerieke faaldata is aanvullende inschatting.",
       "object_naam": "AWZI Haarlem Waarderpolder",
       "ontwerpleeftijd_jaar": 20.0,
       "parent_pbs_id": "HWP-SG",
@@ -7690,15 +7690,15 @@
       "volgorde": 7
     },
     "HWP-SI": {
-      "aanname_leeftijd": "Combinatie renovatie (o.a. voorindikkers 2022–2024) en nieuwbouw fasering tot ca. 2032; per component representatief ontwerp/bouwjaar ingevuld conform demomodel.",
+      "aanname_leeftijd": "Combinatie renovatie (o.a. voorindikkers 2022â€“2024) en nieuwbouw fasering tot ca. 2032; per component representatief ontwerp/bouwjaar ingevuld conform demomodel.",
       "aanname_multipliciteit": "Exemplarenaantal en HWP-tag volgen Bijlage A.1 (of waterlijn Bijlage B waar expliciet gekoppeld aan HWP-SI-01).",
-      "bouwdeel_naam": "Slibindikking — subsysteem HWP-SI",
+      "bouwdeel_naam": "Slibindikking â€” subsysteem HWP-SI",
       "bouwjaar": 2026,
       "component_naam": "",
       "element_naam": "Slibindikking [HWP-SI]",
       "library_ref": "BIB-SYS-HWP-V02",
       "multiplicity": 1,
-      "notes": "Subsysteemknoop voor HWP-SI-01, HWP-SI-02, … (hiërarchie demomodel). Kind-PBS-items bevatten de gedetailleerde bouwdelen.",
+      "notes": "Subsysteemknoop voor HWP-SI-01, HWP-SI-02, â€¦ (hiÃ«rarchie demomodel). Kind-PBS-items bevatten de gedetailleerde bouwdelen.",
       "object_naam": "AWZI Haarlem Waarderpolder",
       "ontwerpleeftijd_jaar": 0.0,
       "parent_pbs_id": "PBS-AWZI-000",
@@ -7706,7 +7706,7 @@
       "volgorde": 8
     },
     "HWP-SI-01": {
-      "aanname_leeftijd": "Combinatie renovatie (o.a. voorindikkers 2022–2024) en nieuwbouw fasering tot ca. 2032; per component representatief ontwerp/bouwjaar ingevuld conform demomodel.",
+      "aanname_leeftijd": "Combinatie renovatie (o.a. voorindikkers 2022â€“2024) en nieuwbouw fasering tot ca. 2032; per component representatief ontwerp/bouwjaar ingevuld conform demomodel.",
       "aanname_multipliciteit": "Exemplarenaantal en HWP-tag volgen Bijlage A.1 (of waterlijn Bijlage B waar expliciet gekoppeld aan HWP-SI-01).",
       "bouwdeel_naam": "Voorindikkers (gravitaire)",
       "bouwjaar": 2026,
@@ -7714,7 +7714,7 @@
       "element_naam": "Slibindikking [HWP-SI]",
       "library_ref": "BIB-SYS-HWP-V02",
       "multiplicity": 2,
-      "notes": "§3.4.2 — gerenoveerd 2022–2024. PBS-tag sluit aan op Systeembeschrijving AWZI HWP v0.2 (januari 2025), Hoogheemraadschap van Rijnland (slibgistingsinstallatie / systeemgrenzen Bijlage A.1).; numerieke faaldata is aanvullende inschatting.",
+      "notes": "Â§3.4.2 â€” gerenoveerd 2022â€“2024. PBS-tag sluit aan op Systeembeschrijving AWZI HWP v0.2 (januari 2025), Hoogheemraadschap van Rijnland (slibgistingsinstallatie / systeemgrenzen Bijlage A.1).; numerieke faaldata is aanvullende inschatting.",
       "object_naam": "AWZI Haarlem Waarderpolder",
       "ontwerpleeftijd_jaar": 22.0,
       "parent_pbs_id": "HWP-SI",
@@ -7722,7 +7722,7 @@
       "volgorde": 0
     },
     "HWP-SI-02": {
-      "aanname_leeftijd": "Combinatie renovatie (o.a. voorindikkers 2022–2024) en nieuwbouw fasering tot ca. 2032; per component representatief ontwerp/bouwjaar ingevuld conform demomodel.",
+      "aanname_leeftijd": "Combinatie renovatie (o.a. voorindikkers 2022â€“2024) en nieuwbouw fasering tot ca. 2032; per component representatief ontwerp/bouwjaar ingevuld conform demomodel.",
       "aanname_multipliciteit": "Exemplarenaantal en HWP-tag volgen Bijlage A.1 (of waterlijn Bijlage B waar expliciet gekoppeld aan HWP-SI-02).",
       "bouwdeel_naam": "Indikkerpompen",
       "bouwjaar": 2026,
@@ -7730,7 +7730,7 @@
       "element_naam": "Slibindikking [HWP-SI]",
       "library_ref": "BIB-SYS-HWP-V02",
       "multiplicity": 3,
-      "notes": "Bijlage A.1 — 2+1 redundant. PBS-tag sluit aan op Systeembeschrijving AWZI HWP v0.2 (januari 2025), Hoogheemraadschap van Rijnland (slibgistingsinstallatie / systeemgrenzen Bijlage A.1).; numerieke faaldata is aanvullende inschatting.",
+      "notes": "Bijlage A.1 â€” 2+1 redundant. PBS-tag sluit aan op Systeembeschrijving AWZI HWP v0.2 (januari 2025), Hoogheemraadschap van Rijnland (slibgistingsinstallatie / systeemgrenzen Bijlage A.1).; numerieke faaldata is aanvullende inschatting.",
       "object_naam": "AWZI Haarlem Waarderpolder",
       "ontwerpleeftijd_jaar": 16.0,
       "parent_pbs_id": "HWP-SI",
@@ -7738,7 +7738,7 @@
       "volgorde": 1
     },
     "HWP-SI-03": {
-      "aanname_leeftijd": "Combinatie renovatie (o.a. voorindikkers 2022–2024) en nieuwbouw fasering tot ca. 2032; per component representatief ontwerp/bouwjaar ingevuld conform demomodel.",
+      "aanname_leeftijd": "Combinatie renovatie (o.a. voorindikkers 2022â€“2024) en nieuwbouw fasering tot ca. 2032; per component representatief ontwerp/bouwjaar ingevuld conform demomodel.",
       "aanname_multipliciteit": "Exemplarenaantal en HWP-tag volgen Bijlage A.1 (of waterlijn Bijlage B waar expliciet gekoppeld aan HWP-SI-03).",
       "bouwdeel_naam": "Polymeer doseersysteem",
       "bouwjaar": 2026,
@@ -7746,7 +7746,7 @@
       "element_naam": "Slibindikking [HWP-SI]",
       "library_ref": "BIB-SYS-HWP-V02",
       "multiplicity": 1,
-      "notes": "§3.4 — pendelsysteem / polymeer. PBS-tag sluit aan op Systeembeschrijving AWZI HWP v0.2 (januari 2025), Hoogheemraadschap van Rijnland (slibgistingsinstallatie / systeemgrenzen Bijlage A.1).; numerieke faaldata is aanvullende inschatting.",
+      "notes": "Â§3.4 â€” pendelsysteem / polymeer. PBS-tag sluit aan op Systeembeschrijving AWZI HWP v0.2 (januari 2025), Hoogheemraadschap van Rijnland (slibgistingsinstallatie / systeemgrenzen Bijlage A.1).; numerieke faaldata is aanvullende inschatting.",
       "object_naam": "AWZI Haarlem Waarderpolder",
       "ontwerpleeftijd_jaar": 15.0,
       "parent_pbs_id": "HWP-SI",
@@ -7754,7 +7754,7 @@
       "volgorde": 2
     },
     "HWP-SI-04": {
-      "aanname_leeftijd": "Combinatie renovatie (o.a. voorindikkers 2022–2024) en nieuwbouw fasering tot ca. 2032; per component representatief ontwerp/bouwjaar ingevuld conform demomodel.",
+      "aanname_leeftijd": "Combinatie renovatie (o.a. voorindikkers 2022â€“2024) en nieuwbouw fasering tot ca. 2032; per component representatief ontwerp/bouwjaar ingevuld conform demomodel.",
       "aanname_multipliciteit": "Exemplarenaantal en HWP-tag volgen Bijlage A.1 (of waterlijn Bijlage B waar expliciet gekoppeld aan HWP-SI-04).",
       "bouwdeel_naam": "Indikkerroerwerken",
       "bouwjaar": 2026,
@@ -7762,7 +7762,7 @@
       "element_naam": "Slibindikking [HWP-SI]",
       "library_ref": "BIB-SYS-HWP-V02",
       "multiplicity": 2,
-      "notes": "§3.4 — 1 per voorindikker. PBS-tag sluit aan op Systeembeschrijving AWZI HWP v0.2 (januari 2025), Hoogheemraadschap van Rijnland (slibgistingsinstallatie / systeemgrenzen Bijlage A.1).; numerieke faaldata is aanvullende inschatting.",
+      "notes": "Â§3.4 â€” 1 per voorindikker. PBS-tag sluit aan op Systeembeschrijving AWZI HWP v0.2 (januari 2025), Hoogheemraadschap van Rijnland (slibgistingsinstallatie / systeemgrenzen Bijlage A.1).; numerieke faaldata is aanvullende inschatting.",
       "object_naam": "AWZI Haarlem Waarderpolder",
       "ontwerpleeftijd_jaar": 18.0,
       "parent_pbs_id": "HWP-SI",
@@ -7770,15 +7770,15 @@
       "volgorde": 3
     },
     "HWP-SO": {
-      "aanname_leeftijd": "Combinatie renovatie (o.a. voorindikkers 2022–2024) en nieuwbouw fasering tot ca. 2032; per component representatief ontwerp/bouwjaar ingevuld conform demomodel.",
+      "aanname_leeftijd": "Combinatie renovatie (o.a. voorindikkers 2022â€“2024) en nieuwbouw fasering tot ca. 2032; per component representatief ontwerp/bouwjaar ingevuld conform demomodel.",
       "aanname_multipliciteit": "Exemplarenaantal en HWP-tag volgen Bijlage A.1 (of waterlijn Bijlage B waar expliciet gekoppeld aan HWP-SO-01).",
-      "bouwdeel_naam": "Slib-ontvangst — subsysteem HWP-SO",
+      "bouwdeel_naam": "Slib-ontvangst â€” subsysteem HWP-SO",
       "bouwjaar": 2026,
       "component_naam": "",
       "element_naam": "Slib-ontvangst [HWP-SO]",
       "library_ref": "BIB-SYS-HWP-V02",
       "multiplicity": 1,
-      "notes": "Subsysteemknoop voor HWP-SO-01, HWP-SO-02, … (hiërarchie demomodel). Kind-PBS-items bevatten de gedetailleerde bouwdelen.",
+      "notes": "Subsysteemknoop voor HWP-SO-01, HWP-SO-02, â€¦ (hiÃ«rarchie demomodel). Kind-PBS-items bevatten de gedetailleerde bouwdelen.",
       "object_naam": "AWZI Haarlem Waarderpolder",
       "ontwerpleeftijd_jaar": 0.0,
       "parent_pbs_id": "PBS-AWZI-000",
@@ -7786,7 +7786,7 @@
       "volgorde": 9
     },
     "HWP-SO-01": {
-      "aanname_leeftijd": "Combinatie renovatie (o.a. voorindikkers 2022–2024) en nieuwbouw fasering tot ca. 2032; per component representatief ontwerp/bouwjaar ingevuld conform demomodel.",
+      "aanname_leeftijd": "Combinatie renovatie (o.a. voorindikkers 2022â€“2024) en nieuwbouw fasering tot ca. 2032; per component representatief ontwerp/bouwjaar ingevuld conform demomodel.",
       "aanname_multipliciteit": "Exemplarenaantal en HWP-tag volgen Bijlage A.1 (of waterlijn Bijlage B waar expliciet gekoppeld aan HWP-SO-01).",
       "bouwdeel_naam": "Ontvangstgebouw vrachtauto's",
       "bouwjaar": 2026,
@@ -7794,7 +7794,7 @@
       "element_naam": "Slib-ontvangst [HWP-SO]",
       "library_ref": "BIB-SYS-HWP-V02",
       "multiplicity": 1,
-      "notes": "§3.3.2 — onderdruk/afzuiging naar geurbehandeling [HWP-HS-03]. PBS-tag sluit aan op Systeembeschrijving AWZI HWP v0.2 (januari 2025), Hoogheemraadschap van Rijnland (slibgistingsinstallatie / systeemgrenzen Bijlage A.1).; numerieke faaldata is aanvullende inschatting.",
+      "notes": "Â§3.3.2 â€” onderdruk/afzuiging naar geurbehandeling [HWP-HS-03]. PBS-tag sluit aan op Systeembeschrijving AWZI HWP v0.2 (januari 2025), Hoogheemraadschap van Rijnland (slibgistingsinstallatie / systeemgrenzen Bijlage A.1).; numerieke faaldata is aanvullende inschatting.",
       "object_naam": "AWZI Haarlem Waarderpolder",
       "ontwerpleeftijd_jaar": 25.0,
       "parent_pbs_id": "HWP-SO",
@@ -7802,7 +7802,7 @@
       "volgorde": 0
     },
     "HWP-SO-02": {
-      "aanname_leeftijd": "Combinatie renovatie (o.a. voorindikkers 2022–2024) en nieuwbouw fasering tot ca. 2032; per component representatief ontwerp/bouwjaar ingevuld conform demomodel.",
+      "aanname_leeftijd": "Combinatie renovatie (o.a. voorindikkers 2022â€“2024) en nieuwbouw fasering tot ca. 2032; per component representatief ontwerp/bouwjaar ingevuld conform demomodel.",
       "aanname_multipliciteit": "Exemplarenaantal en HWP-tag volgen Bijlage A.1 (of waterlijn Bijlage B waar expliciet gekoppeld aan HWP-SO-02).",
       "bouwdeel_naam": "Lospunten vrachtauto",
       "bouwjaar": 2026,
@@ -7810,7 +7810,7 @@
       "element_naam": "Slib-ontvangst [HWP-SO]",
       "library_ref": "BIB-SYS-HWP-V02",
       "multiplicity": 3,
-      "notes": "§3.3.3 PBS-tag sluit aan op Systeembeschrijving AWZI HWP v0.2 (januari 2025), Hoogheemraadschap van Rijnland (slibgistingsinstallatie / systeemgrenzen Bijlage A.1).; numerieke faaldata is aanvullende inschatting.",
+      "notes": "Â§3.3.3 PBS-tag sluit aan op Systeembeschrijving AWZI HWP v0.2 (januari 2025), Hoogheemraadschap van Rijnland (slibgistingsinstallatie / systeemgrenzen Bijlage A.1).; numerieke faaldata is aanvullende inschatting.",
       "object_naam": "AWZI Haarlem Waarderpolder",
       "ontwerpleeftijd_jaar": 22.0,
       "parent_pbs_id": "HWP-SO",
@@ -7818,7 +7818,7 @@
       "volgorde": 1
     },
     "HWP-SO-03": {
-      "aanname_leeftijd": "Combinatie renovatie (o.a. voorindikkers 2022–2024) en nieuwbouw fasering tot ca. 2032; per component representatief ontwerp/bouwjaar ingevuld conform demomodel.",
+      "aanname_leeftijd": "Combinatie renovatie (o.a. voorindikkers 2022â€“2024) en nieuwbouw fasering tot ca. 2032; per component representatief ontwerp/bouwjaar ingevuld conform demomodel.",
       "aanname_multipliciteit": "Exemplarenaantal en HWP-tag volgen Bijlage A.1 (of waterlijn Bijlage B waar expliciet gekoppeld aan HWP-SO-03).",
       "bouwdeel_naam": "Weegbrug",
       "bouwjaar": 2026,
@@ -7826,7 +7826,7 @@
       "element_naam": "Slib-ontvangst [HWP-SO]",
       "library_ref": "BIB-SYS-HWP-V02",
       "multiplicity": 1,
-      "notes": "§2 — registratie vrachtstromen. PBS-tag sluit aan op Systeembeschrijving AWZI HWP v0.2 (januari 2025), Hoogheemraadschap van Rijnland (slibgistingsinstallatie / systeemgrenzen Bijlage A.1).; numerieke faaldata is aanvullende inschatting.",
+      "notes": "Â§2 â€” registratie vrachtstromen. PBS-tag sluit aan op Systeembeschrijving AWZI HWP v0.2 (januari 2025), Hoogheemraadschap van Rijnland (slibgistingsinstallatie / systeemgrenzen Bijlage A.1).; numerieke faaldata is aanvullende inschatting.",
       "object_naam": "AWZI Haarlem Waarderpolder",
       "ontwerpleeftijd_jaar": 18.0,
       "parent_pbs_id": "HWP-SO",
@@ -7834,7 +7834,7 @@
       "volgorde": 2
     },
     "HWP-SO-04": {
-      "aanname_leeftijd": "Combinatie renovatie (o.a. voorindikkers 2022–2024) en nieuwbouw fasering tot ca. 2032; per component representatief ontwerp/bouwjaar ingevuld conform demomodel.",
+      "aanname_leeftijd": "Combinatie renovatie (o.a. voorindikkers 2022â€“2024) en nieuwbouw fasering tot ca. 2032; per component representatief ontwerp/bouwjaar ingevuld conform demomodel.",
       "aanname_multipliciteit": "Exemplarenaantal en HWP-tag volgen Bijlage A.1 (of waterlijn Bijlage B waar expliciet gekoppeld aan HWP-SO-04).",
       "bouwdeel_naam": "Ontvangstbuffer / persleiding egalisatie",
       "bouwjaar": 2026,
@@ -7842,7 +7842,7 @@
       "element_naam": "Slib-ontvangst [HWP-SO]",
       "library_ref": "BIB-SYS-HWP-V02",
       "multiplicity": 1,
-      "notes": "§2 — egalisatie inkomende slibstromen. PBS-tag sluit aan op Systeembeschrijving AWZI HWP v0.2 (januari 2025), Hoogheemraadschap van Rijnland (slibgistingsinstallatie / systeemgrenzen Bijlage A.1).; numerieke faaldata is aanvullende inschatting.",
+      "notes": "Â§2 â€” egalisatie inkomende slibstromen. PBS-tag sluit aan op Systeembeschrijving AWZI HWP v0.2 (januari 2025), Hoogheemraadschap van Rijnland (slibgistingsinstallatie / systeemgrenzen Bijlage A.1).; numerieke faaldata is aanvullende inschatting.",
       "object_naam": "AWZI Haarlem Waarderpolder",
       "ontwerpleeftijd_jaar": 30.0,
       "parent_pbs_id": "HWP-SO",
@@ -7850,7 +7850,7 @@
       "volgorde": 3
     },
     "HWP-SO-05": {
-      "aanname_leeftijd": "Combinatie renovatie (o.a. voorindikkers 2022–2024) en nieuwbouw fasering tot ca. 2032; per component representatief ontwerp/bouwjaar ingevuld conform demomodel.",
+      "aanname_leeftijd": "Combinatie renovatie (o.a. voorindikkers 2022â€“2024) en nieuwbouw fasering tot ca. 2032; per component representatief ontwerp/bouwjaar ingevuld conform demomodel.",
       "aanname_multipliciteit": "Exemplarenaantal en HWP-tag volgen Bijlage A.1 (of waterlijn Bijlage B waar expliciet gekoppeld aan HWP-SO-05).",
       "bouwdeel_naam": "Slibvoedingspompen ontvangst",
       "bouwjaar": 2026,
@@ -7858,7 +7858,7 @@
       "element_naam": "Slib-ontvangst [HWP-SO]",
       "library_ref": "BIB-SYS-HWP-V02",
       "multiplicity": 3,
-      "notes": "§3.3.4 — 3 stuks volgens Bijlage A.1. PBS-tag sluit aan op Systeembeschrijving AWZI HWP v0.2 (januari 2025), Hoogheemraadschap van Rijnland (slibgistingsinstallatie / systeemgrenzen Bijlage A.1).; numerieke faaldata is aanvullende inschatting.",
+      "notes": "Â§3.3.4 â€” 3 stuks volgens Bijlage A.1. PBS-tag sluit aan op Systeembeschrijving AWZI HWP v0.2 (januari 2025), Hoogheemraadschap van Rijnland (slibgistingsinstallatie / systeemgrenzen Bijlage A.1).; numerieke faaldata is aanvullende inschatting.",
       "object_naam": "AWZI Haarlem Waarderpolder",
       "ontwerpleeftijd_jaar": 16.0,
       "parent_pbs_id": "HWP-SO",
@@ -7866,7 +7866,7 @@
       "volgorde": 4
     },
     "HWP-SO-06": {
-      "aanname_leeftijd": "Combinatie renovatie (o.a. voorindikkers 2022–2024) en nieuwbouw fasering tot ca. 2032; per component representatief ontwerp/bouwjaar ingevuld conform demomodel.",
+      "aanname_leeftijd": "Combinatie renovatie (o.a. voorindikkers 2022â€“2024) en nieuwbouw fasering tot ca. 2032; per component representatief ontwerp/bouwjaar ingevuld conform demomodel.",
       "aanname_multipliciteit": "Exemplarenaantal en HWP-tag volgen Bijlage A.1 (of waterlijn Bijlage B waar expliciet gekoppeld aan HWP-SO-06).",
       "bouwdeel_naam": "Versnijders (inline)",
       "bouwjaar": 2026,
@@ -7874,7 +7874,7 @@
       "element_naam": "Slib-ontvangst [HWP-SO]",
       "library_ref": "BIB-SYS-HWP-V02",
       "multiplicity": 2,
-      "notes": "§3.3.5 — bescherming Ephyra / warmtewisselaars. PBS-tag sluit aan op Systeembeschrijving AWZI HWP v0.2 (januari 2025), Hoogheemraadschap van Rijnland (slibgistingsinstallatie / systeemgrenzen Bijlage A.1).; numerieke faaldata is aanvullende inschatting.",
+      "notes": "Â§3.3.5 â€” bescherming Ephyra / warmtewisselaars. PBS-tag sluit aan op Systeembeschrijving AWZI HWP v0.2 (januari 2025), Hoogheemraadschap van Rijnland (slibgistingsinstallatie / systeemgrenzen Bijlage A.1).; numerieke faaldata is aanvullende inschatting.",
       "object_naam": "AWZI Haarlem Waarderpolder",
       "ontwerpleeftijd_jaar": 16.0,
       "parent_pbs_id": "HWP-SO",
@@ -7882,7 +7882,7 @@
       "volgorde": 5
     },
     "HWP-SO-07": {
-      "aanname_leeftijd": "Combinatie renovatie (o.a. voorindikkers 2022–2024) en nieuwbouw fasering tot ca. 2032; per component representatief ontwerp/bouwjaar ingevuld conform demomodel.",
+      "aanname_leeftijd": "Combinatie renovatie (o.a. voorindikkers 2022â€“2024) en nieuwbouw fasering tot ca. 2032; per component representatief ontwerp/bouwjaar ingevuld conform demomodel.",
       "aanname_multipliciteit": "Exemplarenaantal en HWP-tag volgen Bijlage A.1 (of waterlijn Bijlage B waar expliciet gekoppeld aan HWP-SO-07).",
       "bouwdeel_naam": "Afsluiters en leidingwerk slibtransport",
       "bouwjaar": 2026,
@@ -7890,7 +7890,7 @@
       "element_naam": "Slib-ontvangst [HWP-SO]",
       "library_ref": "BIB-SYS-HWP-V02",
       "multiplicity": 20,
-      "notes": "§2 HWP-SO-07 — A.1: 15–25 stuks; demo gebruikt 20. PBS-tag sluit aan op Systeembeschrijving AWZI HWP v0.2 (januari 2025), Hoogheemraadschap van Rijnland (slibgistingsinstallatie / systeemgrenzen Bijlage A.1).; numerieke faaldata is aanvullende inschatting.",
+      "notes": "Â§2 HWP-SO-07 â€” A.1: 15â€“25 stuks; demo gebruikt 20. PBS-tag sluit aan op Systeembeschrijving AWZI HWP v0.2 (januari 2025), Hoogheemraadschap van Rijnland (slibgistingsinstallatie / systeemgrenzen Bijlage A.1).; numerieke faaldata is aanvullende inschatting.",
       "object_naam": "AWZI Haarlem Waarderpolder",
       "ontwerpleeftijd_jaar": 22.0,
       "parent_pbs_id": "HWP-SO",
@@ -7898,15 +7898,15 @@
       "volgorde": 6
     },
     "HWP-VW": {
-      "aanname_leeftijd": "Combinatie renovatie (o.a. voorindikkers 2022–2024) en nieuwbouw fasering tot ca. 2032; per component representatief ontwerp/bouwjaar ingevuld conform demomodel.",
+      "aanname_leeftijd": "Combinatie renovatie (o.a. voorindikkers 2022â€“2024) en nieuwbouw fasering tot ca. 2032; per component representatief ontwerp/bouwjaar ingevuld conform demomodel.",
       "aanname_multipliciteit": "Exemplarenaantal en HWP-tag volgen Bijlage A.1 (of waterlijn Bijlage B waar expliciet gekoppeld aan HWP-VW-01).",
-      "bouwdeel_naam": "Verwarming — subsysteem HWP-VW",
+      "bouwdeel_naam": "Verwarming â€” subsysteem HWP-VW",
       "bouwjaar": 2026,
       "component_naam": "",
       "element_naam": "Verwarming [HWP-VW]",
       "library_ref": "BIB-SYS-HWP-V02",
       "multiplicity": 1,
-      "notes": "Subsysteemknoop voor HWP-VW-01, HWP-VW-02, … (hiërarchie demomodel). Kind-PBS-items bevatten de gedetailleerde bouwdelen.",
+      "notes": "Subsysteemknoop voor HWP-VW-01, HWP-VW-02, â€¦ (hiÃ«rarchie demomodel). Kind-PBS-items bevatten de gedetailleerde bouwdelen.",
       "object_naam": "AWZI Haarlem Waarderpolder",
       "ontwerpleeftijd_jaar": 0.0,
       "parent_pbs_id": "PBS-AWZI-000",
@@ -7914,7 +7914,7 @@
       "volgorde": 10
     },
     "HWP-VW-01": {
-      "aanname_leeftijd": "Combinatie renovatie (o.a. voorindikkers 2022–2024) en nieuwbouw fasering tot ca. 2032; per component representatief ontwerp/bouwjaar ingevuld conform demomodel.",
+      "aanname_leeftijd": "Combinatie renovatie (o.a. voorindikkers 2022â€“2024) en nieuwbouw fasering tot ca. 2032; per component representatief ontwerp/bouwjaar ingevuld conform demomodel.",
       "aanname_multipliciteit": "Exemplarenaantal en HWP-tag volgen Bijlage A.1 (of waterlijn Bijlage B waar expliciet gekoppeld aan HWP-VW-01).",
       "bouwdeel_naam": "Warmtepompinstallatie TEA (Aquathermie)",
       "bouwjaar": 2026,
@@ -7922,7 +7922,7 @@
       "element_naam": "Verwarming [HWP-VW]",
       "library_ref": "BIB-SYS-HWP-V02",
       "multiplicity": 1,
-      "notes": "§3.6 primair voor gistingstemperatuur. PBS-tag sluit aan op Systeembeschrijving AWZI HWP v0.2 (januari 2025), Hoogheemraadschap van Rijnland (slibgistingsinstallatie / systeemgrenzen Bijlage A.1).; numerieke faaldata is aanvullende inschatting.",
+      "notes": "Â§3.6 primair voor gistingstemperatuur. PBS-tag sluit aan op Systeembeschrijving AWZI HWP v0.2 (januari 2025), Hoogheemraadschap van Rijnland (slibgistingsinstallatie / systeemgrenzen Bijlage A.1).; numerieke faaldata is aanvullende inschatting.",
       "object_naam": "AWZI Haarlem Waarderpolder",
       "ontwerpleeftijd_jaar": 18.0,
       "parent_pbs_id": "HWP-VW",
@@ -7930,7 +7930,7 @@
       "volgorde": 0
     },
     "HWP-VW-02": {
-      "aanname_leeftijd": "Combinatie renovatie (o.a. voorindikkers 2022–2024) en nieuwbouw fasering tot ca. 2032; per component representatief ontwerp/bouwjaar ingevuld conform demomodel.",
+      "aanname_leeftijd": "Combinatie renovatie (o.a. voorindikkers 2022â€“2024) en nieuwbouw fasering tot ca. 2032; per component representatief ontwerp/bouwjaar ingevuld conform demomodel.",
       "aanname_multipliciteit": "Exemplarenaantal en HWP-tag volgen Bijlage A.1 (of waterlijn Bijlage B waar expliciet gekoppeld aan HWP-VW-02).",
       "bouwdeel_naam": "Externe warmtewisselaar slibcircuit",
       "bouwjaar": 2026,
@@ -7938,7 +7938,7 @@
       "element_naam": "Verwarming [HWP-VW]",
       "library_ref": "BIB-SYS-HWP-V02",
       "multiplicity": 3,
-      "notes": "§3.6 — 3 stuks PBS-tag sluit aan op Systeembeschrijving AWZI HWP v0.2 (januari 2025), Hoogheemraadschap van Rijnland (slibgistingsinstallatie / systeemgrenzen Bijlage A.1).; numerieke faaldata is aanvullende inschatting.",
+      "notes": "Â§3.6 â€” 3 stuks PBS-tag sluit aan op Systeembeschrijving AWZI HWP v0.2 (januari 2025), Hoogheemraadschap van Rijnland (slibgistingsinstallatie / systeemgrenzen Bijlage A.1).; numerieke faaldata is aanvullende inschatting.",
       "object_naam": "AWZI Haarlem Waarderpolder",
       "ontwerpleeftijd_jaar": 22.0,
       "parent_pbs_id": "HWP-VW",
@@ -7946,7 +7946,7 @@
       "volgorde": 1
     },
     "HWP-VW-03": {
-      "aanname_leeftijd": "Combinatie renovatie (o.a. voorindikkers 2022–2024) en nieuwbouw fasering tot ca. 2032; per component representatief ontwerp/bouwjaar ingevuld conform demomodel.",
+      "aanname_leeftijd": "Combinatie renovatie (o.a. voorindikkers 2022â€“2024) en nieuwbouw fasering tot ca. 2032; per component representatief ontwerp/bouwjaar ingevuld conform demomodel.",
       "aanname_multipliciteit": "Exemplarenaantal en HWP-tag volgen Bijlage A.1 (of waterlijn Bijlage B waar expliciet gekoppeld aan HWP-VW-03).",
       "bouwdeel_naam": "Circulatiepomp slibcircuit",
       "bouwjaar": 2026,
@@ -7954,7 +7954,7 @@
       "element_naam": "Verwarming [HWP-VW]",
       "library_ref": "BIB-SYS-HWP-V02",
       "multiplicity": 6,
-      "notes": "§2 — warmtedistributie. PBS-tag sluit aan op Systeembeschrijving AWZI HWP v0.2 (januari 2025), Hoogheemraadschap van Rijnland (slibgistingsinstallatie / systeemgrenzen Bijlage A.1).; numerieke faaldata is aanvullende inschatting.",
+      "notes": "Â§2 â€” warmtedistributie. PBS-tag sluit aan op Systeembeschrijving AWZI HWP v0.2 (januari 2025), Hoogheemraadschap van Rijnland (slibgistingsinstallatie / systeemgrenzen Bijlage A.1).; numerieke faaldata is aanvullende inschatting.",
       "object_naam": "AWZI Haarlem Waarderpolder",
       "ontwerpleeftijd_jaar": 16.0,
       "parent_pbs_id": "HWP-VW",
@@ -7962,7 +7962,7 @@
       "volgorde": 2
     },
     "HWP-VW-04": {
-      "aanname_leeftijd": "Combinatie renovatie (o.a. voorindikkers 2022–2024) en nieuwbouw fasering tot ca. 2032; per component representatief ontwerp/bouwjaar ingevuld conform demomodel.",
+      "aanname_leeftijd": "Combinatie renovatie (o.a. voorindikkers 2022â€“2024) en nieuwbouw fasering tot ca. 2032; per component representatief ontwerp/bouwjaar ingevuld conform demomodel.",
       "aanname_multipliciteit": "Exemplarenaantal en HWP-tag volgen Bijlage A.1 (of waterlijn Bijlage B waar expliciet gekoppeld aan HWP-VW-04).",
       "bouwdeel_naam": "Circulatiepomp warmwater",
       "bouwjaar": 2026,
@@ -7970,7 +7970,7 @@
       "element_naam": "Verwarming [HWP-VW]",
       "library_ref": "BIB-SYS-HWP-V02",
       "multiplicity": 3,
-      "notes": "§2. PBS-tag sluit aan op Systeembeschrijving AWZI HWP v0.2 (januari 2025), Hoogheemraadschap van Rijnland (slibgistingsinstallatie / systeemgrenzen Bijlage A.1).; numerieke faaldata is aanvullende inschatting.",
+      "notes": "Â§2. PBS-tag sluit aan op Systeembeschrijving AWZI HWP v0.2 (januari 2025), Hoogheemraadschap van Rijnland (slibgistingsinstallatie / systeemgrenzen Bijlage A.1).; numerieke faaldata is aanvullende inschatting.",
       "object_naam": "AWZI Haarlem Waarderpolder",
       "ontwerpleeftijd_jaar": 16.0,
       "parent_pbs_id": "HWP-VW",
@@ -7978,7 +7978,7 @@
       "volgorde": 3
     },
     "HWP-VW-05": {
-      "aanname_leeftijd": "Combinatie renovatie (o.a. voorindikkers 2022–2024) en nieuwbouw fasering tot ca. 2032; per component representatief ontwerp/bouwjaar ingevuld conform demomodel.",
+      "aanname_leeftijd": "Combinatie renovatie (o.a. voorindikkers 2022â€“2024) en nieuwbouw fasering tot ca. 2032; per component representatief ontwerp/bouwjaar ingevuld conform demomodel.",
       "aanname_multipliciteit": "Exemplarenaantal en HWP-tag volgen Bijlage A.1 (of waterlijn Bijlage B waar expliciet gekoppeld aan HWP-VW-05).",
       "bouwdeel_naam": "WKK-installatie (reserve warmte/elektriciteit)",
       "bouwjaar": 2026,
@@ -7986,7 +7986,7 @@
       "element_naam": "Verwarming [HWP-VW]",
       "library_ref": "BIB-SYS-HWP-V02",
       "multiplicity": 1,
-      "notes": "§3.6. PBS-tag sluit aan op Systeembeschrijving AWZI HWP v0.2 (januari 2025), Hoogheemraadschap van Rijnland (slibgistingsinstallatie / systeemgrenzen Bijlage A.1).; numerieke faaldata is aanvullende inschatting.",
+      "notes": "Â§3.6. PBS-tag sluit aan op Systeembeschrijving AWZI HWP v0.2 (januari 2025), Hoogheemraadschap van Rijnland (slibgistingsinstallatie / systeemgrenzen Bijlage A.1).; numerieke faaldata is aanvullende inschatting.",
       "object_naam": "AWZI Haarlem Waarderpolder",
       "ontwerpleeftijd_jaar": 20.0,
       "parent_pbs_id": "HWP-VW",
@@ -7994,7 +7994,7 @@
       "volgorde": 4
     },
     "HWP-VW-06": {
-      "aanname_leeftijd": "Combinatie renovatie (o.a. voorindikkers 2022–2024) en nieuwbouw fasering tot ca. 2032; per component representatief ontwerp/bouwjaar ingevuld conform demomodel.",
+      "aanname_leeftijd": "Combinatie renovatie (o.a. voorindikkers 2022â€“2024) en nieuwbouw fasering tot ca. 2032; per component representatief ontwerp/bouwjaar ingevuld conform demomodel.",
       "aanname_multipliciteit": "Exemplarenaantal en HWP-tag volgen Bijlage A.1 (of waterlijn Bijlage B waar expliciet gekoppeld aan HWP-VW-06).",
       "bouwdeel_naam": "Gasketel backup verwarming",
       "bouwjaar": 2026,
@@ -8002,7 +8002,7 @@
       "element_naam": "Verwarming [HWP-VW]",
       "library_ref": "BIB-SYS-HWP-V02",
       "multiplicity": 1,
-      "notes": "§3.6. PBS-tag sluit aan op Systeembeschrijving AWZI HWP v0.2 (januari 2025), Hoogheemraadschap van Rijnland (slibgistingsinstallatie / systeemgrenzen Bijlage A.1).; numerieke faaldata is aanvullende inschatting.",
+      "notes": "Â§3.6. PBS-tag sluit aan op Systeembeschrijving AWZI HWP v0.2 (januari 2025), Hoogheemraadschap van Rijnland (slibgistingsinstallatie / systeemgrenzen Bijlage A.1).; numerieke faaldata is aanvullende inschatting.",
       "object_naam": "AWZI Haarlem Waarderpolder",
       "ontwerpleeftijd_jaar": 20.0,
       "parent_pbs_id": "HWP-VW",
@@ -8010,7 +8010,7 @@
       "volgorde": 5
     },
     "HWP-VW-07": {
-      "aanname_leeftijd": "Combinatie renovatie (o.a. voorindikkers 2022–2024) en nieuwbouw fasering tot ca. 2032; per component representatief ontwerp/bouwjaar ingevuld conform demomodel.",
+      "aanname_leeftijd": "Combinatie renovatie (o.a. voorindikkers 2022â€“2024) en nieuwbouw fasering tot ca. 2032; per component representatief ontwerp/bouwjaar ingevuld conform demomodel.",
       "aanname_multipliciteit": "Exemplarenaantal en HWP-tag volgen Bijlage A.1 (of waterlijn Bijlage B waar expliciet gekoppeld aan HWP-VW-07).",
       "bouwdeel_naam": "Warmtebuffer",
       "bouwjaar": 2026,
@@ -8018,7 +8018,7 @@
       "element_naam": "Verwarming [HWP-VW]",
       "library_ref": "BIB-SYS-HWP-V02",
       "multiplicity": 1,
-      "notes": "§3.6. PBS-tag sluit aan op Systeembeschrijving AWZI HWP v0.2 (januari 2025), Hoogheemraadschap van Rijnland (slibgistingsinstallatie / systeemgrenzen Bijlage A.1).; numerieke faaldata is aanvullende inschatting.",
+      "notes": "Â§3.6. PBS-tag sluit aan op Systeembeschrijving AWZI HWP v0.2 (januari 2025), Hoogheemraadschap van Rijnland (slibgistingsinstallatie / systeemgrenzen Bijlage A.1).; numerieke faaldata is aanvullende inschatting.",
       "object_naam": "AWZI Haarlem Waarderpolder",
       "ontwerpleeftijd_jaar": 25.0,
       "parent_pbs_id": "HWP-VW",
@@ -8026,15 +8026,15 @@
       "volgorde": 6
     },
     "HWP-WL-BLR": {
-      "aanname_leeftijd": "Combinatie renovatie (o.a. voorindikkers 2022–2024) en nieuwbouw fasering tot ca. 2032; per component representatief ontwerp/bouwjaar ingevuld conform demomodel.",
+      "aanname_leeftijd": "Combinatie renovatie (o.a. voorindikkers 2022â€“2024) en nieuwbouw fasering tot ca. 2032; per component representatief ontwerp/bouwjaar ingevuld conform demomodel.",
       "aanname_multipliciteit": "Exemplarenaantal en HWP-tag volgen Bijlage A.1 (of waterlijn Bijlage B waar expliciet gekoppeld aan HWP-WL-BLR).",
       "bouwdeel_naam": "Beluchting / blowers",
       "bouwjaar": 2026,
       "component_naam": "",
-      "element_naam": "Waterlijn — beluchting",
+      "element_naam": "Waterlijn â€” beluchting",
       "library_ref": "BIB-SYS-HWP-V02",
       "multiplicity": 8,
-      "notes": "Bijlage B — beluchtingscapaciteit bij piekscenario's. PBS-tag sluit aan op Systeembeschrijving AWZI HWP v0.2 (januari 2025), Hoogheemraadschap van Rijnland (slibgistingsinstallatie / systeemgrenzen Bijlage A.1).; numerieke faaldata is aanvullende inschatting.",
+      "notes": "Bijlage B â€” beluchtingscapaciteit bij piekscenario's. PBS-tag sluit aan op Systeembeschrijving AWZI HWP v0.2 (januari 2025), Hoogheemraadschap van Rijnland (slibgistingsinstallatie / systeemgrenzen Bijlage A.1).; numerieke faaldata is aanvullende inschatting.",
       "object_naam": "AWZI Haarlem Waarderpolder",
       "ontwerpleeftijd_jaar": 15.0,
       "parent_pbs_id": "PBS-AWZI-000",
@@ -8042,12 +8042,12 @@
       "volgorde": 11
     },
     "HWP-WL-EBUF": {
-      "aanname_leeftijd": "Combinatie renovatie (o.a. voorindikkers 2022–2024) en nieuwbouw fasering tot ca. 2032; per component representatief ontwerp/bouwjaar ingevuld conform demomodel.",
+      "aanname_leeftijd": "Combinatie renovatie (o.a. voorindikkers 2022â€“2024) en nieuwbouw fasering tot ca. 2032; per component representatief ontwerp/bouwjaar ingevuld conform demomodel.",
       "aanname_multipliciteit": "Exemplarenaantal en HWP-tag volgen Bijlage A.1 (of waterlijn Bijlage B waar expliciet gekoppeld aan HWP-WL-EBUF).",
       "bouwdeel_naam": "Effluentbuffer / nabehandeling inclusief noodroute",
       "bouwjaar": 2026,
       "component_naam": "",
-      "element_naam": "Waterlijn — nabehandeling",
+      "element_naam": "Waterlijn â€” nabehandeling",
       "library_ref": "BIB-SYS-HWP-V02",
       "multiplicity": 1,
       "notes": "Bijlage B noemt o.a. effluentbufferorde; bottleneck bij overstortscenario. PBS-tag sluit aan op Systeembeschrijving AWZI HWP v0.2 (januari 2025), Hoogheemraadschap van Rijnland (slibgistingsinstallatie / systeemgrenzen Bijlage A.1).; numerieke faaldata is aanvullende inschatting.",
@@ -8058,7 +8058,7 @@
       "volgorde": 12
     },
     "HWP-WL-INF-P": {
-      "aanname_leeftijd": "Combinatie renovatie (o.a. voorindikkers 2022–2024) en nieuwbouw fasering tot ca. 2032; per component representatief ontwerp/bouwjaar ingevuld conform demomodel.",
+      "aanname_leeftijd": "Combinatie renovatie (o.a. voorindikkers 2022â€“2024) en nieuwbouw fasering tot ca. 2032; per component representatief ontwerp/bouwjaar ingevuld conform demomodel.",
       "aanname_multipliciteit": "Exemplarenaantal en HWP-tag volgen Bijlage A.1 (of waterlijn Bijlage B waar expliciet gekoppeld aan HWP-WL-INF-P).",
       "bouwdeel_naam": "Influent-/voedingspompen",
       "bouwjaar": 2026,
@@ -8066,7 +8066,7 @@
       "element_naam": "Waterlijn",
       "library_ref": "BIB-SYS-HWP-V02",
       "multiplicity": 6,
-      "notes": "§4.3 — redundantie verwacht conform ontwerp. PBS-tag sluit aan op Systeembeschrijving AWZI HWP v0.2 (januari 2025), Hoogheemraadschap van Rijnland (slibgistingsinstallatie / systeemgrenzen Bijlage A.1).; numerieke faaldata is aanvullende inschatting.",
+      "notes": "Â§4.3 â€” redundantie verwacht conform ontwerp. PBS-tag sluit aan op Systeembeschrijving AWZI HWP v0.2 (januari 2025), Hoogheemraadschap van Rijnland (slibgistingsinstallatie / systeemgrenzen Bijlage A.1).; numerieke faaldata is aanvullende inschatting.",
       "object_naam": "AWZI Haarlem Waarderpolder",
       "ontwerpleeftijd_jaar": 18.0,
       "parent_pbs_id": "PBS-AWZI-000",
@@ -8074,15 +8074,15 @@
       "volgorde": 13
     },
     "HWP-WL-MECH": {
-      "aanname_leeftijd": "Combinatie renovatie (o.a. voorindikkers 2022–2024) en nieuwbouw fasering tot ca. 2032; per component representatief ontwerp/bouwjaar ingevuld conform demomodel.",
+      "aanname_leeftijd": "Combinatie renovatie (o.a. voorindikkers 2022â€“2024) en nieuwbouw fasering tot ca. 2032; per component representatief ontwerp/bouwjaar ingevuld conform demomodel.",
       "aanname_multipliciteit": "Exemplarenaantal en HWP-tag volgen Bijlage A.1 (of waterlijn Bijlage B waar expliciet gekoppeld aan HWP-WL-MECH).",
       "bouwdeel_naam": "Mechanische voorbehandeling (grof/fijnrooster, transportschroef, zandvanger)",
       "bouwjaar": 2026,
       "component_naam": "",
-      "element_naam": "Waterlijn — voorbehandeling",
+      "element_naam": "Waterlijn â€” voorbehandeling",
       "library_ref": "BIB-SYS-HWP-V02",
       "multiplicity": 1,
-      "notes": "§4.1 en figuren influentvoorbehandeling. PBS-tag sluit aan op Systeembeschrijving AWZI HWP v0.2 (januari 2025), Hoogheemraadschap van Rijnland (slibgistingsinstallatie / systeemgrenzen Bijlage A.1).; numerieke faaldata is aanvullende inschatting.",
+      "notes": "Â§4.1 en figuren influentvoorbehandeling. PBS-tag sluit aan op Systeembeschrijving AWZI HWP v0.2 (januari 2025), Hoogheemraadschap van Rijnland (slibgistingsinstallatie / systeemgrenzen Bijlage A.1).; numerieke faaldata is aanvullende inschatting.",
       "object_naam": "AWZI Haarlem Waarderpolder",
       "ontwerpleeftijd_jaar": 25.0,
       "parent_pbs_id": "PBS-AWZI-000",
@@ -8090,12 +8090,12 @@
       "volgorde": 14
     },
     "HWP-WL-NRD-C": {
-      "aanname_leeftijd": "Combinatie renovatie (o.a. voorindikkers 2022–2024) en nieuwbouw fasering tot ca. 2032; per component representatief ontwerp/bouwjaar ingevuld conform demomodel.",
+      "aanname_leeftijd": "Combinatie renovatie (o.a. voorindikkers 2022â€“2024) en nieuwbouw fasering tot ca. 2032; per component representatief ontwerp/bouwjaar ingevuld conform demomodel.",
       "aanname_multipliciteit": "Exemplarenaantal en HWP-tag volgen Bijlage A.1 (of waterlijn Bijlage B waar expliciet gekoppeld aan HWP-WL-NRD-C).",
-      "bouwdeel_naam": "Nereda-controller (SBR-cycluscoördinatie)",
+      "bouwdeel_naam": "Nereda-controller (SBR-cycluscoÃ¶rdinatie)",
       "bouwjaar": 2026,
       "component_naam": "",
-      "element_naam": "Waterlijn — Nereda",
+      "element_naam": "Waterlijn â€” Nereda",
       "library_ref": "BIB-SYS-HWP-V02",
       "multiplicity": 1,
       "notes": "Bijlage B: kritisch voor synchronisatie van parallelle reactoren. PBS-tag sluit aan op Systeembeschrijving AWZI HWP v0.2 (januari 2025), Hoogheemraadschap van Rijnland (slibgistingsinstallatie / systeemgrenzen Bijlage A.1).; numerieke faaldata is aanvullende inschatting.",
@@ -8106,12 +8106,12 @@
       "volgorde": 15
     },
     "HWP-WL-NRD-R": {
-      "aanname_leeftijd": "Combinatie renovatie (o.a. voorindikkers 2022–2024) en nieuwbouw fasering tot ca. 2032; per component representatief ontwerp/bouwjaar ingevuld conform demomodel.",
+      "aanname_leeftijd": "Combinatie renovatie (o.a. voorindikkers 2022â€“2024) en nieuwbouw fasering tot ca. 2032; per component representatief ontwerp/bouwjaar ingevuld conform demomodel.",
       "aanname_multipliciteit": "Exemplarenaantal en HWP-tag volgen Bijlage A.1 (of waterlijn Bijlage B waar expliciet gekoppeld aan HWP-WL-NRD-R).",
       "bouwdeel_naam": "Nereda-SBR reactoren",
       "bouwjaar": 2026,
       "component_naam": "",
-      "element_naam": "Waterlijn — Nereda",
+      "element_naam": "Waterlijn â€” Nereda",
       "library_ref": "BIB-SYS-HWP-V02",
       "multiplicity": 4,
       "notes": "Bijlage B: 4 x 10.000 m3 (controleer definitieve P&ID/ontwerp). PBS-tag sluit aan op Systeembeschrijving AWZI HWP v0.2 (januari 2025), Hoogheemraadschap van Rijnland (slibgistingsinstallatie / systeemgrenzen Bijlage A.1).; numerieke faaldata is aanvullende inschatting.",
@@ -8122,7 +8122,7 @@
       "volgorde": 16
     },
     "HWP-WL-VB": {
-      "aanname_leeftijd": "Combinatie renovatie (o.a. voorindikkers 2022–2024) en nieuwbouw fasering tot ca. 2032; per component representatief ontwerp/bouwjaar ingevuld conform demomodel.",
+      "aanname_leeftijd": "Combinatie renovatie (o.a. voorindikkers 2022â€“2024) en nieuwbouw fasering tot ca. 2032; per component representatief ontwerp/bouwjaar ingevuld conform demomodel.",
       "aanname_multipliciteit": "Exemplarenaantal en HWP-tag volgen Bijlage A.1 (of waterlijn Bijlage B waar expliciet gekoppeld aan HWP-WL-VB).",
       "bouwdeel_naam": "Influentbuffer / verdeelwerk (vrij verval na eerste opvoer)",
       "bouwjaar": 2026,
@@ -8130,7 +8130,7 @@
       "element_naam": "Waterlijn",
       "library_ref": "BIB-SYS-HWP-V02",
       "multiplicity": 1,
-      "notes": "§4.2.2 vrij-verval + hydraulische buffering; Bijlage B noemt o.a. bufferordergrootte (controleer definitief ontwerp). PBS-tag sluit aan op Systeembeschrijving AWZI HWP v0.2 (januari 2025), Hoogheemraadschap van Rijnland (slibgistingsinstallatie / systeemgrenzen Bijlage A.1).; numerieke faaldata is aanvullende inschatting.",
+      "notes": "Â§4.2.2 vrij-verval + hydraulische buffering; Bijlage B noemt o.a. bufferordergrootte (controleer definitief ontwerp). PBS-tag sluit aan op Systeembeschrijving AWZI HWP v0.2 (januari 2025), Hoogheemraadschap van Rijnland (slibgistingsinstallatie / systeemgrenzen Bijlage A.1).; numerieke faaldata is aanvullende inschatting.",
       "object_naam": "AWZI Haarlem Waarderpolder",
       "ontwerpleeftijd_jaar": 35.0,
       "parent_pbs_id": "PBS-AWZI-000",
@@ -8146,7 +8146,7 @@
       "element_naam": "Systeemniveau",
       "library_ref": "",
       "multiplicity": 1,
-      "notes": "Fysieke PBS-decompositie en multipliciteiten volgen Systeembeschrijving AWZI HWP v0.2 (januari 2025), Hoogheemraadschap van Rijnland (slibgistingsinstallatie / systeemgrenzen Bijlage A.1).; waterlijn-/Nereda-schaal volgt §4 en Bijlage B waar genoemd (o.a. reactorvolumes, buffer). MTTF/σ, CM-kosten en sommige ontwerpleeftijden zijn waar niet in het document ingevuld: engineering judgement uitsluitend voor demomodel.",
+      "notes": "Fysieke PBS-decompositie en multipliciteiten volgen Systeembeschrijving AWZI HWP v0.2 (januari 2025), Hoogheemraadschap van Rijnland (slibgistingsinstallatie / systeemgrenzen Bijlage A.1).; waterlijn-/Nereda-schaal volgt Â§4 en Bijlage B waar genoemd (o.a. reactorvolumes, buffer). MTTF/Ïƒ, CM-kosten en sommige ontwerpleeftijden zijn waar niet in het document ingevuld: engineering judgement uitsluitend voor demomodel.",
       "object_naam": "AWZI Haarlem Waarderpolder",
       "ontwerpleeftijd_jaar": 0.0,
       "parent_pbs_id": null,

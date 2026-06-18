@@ -33,6 +33,7 @@ def test_workspace_menu_bar_has_top_level_menus(monkeypatch) -> None:
     assert _menu_labels(window) == [
         messages.WORKSPACE_MENU_FILE,
         messages.WORKSPACE_MENU_VIEW,
+        messages.WORKSPACE_MENU_WHATIF,
         messages.WORKSPACE_MENU_RUN,
         messages.WORKSPACE_MENU_ANALYSIS,
     ]
@@ -83,14 +84,11 @@ def test_kpi_menu_toggle_collapses_panel(monkeypatch) -> None:
     window.workspace_state.set_modus(MODE_LCC)
     app.processEvents()
 
-    kpi_action = _action(window, "view.kpi_overview_visible")
-    assert kpi_action.isChecked() is False
-    assert window.workspace_state.snapshot().kpi_collapsed_in_lcc is True
-    assert window.kpi_table_view.isVisible() is False
-
-    kpi_action.setChecked(True)
+    kpi_action = _action(window, "view.output.kpi_overview")
+    kpi_action.trigger()
     app.processEvents()
-    assert window.workspace_state.snapshot().kpi_collapsed_in_lcc is False
+    assert window.workspace_state.snapshot().active_view_id == "output.kpi_overview"
+    assert window.detail_stack.currentWidget() is window.kpi_overview_page
     assert window.kpi_table_view.isVisible() is True
 
 

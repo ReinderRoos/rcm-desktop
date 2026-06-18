@@ -124,7 +124,7 @@ def main() -> int:
         window.set_pbs_scope(pbs_ids[-1])
         app.processEvents()
     _grab(window, OUT_DIR / "03-pbs-scope-geselecteerd.png")
-    window.show_whole_project_button.click()
+    window.set_pbs_scope(None)
     app.processEvents()
 
     # 04 — Top 10

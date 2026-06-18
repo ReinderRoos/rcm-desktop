@@ -27,6 +27,8 @@ from rcm_desktop.views.widgets.nb_effect_filter_combo import NbEffectFilterCombo
 @dataclass
 class Top10SubbarPanel:
     widget: QWidget
+    row_layout: QHBoxLayout
+    subbar_label: QLabel
     metric_combo: QComboBox
     nb_effect_filter_combo: NbEffectFilterCombo
     horizon_button_group: QButtonGroup
@@ -44,7 +46,8 @@ def build_top10_subbar_panel(parent: QWidget | None = None) -> Top10SubbarPanel:
     enable_stylesheet_background(widget)
     row = QHBoxLayout(widget)
     row.setContentsMargins(0, 0, 0, 0)
-    row.addWidget(QLabel(messages.WORKSPACE_TOP10_SUBBAR_LABEL))
+    subbar_label = QLabel(messages.WORKSPACE_TOP10_SUBBAR_LABEL)
+    row.addWidget(subbar_label)
 
     metric_combo = QComboBox()
     metric_labels = {
@@ -103,6 +106,8 @@ def build_top10_subbar_panel(parent: QWidget | None = None) -> Top10SubbarPanel:
 
     return Top10SubbarPanel(
         widget=widget,
+        row_layout=row,
+        subbar_label=subbar_label,
         metric_combo=metric_combo,
         nb_effect_filter_combo=nb_effect_filter_combo,
         horizon_button_group=horizon_button_group,

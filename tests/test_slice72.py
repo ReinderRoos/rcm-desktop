@@ -24,6 +24,7 @@ from rcm_desktop.adapter.results_workspace_state import (
     METRIC_NIET_BESCHIKBAARHEID,
     MODE_BIJDRAGEN,
     SOURCE_FAALWIJZE,
+    SOURCE_PBS,
     ContributionPresentation,
     ResultsWorkspaceState,
 )
@@ -115,9 +116,9 @@ def test_chart_bar_label_follows_kosten_metric() -> None:
 # --- 01: faalwijze default, no component toggle ---
 
 
-def test_workspace_default_source_is_faalwijze() -> None:
+def test_workspace_default_source_is_pbs() -> None:
     state = ResultsWorkspaceState()
-    assert state.snapshot().source == SOURCE_FAALWIJZE
+    assert state.snapshot().source == SOURCE_PBS
 
 
 def test_bijdragen_top10_has_no_component_source_toggle(monkeypatch) -> None:
@@ -129,20 +130,6 @@ def test_bijdragen_top10_has_no_component_source_toggle(monkeypatch) -> None:
 
     assert not hasattr(window, "source_toggle_pbs_button")
 
-
-def test_bijdragen_chart_defaults_to_faalwijze_grouping(monkeypatch) -> None:
-    app = _ensure_app()
-    monkeypatch.setattr(QMessageBox, "critical", lambda *_a, **_k: QMessageBox.Ok)
-    window = ResultsWorkspaceWindow()
-    window.show()
-    project = _three_level_project()
-    window._state.set_last_project(project)
-    window._state.set_last_run(_done_run_for_fixture())
-    app.processEvents()
-
-    rows = window.bijdragen_chart_widget.rows()
-    assert rows
-    assert all(r.category_id.startswith("FM-") for r in rows)
 
 
 # --- 02: chart-only ---

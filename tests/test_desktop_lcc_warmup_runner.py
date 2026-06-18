@@ -13,7 +13,7 @@ from rcm_desktop.adapter.lcc_warmup_runner import LCCWarmupRunner
 from rcm_desktop.adapter.lcc_type_filter import LCCTypeFilterSet
 from rcm_desktop.adapter.planning_overlay_state import PlanningOverlayState
 from rcm_desktop.adapter.presentation_lazy_service import warm_lcc_render_index
-from rcm_desktop.adapter.results_workspace_state import MODE_LCC, WorkspaceStateSnapshot
+from rcm_desktop.adapter.results_workspace_state import METRIC_NIET_BESCHIKBAARHEID, MODE_LCC, WorkspaceStateSnapshot
 from rcm_desktop.adapter.run_service import run as run_single
 from rcm_desktop.adapter.workspace_render_index import SLOT_CURRENT, WorkspaceRenderIndex
 
@@ -41,7 +41,7 @@ def test_warmup_populates_render_index(qt_app):
     snapshot = WorkspaceStateSnapshot(
         modus=MODE_LCC,
         source="pbs",
-        metric="nb",
+        metric=METRIC_NIET_BESCHIKBAARHEID,
         top_n=10,
         scope_id=None,
         filter_text="",

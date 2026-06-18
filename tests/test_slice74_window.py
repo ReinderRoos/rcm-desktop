@@ -30,7 +30,7 @@ from tests.test_desktop_results_workspace_window import _ensure_app
 from tests.workspace_test_helpers import switch_workspace_modus
 
 NUM = 5
-_DOWNTIME_COL = 6
+_DOWNTIME_COL = 3  # metric column in FMSingleRunTableModel
 _LIFECYCLE_HOURS = EffectPresentation(horizon="lifecycle", unavailability_display="hours")
 
 

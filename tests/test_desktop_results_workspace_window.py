@@ -14,6 +14,7 @@ from rcm_core.persistence import load_project
 from rcm_desktop import messages
 from rcm_desktop.adapter.result_view_service import FMResultRow, PBSResultRow
 from rcm_desktop.adapter.results_workspace_state import (
+    METRIC_FAALMOMENTEN,
     METRIC_KOSTEN,
     METRIC_NIET_BESCHIKBAARHEID,
     MODE_BIJDRAGEN,
@@ -152,7 +153,6 @@ def test_workspace_window_constructs_with_pbs_sidebar_visible(monkeypatch):
     assert window.pbs_sidebar.isVisible() is True
     pbs_action = window._workspace_menu.actions_by_id["view.pbs_tree_visible"]
     assert pbs_action.isChecked() is True
-    assert window.show_whole_project_button is not None
     assert window.pbs_filter_input is not None
     assert window.pbs_tree_view is not None
 
@@ -288,7 +288,7 @@ def test_workspace_window_show_whole_project_resets_scope(monkeypatch):
     app.processEvents()
     assert window.fm_table_view.model().rowCount() == 1
 
-    window.show_whole_project_button.click()
+    window.set_pbs_scope(None)
     app.processEvents()
 
     assert window._pbs_scope_id is None
@@ -390,7 +390,7 @@ def test_workspace_window_clears_run_state_on_new_project_path(monkeypatch):
     assert model_after.data(first_root_after, Qt.DisplayRole) == "—"
 
 
-def test_workspace_window_default_modus_is_bijdragen_with_niet_beschikbaarheid_pbs(
+def test_workspace_window_default_modus_is_fm_detail_with_niet_beschikbaarheid_pbs(
     monkeypatch,
     isolated_navigation_settings,
 ):
@@ -401,9 +401,9 @@ def test_workspace_window_default_modus_is_bijdragen_with_niet_beschikbaarheid_p
     app.processEvents()
 
     snapshot = window.workspace_state.snapshot()
-    assert snapshot.modus == MODE_BIJDRAGEN
+    assert snapshot.modus == MODE_FM_DETAIL
     assert snapshot.metric == METRIC_NIET_BESCHIKBAARHEID
-    assert snapshot.source == SOURCE_FAALWIJZE
+    assert snapshot.source == SOURCE_PBS
 
 
 def test_clicking_view_dropdown_switches_workspace_state_modus(monkeypatch):
@@ -426,11 +426,7 @@ def test_switching_modus_changes_visible_detail_page(monkeypatch, isolated_navig
     window.show()
     app.processEvents()
 
-    # Bijdragen page is initial.
-    assert window.detail_stack.currentWidget() is window.bijdragen_page
-
-    switch_workspace_modus(window, "fm_detail", app)
-    app.processEvents()
+    # FM-detail page is initial (slice 104: Top 10 removed).
     assert window.detail_stack.currentWidget() is window.fm_detail_page
 
     switch_workspace_modus(window, "lcc", app)
@@ -439,9 +435,10 @@ def test_switching_modus_changes_visible_detail_page(monkeypatch, isolated_navig
 
     switch_workspace_modus(window, "bijdragen", app)
     app.processEvents()
-    assert window.detail_stack.currentWidget() is window.bijdragen_page
+    assert window.detail_stack.currentWidget() is window.fm_detail_page
 
 
+@pytest.mark.skip(reason="Top 10 modus verwijderd (slice 104)")
 def test_bijdragen_modus_renders_top_n_contribution_rows_after_run(monkeypatch):
     app = _ensure_app()
     monkeypatch.setattr(QMessageBox, "critical", lambda *_a, **_k: QMessageBox.Ok)
@@ -457,7 +454,7 @@ def test_bijdragen_modus_renders_top_n_contribution_rows_after_run(monkeypatch):
     assert len(chart_rows) >= 1
 
 
-def test_changing_metric_combo_updates_contribution_rows(monkeypatch):
+def test_changing_metric_combo_updates_fm_table_metric_column(monkeypatch):
     app = _ensure_app()
     monkeypatch.setattr(QMessageBox, "critical", lambda *_a, **_k: QMessageBox.Ok)
     window = ResultsWorkspaceWindow()
@@ -466,21 +463,28 @@ def test_changing_metric_combo_updates_contribution_rows(monkeypatch):
     window._state.set_last_project(project)
     run = _done_run_for_fixture()
     window._state.set_last_run(run)
+    switch_workspace_modus(window, "fm_detail", app)
     app.processEvents()
 
-    initial = window.bijdragen_chart_widget.rows()
-    initial_values = tuple(r.value for r in initial)
+    src = window._fm_table_filter_proxy.sourceModel()
+    assert src is not None
+    idx_fm = window.metric_combo.findData(METRIC_FAALMOMENTEN)
+    window.metric_combo.setCurrentIndex(idx_fm)
+    app.processEvents()
 
-    # Switch to METRIC_KOSTEN; values should change (kosten vs unavailability are different units/magnitudes).
     idx = window.metric_combo.findData(METRIC_KOSTEN)
     window.metric_combo.setCurrentIndex(idx)
     app.processEvents()
 
-    new_values = tuple(r.value for r in window.bijdragen_chart_widget.rows())
-    assert new_values != initial_values
     assert window.workspace_state.snapshot().metric == METRIC_KOSTEN
+    src = window._fm_table_filter_proxy.sourceModel()
+    assert src is not None
+    assert src.headerData(3, Qt.Horizontal, Qt.DisplayRole) == (
+        messages.FM_RESULTS_HEADER_TOTAL_COST_EUR
+    )
 
 
+@pytest.mark.skip(reason="Top 10 modus verwijderd (slice 104)")
 def test_bijdragen_defaults_to_faalwijze_grouping(monkeypatch):
     app = _ensure_app()
     monkeypatch.setattr(QMessageBox, "critical", lambda *_a, **_k: QMessageBox.Ok)
@@ -601,32 +605,26 @@ def test_lcc_modus_after_run_shows_chart_and_table_with_ltap_horizon_buckets(mon
     assert window.lcc_empty_state_label.isVisible() is False
 
 
-def test_top10_subbar_visible_in_bijdragen_lcc_and_fm_detail(
+def test_chrome_footer_metric_visible_in_lcc_not_fm_detail(
     monkeypatch, isolated_navigation_settings
 ):
-    # Slice 74: subbar ook in FM-detail; slice 80: metric-combo daar ook zichtbaar.
     app = _ensure_app()
     monkeypatch.setattr(QMessageBox, "critical", lambda *_a, **_k: QMessageBox.Ok)
     window = ResultsWorkspaceWindow()
     window.show()
     app.processEvents()
 
-    assert window.top10_subbar.isVisible() is True
     switch_workspace_modus(window, "lcc", app)
     app.processEvents()
-    assert window.top10_subbar.isVisible() is True
+    assert window.chrome_footer.isVisible() is True
+    assert window.metric_combo.isVisible() is True
     switch_workspace_modus(window, "fm_detail", app)
     app.processEvents()
-    assert window.top10_subbar.isVisible() is True
-    assert window.nb_effect_filter_combo.isVisible() is True
     assert window.metric_combo.isVisible() is True
-    switch_workspace_modus(window, "bijdragen", app)
-    app.processEvents()
-    assert window.top10_subbar.isVisible() is True
-    assert window.metric_combo.isVisible() is True
+    assert window.metric_combo.parent() is window.fm_metric_chrome_host
 
 
-def test_legacy_niet_beschikbaarheid_modus_migrates_to_bijdragen(monkeypatch):
+def test_legacy_niet_beschikbaarheid_modus_migrates_to_fm_detail(monkeypatch):
     app = _ensure_app()
     monkeypatch.setattr(QMessageBox, "critical", lambda *_a, **_k: QMessageBox.Ok)
     window = ResultsWorkspaceWindow()
@@ -635,8 +633,8 @@ def test_legacy_niet_beschikbaarheid_modus_migrates_to_bijdragen(monkeypatch):
 
     window.workspace_state.set_modus("niet_beschikbaarheid")
     app.processEvents()
-    assert window.workspace_state.snapshot().modus == MODE_BIJDRAGEN
-    assert window.detail_stack.currentWidget() is window.bijdragen_page
+    assert window.workspace_state.snapshot().modus == MODE_FM_DETAIL
+    assert window.detail_stack.currentWidget() is window.fm_detail_page
 
 
 def test_lcc_modus_shows_planning_chart_after_run(monkeypatch):
@@ -914,7 +912,7 @@ def test_loading_new_project_resets_modus_and_metric_to_defaults(monkeypatch):
     app.processEvents()
 
     snapshot = window.workspace_state.snapshot()
-    assert snapshot.modus == MODE_BIJDRAGEN
+    assert snapshot.modus == MODE_FM_DETAIL
     assert snapshot.metric == METRIC_NIET_BESCHIKBAARHEID
     assert snapshot.scope_id is None
 
@@ -1001,9 +999,9 @@ def test_modus_switches_use_single_pane_after_run(monkeypatch):
     app.processEvents()
     assert window.lcc_single_slot_pane.isVisible() is True
 
-    window.workspace_state.set_modus(MODE_BIJDRAGEN)
+    window.workspace_state.set_modus(MODE_FM_DETAIL)
     app.processEvents()
-    assert window.bijdragen_single_slot_pane.isVisible() is True
+    assert window.fm_single_slot_pane.isVisible() is True
 
 
 def test_pbs_scope_applies_to_bijdragen_single_pane(monkeypatch):
@@ -1022,7 +1020,7 @@ def test_pbs_scope_applies_to_bijdragen_single_pane(monkeypatch):
     app.processEvents()
     scoped_rows = len(window.bijdragen_chart_widget.rows())
 
-    window.show_whole_project_button.click()
+    window.set_pbs_scope(None)
     app.processEvents()
     full_rows = len(window.bijdragen_chart_widget.rows())
     assert full_rows >= scoped_rows
@@ -1127,7 +1125,7 @@ def test_fm_inspector_selection_after_scope_rerender(monkeypatch):
     assert window.fm_inspector_panel.isVisible()
     assert "FM-A" in window.fm_inspector_identity_label.text()
 
-    window.show_whole_project_button.click()
+    window.set_pbs_scope(None)
     app.processEvents()
 
     model = window.fm_table_view.model()
@@ -1280,7 +1278,7 @@ def test_fm_detail_inspector_profile_missing_without_horizon(monkeypatch):
     )
 
 
-def test_fm_detail_inspector_hidden_in_top10_modus(monkeypatch):
+def test_fm_detail_inspector_hidden_in_lcc_modus(monkeypatch):
     """Slice 34 issue 03 — inspector alleen in FM-detail."""
     app = _ensure_app()
     monkeypatch.setattr(QMessageBox, "critical", lambda *_a, **_k: QMessageBox.Ok)
@@ -1289,7 +1287,7 @@ def test_fm_detail_inspector_hidden_in_top10_modus(monkeypatch):
     project = _three_level_project()
     window._state.set_last_project(project)
     window._state.set_last_run(_done_run_for_fixture())
-    switch_workspace_modus(window, "bijdragen", app)
+    switch_workspace_modus(window, "lcc", app)
     app.processEvents()
 
     assert not window.fm_inspector_container.isVisible()
@@ -1319,8 +1317,8 @@ def _done_run_sample_fm001() -> RunResult:
     return build_run_result(project, list(fm_core), summary_prefix="test")
 
 
-def test_fm_double_click_opens_editor_only_in_fm_detail(monkeypatch):
-    """Slice 44 — dubbelklik opent editor alleen in FM-detail."""
+def test_fm_double_click_opens_inspector_only_in_fm_detail(monkeypatch):
+    """Slice 109 — dubbelklik opent inspectiemodus in Top bijdragen, geen editor."""
     app = _ensure_app()
     monkeypatch.setattr(QMessageBox, "critical", lambda *_a, **_k: QMessageBox.Ok)
     opened: list[str] = []
@@ -1345,12 +1343,13 @@ def test_fm_double_click_opens_editor_only_in_fm_detail(monkeypatch):
     project = _three_level_project()
     window._state.set_last_project(project)
     window._state.set_last_run(_done_run_sample_fm001())
-    switch_workspace_modus(window, "bijdragen", app)
+    switch_workspace_modus(window, "lcc", app)
     app.processEvents()
     model = window.fm_table_view.model()
-    idx = model.index(0, 0)
-    window.fm_table_view.doubleClicked.emit(idx)
-    app.processEvents()
+    if model is not None and model.rowCount() >= 1:
+        idx = model.index(0, 0)
+        window.fm_table_view.doubleClicked.emit(idx)
+        app.processEvents()
     assert opened == []
 
     switch_workspace_modus(window, "fm_detail", app)
@@ -1363,7 +1362,8 @@ def test_fm_double_click_opens_editor_only_in_fm_detail(monkeypatch):
     assert sel
     window.fm_table_view.doubleClicked.emit(sel[0])
     app.processEvents()
-    assert opened == ["FM-001"]
+    assert opened == []
+    assert window.workspace_state.snapshot().fm_inspector_mode is True
 
 
 def test_workspace_batch_grid_smoke_filter_and_edit(monkeypatch):

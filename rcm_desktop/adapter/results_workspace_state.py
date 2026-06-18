@@ -39,6 +39,7 @@ from rcm_desktop.adapter.workspace_view_registry import (
     SIDE_INPUT,
     SIDE_OUTPUT,
     WORKSPACE_VIEW_REGISTRY,
+    migrate_workspace_view_id,
     view_by_id,
 )
 
@@ -52,11 +53,16 @@ MODE_LCC = "lcc"
 
 MODE_FM_DETAIL = "fm_detail"
 
+MODE_KPI_OVERVIEW = "kpi_overview"
+
+FM_VIEW_MODE_TABLE = "table"
+FM_VIEW_MODE_DIAGRAM = "diagram"
+
 
 
 ALL_MODES: tuple[str, ...] = (
 
-    MODE_BIJDRAGEN,
+    MODE_KPI_OVERVIEW,
 
     MODE_LCC,
 
@@ -143,7 +149,11 @@ class ContributionPresentation:
 
 def normalize_modus(modus: str) -> str:
 
-    """Map verwijderde modi naar actieve modi (slice 33)."""
+    """Map verwijderde modi naar actieve modi (slice 33, slice 104)."""
+
+    if modus == MODE_BIJDRAGEN:
+
+        return MODE_FM_DETAIL
 
     if modus == _LEGACY_MODE_PREVENTIEF_ONDERHOUD:
 
@@ -151,7 +161,7 @@ def normalize_modus(modus: str) -> str:
 
     if modus == _LEGACY_MODE_NIET_BESCHIKBAARHEID:
 
-        return MODE_BIJDRAGEN
+        return MODE_FM_DETAIL
 
     return modus
 
@@ -219,13 +229,21 @@ class WorkspaceStateSnapshot:
 
     planning_overlay: PlanningOverlayState = PlanningOverlayState.inactive()
 
-    kpi_collapsed_in_lcc: bool = True
-
     meekoppel_collapsed_in_lcc: bool = False
 
     lcc_whatif_collapsed_in_lcc: bool = False
 
     compare_mode: bool = False
+
+    fm_view_mode: str = FM_VIEW_MODE_TABLE
+
+    fm_show_nmf_rf: bool = False
+
+    fm_inspector_dismissed: bool = False
+
+    fm_inspector_mode: bool = False
+
+    fm_inspector_fm_id: str | None = None
 
     effect_nb_filter: EffectNbFilterSet = EffectNbFilterSet()
 
@@ -239,9 +257,9 @@ class WorkspaceStateSnapshot:
 
 _DEFAULT_SNAPSHOT = WorkspaceStateSnapshot(
 
-    modus=MODE_BIJDRAGEN,
+    modus=MODE_FM_DETAIL,
 
-    source=SOURCE_FAALWIJZE,
+    source=SOURCE_PBS,
 
     metric=METRIC_NIET_BESCHIKBAARHEID,
 
@@ -258,8 +276,6 @@ _DEFAULT_SNAPSHOT = WorkspaceStateSnapshot(
     lcc_calendar_year=None,
 
     planning_overlay=PlanningOverlayState.inactive(),
-
-    kpi_collapsed_in_lcc=True,
 
     meekoppel_collapsed_in_lcc=False,
 
@@ -284,8 +300,7 @@ class ResultsWorkspaceState:
         self._listeners: list[Callable[[WorkspaceStateSnapshot], None]] = []
 
         self._source_by_modus: dict[str, str] = {
-            MODE_BIJDRAGEN: SOURCE_FAALWIJZE,
-            **{modus: SOURCE_PBS for modus in ALL_MODES if modus != MODE_BIJDRAGEN},
+            modus: SOURCE_PBS for modus in ALL_MODES
         }
 
         self._sticky_view_by_side: dict[str, str] = dict(DEFAULT_VIEW_BY_SIDE)
@@ -356,6 +371,7 @@ class ResultsWorkspaceState:
         self._apply_modus(modus)
 
     def set_active_view(self, view_id: str) -> None:
+        view_id = migrate_workspace_view_id(view_id)
         entry = view_by_id(WORKSPACE_VIEW_REGISTRY, view_id)
         if entry is None:
             raise ValueError(f"Onbekende view: {view_id!r}")
@@ -415,6 +431,7 @@ class ResultsWorkspaceState:
         for sticky_side, view_id in sticky_by_side.items():
             if sticky_side not in DEFAULT_VIEW_BY_SIDE:
                 continue
+            view_id = migrate_workspace_view_id(view_id)
             entry = view_by_id(WORKSPACE_VIEW_REGISTRY, view_id)
             if entry is None or entry.side != sticky_side:
                 view_id = DEFAULT_VIEW_BY_SIDE[sticky_side]
@@ -428,6 +445,16 @@ class ResultsWorkspaceState:
         self.set_workspace_side(side)
 
     def _view_id_for_legacy_modus(self, modus: str) -> str | None:
+        side = self._snapshot.workspace_side
+        sticky = self._sticky_view_by_side.get(side)
+        if sticky is not None:
+            sticky_entry = view_by_id(WORKSPACE_VIEW_REGISTRY, sticky)
+            if (
+                sticky_entry is not None
+                and sticky_entry.enabled
+                and sticky_entry.legacy_modus == modus
+            ):
+                return sticky
         for entry in WORKSPACE_VIEW_REGISTRY:
             if entry.legacy_modus == modus and entry.enabled:
                 return entry.view_id
@@ -440,9 +467,7 @@ class ResultsWorkspaceState:
         workspace_side: str | None = None,
         active_view_id: str | None = None,
     ) -> None:
-        sticky_source = self._source_by_modus.get(
-            modus, SOURCE_FAALWIJZE if modus == MODE_BIJDRAGEN else SOURCE_PBS
-        )
+        sticky_source = self._source_by_modus.get(modus, SOURCE_PBS)
         side = workspace_side if workspace_side is not None else self._snapshot.workspace_side
         view_id = active_view_id if active_view_id is not None else self._snapshot.active_view_id
         if modus == MODE_LCC:
@@ -452,7 +477,6 @@ class ResultsWorkspaceState:
                 source=sticky_source,
                 workspace_side=side,
                 active_view_id=view_id,
-                kpi_collapsed_in_lcc=True,
                 meekoppel_collapsed_in_lcc=True,
                 lcc_whatif_collapsed_in_lcc=True,
             )
@@ -640,18 +664,6 @@ class ResultsWorkspaceState:
 
 
 
-    def set_kpi_collapsed_in_lcc(self, collapsed: bool) -> None:
-
-        if collapsed == self._snapshot.kpi_collapsed_in_lcc:
-
-            return
-
-        self._snapshot = replace(self._snapshot, kpi_collapsed_in_lcc=collapsed)
-
-        self._emit()
-
-
-
     def set_meekoppel_collapsed_in_lcc(self, collapsed: bool) -> None:
 
         if collapsed == self._snapshot.meekoppel_collapsed_in_lcc:
@@ -686,15 +698,84 @@ class ResultsWorkspaceState:
 
         self._emit()
 
+    def set_fm_view_mode(self, mode: str) -> None:
+        if mode not in (FM_VIEW_MODE_TABLE, FM_VIEW_MODE_DIAGRAM):
+            raise ValueError(f"Onbekende FM-view-modus: {mode!r}")
+        if mode == self._snapshot.fm_view_mode:
+            return
+        if mode == FM_VIEW_MODE_DIAGRAM and self._snapshot.fm_inspector_mode:
+            self._snapshot = replace(
+                self._snapshot,
+                fm_view_mode=mode,
+                fm_inspector_mode=False,
+                fm_inspector_fm_id=None,
+                fm_inspector_dismissed=True,
+            )
+            self._emit()
+            return
+        self._snapshot = replace(self._snapshot, fm_view_mode=mode)
+        self._emit()
 
+    def set_fm_show_nmf_rf(self, visible: bool) -> None:
+        if visible == self._snapshot.fm_show_nmf_rf:
+            return
+        self._snapshot = replace(self._snapshot, fm_show_nmf_rf=visible)
+        self._emit()
+
+    def open_fm_inspector_mode(self, fm_id: str) -> None:
+        fm_key = str(fm_id)
+        if (
+            self._snapshot.fm_inspector_mode
+            and self._snapshot.fm_inspector_fm_id == fm_key
+        ):
+            return
+        self._snapshot = replace(
+            self._snapshot,
+            fm_inspector_mode=True,
+            fm_inspector_fm_id=fm_key,
+            fm_inspector_dismissed=False,
+            fm_view_mode=FM_VIEW_MODE_TABLE,
+        )
+        self._emit()
+
+    def close_fm_inspector_mode(self) -> None:
+        if not self._snapshot.fm_inspector_mode and self._snapshot.fm_inspector_fm_id is None:
+            if self._snapshot.fm_inspector_dismissed:
+                return
+        self._snapshot = replace(
+            self._snapshot,
+            fm_inspector_mode=False,
+            fm_inspector_fm_id=None,
+            fm_inspector_dismissed=True,
+        )
+        self._emit()
+
+    def step_fm_inspector(self, delta: int, ordered_fm_ids: tuple[str, ...]) -> None:
+        if not self._snapshot.fm_inspector_mode or not ordered_fm_ids:
+            return
+        current = self._snapshot.fm_inspector_fm_id
+        if current is None or current not in ordered_fm_ids:
+            return
+        idx = ordered_fm_ids.index(current) + delta
+        if idx < 0 or idx >= len(ordered_fm_ids):
+            return
+        self.open_fm_inspector_mode(ordered_fm_ids[idx])
+
+    def set_fm_inspector_dismissed(self, dismissed: bool) -> None:
+        if dismissed:
+            self.close_fm_inspector_mode()
+            return
+        if dismissed == self._snapshot.fm_inspector_dismissed:
+            return
+        self._snapshot = replace(self._snapshot, fm_inspector_dismissed=dismissed)
+        self._emit()
 
     def reset_for_new_project(self) -> None:
 
         """Reset alle keuzes naar de factory-defaults (modus/metric/scope/filter)."""
 
         self._source_by_modus = {
-            MODE_BIJDRAGEN: SOURCE_FAALWIJZE,
-            **{modus: SOURCE_PBS for modus in ALL_MODES if modus != MODE_BIJDRAGEN},
+            modus: SOURCE_PBS for modus in ALL_MODES
         }
 
         self._sticky_view_by_side[SIDE_INPUT] = DEFAULT_VIEW_BY_SIDE[SIDE_INPUT]

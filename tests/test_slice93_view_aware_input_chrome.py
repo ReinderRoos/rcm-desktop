@@ -42,4 +42,4 @@ def test_new_fm_hidden_on_output_fm_results() -> None:
     assert plan.fm_toolbar.new_fm_visible is False
     assert plan.fm_toolbar.batch_faalwijzen_visible is False
     assert plan.fm_toolbar.column_crop_visible is True
-    assert plan.fm_toolbar.fm_inspector_visible is True
+    assert plan.fm_toolbar.fm_inspector_visible is False

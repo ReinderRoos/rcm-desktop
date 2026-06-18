@@ -20,13 +20,10 @@ class WorkspaceMenuHandlers:
     export_rcm_cost: Callable[[], None]
     quit: Callable[[], None]
     set_pbs_sidebar_visible: Callable[[bool], None]
-    set_kpi_overview_visible: Callable[[bool], None]
     set_fm_column_crop: Callable[[bool], None]
     toggle_lcc_whatif: Callable[[], None]
     run_compare_slot_a: Callable[[], None]
     run_compare_slot_b: Callable[[], None]
-    set_compare_scenario_cm: Callable[[], None]
-    set_compare_scenario_pm: Callable[[], None]
     revalidate_input: Callable[[], None]
     open_faalwijzen_grid: Callable[[], None]
     open_compare_models: Callable[[], None]
@@ -95,16 +92,11 @@ def sync_workspace_menu_check_states(
     binding: WorkspaceMenuBinding,
     *,
     pbs_sidebar_visible: bool,
-    kpi_overview_visible: bool,
     fm_column_crop_checked: bool | None = None,
     workspace_side: str | None = None,
     active_view_id: str | None = None,
 ) -> None:
     _set_checked(binding.actions_by_id.get("view.pbs_tree_visible"), pbs_sidebar_visible)
-    _set_checked(
-        binding.actions_by_id.get("view.kpi_overview_visible"),
-        kpi_overview_visible,
-    )
     if fm_column_crop_checked is not None:
         _set_checked(
             binding.actions_by_id.get("view.column_crop"),
@@ -168,13 +160,10 @@ def _connect_action(
     if action_id == "view.pbs_tree_visible":
         action.toggled.connect(handlers.set_pbs_sidebar_visible)
         return
-    if action_id == "view.kpi_overview_visible":
-        action.toggled.connect(handlers.set_kpi_overview_visible)
-        return
     if action_id == "view.column_crop":
         action.toggled.connect(handlers.set_fm_column_crop)
         return
-    if action_id == "run.toggle_whatif":
+    if action_id == "whatif.toggle":
         action.triggered.connect(handlers.toggle_lcc_whatif)
         return
     if action_id == "run.slot_a":
@@ -182,12 +171,6 @@ def _connect_action(
         return
     if action_id == "run.slot_b":
         action.triggered.connect(handlers.run_compare_slot_b)
-        return
-    if action_id == "run.scenario_cm":
-        action.triggered.connect(handlers.set_compare_scenario_cm)
-        return
-    if action_id == "run.scenario_pm":
-        action.triggered.connect(handlers.set_compare_scenario_pm)
         return
     if action_id == "analysis.revalidate_input":
         action.triggered.connect(handlers.revalidate_input)

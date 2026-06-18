@@ -134,6 +134,8 @@ def test_nmf_filter_shows_only_nmf_rows(monkeypatch) -> None:
 
     model = window.fm_table_view.model()
     assert model.rowCount() == 2
+    window.fm_single_nmf_rf_toggle.setChecked(True)
+    app.processEvents()
     _set_bool_filter(window, FM_COL_NMF, True)
     app.processEvents()
     assert model.rowCount() == 1
@@ -143,7 +145,7 @@ def test_nmf_filter_shows_only_nmf_rows(monkeypatch) -> None:
 def test_kosten_filter_limits_rows(monkeypatch) -> None:
     from PySide6.QtWidgets import QMessageBox
 
-    from rcm_desktop.adapter.results_workspace_state import ContributionPresentation
+    from rcm_desktop.adapter.results_workspace_state import ContributionPresentation, METRIC_KOSTEN
     from rcm_desktop.views.results_workspace_window import ResultsWorkspaceWindow
 
     from tests.test_desktop_results_workspace_window import _ensure_app
@@ -224,6 +226,7 @@ def test_kosten_filter_limits_rows(monkeypatch) -> None:
     window.workspace_state.set_contribution_presentation(
         ContributionPresentation(horizon="lifecycle")
     )
+    window.workspace_state.set_metric(METRIC_KOSTEN)
     app.processEvents()
 
     model = window.fm_table_view.model()
@@ -239,6 +242,8 @@ def test_clear_button_restores_all_rows(monkeypatch) -> None:
     model = window.fm_table_view.model()
     total = model.rowCount()
     _set_text_filter(window, FM_COL_BOUWDEEL, "zzz_geen_match")
+    window.fm_single_nmf_rf_toggle.setChecked(True)
+    app.processEvents()
     _set_bool_filter(window, FM_COL_NMF, True)
     app.processEvents()
     assert model.rowCount() == 0

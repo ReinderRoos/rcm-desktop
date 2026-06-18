@@ -13,7 +13,11 @@ from rcm_desktop.adapter.simulation_runner import SimulationRunner
 from rcm_desktop.adapter.simulation_workspace_service import (
     build_run_result_from_mc_p50,
     monte_carlo_params_from_project,
-    start_analyse_uses_monte_carlo,
+)
+from rcm_desktop.adapter.planning_overlay_state import PlanningOverlayState
+from rcm_desktop.adapter.simulation_workspace_controller import (
+    SimulationWorkspaceController,
+    WorkspaceRunContext,
 )
 from rcm_desktop.views.panels.simulation_workspace_binding import (
     current_run_mode,
@@ -41,30 +45,67 @@ def wire_simulation_run_handlers(window: Any) -> None:
         )
 
 
+def _run_context(window: Any) -> WorkspaceRunContext:
+    state = getattr(window, "workspace_state", None)
+    if state is not None:
+        snapshot = state.snapshot()
+        overlay = snapshot.planning_overlay
+        compare_mode = snapshot.compare_mode
+    else:
+        overlay = PlanningOverlayState.inactive()
+        compare_mode = False
+    path_input = getattr(window, "path_input", None)
+    path = path_input.text().strip() or None if path_input is not None else None
+    session = window._project_session() if hasattr(window, "_project_session") else None
+    fm_cache = bool(path and session is not None and wss.fm_cache_available_for_session(session, path))
+    return WorkspaceRunContext(
+        run_mode=current_run_mode(window),
+        project_path=path,
+        fm_cache_available=fm_cache,
+        planning_overlay=overlay,
+        pending_compare_slot=getattr(window, "_pending_mc_compare_slot", None),
+        variant_mode=bool(
+            getattr(window, "_scenario_workflow", None) is not None
+            and getattr(window._scenario_workflow, "variant_mode", False)
+        ),
+        compare_mode=compare_mode,
+    )
+
+
 def dispatch_start_analyse(window: Any) -> bool:
     session = window._project_session()
     if session is None:
         return False
-    run_mode = current_run_mode(window)
-    if start_analyse_uses_monte_carlo(run_mode):
-        return _start_monte_carlo(window, session, compare_slot_key=None)
-    return _start_analytical(window, session)
+    plan = SimulationWorkspaceController.plan_start_analyse(_run_context(window))
+    if plan is None:
+        return False
+    if plan.mode == "monte_carlo":
+        return _start_monte_carlo(window, session, compare_slot_key=plan.compare_slot)
+    return _start_analytical(window, session, plan=plan)
 
 
 def dispatch_compare_slot_run(window: Any, slot_key: str) -> bool:
     """Start Run A/B as Monte Carlo when run-modus is MC."""
-    if not start_analyse_uses_monte_carlo(current_run_mode(window)):
-        return False
     session = window._project_session()
     if session is None:
         return False
-    return _start_monte_carlo(window, session, compare_slot_key=slot_key)
+    plan = SimulationWorkspaceController.plan_compare_slot_run(
+        _run_context(window),
+        slot_key,
+    )
+    if plan is None:
+        return False
+    return _start_monte_carlo(window, session, compare_slot_key=plan.compare_slot)
 
 
-def _start_analytical(window: Any, session: Any) -> bool:
+def _start_analytical(window: Any, session: Any, *, plan: object | None = None) -> bool:
     path = window.path_input.text().strip()
     overlay = window.workspace_state.snapshot().planning_overlay
-    force = bool(path and wss.fm_cache_available_for_session(session, path))
+    force = False
+    if plan is not None and hasattr(plan, "force_recompute"):
+        force = bool(plan.force_recompute)
+    else:
+        force = bool(path and wss.fm_cache_available_for_session(session, path))
     if window._run_runner.start(
         wss.editing_project(session),
         path,
@@ -117,19 +158,27 @@ def _on_simulation_job_changed(window: Any, job: object) -> None:
 def _on_mc_result_ready(window: Any, result: object) -> None:
     if not isinstance(result, MCRunResult):
         return
-    store = ensure_simulation_store(window)
-    attach_mc_run_to_store(store, result, job_id=f"mc-{result.seed}-{result.n_completed}")
-    window._state.set_last_mc_run(result)
-    slot_key = getattr(window, "_pending_mc_compare_slot", None)
+    apply_plan = SimulationWorkspaceController.plan_mc_result_apply(
+        _run_context(window),
+        result,
+    )
+    if apply_plan.attach_to_store:
+        store = ensure_simulation_store(window)
+        attach_mc_run_to_store(store, result, job_id=f"mc-{result.seed}-{result.n_completed}")
+    if apply_plan.set_last_mc_run:
+        window._state.set_last_mc_run(result)
+    slot_key = apply_plan.compare_slot
     workflow = getattr(window, "_scenario_workflow", None)
-    if slot_key is not None and result.status == "done" and isinstance(workflow, ScenarioWorkflowService):
+    if slot_key is not None and isinstance(workflow, ScenarioWorkflowService):
         _put_mc_into_compare_slot(window, workflow, slot_key, result)
         _clear_pending_mc_compare_slot(window)
-    elif workflow is not None and isinstance(workflow, ScenarioWorkflowService) and workflow.variant_mode and result.status == "done":
+    elif apply_plan.apply_variant_live and isinstance(workflow, ScenarioWorkflowService):
         _apply_mc_variant_run(window, workflow, result)
-    refresh_simulation_status(window)
-    window._rerender_detail_for_current_scope()
-    if hasattr(window, "_update_scenario_workflow_chrome"):
+    if apply_plan.refresh_status:
+        refresh_simulation_status(window)
+    if apply_plan.rerender_detail:
+        window._rerender_detail_for_current_scope()
+    if apply_plan.update_scenario_chrome and hasattr(window, "_update_scenario_workflow_chrome"):
         window._update_scenario_workflow_chrome()
 
 

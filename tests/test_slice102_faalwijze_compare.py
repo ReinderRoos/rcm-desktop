@@ -233,5 +233,6 @@ def test_orchestrator_fm_compare_plan_includes_faalwijze_presentation() -> None:
     )
     plan = ResultsWorkspaceOrchestrator.plan_render(snapshot, ctx)
     assert plan.kind == "fm_compare"
-    assert plan.faalwijze_compare is not None
-    assert len(plan.faalwijze_compare.rows) >= 1
+    assert plan.faalwijze_bundle is not None
+    assert plan.faalwijze_bundle.compare is not None
+    assert len(plan.faalwijze_bundle.compare.rows) >= 1

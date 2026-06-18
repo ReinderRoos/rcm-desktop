@@ -28,6 +28,13 @@ bruikbare MC-product opleveren zonder Top 10/LCC te herontwerpen.
   de gedeelde **`ContributionPresentation`**-horizon (default Ø per jaar) — dezelfde
   schaalpipeline als analytische FM via synthetische `FMResult`-rollups; P10/P90
   tooltips schalen mee.
+- **Presentatie v1.3 (slice 103):** HILT103 is acceptance gate voor de volledige
+  MC-presentatieketen (single-run, scenario compare, mixed compare). **Belofte:**
+  horizon-conforme FM-kolommen (v1.2), niet-vlakke LCC/NB-jaarcurves via synthetisch
+  `horizon_profile` op P50-rollups, compare-slots die MC LCC/FM zonder live analytical
+  session kunnen opbouwen. **Geen belofte:** numerieke gelijkheid tussen MC P50
+  lifecycle-totalen en analytische puntschattingen — P50 is verdeling-median,
+  analytisch is punt; afwijking is productgedrag, geen presentatie-bug.
 - **N** via modelinstellingen (`monte_carlo_n`, default 10.000). **Seed** via
   `monte_carlo_seed` (leeg = willekeurig per run); getoond in statusstrip.
 - **UI:** MC op **achtergrondthread** met voortgang; **annuleren** stopt job en

@@ -17,6 +17,10 @@ SIDE_OUTPUT = "output"
 _LEGACY_MODUS_BIJDRAGEN = "bijdragen"
 _LEGACY_MODUS_LCC = "lcc"
 _LEGACY_MODUS_FM_DETAIL = "fm_detail"
+_LEGACY_MODUS_KPI_OVERVIEW = "kpi_overview"
+
+WORKSPACE_NAV_RAIL_WIDTH_PX = 160
+WORKSPACE_CHROME_FOOTER_RIGHT_WIDTH_PX = 120
 
 
 @dataclass(frozen=True)
@@ -43,6 +47,10 @@ class WorkspaceChromeProfile:
     shows_metric_combo: bool = False
     shows_batch_faalwijzen: bool = False
     shows_column_crop: bool = False
+    shows_fm_inspector: bool = False
+    shows_fm_compare_toggles: bool = False
+    shows_horizon_controls: bool = False
+    shows_lcc_contribution_subbar: bool = False
     toolbar_family: ToolbarFamily = "none"
 
 
@@ -54,6 +62,7 @@ class WorkspaceViewEntry:
     shortcut: str
     order: int
     enabled: bool
+    rail_label: str | None = None
     legacy_modus: str | None = None
     lcc_preset: LccViewPreset | None = None
     chrome: WorkspaceChromeProfile | None = None
@@ -81,6 +90,7 @@ _CHROME_LCC = WorkspaceChromeProfile(
     toolbar_family="lcc",
     shows_metric_combo=True,
     shows_nb_effect_filter=True,
+    shows_lcc_contribution_subbar=True,
 )
 _CHROME_FM_INPUT = WorkspaceChromeProfile(
     toolbar_family="fm",
@@ -93,6 +103,9 @@ _CHROME_FM_OUTPUT = WorkspaceChromeProfile(
     shows_column_crop=True,
     shows_metric_combo=True,
     shows_nb_effect_filter=True,
+    shows_fm_inspector=True,
+    shows_fm_compare_toggles=True,
+    shows_horizon_controls=True,
 )
 _CHROME_INPUT_GRID = WorkspaceChromeProfile(toolbar_family="input_grid")
 
@@ -102,10 +115,22 @@ WORKSPACE_VIEW_REGISTRY: tuple[WorkspaceViewEntry, ...] = (
         side=SIDE_OUTPUT,
         label=messages.WORKSPACE_VIEW_TOP_10,
         shortcut="Ctrl+Alt+1",
-        order=1,
-        enabled=True,
+        order=0,
+        enabled=False,
+        rail_label="Top10",
         legacy_modus=_LEGACY_MODUS_BIJDRAGEN,
         chrome=_CHROME_TOP10,
+    ),
+    WorkspaceViewEntry(
+        view_id="output.kpi_overview",
+        side=SIDE_OUTPUT,
+        label=messages.WORKSPACE_VIEW_KPI_OVERVIEW,
+        shortcut="Ctrl+K",
+        order=1,
+        enabled=True,
+        rail_label="KPI",
+        legacy_modus=_LEGACY_MODUS_KPI_OVERVIEW,
+        chrome=WorkspaceChromeProfile(toolbar_family="none"),
     ),
     WorkspaceViewEntry(
         view_id="output.lcc_plot",
@@ -114,6 +139,7 @@ WORKSPACE_VIEW_REGISTRY: tuple[WorkspaceViewEntry, ...] = (
         shortcut="Ctrl+Alt+2",
         order=2,
         enabled=True,
+        rail_label="LCC",
         legacy_modus=_LEGACY_MODUS_LCC,
         chrome=_CHROME_LCC,
     ),
@@ -124,6 +150,7 @@ WORKSPACE_VIEW_REGISTRY: tuple[WorkspaceViewEntry, ...] = (
         shortcut="Ctrl+Alt+3",
         order=3,
         enabled=True,
+        rail_label="LTAP",
         legacy_modus=_LEGACY_MODUS_LCC,
         lcc_preset=LccViewPreset(cm_enabled=False),
         chrome=_CHROME_LCC,
@@ -131,10 +158,11 @@ WORKSPACE_VIEW_REGISTRY: tuple[WorkspaceViewEntry, ...] = (
     WorkspaceViewEntry(
         view_id="output.fm_results",
         side=SIDE_OUTPUT,
-        label=messages.WORKSPACE_VIEW_FM_RESULTS,
+        label=messages.WORKSPACE_VIEW_TOP_BIJDRAGEN,
         shortcut="Ctrl+Alt+4",
         order=4,
         enabled=True,
+        rail_label="TopX",
         legacy_modus=_LEGACY_MODUS_FM_DETAIL,
         chrome=_CHROME_FM_OUTPUT,
     ),
@@ -145,6 +173,7 @@ WORKSPACE_VIEW_REGISTRY: tuple[WorkspaceViewEntry, ...] = (
         shortcut="Ctrl+Alt+1",
         order=1,
         enabled=True,
+        rail_label="Faalwijzen",
         legacy_modus=None,
         chrome=_CHROME_FM_INPUT,
     ),
@@ -155,6 +184,7 @@ WORKSPACE_VIEW_REGISTRY: tuple[WorkspaceViewEntry, ...] = (
         shortcut="Ctrl+Alt+2",
         order=2,
         enabled=True,
+        rail_label="REV",
         legacy_modus=None,
         chrome=_CHROME_INPUT_GRID,
     ),
@@ -165,6 +195,7 @@ WORKSPACE_VIEW_REGISTRY: tuple[WorkspaceViewEntry, ...] = (
         shortcut="Ctrl+Alt+3",
         order=3,
         enabled=True,
+        rail_label="Effect",
         legacy_modus=None,
         chrome=_CHROME_INPUT_GRID,
     ),
@@ -175,6 +206,7 @@ WORKSPACE_VIEW_REGISTRY: tuple[WorkspaceViewEntry, ...] = (
         shortcut="Ctrl+Alt+4",
         order=4,
         enabled=True,
+        rail_label="Taakgroep",
         legacy_modus=None,
         chrome=_CHROME_INPUT_GRID,
     ),
@@ -185,15 +217,25 @@ WORKSPACE_VIEW_REGISTRY: tuple[WorkspaceViewEntry, ...] = (
         shortcut="Ctrl+Alt+5",
         order=5,
         enabled=True,
+        rail_label="Correctief",
         legacy_modus=None,
         chrome=_CHROME_INPUT_GRID,
     ),
 )
 
 DEFAULT_VIEW_BY_SIDE: dict[str, str] = {
-    SIDE_OUTPUT: "output.top_10",
+    SIDE_OUTPUT: "output.fm_results",
     SIDE_INPUT: "input.faalwijzen",
 }
+
+_RETIRED_VIEW_IDS: frozenset[str] = frozenset({"output.top_10"})
+
+
+def migrate_workspace_view_id(view_id: str) -> str:
+    """Map retired views to their replacement (slice 104)."""
+    if view_id in _RETIRED_VIEW_IDS:
+        return "output.fm_results"
+    return view_id
 
 
 def views_for_side(
@@ -208,6 +250,14 @@ def views_for_side(
     )
 
 
+def enabled_views_for_side(
+    registry: tuple[WorkspaceViewEntry, ...],
+    side: str,
+) -> tuple[WorkspaceViewEntry, ...]:
+    """Views shown in navigation dropdown and Beeld-menu (excludes retired entries)."""
+    return tuple(entry for entry in views_for_side(registry, side) if entry.enabled)
+
+
 def view_by_id(
     registry: tuple[WorkspaceViewEntry, ...],
     view_id: str,
@@ -218,6 +268,13 @@ def view_by_id(
     return None
 
 
+def rail_label_for_view(entry: WorkspaceViewEntry) -> str:
+    """Weergavenaam in navigatierail (ADR-0020)."""
+    if entry.rail_label:
+        return entry.rail_label
+    return entry.label
+
+
 def chrome_for_view(
     registry: tuple[WorkspaceViewEntry, ...],
     view_id: str,
@@ -226,6 +283,32 @@ def chrome_for_view(
     if entry is None:
         return None
     return entry.chrome
+
+
+def legacy_modus_for_view(
+    registry: tuple[WorkspaceViewEntry, ...],
+    view_id: str,
+) -> str | None:
+    """Leid legacy modus af uit view-registry (106-A canonieke navigatie)."""
+    entry = view_by_id(registry, view_id)
+    if entry is None:
+        return None
+    return entry.legacy_modus
+
+
+def detail_stack_key_for_view(
+    registry: tuple[WorkspaceViewEntry, ...],
+    view_id: str,
+) -> str:
+    """Stack-widget-sleutel voor detail-paneel (LCC-views delen MODE_LCC-paneel)."""
+    entry = view_by_id(registry, view_id)
+    if entry is None:
+        return _LEGACY_MODUS_FM_DETAIL
+    if entry.legacy_modus is not None:
+        return entry.legacy_modus
+    if entry.chrome is not None and entry.chrome.toolbar_family == "input_grid":
+        return "input_entity_grid"
+    return "input_placeholder"
 
 
 def _menu_shortcuts(spec: tuple[WorkspaceMenuSection, ...]) -> set[str]:

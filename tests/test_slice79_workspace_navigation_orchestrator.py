@@ -29,12 +29,11 @@ def test_navigation_plan_lists_output_views_with_ltap_disabled() -> None:
     assert plan.side_input_checked is False
     assert plan.active_view_id == "output.top_10"
     assert [item.view_id for item in plan.dropdown_items] == [
-        "output.top_10",
         "output.lcc_plot",
         "output.ltap",
         "output.fm_results",
     ]
-    ltap = plan.dropdown_items[2]
+    ltap = plan.dropdown_items[1]
     assert ltap.enabled is True
     assert plan.show_input_placeholder is False
 

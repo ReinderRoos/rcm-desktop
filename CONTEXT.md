@@ -92,12 +92,50 @@ sneltoetsen biedt. Het **Beeld-menu** bevat aan/uit-vinkbare items voor
 weergave-toggles — minimaal **PBS-boom zichtbaar** (de component-kolom/PBS-zijbalk)
 en **KPI-overzicht** — plus submenu's **Input** en **Output** met views uit de
 view-registry. Een menu-item is de **enige** bediening voor een gemigreerde toggle
-(geen dubbele knop).
+(geen dubbele knop). PBS-boom is de enige resterende Beeld-toggle.
 
 **Werkruimte-zijde**
 Conceptuele scheiding tussen **Input** (invoertabellen) en **Output**
 (resultaatweergaves). De analist schakelt met `Ctrl+1` / `Ctrl+2`; per zijde
 onthoudt de state de laatst gekozen view (**sticky per zijde**).
+
+**Werkruimte-navigatierail**
+Verticale bedieningsstrook rechts van het resultaatgebied (`detail_zone`):
+Werkruimte-zijde (Input/Output) bovenaan — **onder elkaar** — daaronder de
+actieve view-tabs uit de view-registry. De PBS-zijbalk blijft links;
+scope-selectie en view-navigatie zijn zo visueel gescheiden. Vaste breedte
+~160px (Input-bedieningslabels); Output houdt compacte rail-labels. Inklapbaar
+gedrag is uitgesteld.
+
+**Rail-label**
+Weergavenaam van een view in de navigatierail. Los van het volledige
+**view-label** (Beeld-menu, view-titel, tooltips). Komt uit de view-registry.
+
+- **Output:** verkorte codes (KPI, LCC, LTAP, TopX).
+- **Input:** bedieningslabels — leesbaar en kort, niet per se identiek aan het
+  view-label: Faalwijzen, REV, Effect, Taakgroep, Correctief (registry-labels
+  blijven formeel: «REV-taken», «Taakgroepen», «Correctief onderhoud»).
+
+**View-titel**
+Prominente kopregel direct boven het actieve view-inhoudsgebied
+(`detail_zone`), met het volledige view-label uit de registry (bv.
+«Top bijdragen», «LCC-plot», «Faalwijzen»). Geeft oriëntatie zonder de
+navigatierail te dupliceren. Overlay- of sessiestatus (bv. what-if actief)
+hoort **niet** in de view-titel maar in chrome-footer of statusstrip.
+
+**Werkruimte-chrome-footer**
+Horizontale bedieningsbalk direct onder het actieve view-inhoudsgebied
+(niet onder de PBS-zijbalk, niet onder de navigatierail). Bundelt
+view-chrome uit het chrome-profiel (`toolbar_family`): gedeelde controls
+midden, view-specifieke filters rechts (bv. LCC-maatregeltypes onder
+elkaar). Lichtgewicht LCC-planningbediening (what-if aan/uit, reset,
+presets) hoort hier; zware planning-workflows (meekoppelkansen-tabel,
+jaarverschuiving bij grafiekselectie) blijven in het inhoudsgebied.
+
+Twee vaste zones: **midden** gedeelde chrome (metric, horizon, NB,
+what-if-knoppen, overlay-status), **rechts** smalle kolom (~120px, altijd
+gereserveerd) voor verticale view-specifieke filters — ook leeg bij views
+zonder rechterstack, zodat bediening niet verspringt bij view-wissel.
 
 **View-registry** (`workspace_view_registry`)
 Qt-vrije declaratieve lijst van werkruimte-views: `view_id`, zijde, label,
@@ -123,8 +161,34 @@ expliciete bron (A→B of B→A). Pipeline:
 geen automatische merge op lage drempel in v1.
 
 **FM-resultaten**
-Output-view (was: FM-detail): sorteerbare FM-tabel plus inspector in de
-resultatenwerkruimte.
+Output-view (was: FM-detail): sorteerbare faalwijze-tabel plus **FM-inspector**
+in de resultatenwerkruimte. Analist gebruikt deze view om **grootste bijdragen** aan
+kosten en niet-beschikbaarheid te vinden (metric, sortering, effectfilter).
+View-label in het Beeld-menu: **Top bijdragen**; rail-label: **TopX**. Geen aparte
+Top-10-view meer.
+
+**Top bijdragen-diagram**
+Horizontaal Top-N staafdiagram in Top bijdragen (tabel/diagram-toggle). Toont
+ranking van faalwijzen op de actieve metric. Geen LCC-tijdreeks — die hoort bij
+LCC-plot (projectniveau) of FM-inspector (faalwijze-niveau).
+
+**FM-inspector**
+Read-only verificatiepaneel onder de FM-tabel in Top bijdragen. Alleen
+beschikbaar in **tabelweergave** (niet in Top bijdragen-diagram). Wordt geopend
+met **dubbelklik** op een rij (niet met enkele selectie). Bij open inspectiemodus:
+de tabel toont een **contextvenster** van maximaal **drie rijen** (faalwijze
+erboven, geselecteerde faalwijze, faalwijze eronder); aan de rand van de
+gefilterde lijst alleen beschikbare buren (geen placeholders). Bij één of
+twee rijen totaal: toon alle beschikbare. De volledige gefilterde lijst keert
+terug na sluiten. Schakelen naar **Top bijdragen-diagram** sluit inspectiemodus
+automatisch (inspector alleen in tabelweergave). Onder de tabel: lifecycle-samenvatting, reconcile-status
+en een **LCC-plot op faalwijze-niveau** (metric/NB/horizon gekoppeld aan de
+zelfde filters als de hoofdtabel): **faalmomenten** en **niet-beschikbaarheid**
+als enkelvoudige reeks per kalenderjaar; **kosten** als **CM + PM gestapeld**
+per jaar (PM-serie via adapter, analoog aan project-LCC). **Sluiten** herstelt tabelweergave zonder
+inspector; **pijl omhoog/omlaag** stapt naar vorige/volgende faalwijze in de
+gefilterde lijst. **Bewerken…** in het inspector-paneel opent de faalwijze-editor
+voor de geselecteerde FM (bewuste stap na validatie; dubbelklik opent geen editor).
 
 **LCC-plot**
 Output-view (was: Tijdsplot): LCC-jaargrafiek met what-if-planning en
@@ -213,20 +277,16 @@ Drie lagen om **één faalwijze (FM)** te controleren — van streng naar intera
    (`tests/test_nmf_schedule.py`, adapter unit-tests). Leg regressies hier vast
    vóór je in de UI kijkt.
 
-2. **Resultatenwerkruimte, modus FM-detail** — Standaard interactief pad na slice 34.
-   - **Verifiëren (read-only):** selecteer één FM; het **inspectorpaneel** toont
-     lifecycle-totalen, jaarreeks uit `horizon_profile` (faalmomenten-proxy,
-     correctief EUR, downtime, verborgen NB), reconcile-status en **FM-invoerhash**.
-     Zie `fm_verification_service` en
-     `.scratch/rcm-desktop-slice34-fm-verificatie-werkruimte/`.
-   - **Bewerken (slice 44):** **dubbelklik** op een FM-rij opent de modale
-     **faalwijze-editor** (`FmEditorDialog`): basis (faaltype, MTTF, NMF, startleeftijd
-     via PBS-`bouwjaar`), effecten, correctief (CM-split materiaal/arbeid, hersteltijd),
-     preventief (PM-taken, taakgroepen, PM-effectlinks). **OK** valideert via de
-     tabulaire editing-pipeline, werkt het project bij en triggert een
-     **incrementele run** (`full_recompute=False`) — geen volledige herberekening.
-     Waarschuwingen bij gedeeld PBS of gedeelde taakgroep. PRD/issues:
-     `.scratch/rcm-desktop-slice44-fm-bewerken-werkruimte/`.
+2. **Resultatenwerkruimte, Top bijdragen** — Standaard interactief pad na slice 34.
+   - **Verifiëren (read-only):** **dubbelklik** op een FM-rij opent **inspectiemodus**
+     (FM-inspector): lifecycle-totalen, reconcile-status, **FM-invoerhash**, en
+     **LCC-plot op faalwijze-niveau** (vervangt de jaartabel). Alleen in
+     tabelweergave; contextvenster van drie rijen in de tabel; pijltjes
+     navigeren; sluiten herstelt de volledige tabel.
+   - **Bewerken:** primair vanuit **Input → Faalwijzen** (en verwante
+     invoertabellen) via de modale **faalwijze-editor** (`FmEditorDialog`).
+     Secundair: knop **Bewerken…** in FM-inspector na validatie in Top bijdragen.
+     Top bijdragen-dubbelklik opent geen editor.
 
 3. **Batch faalwijzen-grid** (slice 46) — homogene modelfouten (faaltype, NMF, MTTF,
    …) batch-corrigeren via schema-gedreven grid + `apply_bulk_change`.
@@ -241,8 +301,14 @@ Drie lagen om **één faalwijze (FM)** te controleren — van streng naar intera
    (slice 44); ValidateWindow is niet de hoofdroute voor diep FM-editwerk.
 
 Kalenderjaar in de inspector gebruikt dezelfde mapping als LCC/Tijdsplot:
-`modeljaar` + horizonindex. Jaar-faalmomenten in de UI zijn **presentatie-proxy**
+`modeljaar` + horizonindex. Jaarreeks in de UI is **presentatie-proxy**
 (zelfde pad als Top 10/LCC), geen tweede motorberekening.
+
+**Faalwijze-editor openen (Input)**
+Op **Input → Faalwijzen**: **dubbelklik** op een rij opent de faalwijze-editor
+voor die FM. Overige Input-views (REV, Effect, Taakgroep, Correctief) krijgen
+eigen dubbelklik→editor zodra entity-specifieke editors bestaan; tot die tijd
+grid-only zonder dubbelklik-editor.
 
 ## Effectimpact (slice 70)
 
@@ -321,6 +387,13 @@ LCC (P50)** en **FM-resultaten (banden)**; analytische slot blijft apart beschik
 bij terugschakelen. N via `monte_carlo_n`; seed via `monte_carlo_seed` (leeg =
 willekeurig). MC op achtergrond met voortgang; annuleren gooit partial resultaten weg.
 
+**MC-presentatie-pariteit**
+Wat de UI belooft t.o.v. analytische presentatie in MC-modus: horizon-conforme
+FM-kolommen (default Ø per jaar), niet-vlakke LCC/NB-jaarcurves voor aging-faalwijzen,
+en compare-slots die MC-resultaten tonen zonder verborgen analytical session-state.
+_Avoid:_ "parity" zonder horizon-qualifier; numerieke gelijkheid MC P50 lifecycle-totalen
+↔ analytisch punt (P50 is verdeling-median, analytisch is puntschatting).
+
 **Scenariovergelijking (werkruimte)**
 Twee bevroren scenario's (referentie + variant) binnen **één project**: **Start
 analyse** (live run) → **Extra scenario** (bevriest scenario 1, configureert variant)
@@ -332,12 +405,14 @@ Visuele en interactieve huid rond de resultatenwerkruimte: Delta Pi-huisstijl,
 layout-shell (topbar, navigatie, statusstrip, footer) en view-specifieke
 presentatieregels. Rekeneenheden en adapter-DTO's blijven leidend; geen parallel
 mock-datamodel. Dekking: **hele** resultatenwerkruimte (Input- én Output-views).
-KPI-overzicht start standaard ingeklapt (Beeld-menu). **ValidateWindow** blijft
-buiten scope tot slice 99 (retirement).
+Layout-shell v2 (navigatierail, chrome-footer): zie ADR-0020.
+**ValidateWindow** blijft buiten scope tot slice 99 (retirement).
 
 **KPI-overzicht**
-Compacte tabel met project-KPI-totalen boven het werkblad. Inklapbaar via
-Beeld-menu. In RCM2-presentatielaag v1 **standaard ingeklapt** in alle modi.
+Output-view (`output.kpi_overview`) in de view-registry: compacte tabel met
+project-KPI-totalen, gefilterd op actieve PBS-scope. Geen overlay boven andere
+views — de analist navigeert ernaar via navigatierail, Beeld → Output of
+sneltoets (`Ctrl+K`). Chrome-footer leeg (`toolbar_family: none`).
 
 **StatusStrip**
 Persistente statusregel in de werkruimte: validatiestatus, MC-modus en

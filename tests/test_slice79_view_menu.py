@@ -14,8 +14,8 @@ def test_view_menu_groups_cover_all_registry_views() -> None:
         for item in group.items
         if item.view_id is not None
     }
-    assert len(view_ids) == 9
-    assert "output.top_10" in view_ids
+    assert len(view_ids) == 8
+    assert "output.top_10" not in view_ids
     assert "input.correctief" in view_ids
 
 

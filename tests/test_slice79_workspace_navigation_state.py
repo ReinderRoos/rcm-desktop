@@ -11,11 +11,11 @@ from rcm_desktop.adapter.results_workspace_state import (
 from rcm_desktop.adapter.workspace_view_registry import SIDE_INPUT, SIDE_OUTPUT
 
 
-def test_default_navigation_starts_on_output_top_10() -> None:
+def test_default_navigation_starts_on_output_fm_results() -> None:
     snap = ResultsWorkspaceState().snapshot()
     assert snap.workspace_side == SIDE_OUTPUT
-    assert snap.active_view_id == "output.top_10"
-    assert snap.modus == MODE_BIJDRAGEN
+    assert snap.active_view_id == "output.fm_results"
+    assert snap.modus == MODE_FM_DETAIL
 
 
 def test_set_active_view_switches_legacy_modus() -> None:

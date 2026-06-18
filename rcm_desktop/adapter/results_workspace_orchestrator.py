@@ -20,16 +20,24 @@ from rcm_desktop.adapter.compare_view_service import (
     build_fm_compare_panels,
     build_lcc_compare_panels,
 )
-from rcm_desktop.adapter.faalwijze_analyse_service import FaalwijzeComparePresentation
-from rcm_desktop.adapter.faalwijze_analyse_service import build_faalwijze_compare_presentation
+from rcm_desktop.adapter.faalwijze_analyse_service import (
+    FaalwijzePresentationBundle,
+    FM_COMPARE_VIEW_TABLE,
+    build_faalwijze_bundle_for_compare,
+    build_faalwijze_bundle_for_fm_view,
+)
 from rcm_desktop.adapter.lcc_type_filter import LCCTypeFilterSet
 from rcm_desktop.adapter.lcc_view_service import LCCView
-from rcm_desktop.adapter.workspace_lcc_preset_service import effective_lcc_filters
+from rcm_desktop.adapter.workspace_lcc_preset_service import (
+    effective_lcc_filters,
+    lcc_preset_for_view,
+)
 from rcm_desktop.adapter.presentation_cache_service import PresentationProjectTotal
 from rcm_desktop.adapter.project_session import ProjectSession
 from rcm_desktop.adapter.simulation_job_service import RunMode
 from rcm_desktop.adapter.simulation_workspace_service import live_run_available
 from rcm_desktop.adapter.results_workspace_state import (
+    FM_VIEW_MODE_TABLE,
     METRIC_FAALMOMENTEN,
     METRIC_KOSTEN,
     METRIC_NIET_BESCHIKBAARHEID,
@@ -51,8 +59,10 @@ from rcm_desktop.adapter.workspace_view_registry import (
     WORKSPACE_VIEW_REGISTRY,
     WorkspaceChromeProfile,
     chrome_for_view,
+    detail_stack_key_for_view,
+    enabled_views_for_side,
+    rail_label_for_view,
     view_by_id,
-    views_for_side,
 )
 from rcm_desktop.adapter.workspace_view_service import (
     BijdragenView,
@@ -85,6 +95,7 @@ def _on_output_side(snapshot: WorkspaceStateSnapshot) -> bool:
 class WorkspaceViewDropdownItem:
     view_id: str
     label: str
+    rail_label: str
     enabled: bool
     selected: bool
 
@@ -128,6 +139,8 @@ class LccToolbarVisibilityPlan:
     cm_filter_visible: bool
     cm_preset_button_visible: bool
     lcc_filters: LCCTypeFilterSet
+    contribution_subbar_visible: bool = False
+    nb_display_toggles_visible: bool = False
 
 
 @dataclass(frozen=True)
@@ -148,6 +161,8 @@ class FmToolbarPlan:
     year_choice: str | int = "average"
     fm_compare_nmf_rf_toggle_visible: bool = False
     fm_compare_view_toggle_visible: bool = False
+    fm_view_mode: str = FM_COMPARE_VIEW_TABLE
+    fm_show_nmf_rf: bool = False
 
 
 @dataclass(frozen=True)
@@ -193,13 +208,28 @@ class SharedToolbarPlan:
 
 
 @dataclass(frozen=True)
+class WorkspaceChromeFooterPlan:
+    visible: bool
+    context_label: str
+    middle_chrome_visible: bool
+    lcc_measure_stack_visible: bool
+    lcc_whatif_light_visible: bool
+    fm_toolbar: FmToolbarPlan | None = None
+    lcc_toolbar: LccToolbarVisibilityPlan | None = None
+
+
+@dataclass(frozen=True)
 class WorkspaceUiSyncPlan:
     detail_page_modus: str
     modus_button: str
+    view_title: str
     navigation: WorkspaceNavigationPlan
     source_toggle: str
     metric: str
     shared_toolbar: SharedToolbarPlan
+    chrome_footer: WorkspaceChromeFooterPlan
+    top10_subbar_visible: bool
+    status_strip_visible: bool
     bijdragen: BijdragenToolbarPlan | None
     lcc_toolbar: LccToolbarVisibilityPlan | None
     fm_toolbar: FmToolbarPlan | None
@@ -227,7 +257,7 @@ class RenderPlan:
     bijdragen: BijdragenView | None = None
     lcc: LCCView | None = None
     compare_panels: tuple[ComparePanel, ...] | None = None
-    faalwijze_compare: FaalwijzeComparePresentation | None = None
+    faalwijze_bundle: FaalwijzePresentationBundle | None = None
 
 
 @dataclass(frozen=True)
@@ -256,10 +286,11 @@ def _plan_navigation(snapshot: WorkspaceStateSnapshot) -> WorkspaceNavigationPla
         WorkspaceViewDropdownItem(
             view_id=entry.view_id,
             label=entry.label,
+            rail_label=rail_label_for_view(entry),
             enabled=entry.enabled,
             selected=entry.view_id == snapshot.active_view_id,
         )
-        for entry in views_for_side(WORKSPACE_VIEW_REGISTRY, snapshot.workspace_side)
+        for entry in enabled_views_for_side(WORKSPACE_VIEW_REGISTRY, snapshot.workspace_side)
     )
     return WorkspaceNavigationPlan(
         workspace_side=snapshot.workspace_side,
@@ -270,6 +301,32 @@ def _plan_navigation(snapshot: WorkspaceStateSnapshot) -> WorkspaceNavigationPla
         show_input_placeholder=show_input_placeholder,
         show_input_entity_grid=show_input_entity_grid,
     )
+
+
+def _plan_status_strip_visible(snapshot: WorkspaceStateSnapshot) -> bool:
+    """Validatiestrip overal verborgen (slice 105 issue 30, optie C)."""
+    return False
+
+
+def _plan_top10_subbar_visible(snapshot: WorkspaceStateSnapshot) -> bool:
+    """Top-10/metric-subbar alleen op output-chrome (slice 105 issue 18)."""
+    if not _on_output_side(snapshot):
+        return False
+    active_entry = view_by_id(WORKSPACE_VIEW_REGISTRY, snapshot.active_view_id)
+    if active_entry is not None and active_entry.side == SIDE_INPUT:
+        return False
+    if _plan_bijdragen_toolbar(snapshot) is not None:
+        return True
+    profile = chrome_for_view(WORKSPACE_VIEW_REGISTRY, snapshot.active_view_id)
+    if profile is None:
+        return False
+    if profile.allows_new_fm or profile.toolbar_family == "input_grid":
+        return False
+    if profile.shows_lcc_contribution_subbar:
+        return True
+    if profile.toolbar_family == "fm" and not profile.allows_new_fm:
+        return False
+    return False
 
 
 def _plan_bijdragen_toolbar(
@@ -300,22 +357,28 @@ def _plan_bijdragen_toolbar(
     )
 
 
-def _plan_lcc_toolbar(snapshot: WorkspaceStateSnapshot) -> LccToolbarVisibilityPlan:
+def _plan_lcc_toolbar(
+    snapshot: WorkspaceStateSnapshot,
+    profile: WorkspaceChromeProfile,
+) -> LccToolbarVisibilityPlan:
     nb_visible = snapshot.metric == METRIC_NIET_BESCHIKBAARHEID
     whatif_active = snapshot.planning_overlay.active
     preset = effective_lcc_filters(snapshot)
-    cm_controls = preset.cm
+    view_preset = lcc_preset_for_view(snapshot.active_view_id)
+    cm_controls = view_preset is None or view_preset.cm_enabled
     return LccToolbarVisibilityPlan(
         filter_bar_visible=True,
         pm_type_filters_visible=snapshot.metric == METRIC_KOSTEN,
-        metric_combo_visible=True,
-        effect_nb_filter_visible=nb_visible,
+        metric_combo_visible=profile.shows_metric_combo,
+        effect_nb_filter_visible=nb_visible and profile.shows_nb_effect_filter,
         show_all_years_visible=True,
         year_summary_label_visible=True,
         meekoppel_panel_visible=whatif_active,
         cm_filter_visible=cm_controls,
         cm_preset_button_visible=cm_controls,
         lcc_filters=preset,
+        contribution_subbar_visible=profile.shows_lcc_contribution_subbar,
+        nb_display_toggles_visible=nb_visible and profile.shows_lcc_contribution_subbar,
     )
 
 
@@ -336,24 +399,29 @@ def _plan_output_fm_results_toolbar(
     profile: WorkspaceChromeProfile,
 ) -> FmToolbarPlan:
     pres = snapshot.contribution_presentation
-    fm_compare = snapshot.compare_mode and snapshot.modus == MODE_FM_DETAIL
+    fm_compare = snapshot.compare_mode and profile.shows_fm_compare_toggles
     return FmToolbarPlan(
         batch_faalwijzen_visible=profile.shows_batch_faalwijzen,
         new_fm_visible=profile.allows_new_fm,
         column_crop_visible=profile.shows_column_crop and not fm_compare,
-        fm_inspector_visible=not fm_compare,
+        fm_inspector_visible=profile.shows_fm_inspector
+        and not fm_compare
+        and snapshot.fm_inspector_mode
+        and snapshot.fm_view_mode == FM_VIEW_MODE_TABLE,
         clear_fm_inspector=fm_compare,
-        fm_compare_nmf_rf_toggle_visible=fm_compare,
-        fm_compare_view_toggle_visible=fm_compare,
+        fm_compare_nmf_rf_toggle_visible=profile.shows_fm_compare_toggles,
+        fm_compare_view_toggle_visible=profile.shows_fm_compare_toggles,
         delete_fm_visible=False,
         effect_nb_filter_visible=profile.shows_nb_effect_filter,
         metric_combo_visible=profile.shows_metric_combo,
-        horizon_lifecycle_visible=True,
-        horizon_per_year_visible=True,
-        year_combo_visible=pres.horizon == "per_year",
+        horizon_lifecycle_visible=profile.shows_horizon_controls,
+        horizon_per_year_visible=profile.shows_horizon_controls,
+        year_combo_visible=profile.shows_horizon_controls and pres.horizon == "per_year",
         horizon_lifecycle_checked=pres.horizon == "lifecycle",
         horizon_per_year_checked=pres.horizon == "per_year",
         year_choice=pres.year_choice,
+        fm_view_mode=snapshot.fm_view_mode,
+        fm_show_nmf_rf=snapshot.fm_show_nmf_rf,
     )
 
 
@@ -364,6 +432,85 @@ def _plan_fm_toolbar(snapshot: WorkspaceStateSnapshot) -> FmToolbarPlan:
     if profile.allows_new_fm:
         return _plan_input_faalwijzen_chrome(profile)
     return _plan_output_fm_results_toolbar(snapshot, profile)
+
+
+def plan_chrome_toolbar(snapshot: WorkspaceStateSnapshot) -> FmToolbarPlan | LccToolbarVisibilityPlan | None:
+    """Declaratieve toolbar-planning uit chrome-profiel (slice 105 issue 12)."""
+    if not _on_output_side(snapshot):
+        return None
+    profile = chrome_for_view(WORKSPACE_VIEW_REGISTRY, snapshot.active_view_id)
+    if profile is None:
+        return None
+    if profile.toolbar_family == "fm":
+        return _plan_fm_toolbar(snapshot)
+    if profile.toolbar_family == "lcc":
+        return _plan_lcc_toolbar(snapshot, profile)
+    return None
+
+
+def plan_view_title(snapshot: WorkspaceStateSnapshot) -> str:
+    """Volledig view-label boven detail_zone (slice 107-B, ADR-0021)."""
+    entry = view_by_id(WORKSPACE_VIEW_REGISTRY, snapshot.active_view_id)
+    return entry.label if entry is not None else ""
+
+
+def plan_chrome_footer(snapshot: WorkspaceStateSnapshot) -> WorkspaceChromeFooterPlan:
+    """Footer-plan onder detail_zone (slice 107, ADR-0020; context → view-titel 107-B)."""
+    entry = view_by_id(WORKSPACE_VIEW_REGISTRY, snapshot.active_view_id)
+    context_label = ""
+    if not _on_output_side(snapshot) or entry is None:
+        fm_toolbar = _plan_fm_toolbar(snapshot) if entry and entry.chrome and entry.chrome.toolbar_family == "fm" and entry.chrome.allows_new_fm else None
+        return WorkspaceChromeFooterPlan(
+            visible=fm_toolbar is not None and (
+                fm_toolbar.new_fm_visible or fm_toolbar.batch_faalwijzen_visible
+            ),
+            context_label=context_label,
+            middle_chrome_visible=False,
+            lcc_measure_stack_visible=False,
+            lcc_whatif_light_visible=False,
+            fm_toolbar=fm_toolbar,
+        )
+    toolbar = plan_chrome_toolbar(snapshot)
+    fm_toolbar = toolbar if isinstance(toolbar, FmToolbarPlan) else None
+    lcc_toolbar = toolbar if isinstance(toolbar, LccToolbarVisibilityPlan) else None
+    middle = fm_toolbar is not None and (
+        fm_toolbar.metric_combo_visible
+        or fm_toolbar.horizon_lifecycle_visible
+        or fm_toolbar.effect_nb_filter_visible
+    )
+    if lcc_toolbar is not None:
+        middle = middle or lcc_toolbar.metric_combo_visible or lcc_toolbar.effect_nb_filter_visible
+    lcc_stack = (
+        lcc_toolbar is not None
+        and lcc_toolbar.pm_type_filters_visible
+        and snapshot.metric == METRIC_KOSTEN
+    )
+    lcc_whatif = lcc_toolbar is not None and lcc_toolbar.filter_bar_visible
+    visible = middle or lcc_stack or lcc_whatif or (
+        fm_toolbar is not None
+        and (
+            fm_toolbar.fm_inspector_visible
+            or fm_toolbar.column_crop_visible
+            or fm_toolbar.fm_compare_nmf_rf_toggle_visible
+        )
+    )
+    if snapshot.active_view_id == "output.kpi_overview":
+        return WorkspaceChromeFooterPlan(
+            visible=True,
+            context_label=context_label,
+            middle_chrome_visible=False,
+            lcc_measure_stack_visible=False,
+            lcc_whatif_light_visible=False,
+        )
+    return WorkspaceChromeFooterPlan(
+        visible=visible,
+        context_label=context_label,
+        middle_chrome_visible=middle,
+        lcc_measure_stack_visible=lcc_stack,
+        lcc_whatif_light_visible=lcc_whatif,
+        fm_toolbar=fm_toolbar,
+        lcc_toolbar=lcc_toolbar,
+    )
 
 
 def _plan_compare_chrome(snapshot: WorkspaceStateSnapshot) -> CompareChromePlan:
@@ -387,13 +534,14 @@ def _collapse_glyph(collapsed: bool) -> str:
     return _COLLAPSE_COLLAPSED if collapsed else _COLLAPSE_EXPANDED
 
 
-def _plan_kpi_collapse(snapshot: WorkspaceStateSnapshot) -> CollapsePanelPlan:
-    collapsed = snapshot.kpi_collapsed_in_lcc
-    return CollapsePanelPlan(
-        chrome_visible=True,
-        content_visible=not collapsed,
-        collapse_glyph=_collapse_glyph(collapsed),
-        chrome_enabled=True,
+def _plan_collapse_panels(
+    previous: WorkspaceStateSnapshot | None,
+    snapshot: WorkspaceStateSnapshot,
+) -> CollapsePanelsPlan:
+    return CollapsePanelsPlan(
+        kpi=None,
+        lcc_whatif=_plan_lcc_whatif_collapse(snapshot),
+        meekoppel=_plan_meekoppel_collapse(previous, snapshot),
     )
 
 
@@ -441,17 +589,6 @@ def _plan_meekoppel_collapse(
     )
 
 
-def _plan_collapse_panels(
-    previous: WorkspaceStateSnapshot | None,
-    snapshot: WorkspaceStateSnapshot,
-) -> CollapsePanelsPlan:
-    return CollapsePanelsPlan(
-        kpi=_plan_kpi_collapse(snapshot),
-        lcc_whatif=_plan_lcc_whatif_collapse(snapshot),
-        meekoppel=_plan_meekoppel_collapse(previous, snapshot),
-    )
-
-
 def _inactive_fm_toolbar() -> FmToolbarPlan:
     return FmToolbarPlan(
         batch_faalwijzen_visible=False,
@@ -487,20 +624,30 @@ class ResultsWorkspaceOrchestrator:
         current: WorkspaceStateSnapshot,
     ) -> WorkspaceUiSyncPlan:
         split_depth = workspace_detail_split_render_depth(previous, current)
+        profile = chrome_for_view(WORKSPACE_VIEW_REGISTRY, current.active_view_id)
         fm_toolbar = _plan_fm_toolbar(current)
+        lcc_toolbar = (
+            _plan_lcc_toolbar(current, profile)
+            if profile is not None
+            and profile.toolbar_family == "lcc"
+            and _on_output_side(current)
+            else None
+        )
         return WorkspaceUiSyncPlan(
-            detail_page_modus=current.modus,
+            detail_page_modus=detail_stack_key_for_view(
+                WORKSPACE_VIEW_REGISTRY, current.active_view_id
+            ),
             modus_button=current.modus,
+            view_title=plan_view_title(current),
             navigation=_plan_navigation(current),
             source_toggle=current.source,
             metric=current.metric,
             shared_toolbar=_plan_shared_toolbar(current),
+            chrome_footer=plan_chrome_footer(current),
+            top10_subbar_visible=_plan_top10_subbar_visible(current),
+            status_strip_visible=_plan_status_strip_visible(current),
             bijdragen=_plan_bijdragen_toolbar(current),
-            lcc_toolbar=(
-                _plan_lcc_toolbar(current)
-                if current.modus == MODE_LCC and _on_output_side(current)
-                else None
-            ),
+            lcc_toolbar=lcc_toolbar,
             fm_toolbar=fm_toolbar,
             compare=plan_compare_chrome(current),
             collapse=_plan_collapse_panels(previous, current),
@@ -557,18 +704,23 @@ class ResultsWorkspaceOrchestrator:
                     current,
                     slots=ctx.compare_slots,
                 )
-                faalwijze_compare = build_faalwijze_compare_presentation(
+                bundle = build_faalwijze_bundle_for_compare(
                     panels,
                     metric=current.metric,
                 )
                 return RenderPlan(
                     kind="fm_compare",
                     compare_panels=panels,
-                    faalwijze_compare=faalwijze_compare,
+                    faalwijze_bundle=bundle,
                 )
+            fm_view = build_fm_detail_view(session, current, run_mode=ctx.run_mode)
             return RenderPlan(
                 kind="fm",
-                fm=build_fm_detail_view(session, current, run_mode=ctx.run_mode),
+                fm=fm_view,
+                faalwijze_bundle=build_faalwijze_bundle_for_fm_view(
+                    fm_view,
+                    metric=current.metric,
+                ),
             )
 
         if modus == MODE_BIJDRAGEN and MODE_BIJDRAGEN in required:

@@ -84,27 +84,20 @@ def test_contribution_cache_misses_when_nb_filter_differs() -> None:
     assert _contribution_cache_matches(snap, cached) is False
 
 
-def test_kpi_collapse_plan_in_bijdragen_and_fm_detail() -> None:
+def test_kpi_collapse_plan_removed_in_favor_of_view() -> None:
     bijdragen = _snap(modus=MODE_BIJDRAGEN)
     plan_b = ResultsWorkspaceOrchestrator.plan_ui_sync(None, bijdragen)
-    assert plan_b.collapse.kpi is not None
-    assert plan_b.collapse.kpi.chrome_visible is True
-
-    fm = _snap(modus=MODE_FM_DETAIL)
-    plan_fm = ResultsWorkspaceOrchestrator.plan_ui_sync(None, fm)
-    assert plan_fm.collapse.kpi is not None
-    assert plan_fm.collapse.kpi.chrome_visible is True
+    assert plan_b.collapse.kpi is None
 
 
-def test_kpi_collapse_state_survives_modus_switch() -> None:
+def test_kpi_view_navigation_from_state() -> None:
     state = ResultsWorkspaceState()
-    state.set_modus(MODE_BIJDRAGEN)
-    state.set_kpi_collapsed_in_lcc(True)
-    state.set_modus(MODE_LCC)
-    assert state.snapshot().kpi_collapsed_in_lcc is True
+    state.set_active_view("output.kpi_overview")
+    assert state.snapshot().active_view_id == "output.kpi_overview"
+    assert state.snapshot().modus == "kpi_overview"
 
 
-def test_kpi_collapse_hides_table_in_bijdragen_modus(monkeypatch) -> None:
+def test_kpi_view_shows_table_when_active(monkeypatch) -> None:
     app = _ensure_app()
     monkeypatch.setattr(QMessageBox, "critical", lambda *_a, **_k: QMessageBox.Ok)
     window = ResultsWorkspaceWindow()
@@ -114,15 +107,9 @@ def test_kpi_collapse_hides_table_in_bijdragen_modus(monkeypatch) -> None:
     _inject_run(window, project)
     app.processEvents()
 
-    window.workspace_state.set_modus(MODE_BIJDRAGEN)
-    window.workspace_state.set_kpi_collapsed_in_lcc(True)
+    window.workspace_state.set_active_view("output.kpi_overview")
     app.processEvents()
 
-    kpi_action = window._workspace_menu.actions_by_id["view.kpi_overview_visible"]
+    kpi_action = window._workspace_menu.actions_by_id["view.output.kpi_overview"]
     assert kpi_action.isVisible() is True
-    assert window.kpi_table_view.isVisible() is False
-
-    kpi_action.setChecked(True)
-    app.processEvents()
-
     assert window.kpi_table_view.isVisible() is True

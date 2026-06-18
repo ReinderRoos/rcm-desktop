@@ -78,28 +78,31 @@ def test_workspace_view_registry_golden() -> None:
 
     by_id = {entry.view_id: entry for entry in WORKSPACE_VIEW_REGISTRY}
 
-    assert len(by_id) == 9
+    assert len(by_id) == 10
 
     output = views_for_side(WORKSPACE_VIEW_REGISTRY, SIDE_OUTPUT)
     assert [v.view_id for v in output] == [
         "output.top_10",
+        "output.kpi_overview",
         "output.lcc_plot",
         "output.ltap",
         "output.fm_results",
     ]
     assert output[0].label == messages.WORKSPACE_VIEW_TOP_10
-    assert output[0].enabled is True
-    assert output[0].legacy_modus == _LEGACY_MODUS_BIJDRAGEN
-    assert output[0].shortcut == "Ctrl+Alt+1"
-    assert output[1].label == messages.WORKSPACE_VIEW_LCC_PLOT
-    assert output[1].legacy_modus == _LEGACY_MODUS_LCC
-    assert output[2].label == messages.WORKSPACE_VIEW_LTAP
-    assert output[2].enabled is True
+    assert output[0].enabled is False
+    assert output[1].label == messages.WORKSPACE_VIEW_KPI_OVERVIEW
+    assert output[1].rail_label == "KPI"
+    assert output[1].shortcut == "Ctrl+K"
+    assert output[2].label == messages.WORKSPACE_VIEW_LCC_PLOT
     assert output[2].legacy_modus == _LEGACY_MODUS_LCC
-    assert output[2].lcc_preset is not None
-    assert output[2].lcc_preset.cm_enabled is False
-    assert output[3].label == messages.WORKSPACE_VIEW_FM_RESULTS
-    assert output[3].legacy_modus == _LEGACY_MODUS_FM_DETAIL
+    assert output[3].label == messages.WORKSPACE_VIEW_LTAP
+    assert output[3].enabled is True
+    assert output[3].legacy_modus == _LEGACY_MODUS_LCC
+    assert output[3].lcc_preset is not None
+    assert output[3].lcc_preset.cm_enabled is False
+    assert output[4].label == messages.WORKSPACE_VIEW_TOP_BIJDRAGEN
+    assert output[4].rail_label == "TopX"
+    assert output[4].legacy_modus == _LEGACY_MODUS_FM_DETAIL
 
     input_views = views_for_side(WORKSPACE_VIEW_REGISTRY, SIDE_INPUT)
     assert len(input_views) == 5

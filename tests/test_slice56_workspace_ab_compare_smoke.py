@@ -56,9 +56,8 @@ def test_slice56_no_auto_seed_until_extra_scenario(monkeypatch) -> None:
     assert window.compare_toggle_button.isChecked() is False
     assert window.workspace_state.snapshot().compare_mode is False
     assert not window._compare_slots.has(COMPARE_SLOT_A)
-    assert window.bijdragen_compare_pane.isVisible() is False
-    assert window.bijdragen_single_slot_pane.isVisible() is True
-    assert len(window.bijdragen_chart_widget.rows()) > 0
+    assert window.fm_compare_pane.isVisible() is False
+    assert window.fm_single_slot_pane.isVisible() is True
 
 
 def test_slice56_extra_scenario_freeze_then_compare(monkeypatch) -> None:
@@ -95,15 +94,15 @@ def test_slice56_compare_toggle_on_shows_placeholders_for_empty_slots(monkeypatc
     app.processEvents()
 
     assert window.workspace_state.snapshot().compare_mode is True
-    assert window.bijdragen_compare_pane.isVisible() is True
-    assert window.bijdragen_single_slot_pane.isVisible() is False
+    assert window.fm_compare_pane.isVisible() is True
+    assert window.fm_single_slot_pane.isVisible() is False
 
     placeholder_a = messages.WORKSPACE_COMPARE_SLOT_PLACEHOLDER.format(slot=COMPARE_SLOT_A)
     placeholder_b = messages.WORKSPACE_COMPARE_SLOT_PLACEHOLDER.format(slot=COMPARE_SLOT_B)
-    assert window._bijdragen_compare_col_a["placeholder"].text() == placeholder_a
-    assert window._bijdragen_compare_col_b["placeholder"].text() == placeholder_b
-    assert window._bijdragen_compare_col_a["placeholder"].isVisible() is True
-    assert window._bijdragen_compare_col_b["placeholder"].isVisible() is True
+    assert window._fm_compare_col_a["placeholder"].text() == placeholder_a
+    assert window._fm_compare_col_b["placeholder"].text() == placeholder_b
+    assert window._fm_compare_col_a["placeholder"].isVisible() is True
+    assert window._fm_compare_col_b["placeholder"].isVisible() is True
 
 
 def test_slice56_compare_toggle_on_lcc_modus_shows_stacked_compare_pane(monkeypatch) -> None:

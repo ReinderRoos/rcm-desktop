@@ -203,10 +203,16 @@ def build_lcc_planning_curve(
         )
     else:
         scaled_prev = tuple(b.preventief_eur for b in baseline_scaled)
+        raw_sum = sum(raw_base)
+        if raw_sum > 1e-15:
+            recon_factor = sum(scaled_prev) / raw_sum
+            scaled_filt = tuple(f * recon_factor for f in filt_base)
+        else:
+            scaled_filt = filt_base
         display_buckets = filters.apply_curve(
             baseline_scaled,
             unfiltered_preventief=scaled_prev,
-            filtered_preventief=scaled_prev,
+            filtered_preventief=scaled_filt,
         )
 
     return LCCPlanningCurve(

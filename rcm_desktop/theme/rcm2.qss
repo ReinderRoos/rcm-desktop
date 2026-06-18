@@ -62,6 +62,27 @@ QWidget#WorkspaceSubNavRow {{
     border-bottom: 1px solid {dp_border};
 }}
 
+QWidget#WorkspaceNavRail {{
+    background-color: {dp_surface};
+    color: {dp_text_body};
+    border-left: 1px solid {dp_border};
+}}
+
+QWidget#WorkspaceChromeFooter {{
+    background-color: {dp_surface};
+    color: {dp_text_body};
+    border-top: 1px solid {dp_border};
+}}
+
+QLabel#WorkspaceViewTitle {{
+    font-family: {font_display};
+    font-size: 18px;
+    font-weight: 600;
+    color: {dp_text_body};
+    padding: 10px 12px 6px 12px;
+    background-color: {dp_surface};
+}}
+
 QWidget#WorkspaceSubNav {{
     background-color: transparent;
     color: {dp_text_body};
@@ -105,6 +126,37 @@ QToolButton#WorkspaceSideTab:checked:hover {{
     background-color: transparent;
 }}
 
+/* --- View tabs (slice 105.31) --- */
+QToolButton#WorkspaceViewTab {{
+    color: {dp_text_body};
+    background-color: transparent;
+    border: none;
+    border-left: 2px solid transparent;
+    border-radius: 0;
+    padding: 4px 10px;
+    font-size: 13px;
+    font-weight: 500;
+    text-align: left;
+}}
+
+QToolButton#WorkspaceViewTab:checked {{
+    color: {dp_navy};
+    border-left: 2px solid {dp_navy};
+}}
+
+QToolButton#WorkspaceViewTab:hover {{
+    color: {dp_navy};
+    background-color: #E4E8EE;
+}}
+
+QToolButton#WorkspaceViewTab:checked:hover {{
+    background-color: transparent;
+}}
+
+QToolButton#WorkspaceViewTab:disabled {{
+    color: {dp_text_subtle};
+}}
+
 /* --- Basistekst --- */
 QMainWindow {{
     color: {dp_text_body};
@@ -117,6 +169,12 @@ QMainWindow QLabel {{
 QLabel#MutedHintLabel {{
     color: {dp_text_subtle};
     font-style: italic;
+}}
+
+QComboBox#WorkspaceViewCombo {{
+    min-height: 20px;
+    max-height: 24px;
+    padding: 1px 6px;
 }}
 
 /* --- Menu --- */
@@ -145,7 +203,18 @@ QMenu {{
 
 QMenu::item {{
     color: {dp_text_body};
-    padding: 6px 24px;
+    padding: 4px 20px 4px 16px;
+    min-height: 20px;
+}}
+
+QMenu::right-arrow {{
+    width: 10px;
+    height: 10px;
+    margin-right: 6px;
+    image: none;
+    border-top: 5px solid transparent;
+    border-bottom: 5px solid transparent;
+    border-left: 6px solid {dp_navy};
 }}
 
 QMenu::item:selected {{
@@ -211,8 +280,9 @@ QMainWindow QComboBox {{
     background-color: #FFFFFF;
     border: 1px solid {dp_border};
     border-radius: 3px;
-    padding: 5px 10px;
-    min-height: 1.2em;
+    padding: 1px 6px 1px 8px;
+    min-height: 20px;
+    max-height: 24px;
 }}
 
 QMainWindow QComboBox:hover {{
@@ -235,14 +305,29 @@ QMainWindow QComboBox QLineEdit {{
 QMainWindow QComboBox::drop-down {{
     subcontrol-origin: padding;
     subcontrol-position: top right;
-    width: 22px;
+    width: 20px;
     border-left: 1px solid {dp_border};
-    background-color: #F7F8FA;
+    background-color: #EEF1F5;
 }}
 
 QMainWindow QComboBox::down-arrow {{
-    width: 10px;
-    height: 10px;
+    width: 0;
+    height: 0;
+    margin-top: 1px;
+    border-left: 4px solid transparent;
+    border-right: 4px solid transparent;
+    border-top: 5px solid {dp_navy};
+}}
+
+QTabBar::scroller {{
+    width: 20px;
+}}
+
+QTabBar QToolButton {{
+    background-color: #E4E8EE;
+    border: 1px solid {dp_border};
+    color: {dp_navy};
+    padding: 2px 4px;
 }}
 
 QMainWindow QComboBox QAbstractItemView,
@@ -258,8 +343,8 @@ QMainWindow QComboBox QListView {{
 QMainWindow QComboBox QAbstractItemView::item,
 QMainWindow QComboBox QListView::item {{
     color: {dp_text_body};
-    min-height: 1.4em;
-    padding: 4px 8px;
+    min-height: 1.2em;
+    padding: 2px 8px;
 }}
 
 QMainWindow QComboBox QAbstractItemView::item:disabled,
@@ -325,4 +410,33 @@ QMainWindow QTreeView {{
     alternate-background-color: {dp_row_alt};
     selection-background-color: #D6E4F0;
     selection-color: {dp_text_body};
+}}
+
+/* --- FM-editor sectienavigatie --- */
+QListWidget#FmEditorSectionNav {{
+    background-color: {dp_surface};
+    border: 1px solid {dp_border};
+    border-radius: 4px;
+    padding: 4px;
+    outline: none;
+}}
+
+QListWidget#FmEditorSectionNav::item {{
+    color: {dp_text_body};
+    padding: 8px 10px;
+    margin: 2px 0;
+    border: 1px solid transparent;
+    border-radius: 3px;
+}}
+
+QListWidget#FmEditorSectionNav::item:selected {{
+    color: {dp_text_on_navy};
+    background-color: {dp_navy};
+    border-color: {dp_navy};
+    font-weight: 600;
+}}
+
+QListWidget#FmEditorSectionNav::item:hover:!selected {{
+    background-color: #E4E8EE;
+    border-color: {dp_border};
 }}

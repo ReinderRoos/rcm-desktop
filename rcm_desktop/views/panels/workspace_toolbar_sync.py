@@ -17,22 +17,104 @@ from rcm_desktop.views.panels.input_entity_grid_binding import (
     sync_delete_fm_button_enabled,
     sync_new_fm_button_enabled,
 )
-from rcm_desktop.adapter.results_workspace_state import (
-    METRIC_NIET_BESCHIKBAARHEID,
-    MODE_LCC,
-    WorkspaceStateSnapshot,
+from rcm_desktop.adapter.faalwijze_analyse_service import FM_COMPARE_VIEW_TABLE
+from rcm_desktop.adapter.results_workspace_state import WorkspaceStateSnapshot
+
+
+def apply_status_strip_visibility(window: Any, visible: bool) -> None:
+    """Gele validatiestrip verbergen op Input; bron = invoertabel (slice 105.24)."""
+    if not hasattr(window, "status_strip"):
+        return
+    window.status_strip.setVisible(visible)
+    if visible:
+        window.status_strip.setMaximumHeight(16777215)
+        window.status_strip.setMinimumHeight(0)
+    else:
+        window.status_strip.setFixedHeight(0)
+
+
+_FM_METRIC_CHROME_WIDGET_ATTRS: tuple[str, ...] = (
+    "metric_combo",
+    "nb_effect_filter_combo",
+    "horizon_lifecycle_button",
+    "horizon_per_year_button",
+    "contribution_year_combo",
+    "nb_hours_button",
+    "nb_percent_button",
 )
+
+
+def _clear_layout(layout) -> None:
+    while layout.count():
+        item = layout.takeAt(0)
+        widget = item.widget()
+        if widget is not None:
+            widget.setParent(None)
+
+
+def _detach_widgets(widgets: tuple) -> None:
+    for widget in widgets:
+        if widget is not None:
+            widget.setParent(None)
+
+
+def _clear_layout_except(layout, keep: set) -> None:
+    while layout.count():
+        item = layout.takeAt(0)
+        widget = item.widget()
+        if widget is not None and widget not in keep:
+            widget.setParent(None)
+
+
+def relocate_fm_metric_chrome(window: Any, *, target: str) -> None:
+    """Verplaats gedeelde metric-widgets tussen Top-10-subbar en FM-toolbar (105.27)."""
+    if not hasattr(window, "fm_metric_chrome_layout"):
+        return
+    widgets = tuple(getattr(window, name) for name in _FM_METRIC_CHROME_WIDGET_ATTRS)
+    label = getattr(window, "top10_subbar_label", None)
+    _detach_widgets(widgets)
+
+    if target == "fm":
+        if label is not None:
+            label.setVisible(False)
+        layout = window.fm_metric_chrome_layout
+        _clear_layout(layout)
+        for widget in widgets:
+            layout.addWidget(widget)
+        layout.addStretch(1)
+        return
+
+    if target == "top10":
+        layout = window._top10_subbar_layout
+        keep = {label} if label is not None else set()
+        _clear_layout_except(layout, keep)
+        if label is not None:
+            label.setVisible(True)
+            if layout.indexOf(label) < 0:
+                layout.insertWidget(0, label)
+        for widget in widgets:
+            layout.addWidget(widget)
+        if layout.count() == 0 or layout.itemAt(layout.count() - 1).spacerItem() is None:
+            layout.addStretch(1)
+
+
+def apply_top10_subbar_visibility(window: Any, visible: bool) -> None:
+    if not hasattr(window, "top10_subbar"):
+        return
+    window.top10_subbar.setVisible(visible)
+    if visible:
+        window.top10_subbar.setMaximumHeight(16777215)
+        window.top10_subbar.setMinimumHeight(0)
+    else:
+        window.top10_subbar.setFixedHeight(0)
 
 
 def apply_bijdragen_toolbar(
     window: Any,
     toolbar: BijdragenToolbarPlan | None,
 ) -> None:
-    in_lcc = window.workspace_state.snapshot().modus == MODE_LCC
-    if toolbar is None and not in_lcc:
-        window.top10_subbar.setVisible(False)
+    if toolbar is None:
         return
-    window.top10_subbar.setVisible(True)
     window.metric_combo.setVisible(True)
     if toolbar is None:
         window.horizon_lifecycle_button.setVisible(False)
@@ -89,7 +171,7 @@ def apply_lcc_toolbar(
     for key, box in window._lcc_filter_checks.items():
         if key == "cm":
             box.setVisible(pm_visible and toolbar.cm_filter_visible)
-            box.setEnabled(toolbar.cm_filter_visible)
+            box.setEnabled(pm_visible and toolbar.cm_filter_visible)
         else:
             box.setVisible(pm_visible)
     window.lcc_cm_preset_button.setVisible(toolbar.cm_preset_button_visible)
@@ -100,14 +182,12 @@ def apply_lcc_toolbar(
     window.nb_effect_filter_combo.setVisible(toolbar.effect_nb_filter_visible)
     if toolbar.effect_nb_filter_visible:
         window.nb_effect_filter_combo.set_filter(snapshot.effect_nb_filter)
-    if snapshot.modus == MODE_LCC:
-        window.top10_subbar.setVisible(True)
+    if toolbar.contribution_subbar_visible:
         window.horizon_lifecycle_button.setVisible(False)
         window.horizon_per_year_button.setVisible(False)
         window.contribution_year_combo.setVisible(False)
-        nb = snapshot.metric == METRIC_NIET_BESCHIKBAARHEID
-        window.nb_hours_button.setVisible(nb)
-        window.nb_percent_button.setVisible(nb)
+        window.nb_hours_button.setVisible(toolbar.nb_display_toggles_visible)
+        window.nb_percent_button.setVisible(toolbar.nb_display_toggles_visible)
     window._sync_lcc_filter_checks(toolbar.lcc_filters)
     from rcm_desktop.views.panels.meekoppel_workspace_binding import bind_meekoppel_panel
 
@@ -115,7 +195,12 @@ def apply_lcc_toolbar(
     window._sync_lcc_axis_labels(snapshot)
 
 
-def apply_fm_toolbar(window: Any, toolbar: FmToolbarPlan) -> None:
+def apply_fm_toolbar(
+    window: Any,
+    toolbar: FmToolbarPlan,
+    *,
+    preserve_shared_metric: bool = False,
+) -> None:
     faalwijzen_action = window._workspace_menu.actions_by_id.get("analysis.faalwijzen_grid")
     if faalwijzen_action is not None:
         faalwijzen_action.setVisible(toolbar.batch_faalwijzen_visible)
@@ -124,30 +209,44 @@ def apply_fm_toolbar(window: Any, toolbar: FmToolbarPlan) -> None:
         crop_action.setVisible(toolbar.column_crop_visible)
     if hasattr(window, "column_crop_button"):
         window.column_crop_button.setVisible(toolbar.column_crop_visible)
+    compare_mode = window.workspace_state.snapshot().compare_mode
+    fm_compare_active = toolbar.fm_compare_view_toggle_visible and compare_mode
+    fm_single_active = toolbar.fm_compare_view_toggle_visible and not compare_mode
+    view_mode = toolbar.fm_view_mode
+    show_nmf_rf = toolbar.fm_show_nmf_rf
     if hasattr(window, "fm_compare_nmf_rf_toggle"):
-        from rcm_desktop.adapter.faalwijze_analyse_service import FM_COMPARE_VIEW_TABLE
-
-        nmf_visible = toolbar.fm_compare_nmf_rf_toggle_visible and getattr(
-            window, "_fm_compare_view_mode", FM_COMPARE_VIEW_TABLE
-        ) == FM_COMPARE_VIEW_TABLE
-        window.fm_compare_nmf_rf_toggle.setVisible(nmf_visible)
-        if not toolbar.fm_compare_nmf_rf_toggle_visible and window.fm_compare_nmf_rf_toggle.isChecked():
+        compare_nmf_visible = (
+            toolbar.fm_compare_nmf_rf_toggle_visible
+            and fm_compare_active
+            and view_mode == FM_COMPARE_VIEW_TABLE
+        )
+        window.fm_compare_nmf_rf_toggle.setVisible(compare_nmf_visible)
+        if not compare_nmf_visible and window.fm_compare_nmf_rf_toggle.isChecked():
             blocker = window.fm_compare_nmf_rf_toggle.blockSignals(True)
             window.fm_compare_nmf_rf_toggle.setChecked(False)
             window.fm_compare_nmf_rf_toggle.blockSignals(blocker)
-            window._fm_compare_show_nmf_rf = False
+            window.workspace_state.set_fm_show_nmf_rf(False)
+    if hasattr(window, "fm_single_nmf_rf_toggle"):
+        single_nmf_visible = (
+            toolbar.fm_compare_nmf_rf_toggle_visible
+            and fm_single_active
+            and view_mode == FM_COMPARE_VIEW_TABLE
+        )
+        window.fm_single_nmf_rf_toggle.setVisible(single_nmf_visible)
+        if single_nmf_visible and hasattr(window, "_fm_bind"):
+            window._fm_bind.sync_nmf_rf_toggles(show_nmf_rf)
     if hasattr(window, "fm_compare_table_view_button"):
-        view_toggle_visible = toolbar.fm_compare_view_toggle_visible
-        window.fm_compare_table_view_button.setVisible(view_toggle_visible)
-        window.fm_compare_diagram_view_button.setVisible(view_toggle_visible)
-        if not view_toggle_visible:
-            from rcm_desktop.adapter.faalwijze_analyse_service import FM_COMPARE_VIEW_TABLE
-
-            window._set_fm_compare_view_mode(FM_COMPARE_VIEW_TABLE)
-        elif hasattr(window, "_sync_fm_compare_view_chrome"):
-            window._sync_fm_compare_view_chrome(
-                show_nmf_rf=getattr(window, "_fm_compare_show_nmf_rf", False),
-            )
+        window.fm_compare_table_view_button.setVisible(fm_compare_active)
+        window.fm_compare_diagram_view_button.setVisible(fm_compare_active)
+        if fm_compare_active and hasattr(window, "_fm_bind"):
+            window._fm_bind.sync_view_mode_buttons(view_mode)
+            window._fm_bind.sync_compare_view_chrome(show_nmf_rf=show_nmf_rf)
+        if hasattr(window, "fm_single_table_view_button"):
+            window.fm_single_table_view_button.setVisible(fm_single_active)
+            window.fm_single_diagram_view_button.setVisible(fm_single_active)
+            if fm_single_active and hasattr(window, "_fm_bind"):
+                window._fm_bind.sync_view_mode_buttons(view_mode)
+                window._fm_bind.sync_single_view_chrome(show_nmf_rf=show_nmf_rf)
     if hasattr(window, "new_fm_button"):
         window.new_fm_button.setVisible(toolbar.new_fm_visible)
         if toolbar.new_fm_visible:
@@ -163,7 +262,8 @@ def apply_fm_toolbar(window: Any, toolbar: FmToolbarPlan) -> None:
 
             refresh_fm_inspector(window, None)
     if toolbar.effect_nb_filter_visible:
-        window.top10_subbar.setVisible(True)
+        pass
+    if not preserve_shared_metric:
         window.metric_combo.setVisible(toolbar.metric_combo_visible)
         window.horizon_lifecycle_button.setVisible(toolbar.horizon_lifecycle_visible)
         window.horizon_per_year_button.setVisible(toolbar.horizon_per_year_visible)
@@ -176,15 +276,14 @@ def apply_fm_toolbar(window: Any, toolbar: FmToolbarPlan) -> None:
                 blocker = window.contribution_year_combo.blockSignals(True)
                 window.contribution_year_combo.setCurrentIndex(idx)
                 window.contribution_year_combo.blockSignals(blocker)
-        window.nb_hours_button.setVisible(False)
-        window.horizon_per_year_button.setVisible(False)
-        window.contribution_year_combo.setVisible(False)
-        window.nb_hours_button.setVisible(False)
-        window.nb_percent_button.setVisible(False)
-        window.nb_effect_filter_combo.setVisible(True)
-        window.nb_effect_filter_combo.set_filter(
-            window.workspace_state.snapshot().effect_nb_filter
-        )
+        if not toolbar.horizon_lifecycle_visible:
+            window.nb_hours_button.setVisible(False)
+            window.nb_percent_button.setVisible(False)
+        window.nb_effect_filter_combo.setVisible(toolbar.effect_nb_filter_visible)
+        if toolbar.effect_nb_filter_visible:
+            window.nb_effect_filter_combo.set_filter(
+                window.workspace_state.snapshot().effect_nb_filter
+            )
 
 
 def apply_compare_chrome(window: Any, compare: CompareChromePlan) -> None:

@@ -96,12 +96,11 @@ def test_build_bijdragen_view_after_mc_only_run():
     assert len(view.contribution_rows) > 0
 
 
-def test_plan_render_top10_after_mc_only_run():
+def test_plan_render_fm_detail_after_mc_only_run():
     project = _project()
     mc = run_monte_carlo(project, n=200, seed=4)
     session = ProjectSession.from_parts(LoadedProject.from_core(project), run=None, mc_run=mc)
     ws = ResultsWorkspaceState()
-    ws.set_modus(MODE_BIJDRAGEN)
     ctx = WorkspaceRenderContext(
         session=session,
         compare_slots=CompareSlotState(),
@@ -111,9 +110,10 @@ def test_plan_render_top10_after_mc_only_run():
         run_mode=RunMode.MONTE_CARLO,
     )
     plan = ResultsWorkspaceOrchestrator.plan_render(ws.snapshot(), ctx)
-    assert plan.kind == "bijdragen"
-    assert plan.bijdragen is not None
-    assert len(plan.bijdragen.contribution_rows) > 0
+    assert plan.kind == "fm"
+    assert plan.fm is not None
+    assert plan.fm.is_mc_mode is True
+    assert len(plan.fm.mc_rows) > 0
 
 
 def _single_fm_project(*, failure_type: str, mttf_jaar: float, lifecycle_years: float) -> RCMProject:

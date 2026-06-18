@@ -213,7 +213,7 @@ def test_lcc_axis_labels_per_metric() -> None:
 def test_lcc_axis_labels_golden_strings() -> None:
     assert messages.LCC_PLOT_AXIS_X_KALENDERJAREN == "Kalenderjaren"
     assert "falen" in messages.LCC_PLOT_AXIS_Y_FAALMOMENTEN.lower()
-    assert "EUR" in messages.LCC_PLOT_AXIS_Y_KOSTEN
+    assert "€" in messages.LCC_PLOT_AXIS_Y_KOSTEN
 
 
 def test_list_nb_effect_klassen_still_includes_all_classes() -> None:

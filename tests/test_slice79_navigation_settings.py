@@ -27,7 +27,7 @@ def test_read_unknown_view_id_falls_back_to_side_default() -> None:
 
     side, sticky = read_workspace_navigation(FakeSettings())
     assert side == SIDE_OUTPUT
-    assert sticky["output"] == "output.top_10"
+    assert sticky["output"] == "output.fm_results"
 
 
 def test_write_and_read_round_trip() -> None:

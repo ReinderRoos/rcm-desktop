@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
+from PySide6.QtCore import QModelIndex
 from PySide6.QtWidgets import QDialog, QHBoxLayout, QMessageBox, QPushButton, QVBoxLayout, QWidget
 
 from rcm_desktop import messages
@@ -105,6 +106,32 @@ def handle_new_fm_clicked(window: Any) -> None:
         window._entity_grid_panel.refresh_view()
     finally:
         host.set_save_handler(prev_save)
+
+
+def wire_entity_grid_double_click_editor(window: Any) -> None:
+    panel = getattr(window, "_entity_grid_panel", None)
+    if panel is None:
+        return
+    panel._table.doubleClicked.connect(
+        lambda index: handle_entity_grid_double_click(window, index)
+    )
+
+
+def handle_entity_grid_double_click(window: Any, index: QModelIndex) -> None:
+    if window.workspace_state.snapshot().active_view_id != INPUT_FAALWIJZEN_VIEW:
+        return
+    panel = window._entity_grid_panel
+    model = panel.table_model()
+    proxy = panel._proxy
+    if model is None or proxy is None or not index.isValid():
+        return
+    src = proxy.mapToSource(index)
+    if not src.isValid():
+        return
+    fm_id = model.row_key_at(src.row())
+    if not fm_id:
+        return
+    window._open_fm_editor(str(fm_id))
 
 
 def wire_entity_grid_delete_selection(window: Any) -> None:

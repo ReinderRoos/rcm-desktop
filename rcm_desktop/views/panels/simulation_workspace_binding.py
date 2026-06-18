@@ -89,8 +89,13 @@ def wire_simulation_status_strip(window: Any) -> None:
     refresh_simulation_status(window)
 
 
+def add_simulation_widgets_to_toolbar(toolbar_row: QHBoxLayout, window: Any) -> None:
+    toolbar_row.addWidget(QLabel(messages.SIMULATION_RUN_MODE_LABEL))
+    toolbar_row.addWidget(window.simulation_run_mode_combo)
+    toolbar_row.addWidget(window.simulation_status_label)
+    toolbar_row.addWidget(window.simulation_cancel_button)
+
+
 def add_simulation_widgets_to_validate_row(validate_row: QHBoxLayout, window: Any) -> None:
-    validate_row.addWidget(QLabel(messages.SIMULATION_RUN_MODE_LABEL))
-    validate_row.addWidget(window.simulation_run_mode_combo)
-    validate_row.addWidget(window.simulation_status_label)
-    validate_row.addWidget(window.simulation_cancel_button)
+    """Deprecated: run-modus staat in app-toolbar (slice 105 issue 29)."""
+    del validate_row, window

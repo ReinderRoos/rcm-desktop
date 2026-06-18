@@ -10,7 +10,7 @@ from rcm_desktop.adapter.workspace_view_registry import (
     SIDE_OUTPUT,
     WORKSPACE_SIDES,
     WORKSPACE_VIEW_REGISTRY,
-    views_for_side,
+    enabled_views_for_side,
 )
 
 
@@ -72,7 +72,7 @@ def _view_items_for_side(side: str) -> tuple[WorkspaceViewMenuItem, ...]:
             side=entry.side,
             enabled=entry.enabled,
         )
-        for entry in views_for_side(WORKSPACE_VIEW_REGISTRY, side)
+        for entry in enabled_views_for_side(WORKSPACE_VIEW_REGISTRY, side)
     )
 
 
