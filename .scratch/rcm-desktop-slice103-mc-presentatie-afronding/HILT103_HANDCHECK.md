@@ -1,8 +1,8 @@
 # HILT103 — Handcheck MC-presentatie (gecombineerd HILT100 + HILT101)
 
 **Issue:** slice 103 issue 02  
-**Datum:** 2026-06-16  
-**Status:** NO-GO (2026-06-16)
+**Datum:** 2026-06-18 (re-HILT op master)  
+**Status:** **GO**
 
 ## Doel
 
@@ -35,18 +35,18 @@ Supersedes open items uit HILT100 en HILT101.
 | B1 | **Extra scenario** → scenario 2 MC-run voltooid | x | | |
 | B2 | **Vergelijk scenario's** — Top 10 compare werkt | | | **Overslaan** — slice 104 |
 | B3 | LCC compare: **jaarcurves niet vlak** (beide scenario's) | x | | HILT100 blocking |
-| B4 | FM compare: waarden plausibel per rij | | x | **Blocking:** S2 gewijzigd (iteraties + REV-taken) maar FM compare exact gelijk; LCC compare wel verschil |
+| B4 | FM compare: waarden plausibel per rij | x | | Re-HILT 2026-06-18: B4-blocker opgelost op master |
 
 ## Pad C — Mixed compare (S1 analytisch, S2 MC)
 
 | # | Check | OK | NOK | Notities |
 |---|-------|----|-----|----------|
-| C1 | Wis vergelijking; schakel run-modus **Analytisch** | | | |
-| C2 | **Start analyse** (analytisch) — scenario 1 | | | |
-| C3 | **Extra scenario**; schakel **Monte Carlo**; run scenario 2 | | | |
-| C4 | **Vergelijk scenario's** — FM **Ø per jaar**: geen ~60× verschillen | | | HILT101 |
-| C5 | LCC compare: **MC-slot plot zichtbaar zonder** eerdere MC-run op live session | | | HILT101 blocking |
-| C6 | Geen foutmeldingen in terminal bij lege-test-stappen | | | |
+| C1 | Wis vergelijking; schakel run-modus **Analytisch** | x | | |
+| C2 | **Start analyse** (analytisch) — scenario 1 | x | | |
+| C3 | **Extra scenario**; schakel **Monte Carlo**; run scenario 2 | x | | |
+| C4 | **Vergelijk scenario's** — FM **Ø per jaar**: geen ~60× verschillen | x | | Re-HILT 2026-06-18 |
+| C5 | LCC compare: **MC-slot plot zichtbaar zonder** eerdere MC-run op live session | x | | Re-HILT 2026-06-18 |
+| C6 | Geen foutmeldingen in terminal bij lege-test-stappen | x | | |
 
 ## Optioneel — RF-kolom (conditional slice 103 issue 05)
 
@@ -64,8 +64,9 @@ Supersedes open items uit HILT100 en HILT101.
 | Analist | Uitkomst | Datum |
 |---------|----------|-------|
 | ReinderRoos | **NO-GO** | 2026-06-16 |
+| Reinder | **GO** | 2026-06-18 |
 
-## Blockers (invullen bij NO-GO)
+## Blockers (historisch — opgelost)
 
-1. **B4 — FM compare geen verschil na scenario-2 wijziging:** iteraties (`monte_carlo_n`) gewijzigd + alle REV-taken dis/enabled; FM compare exact gelijk tussen S1 en S2; LCC compare toont wel verschil. Verdacht: FM compare-panel leest verkeerde slot/state of presenteert beide scenario's identiek.
-2. Pad C (mixed compare) niet uitgevoerd — sessie gestopt na B4.
+1. **B4 — FM compare geen verschil** (2026-06-16): opgelost; re-HILT GO 2026-06-18.
+2. Pad C (mixed compare) niet uitgevoerd in sessie 2026-06-16 — afgerond GO 2026-06-18.

@@ -1,7 +1,7 @@
 # Kanban-handoff — slice 105 werkruimte UX-polish
 
 **Datum:** 2026-06-18  
-**Status:** Batch II (30–33) **done** — HILT re-check batch II aanbevolen  
+**Status:** Batch II (30–33) **done** — HILT re-check batch II **GO** 2026-06-18  
 **Bron:** HILT105 re-check 2026-06-18 (analist Reinder)
 
 ## HILT105 eindoordeel

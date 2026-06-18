@@ -1,7 +1,7 @@
 # Kanban-handoff — slice 104 FM single-run presentatie
 
-**Datum:** 2026-06-16  
-**Status:** ready-for-human (re-HILT104) — editor-blockers AFK afgerond  
+**Datum:** 2026-06-18  
+**Status:** **done** — HILT104 GO op master  
 **Bron:** AFK-batch editor-blockers 2026-06-17
 
 ## Queue
@@ -12,7 +12,7 @@
 | 02 | UI: tabel/diagram-toggle single-run FM | AFK | **done** | 01 |
 | 03 | FM-editor: effecten + preventief direct bewerkbaar | AFK | **done** | — |
 | 04 | Top 10 verwijderen + default modus FM | AFK | **done** | 01, 02 |
-| 05 | HILT104 handcheck | HITL | ready-for-human | — |
+| 05 | HILT104 handcheck | HITL | **done** | — |
 | 06 | FM-editor dubbelklik in scenariovergelijking | AFK | **done** | — |
 
 ## AFK-batch voortgang (editor-blockers)
