@@ -25,8 +25,9 @@ def test_slice57_toolbar_has_report_button(monkeypatch) -> None:
     window = ResultsWorkspaceWindow()
     window.show()
     app.processEvents()
-    assert window.generate_report_button.text() == messages.REPORT_GENERATE_BUTTON_LABEL
-    assert window.generate_report_button.isEnabled() is False
+    report_action = window._workspace_menu.actions_by_id["analysis.generate_report"]
+    assert report_action.text() == messages.REPORT_GENERATE_BUTTON_LABEL
+    assert report_action.isEnabled() is False
 
 
 def test_slice57_report_enabled_after_run(monkeypatch) -> None:
@@ -44,4 +45,4 @@ def test_slice57_report_enabled_after_run(monkeypatch) -> None:
         live_overlay=window.workspace_state.snapshot().planning_overlay,
     )
     assert assessment.eligible is True
-    assert window.generate_report_button.isEnabled() is True
+    assert window._workspace_menu.actions_by_id["analysis.generate_report"].isEnabled() is True

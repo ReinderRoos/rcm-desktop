@@ -3,12 +3,14 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from pathlib import Path
 
+from rcm_core.cm_overlay import aw_disabled_pm_ids, materialize_cm_overlay_project
 from rcm_core.engine import compute_pbs_results
 from rcm_core.incremental_run import run_incremental_analysis
 from rcm_core.models import FMResult, PBSResult, RCMProject
 from rcm_desktop.adapter.planning_overlay_state import PlanningOverlayState
 from rcm_desktop.adapter.planning_run_materializer import materialize_project_for_overlay
 from rcm_desktop.adapter.result_view_service import FMResultRow, PBSResultRow, build_pbs_rows, build_rows
+from rcm_desktop.adapter.adapter_error_handling import user_facing_from_exception
 from rcm_desktop.adapter.validate_service import UserFacingError
 
 
@@ -64,6 +66,21 @@ def build_run_result(
     )
 
 
+def _resolve_run_project(
+    project: RCMProject,
+    planning_overlay: PlanningOverlayState | None,
+) -> RCMProject:
+    """Materialiseer disabled PM's: what-if overlay wanneer actief, anders AW-import CM-overlay."""
+    if planning_overlay is not None and planning_overlay.active:
+        if planning_overlay.disabled_pm_ids:
+            return materialize_project_for_overlay(project, planning_overlay)
+        return project
+    disabled = aw_disabled_pm_ids(project)
+    if disabled:
+        return materialize_cm_overlay_project(project)
+    return project
+
+
 def hydrate_run_from_cache(project: RCMProject, project_path: str | Path) -> RunResult | None:
     from rcm_core.cache import find_affected_fms, load_cache_snapshot
 
@@ -101,13 +118,7 @@ def run(
             fm_core_results=tuple(),
         )
 
-    run_project = project
-    if (
-        planning_overlay is not None
-        and planning_overlay.active
-        and planning_overlay.disabled_pm_ids
-    ):
-        run_project = materialize_project_for_overlay(project, planning_overlay)
+    run_project = _resolve_run_project(project, planning_overlay)
 
     try:
         result = run_incremental_analysis(
@@ -117,16 +128,19 @@ def run(
             parallel=parallel,
             scenario_key=scenario_key,
         )
-    except Exception:
+    except Exception as exc:
         return RunResult(
             status="error",
             summary="Run mislukt door een interne fout.",
             metrics=RunMetrics(fm_result_count=0, total_lifecycle_faalmomenten=0.0, total_cost_eur=0.0),
             rows=[],
             pbs_rows=[],
-            error=UserFacingError(
+            error=user_facing_from_exception(
+                "rcm_desktop.adapter.run_service",
                 code="RUN_INTERNAL_ERROR",
                 message="Er ging iets mis tijdens de analyse-run.",
+                exc=exc,
+                context="run_incremental_analysis mislukt",
             ),
             fm_core_results=tuple(),
         )

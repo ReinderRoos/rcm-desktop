@@ -10,6 +10,7 @@ from rcm_core.models import AgingDistribution, FailureType, RCMProject
 from rcm_core.validators import validate_project
 from rcm_core.incremental_run import run_incremental_analysis
 
+from rcm_desktop.adapter.adapter_error_handling import log_adapter_exception
 from rcm_desktop.adapter.run_service import RunResult, build_run_result
 from rcm_desktop.adapter.save_service import SaveConflictError, save_project_atomically
 
@@ -20,6 +21,7 @@ class ModelSettingsDraft:
     modelleur: str
     lifecycle_years: float
     modeljaar: int
+    aw_mc_lifecycle_horizon: bool
     default_mttf_multiplier: float
     default_sigma_fraction: float
     default_aging_distribution: str
@@ -50,6 +52,7 @@ def build_draft(project: RCMProject) -> ModelSettingsDraft:
         modelleur=project.modelleur,
         lifecycle_years=float(cfg.lifecycle_years),
         modeljaar=int(cfg.modeljaar),
+        aw_mc_lifecycle_horizon=bool(cfg.aw_mc_lifecycle_horizon),
         default_mttf_multiplier=float(cfg.default_mttf_multiplier),
         default_sigma_fraction=float(cfg.default_sigma_fraction),
         default_aging_distribution=str(cfg.default_aging_distribution or "normal"),
@@ -70,6 +73,8 @@ def validate_draft(draft: ModelSettingsDraft) -> tuple[str, ...]:
     valid_aging = {"normal", "truncated_normal_0", "weibull_2p"}
     if draft.default_aging_distribution not in valid_aging:
         errors.append("Ongeldige default verouderingsdistributie.")
+    if draft.monte_carlo_n < 100:
+        errors.append("monte_carlo_n moet minimaal 100 zijn.")
     if (
         draft.default_aging_distribution == "weibull_2p"
         and draft.default_beta_jaar <= 0
@@ -89,10 +94,13 @@ def compute_requires_rerun(
     motor_fields = (
         "lifecycle_years",
         "modeljaar",
+        "aw_mc_lifecycle_horizon",
         "default_mttf_multiplier",
         "default_sigma_fraction",
         "default_aging_distribution",
         "default_beta_jaar",
+        "monte_carlo_n",
+        "monte_carlo_seed",
     )
     for name in motor_fields:
         if getattr(baseline, name) != getattr(draft, name):
@@ -106,10 +114,13 @@ def apply_draft_to_project(project: RCMProject, draft: ModelSettingsDraft) -> RC
     updated.modelleur = draft.modelleur
     updated.config.lifecycle_years = float(draft.lifecycle_years)
     updated.config.modeljaar = int(draft.modeljaar)
+    updated.config.aw_mc_lifecycle_horizon = bool(draft.aw_mc_lifecycle_horizon)
     updated.config.default_mttf_multiplier = float(draft.default_mttf_multiplier)
     updated.config.default_sigma_fraction = float(draft.default_sigma_fraction)
     updated.config.default_aging_distribution = draft.default_aging_distribution
     updated.config.default_beta_jaar = float(draft.default_beta_jaar)
+    updated.config.monte_carlo_n = int(draft.monte_carlo_n)
+    updated.config.monte_carlo_seed = draft.monte_carlo_seed
     return updated
 
 
@@ -219,7 +230,12 @@ def commit_model_settings(
                 pbs_results=incremental.pbs_results,
                 summary_prefix="Modelinstellingen opgeslagen",
             )
-        except Exception:
+        except Exception as exc:
+            log_adapter_exception(
+                "rcm_desktop.adapter.model_settings_service",
+                exc,
+                context="incrementele analyse na modelinstellingen mislukt",
+            )
             return ModelSettingsCommitResult(
                 ok=False,
                 errors=("Incrementele analyse mislukt.",),

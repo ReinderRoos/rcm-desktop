@@ -105,6 +105,39 @@ def test_run_service_maps_unexpected_core_error(monkeypatch):
     assert result.pbs_rows == []
 
 
+def test_run_service_materializes_import_seed_when_no_overlay(monkeypatch):
+    """Slice 68: zonder overlay seed materialiseert run import aw_disabled_pm_ids."""
+    fixture = Path("tests/fixtures/RCMCostdata export_Gaarkeuken.rcm.json")
+    if not fixture.is_file():
+        return
+    project = load_project(fixture)
+    raw = (project.import_settings or {}).get("aw_disabled_pm_ids") or []
+    if not raw:
+        return
+    pm_id = str(raw[0])
+    captured: dict[str, object] = {}
+    fake_result = IncrementalRunResult(
+        fm_results={},
+        pbs_results={},
+        cache_only=False,
+        affected_fm_ids=[],
+        recalculated_fm_count=0,
+        parallel_retried_sequential=False,
+    )
+
+    def fake_run(project_arg, project_path_arg, **kwargs):
+        captured["project"] = project_arg
+        return fake_result
+
+    monkeypatch.setattr(run_service, "run_incremental_analysis", fake_run)
+
+    run_service.run(project, fixture)
+
+    run_project = captured["project"]
+    assert pm_id not in run_project.pm_tasks  # type: ignore[union-attr]
+    assert pm_id in project.pm_tasks
+
+
 def test_run_service_materializes_overlay_disabled_pm(monkeypatch):
     fixture = Path("tests/fixtures/sample_project.rcm.json")
     project = load_project(fixture)

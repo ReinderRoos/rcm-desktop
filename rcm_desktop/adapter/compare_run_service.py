@@ -95,25 +95,15 @@ class CompareRunService:
         sk = config.scenario_key
 
         outcome = execute_planning_run(
-
             PlanningRunRequest(
-
                 project=project,
-
                 project_path=project_path,
-
                 planning_overlay=config.planning_overlay,
-
                 force_recompute=config.force_recompute,
-
                 materialize_scenario=sk if sk in _SCENARIO_UI_KEYS else None,
-
                 scenario_motor_key=sk.upper() if sk in _SCENARIO_UI_KEYS else None,
-
             )
-
         )
-
         if outcome.status != "done" or outcome.run_result is None:
 
             return CompareRunOutcome(

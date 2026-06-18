@@ -10,11 +10,14 @@ from rcm_core.import_settings_contract import normalize_import_settings
 from rcm_core.isograph_pm_import_rules import (
     CauseEffectAssignmentRow,
     ScheduledTaskRow,
+    audit_effect_ids_vs_fm_links,
     fm_effect_fractie,
-    pm_effect_fractie_default,
-    pm_import_warning_unresolved,
-    resolve_pm_task_id,
+    parse_effect_ids,
+    pm_effect_fractie,
+    pm_import_warning_unresolved_with_tasks,
+    resolve_pm_tasks,
     should_create_fm_effect_link,
+    summarize_import_warnings,
 )
 from rcm_core.models import (
     EffectKlasse,
@@ -30,10 +33,31 @@ from rcm_core.models import (
     TaskType,
 )
 from rcm_core.config import RCMConfig
+from rcm_core.effect_taxonomy import map_aw_effect_type
 from rcm_core.units import TimeDuration, TimeUnit
 from rcm_desktop.adapter.isograph_excel_reader import read_workbook_sheets
 
 HOURS_PER_YEAR = 8760.0
+
+_REPAIR_QUALITY_KEYS = (
+    "RepairQuality",
+    "RepairQualityPct",
+    "AsGoodAsNew",
+    "AsGoodAsNewPct",
+    "PercentAsGoodAsNew",
+    "CmRepairQuality",
+    "CmAsGoodAsNew",
+)
+
+_AGING_EFFECT_PCT_KEYS = (
+    "AgingEffect",
+    "AgingEffectPct",
+    "RejuvenationEffect",
+    "RejuvenationPct",
+    "RejuvenationEffectPct",
+    "RepairEffect",
+    "RepairEffectPct",
+)
 
 _PROJECT_MC_PREFIXES = ("Avsim", "Npv", "Results")
 _CAUSE_UNCERTAINTY_COLS = (
@@ -43,6 +67,28 @@ _CAUSE_UNCERTAINTY_COLS = (
     "EffectCostErrAbs",
     "ITdtErrPc",
     "CTdtErrPc",
+    "TotalTdtErr",
+)
+_CAUSE_BENCHMARK_COLS = (
+    "TotalCost",
+    "TotalTdt",
+    "OperationalCost",
+    "EffectCost",
+    "LaborCost",
+    "EquipmentCost",
+)
+_CAUSE_DIAGNOSTIC_COLS = (
+    "TotalW",
+    "TotalWErr",
+    "OutageFrequency",
+    "ITdt",
+    "CTdt",
+    "PTdt",
+    "InitialAge",
+    "FmMttf",
+)
+_CAUSE_METADATA_COLS = (
+    _CAUSE_BENCHMARK_COLS + _CAUSE_DIAGNOSTIC_COLS + _CAUSE_UNCERTAINTY_COLS
 )
 
 
@@ -59,6 +105,7 @@ class ImportBuildResult:
     import_settings: dict[str, Any]
     conflicts: list[ImportConflict] = field(default_factory=list)
     warnings: list[str] = field(default_factory=list)
+    warning_summary: dict[str, int] = field(default_factory=dict)
 
 
 def build_from_workbook(path: Path, *, modeljaar: int) -> ImportBuildResult:
@@ -95,7 +142,7 @@ def build_from_sheets(
         if not loc:
             continue
         age_yr = _hours_to_years(row.get("InitialAge"))
-        if age_yr is None:
+        if not age_yr:  # None en 0.0 beide behandeld als onbekend
             continue
         ia_by_pbs.setdefault(loc, set()).add(age_yr)
 
@@ -104,16 +151,24 @@ def build_from_sheets(
 
     ff_by_id = {r["Id"]: r for r in sheets.get("RcmFunctionalFailures", []) if r.get("Id")}
     functies = _build_functies(sheets.get("RcmFunctions", []), kept_location_ids)
+    corrective_rows = sheets.get("RcmCorrectiveTasks", [])
+    rq_column = _discover_repair_quality_column(corrective_rows, cause_rows)
+    if rq_column:
+        import_settings["repair_quality_source"] = f"column:{rq_column}"
+    else:
+        import_settings["repair_quality_source"] = "missing_default_0"
     faalwijzes = _build_faalwijzes(
         cause_rows,
         ff_by_id,
-        sheets.get("RcmCorrectiveTasks", []),
+        corrective_rows,
+        repair_quality_fallback=0.0 if rq_column is None else None,
     )
     import_settings["isograph_causes"] = _extract_cause_metadata(cause_rows)
 
     effect_rows = sheets.get("RcmEffects", [])
     fm_by_id = {fm.fm_id: fm for fm in faalwijzes.values()}
-    effect_klassen = _build_effect_klassen(effect_rows, fm_by_id)
+    effect_klassen, effect_taxonomy_warnings = _build_effect_klassen(effect_rows, fm_by_id)
+    warnings.extend(effect_taxonomy_warnings)
     fm_effect_links, pm_effect_links, assignment_meta, assign_warnings = _build_effect_links(
         sheets.get("RcmCauseEffectAssignments", []),
         sheets.get("RcmScheduledTasks", []),
@@ -122,6 +177,13 @@ def build_from_sheets(
     warnings.extend(assign_warnings)
     if assignment_meta:
         import_settings["isograph_assignments"] = assignment_meta
+    _audit_effect_ids_from_causes(
+        cause_rows,
+        fm_by_id,
+        fm_effect_links,
+        import_settings,
+        warnings,
+    )
     _align_effect_functies(effect_klassen, fm_effect_links, fm_by_id)
 
     scheduled_rows = sheets.get("RcmScheduledTasks", [])
@@ -150,6 +212,7 @@ def build_from_sheets(
         import_settings=normalized_settings,
         conflicts=conflicts,
         warnings=warnings,
+        warning_summary=summarize_import_warnings(warnings),
     )
 
 
@@ -172,6 +235,77 @@ def _prefill_projectnaam_from_import(
         project.projectnaam = desc
     elif fname:
         project.projectnaam = Path(fname).stem
+
+
+def _parse_fraction_0_1(raw: object) -> float | None:
+    """Map AW repair-quality veld (0–1 of 0–100) naar RCM2 repair_quality."""
+    if raw in (None, ""):
+        return None
+    try:
+        value = float(raw)
+    except (TypeError, ValueError):
+        return None
+    if value > 1.0:
+        if value > 100.0:
+            return None
+        value = value / 100.0
+    return max(0.0, min(1.0, value))
+
+
+def _parse_pct_0_100(raw: object) -> float | None:
+    """Map AW aging-effect veld (0–1 of 0–100) naar aging_effect_pct."""
+    if raw in (None, ""):
+        return None
+    try:
+        value = float(raw)
+    except (TypeError, ValueError):
+        return None
+    if value <= 1.0:
+        value = value * 100.0
+    return max(0.0, min(100.0, value))
+
+
+def _first_fraction_from_row(row: dict[str, Any], keys: tuple[str, ...]) -> float | None:
+    for key in keys:
+        if key in row and row[key] not in (None, ""):
+            parsed = _parse_fraction_0_1(row[key])
+            if parsed is not None:
+                return parsed
+    return None
+
+
+def _first_pct_from_row(row: dict[str, Any], keys: tuple[str, ...]) -> float | None:
+    for key in keys:
+        if key in row and row[key] not in (None, ""):
+            parsed = _parse_pct_0_100(row[key])
+            if parsed is not None:
+                return parsed
+    return None
+
+
+def _repair_quality_from_rows(*rows: dict[str, Any]) -> float | None:
+    for row in rows:
+        parsed = _first_fraction_from_row(row, _REPAIR_QUALITY_KEYS)
+        if parsed is not None:
+            return parsed
+    return None
+
+
+def _discover_repair_quality_column(
+    corrective_rows: list[dict[str, Any]],
+    cause_rows: list[dict[str, Any]],
+) -> str | None:
+    """Eerste AW-kolom met repair-quality data (export-niveau discovery)."""
+    for row in corrective_rows + cause_rows:
+        for key in _REPAIR_QUALITY_KEYS:
+            if key in row and row[key] not in (None, ""):
+                if _parse_fraction_0_1(row[key]) is not None:
+                    return key
+    return None
+
+
+def _aging_effect_pct_from_row(row: dict[str, Any]) -> float | None:
+    return _first_pct_from_row(row, _AGING_EFFECT_PCT_KEYS)
 
 
 def _build_config(project_rows: list[dict[str, Any]], *, modeljaar: int) -> RCMConfig:
@@ -211,7 +345,7 @@ def _extract_cause_metadata(cause_rows: list[dict[str, Any]]) -> dict[str, Any]:
             continue
         meta = {
             col: row[col]
-            for col in _CAUSE_UNCERTAINTY_COLS
+            for col in _CAUSE_METADATA_COLS
             if col in row and row[col] not in (None, "")
         }
         if meta:
@@ -289,7 +423,7 @@ def _apply_bouwjaar(
         if pbs_id in conflict_ids or pbs_id not in pbs_items:
             continue
         age_yr = next(iter(ages))
-        pbs_items[pbs_id].bouwjaar = int(modeljaar - age_yr)
+        pbs_items[pbs_id].bouwjaar = round(modeljaar - age_yr)
 
 
 def _build_functies(
@@ -314,6 +448,8 @@ def _build_faalwijzes(
     cause_rows: list[dict[str, Any]],
     ff_by_id: dict[str, dict[str, Any]],
     corrective_rows: list[dict[str, Any]],
+    *,
+    repair_quality_fallback: float | None = None,
 ) -> dict[str, Faalwijze]:
     cm_by_cause: dict[str, dict[str, Any]] = {}
     for row in corrective_rows:
@@ -335,7 +471,10 @@ def _build_faalwijzes(
         mttr_h = float(row.get("Mttr") or 0.0)
         cm = cm_by_cause.get(fm_id, {})
         cost_cm = float(cm.get("OperationalCost") or 0.0)
-        out[fm_id] = Faalwijze(
+        repair_quality = _repair_quality_from_rows(cm, row)
+        if repair_quality is None and repair_quality_fallback is not None:
+            repair_quality = repair_quality_fallback
+        fm_kwargs: dict[str, Any] = dict(
             fm_id=fm_id,
             pbs_id=pbs_id,
             functie_id=functie_id,
@@ -347,6 +486,9 @@ def _build_faalwijzes(
             downtime_per_failure=TimeDuration(mttr_h, TimeUnit.HOURS),
             cost_cm_eur=cost_cm,
         )
+        if repair_quality is not None:
+            fm_kwargs["repair_quality"] = repair_quality
+        out[fm_id] = Faalwijze(**fm_kwargs)
     return out
 
 
@@ -360,21 +502,27 @@ def _map_failure_type(raw: object) -> FailureType:
 def _build_effect_klassen(
     effect_rows: list[dict[str, Any]],
     fm_by_id: dict[str, Faalwijze],
-) -> dict[str, EffectKlasse]:
+) -> tuple[dict[str, EffectKlasse], list[str]]:
     default_functie = next(iter(fm_by_id.values())).functie_id if fm_by_id else ""
     out: dict[str, EffectKlasse] = {}
+    warnings: list[str] = []
     for row in effect_rows:
         eid = str(row.get("Id") or "").strip()
         if not eid:
             continue
+        aw_type = str(row.get("Type") or "").strip()
+        categorie, warn = map_aw_effect_type(aw_type)
+        if warn is not None:
+            warnings.append(f"{eid}: {warn}")
         out[eid] = EffectKlasse(
             klasse_id=eid,
             omschrijving=str(row.get("Description") or eid),
             functie_id=default_functie,
-            categorie=str(row.get("Type") or ""),
+            categorie=categorie,
+            aw_effect_type=aw_type,
             cost_gevolg_eur=0.0,
         )
-    return out
+    return out, warnings
 
 
 def _build_effect_links(
@@ -425,18 +573,18 @@ def _build_effect_links(
                 klasse_id=effect,
                 fractie=fm_effect_fractie(aer),
             )
-        pm_task_key = resolve_pm_task_id(aer, tasks)
-        if pm_task_key:
-            pm_id = f"{cause}|{pm_task_key}|{aer.sub_index}"
-            link_id = f"PMEL|{pm_id}|{effect}"
+        resolved_tasks, pm_resolve_warnings = resolve_pm_tasks(aer, tasks)
+        warnings.extend(pm_resolve_warnings)
+        for resolved in resolved_tasks:
+            link_id = f"PMEL|{resolved.pm_id}|{effect}"
             pm_links[link_id] = PMEffectLink(
                 link_id=link_id,
-                pm_id=pm_id,
+                pm_id=resolved.pm_id,
                 klasse_id=effect,
-                fractie=pm_effect_fractie_default(),
+                fractie=pm_effect_fractie(aer),
             )
-        else:
-            warn = pm_import_warning_unresolved(aer)
+        if not resolved_tasks:
+            warn = pm_import_warning_unresolved_with_tasks(aer, tasks)
             if warn:
                 warnings.append(warn)
             if _truthy(aer.p_enable) or _truthy(aer.i_enable):
@@ -449,6 +597,38 @@ def _build_effect_links(
                 }
 
     return fm_links, pm_links, assignment_meta, warnings
+
+
+def _audit_effect_ids_from_causes(
+    cause_rows: list[dict[str, Any]],
+    fm_by_id: dict[str, Faalwijze],
+    fm_effect_links: dict[str, FMEffectLink],
+    import_settings: dict[str, Any],
+    warnings: list[str],
+) -> None:
+    """Cross-check RcmCauses.EffectIds tegen FM-links (audit only)."""
+    causes_meta = import_settings.setdefault("isograph_causes", {})
+    links_by_fm: dict[str, list[tuple[str, float]]] = {}
+    for link in fm_effect_links.values():
+        links_by_fm.setdefault(link.fm_id, []).append((link.klasse_id, float(link.fractie)))
+    for row in cause_rows:
+        fm_id = str(row.get("Id") or "").strip()
+        if not fm_id or fm_id not in fm_by_id:
+            continue
+        effect_ids_raw = row.get("EffectIds") or row.get("EffectsIds")
+        if effect_ids_raw in (None, ""):
+            continue
+        parsed = parse_effect_ids(effect_ids_raw)
+        meta = causes_meta.setdefault(fm_id, {})
+        meta["EffectIds"] = effect_ids_raw
+        meta["effect_ids_parsed"] = [
+            {"effect_id": p.effect_id, "redundancy_factor": p.redundancy_factor}
+            for p in parsed
+        ]
+        fm_links = links_by_fm.get(fm_id, [])
+        mismatch = audit_effect_ids_vs_fm_links(effect_ids_raw, fm_links)
+        if mismatch:
+            warnings.append(f"{fm_id}: {mismatch}")
 
 
 def _align_effect_functies(
@@ -519,10 +699,14 @@ def _build_pm_tasks(
             task_id=task_id,
             description=desc,
         )
-        out[pm_id] = PMTask(
+        taak_type = _map_task_type(row.get("Type"), task_id)
+        aging_effect_pct = _aging_effect_pct_from_row(row)
+        if taak_type == TaskType.REV and aging_effect_pct is None:
+            aging_effect_pct = 100.0
+        pm_kwargs: dict[str, Any] = dict(
             pm_id=pm_id,
             fm_id=cause,
-            taak_type=_map_task_type(row.get("Type"), task_id),
+            taak_type=taak_type,
             taak_omschrijving=desc,
             interval_jaar=interval_yr,
             duration=TimeDuration(duration_h, TimeUnit.HOURS),
@@ -530,6 +714,9 @@ def _build_pm_tasks(
             causes_unavailability=_truthy(row.get("OutedDuringMaintenance")),
             is_wettelijk_verplicht=is_wet,
         )
+        if aging_effect_pct is not None:
+            pm_kwargs["aging_effect_pct"] = aging_effect_pct
+        out[pm_id] = PMTask(**pm_kwargs)
     return out
 
 

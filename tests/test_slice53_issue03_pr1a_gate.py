@@ -29,14 +29,16 @@ def test_render_bind_path_avoids_mutation_project_access() -> None:
     assert "wss.editing_project(" not in render_bind
 
 
-def test_pr1a_modus_builders_still_used() -> None:
+def test_pr1a_modus_builders_delegated_to_orchestrator() -> None:
+    """Slice 61 PR3: modus-builders horen in orchestrator, niet in view rerender."""
     source = WORKSPACE_WINDOW.read_text(encoding="utf-8")
     rerender = _section(
         source,
         "    def _rerender_detail_for_current_scope(",
         "    def _selected_fm_id_from_table(self) -> str | None:",
     )
-    assert "build_fm_detail_view(session, snapshot)" in rerender
-    assert "build_bijdragen_view(" in rerender
-    assert "build_lcc_view(" in rerender
+    assert "ResultsWorkspaceOrchestrator.plan_render(" in rerender
+    assert "build_fm_detail_view" not in rerender
+    assert "build_bijdragen_view" not in rerender
+    assert "build_lcc_view" not in rerender
 

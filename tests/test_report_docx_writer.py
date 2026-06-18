@@ -3,6 +3,10 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+import pytest
+
+pytest.importorskip("matplotlib")
+
 from docx import Document
 
 from rcm_desktop.adapter.report_docx_writer import write_report_docx

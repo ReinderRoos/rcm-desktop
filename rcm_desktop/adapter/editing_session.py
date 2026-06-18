@@ -21,9 +21,16 @@ class EditingSession:
     def session(self) -> dict[str, Any]:
         return self._session
 
+    @property
+    def base_project(self) -> RCMProject | None:
+        return self._base_project
+
     def load_project(self, project: RCMProject) -> None:
         self._base_project = project
         init_edit_state(project, session=self._session)
+        from rcm_desktop.adapter.input_grid_findings import inject_input_grid_findings
+
+        inject_input_grid_findings(self._session, base_project=project)
 
     def apply_entity_rows(self, entity: str, rows: list[dict[str, Any]]) -> None:
         if self._base_project is None:

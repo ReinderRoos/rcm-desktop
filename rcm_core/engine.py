@@ -23,6 +23,7 @@ from rcm_core.distributions import (
     p_failure_by_age,
 )
 from rcm_core.lcc_profile import build_fm_horizon_profile, compute_fm_faalmomenten_per_bucket
+from rcm_core.lifecycle_horizon import effective_lifecycle_end_age
 
 
 # ---------------------------------------------------------------------------
@@ -122,22 +123,30 @@ def _effect_bijdragen_per_jaar(
     pm_tasks: list[PMTask],
     pm_effect_links: list[PMEffectLink] | None,
     lifecycle_years: float,
-) -> dict[str, list[float]]:
-    """Jaarlijkse effectbijdragen; som per klasse ≈ lifecycle-totaal op FMResult."""
+) -> tuple[
+    dict[str, list[float]],
+    dict[str, list[float]],
+    dict[str, list[float]],
+]:
+    """Jaarlijkse effectbijdragen; som per klasse ≈ lifecycle-totaal op FMResult.
+
+    Returns (fm_per_jaar, pm_per_jaar, mixed_per_jaar).
+    """
     num = len(faalmomenten)
     if num <= 0:
-        return {}
+        return {}, {}, {}
 
-    out: dict[str, list[float]] = {}
+    fm_out: dict[str, list[float]] = {}
+    pm_out: dict[str, list[float]] = {}
 
-    def _add(klasse_id: str, h: int, delta: float) -> None:
-        if klasse_id not in out:
-            out[klasse_id] = [0.0] * num
-        out[klasse_id][h] += delta
+    def _add(target: dict[str, list[float]], klasse_id: str, h: int, delta: float) -> None:
+        if klasse_id not in target:
+            target[klasse_id] = [0.0] * num
+        target[klasse_id][h] += delta
 
     for link in fm_effect_links or []:
         for h, moment in enumerate(faalmomenten):
-            _add(link.klasse_id, h, float(moment) * float(link.fractie))
+            _add(fm_out, link.klasse_id, h, float(moment) * float(link.fractie))
 
     links_by_pm: dict[str, list[PMEffectLink]] = {}
     for link in pm_effect_links or []:
@@ -151,9 +160,15 @@ def _effect_bijdragen_per_jaar(
             lifecycle_bijdrage = task.duration.to_hours() * link.fractie * executions
             per_bucket = lifecycle_bijdrage / num if num > 0 else 0.0
             for h in range(num):
-                _add(link.klasse_id, h, per_bucket)
+                _add(pm_out, link.klasse_id, h, per_bucket)
 
-    return out
+    mixed: dict[str, list[float]] = {}
+    for klasse_id in set(fm_out) | set(pm_out):
+        fm_series = fm_out.get(klasse_id, [0.0] * num)
+        pm_series = pm_out.get(klasse_id, [0.0] * num)
+        mixed[klasse_id] = [fm_series[h] + pm_series[h] for h in range(num)]
+
+    return fm_out, pm_out, mixed
 
 
 # ---------------------------------------------------------------------------
@@ -181,7 +196,11 @@ def compute_fm_result(
         current_age = pbs.current_age(config.modeljaar)
         eff_multiplicity = pbs.multiplicity
 
-    lifecycle = config.lifecycle_years
+    lifecycle = effective_lifecycle_end_age(
+        float(config.lifecycle_years),
+        current_age,
+        aw_mc_horizon=config.aw_mc_lifecycle_horizon,
+    )
 
     # Verwacht aantal falingen
     rev_schedule = (
@@ -255,7 +274,7 @@ def compute_fm_result(
         pm_tasks=pm_tasks,
         all_pbs=all_pbs,
     )
-    effect_per_jaar = _effect_bijdragen_per_jaar(
+    fm_effect_per_jaar, pm_effect_per_jaar, effect_per_jaar = _effect_bijdragen_per_jaar(
         faalmomenten=faalmomenten,
         fm_effect_links=fm_effect_links,
         pm_tasks=pm_tasks,
@@ -286,7 +305,11 @@ def compute_fm_result(
         total_cost_eur=expected_cm_cost + pm_cost,
         risk_contribution=risk_contribution,
         effect_bijdragen=combined_effect_bijdragen,
+        fm_effect_bijdragen=fm_effect_bijdragen,
+        pm_effect_bijdragen=pm_effect_bijdragen,
         effect_bijdragen_per_jaar=effect_per_jaar,
+        fm_effect_bijdragen_per_jaar=fm_effect_per_jaar,
+        pm_effect_bijdragen_per_jaar=pm_effect_per_jaar,
         horizon_profile=horizon_profile,
     )
 
@@ -415,6 +438,8 @@ def deduplicate_parallel_fm_pm_costs(
             expected_pm_downtime_hr=pm_downtime_hr,
             total_cost_eur=prev.expected_cm_cost_eur + pm_cost,
             effect_bijdragen=combined_effect_bijdragen,
+            fm_effect_bijdragen=fm_effect_bijdragen,
+            pm_effect_bijdragen=pm_effect_bijdragen,
         )
     return updated
 

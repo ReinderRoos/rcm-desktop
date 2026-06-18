@@ -5,6 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Literal
 
+from rcm_core.effect_impact_service import collect_fm_ids_for_functie
 from rcm_core.models import RCMProject
 
 from rcm_desktop.adapter.report_run_source_service import ReportScenarioRun
@@ -38,18 +39,7 @@ def _category_match(categorie: str, kind: MetricKind) -> bool:
 
 
 def _fm_ids_for_functie(project: RCMProject, functie_id: str, kind: MetricKind) -> frozenset[str]:
-    ek_ids = {
-        ek.klasse_id
-        for ek in project.effect_klassen.values()
-        if ek.functie_id == functie_id and _category_match(ek.categorie, kind)
-    }
-    if not ek_ids:
-        return frozenset()
-    return frozenset(
-        link.fm_id
-        for link in project.fm_effect_links.values()
-        if link.klasse_id in ek_ids
-    )
+    return collect_fm_ids_for_functie(project, functie_id, kind)
 
 
 def _impact_value(

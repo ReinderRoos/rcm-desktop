@@ -47,26 +47,45 @@ def test_model_shape_and_headers():
     model = FMResultsTableModel([_row("FM-1", "omschrijving", "PBS-1", "Bouwdeel", 1.2, 3.4, 1200.0)])
 
     assert model.rowCount() == 1
-    assert model.columnCount() == 7
+    assert model.columnCount() == 9
     assert model.headerData(0, Qt.Horizontal, Qt.DisplayRole) == messages.FM_RESULTS_HEADER_FM_ID
-    assert model.headerData(6, Qt.Horizontal, Qt.DisplayRole) == messages.FM_RESULTS_HEADER_TOTAL_COST_EUR
+    assert model.headerData(1, Qt.Horizontal, Qt.DisplayRole) == messages.FM_RESULTS_HEADER_BOUWDEEL_NAAM
+    assert model.headerData(2, Qt.Horizontal, Qt.DisplayRole) == messages.FM_RESULTS_HEADER_FAALWIJZE
+    assert model.headerData(3, Qt.Horizontal, Qt.DisplayRole) == messages.FM_RESULTS_HEADER_NMF
+    assert model.headerData(4, Qt.Horizontal, Qt.DisplayRole) == messages.FM_RESULTS_HEADER_RF
+    assert model.headerData(7, Qt.Horizontal, Qt.DisplayRole) == messages.FM_RESULTS_HEADER_TOTAL_COST_EUR
+
+
+def test_model_column_order_golden():
+    model = FMResultsTableModel([])
+    assert model._HEADERS == (
+        messages.FM_RESULTS_HEADER_FM_ID,
+        messages.FM_RESULTS_HEADER_BOUWDEEL_NAAM,
+        messages.FM_RESULTS_HEADER_FAALWIJZE,
+        messages.FM_RESULTS_HEADER_NMF,
+        messages.FM_RESULTS_HEADER_RF,
+        messages.FM_RESULTS_HEADER_FAALMOMENTEN,
+        messages.FM_RESULTS_HEADER_DOWNTIME_HR,
+        messages.FM_RESULTS_HEADER_TOTAL_COST_EUR,
+        messages.FM_RESULTS_HEADER_PBS_ID,
+    )
 
 
 def test_model_display_role_formats_values_for_ui():
     model = FMResultsTableModel([_row("FM-1", "omschrijving", "PBS-1", "Bouwdeel", 12.0, 1234.5, 1200.0)])
 
-    assert model.data(model.index(0, 4), Qt.DisplayRole) == "12"
-    assert model.data(model.index(0, 5), Qt.DisplayRole) == "1.234,50"
-    assert model.data(model.index(0, 6), Qt.DisplayRole) == "€ 1.200,00"
+    assert model.data(model.index(0, 5), Qt.DisplayRole) == "12"
+    assert model.data(model.index(0, 6), Qt.DisplayRole) == "1.234,50"
+    assert model.data(model.index(0, 7), Qt.DisplayRole) == "€ 1.200,00"
 
 
 def test_model_user_role_keeps_raw_values_for_sorting():
     model = FMResultsTableModel([_row("FM-1", "omschrijving", "PBS-1", "Bouwdeel", 12.0, 1234.5, 1200.0)])
     raw_role = Qt.UserRole + 1
 
-    assert model.data(model.index(0, 4), raw_role) == 12.0
-    assert model.data(model.index(0, 5), raw_role) == 1234.5
-    assert model.data(model.index(0, 6), raw_role) == 1200.0
+    assert model.data(model.index(0, 5), raw_role) == 12.0
+    assert model.data(model.index(0, 6), raw_role) == 1234.5
+    assert model.data(model.index(0, 7), raw_role) == 1200.0
     assert model.data(model.index(0, 0), raw_role) == "FM-1"
 
 
@@ -81,7 +100,7 @@ def test_sort_proxy_orders_downtime_numerically_not_lexically():
     source = FMResultsTableModel(rows)
     proxy = FMResultsSortProxy()
     proxy.setSourceModel(source)
-    proxy.sort(5, Qt.AscendingOrder)
+    proxy.sort(6, Qt.AscendingOrder)
 
     ordered = [
         proxy.data(proxy.index(row, 0), RAW_ROLE) for row in range(proxy.rowCount())
@@ -98,7 +117,7 @@ def test_sort_proxy_orders_total_cost_numerically():
     source = FMResultsTableModel(rows)
     proxy = FMResultsSortProxy()
     proxy.setSourceModel(source)
-    proxy.sort(6, Qt.AscendingOrder)
+    proxy.sort(7, Qt.AscendingOrder)
 
     ordered = [
         proxy.data(proxy.index(row, 0), RAW_ROLE) for row in range(proxy.rowCount())

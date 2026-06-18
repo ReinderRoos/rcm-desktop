@@ -51,14 +51,15 @@ class FaalwijzenFilterProxy(QSortFilterProxyModel):
         if src is None:
             return True
         row_v = src._row_at(source_row)
-        if self._failure_type is not None and row_v.failure_type != self._failure_type:
+        values = row_v.values
+        if self._failure_type is not None and values.get("failure_type") != self._failure_type:
             return False
-        if self._nmf_only is True and row_v.is_evident:
+        if self._nmf_only is True and values.get("is_evident", True):
             return False
-        if self._nmf_only is False and not row_v.is_evident:
+        if self._nmf_only is False and not values.get("is_evident", True):
             return False
         if self._search:
-            hay = f"{row_v.fm_id} {row_v.faalwijze_omschrijving}".lower()
+            hay = f"{row_v.row_key} {values.get('faalwijze_omschrijving', '')}".lower()
             if self._search not in hay:
                 return False
         return True

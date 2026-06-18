@@ -186,4 +186,4 @@ def test_workspace_state_reset_after_preserve_consumed(sample_project) -> None:
         ws.reset_for_new_project()
     assert ws.snapshot().modus == MODE_FM_DETAIL
     ws.reset_for_new_project()
-    assert ws.snapshot().modus == MODE_BIJDRAGEN
+    assert ws.snapshot().modus == MODE_FM_DETAIL

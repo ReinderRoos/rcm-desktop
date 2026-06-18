@@ -17,3 +17,8 @@ env/
 .vscode/
 *.log
 *.rcm.cache.json
+*.cache.*.json
+*.cache.json
+*.rcm.json.bak
+*.rcm.cache.cm.json
+*.rcm.cache.pm.json

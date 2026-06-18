@@ -7,7 +7,12 @@ from PySide6.QtGui import QBrush, QColor, QPainter, QPen
 from PySide6.QtWidgets import QWidget
 
 from rcm_desktop import messages
-from rcm_desktop.adapter.contribution_chart_service import ContributionRow
+from rcm_desktop.theme.dp_tokens import DP_TEXT_SUBTLE
+from rcm_desktop.adapter.contribution_display_service import format_contribution_bar_annotation
+from rcm_desktop.adapter.results_workspace_state import (
+    ContributionPresentation,
+    METRIC_NIET_BESCHIKBAARHEID,
+)
 
 
 class ContributionBarChartWidget(QWidget):
@@ -16,7 +21,24 @@ class ContributionBarChartWidget(QWidget):
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
         self._rows: tuple[ContributionRow, ...] = ()
+        self._metric: str = METRIC_NIET_BESCHIKBAARHEID
+        self._presentation = ContributionPresentation()
+        self._bar_color_hex: str | None = None
         self.setMinimumHeight(180)
+
+    def set_bar_color_hex(self, color_hex: str | None) -> None:
+        """Override default bar color (scenario compare, slice 102)."""
+        self._bar_color_hex = color_hex
+        self.update()
+
+    def set_display_context(
+        self,
+        metric: str,
+        presentation: ContributionPresentation,
+    ) -> None:
+        self._metric = metric
+        self._presentation = presentation
+        self.update()
 
     def set_rows(self, rows: tuple[ContributionRow, ...]) -> None:
         self._rows = tuple(rows)
@@ -25,27 +47,32 @@ class ContributionBarChartWidget(QWidget):
     def rows(self) -> tuple[ContributionRow, ...]:
         return self._rows
 
+    def bar_value_label(self, row: ContributionRow) -> str:
+        return format_contribution_bar_annotation(
+            row.value, self._metric, self._presentation
+        )
+
     def paintEvent(self, event):  # noqa: N802
         painter = QPainter(self)
         painter.setRenderHint(QPainter.Antialiasing, True)
         rect = self.rect()
         painter.fillRect(rect, QColor("#FAFAFA"))
         if not self._rows:
-            painter.setPen(QPen(QColor("#9E9E9E")))
+            painter.setPen(QPen(QColor(DP_TEXT_SUBTLE)))
             painter.drawText(rect, Qt.AlignCenter, messages.WORKSPACE_BIJDRAGE_EMPTY_STATE)
             painter.end()
             return
 
         max_value = max((r.value for r in self._rows), default=0.0)
         if max_value <= 0.0:
-            painter.setPen(QPen(QColor("#9E9E9E")))
+            painter.setPen(QPen(QColor(DP_TEXT_SUBTLE)))
             painter.drawText(rect, Qt.AlignCenter, messages.WORKSPACE_BIJDRAGE_EMPTY_STATE)
             painter.end()
             return
 
         n = len(self._rows)
         bar_height = max(12, (rect.height() - 12) // max(n, 1) - 4)
-        bar_color = QColor("#1976D2")
+        bar_color = QColor(self._bar_color_hex or "#1976D2")
         text_color = QColor("#212121")
         label_width = 220
         right_margin = 8
@@ -58,5 +85,6 @@ class ContributionBarChartWidget(QWidget):
             bar_w = int(bar_max_width * (row.value / max_value))
             painter.fillRect(bar_x, y, bar_w, bar_height, QBrush(bar_color))
             painter.setPen(QPen(text_color))
-            painter.drawText(bar_x + bar_w + 4, y + bar_height - 4, f"{row.share_pct:.1f} %")
+            value_label = self.bar_value_label(row)
+            painter.drawText(bar_x + bar_w + 4, y + bar_height - 4, value_label)
         painter.end()

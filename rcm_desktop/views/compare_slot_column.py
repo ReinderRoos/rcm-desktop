@@ -16,21 +16,17 @@ def build_bijdragen_compare_column(parent: QWidget | None = None) -> dict[str, Q
     header = QLabel("")
     header.setStyleSheet("font-weight: 600;")
     placeholder = QLabel("")
-    placeholder.setStyleSheet("color: #9E9E9E;")
+    placeholder.setObjectName("MutedHintLabel")
     placeholder.setWordWrap(True)
     chart = ContributionBarChartWidget(host)
-    table = QTableView(host)
-    table.setAlternatingRowColors(True)
     layout.addWidget(header)
     layout.addWidget(placeholder)
-    layout.addWidget(chart, stretch=2)
-    layout.addWidget(table, stretch=1)
+    layout.addWidget(chart, stretch=1)
     return {
         "host": host,
         "header": header,
         "placeholder": placeholder,
         "chart": chart,
-        "table": table,
     }
 
 
@@ -41,7 +37,7 @@ def build_lcc_compare_column(parent: QWidget | None = None) -> dict[str, QWidget
     header = QLabel("")
     header.setStyleSheet("font-weight: 600;")
     placeholder = QLabel("")
-    placeholder.setStyleSheet("color: #9E9E9E;")
+    placeholder.setObjectName("MutedHintLabel")
     placeholder.setWordWrap(True)
     chart = LCCStackedBarChartWidget(host)
     table = QTableView(host)
@@ -59,10 +55,37 @@ def build_lcc_compare_column(parent: QWidget | None = None) -> dict[str, QWidget
     }
 
 
+def build_fm_compare_column(parent: QWidget | None = None) -> dict[str, QWidget]:
+    from PySide6.QtWidgets import QTableView
+
+    host = QWidget(parent)
+    layout = QVBoxLayout(host)
+    layout.setContentsMargins(0, 0, 0, 0)
+    header = QLabel("")
+    header.setStyleSheet("font-weight: 600;")
+    placeholder = QLabel("")
+    placeholder.setObjectName("MutedHintLabel")
+    placeholder.setWordWrap(True)
+    table = QTableView(host)
+    table.setSortingEnabled(False)
+    table.setAlternatingRowColors(True)
+    layout.addWidget(header)
+    layout.addWidget(placeholder)
+    layout.addWidget(table, stretch=1)
+    return {
+        "host": host,
+        "header": header,
+        "placeholder": placeholder,
+        "table": table,
+    }
+
+
 def set_compare_placeholder(column: dict[str, QWidget], *, slot_key: str) -> None:
     column["placeholder"].setText(
         messages.WORKSPACE_COMPARE_SLOT_PLACEHOLDER.format(slot=slot_key)
     )
     column["placeholder"].setVisible(True)
-    column["chart"].setVisible(False)
-    column["table"].setVisible(False)
+    if "chart" in column:
+        column["chart"].setVisible(False)
+    if "table" in column:
+        column["table"].setVisible(False)

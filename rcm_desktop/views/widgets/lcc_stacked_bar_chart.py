@@ -7,6 +7,7 @@ from PySide6.QtGui import QBrush, QColor, QPainter, QPen
 from PySide6.QtWidgets import QWidget
 
 from rcm_desktop import messages
+from rcm_desktop.theme.dp_tokens import DP_MEASURE_CM, DP_MEASURE_PM, DP_TEXT_SUBTLE
 from rcm_desktop.adapter.lcc_chart_service import LCCYearBucket
 
 
@@ -15,15 +16,29 @@ class LCCStackedBarChartWidget(QWidget):
 
     year_clicked = Signal(int)
 
-    _CORRECTIEF_COLOR = QColor("#90CAF9")
-    _PREVENTIEF_COLOR = QColor("#1565C0")
+    _CORRECTIEF_COLOR = QColor(DP_MEASURE_CM)
+    _PREVENTIEF_COLOR = QColor(DP_MEASURE_PM)
 
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
         self._buckets: tuple[LCCYearBucket, ...] = ()
         self._selected_year: int | None = None
         self._scale_max: float | None = None
+        self._x_axis_label = messages.LCC_PLOT_AXIS_X_KALENDERJAREN
+        self._y_axis_label = ""
+        self._scenario_primary_hex: str | None = None
         self.setMinimumHeight(220)
+
+    def set_scenario_palette(self, primary_hex: str | None) -> None:
+        """Override default CM/PM blues with scenario accent (compare, slice 102)."""
+        self._scenario_primary_hex = primary_hex
+        self.update()
+
+    def _stack_colors(self) -> tuple[QColor, QColor]:
+        if self._scenario_primary_hex:
+            primary = QColor(self._scenario_primary_hex)
+            return primary.lighter(140), primary
+        return self._CORRECTIEF_COLOR, self._PREVENTIEF_COLOR
 
     def set_buckets(self, buckets: tuple[LCCYearBucket, ...]) -> None:
         self._buckets = tuple(buckets)
@@ -38,12 +53,27 @@ class LCCStackedBarChartWidget(QWidget):
         self._scale_max = value
         self.update()
 
+    def set_axis_labels(self, *, x_label: str, y_label: str) -> None:
+        self._x_axis_label = x_label
+        self._y_axis_label = y_label
+        self.update()
+
     def buckets(self) -> tuple[LCCYearBucket, ...]:
         return self._buckets
 
+    @staticmethod
+    def _format_tick(value: float) -> str:
+        if value >= 1_000_000:
+            return f"{value / 1_000_000:.1f}M"
+        if value >= 1_000:
+            return f"{value / 1_000:.0f}k"
+        return f"{int(round(value))}"
+
     def _layout_metrics(self, rect):
-        bottom_axis_height = 18
-        left_margin = 8
+        bottom_axis_height = 28
+        tick_label_width = 52
+        y_title_width = 22
+        left_margin = tick_label_width + y_title_width + 10
         right_margin = 8
         n = len(self._buckets)
         usable_w = max(60, rect.width() - left_margin - right_margin)
@@ -51,14 +81,25 @@ class LCCStackedBarChartWidget(QWidget):
         bar_w = max(4, slot_w - 3)
         plot_h = max(60, rect.height() - bottom_axis_height - 6)
         baseline_y = 6 + plot_h
-        return left_margin, right_margin, slot_w, bar_w, plot_h, baseline_y
+        return (
+            left_margin,
+            right_margin,
+            slot_w,
+            bar_w,
+            plot_h,
+            baseline_y,
+            tick_label_width,
+            y_title_width,
+        )
 
     def _calendar_year_at(self, x: int, y: int) -> int | None:
         if not self._buckets:
             return None
         rect = self.rect()
-        left_margin, _right_margin, slot_w, _bar_w, _plot_h, baseline_y = self._layout_metrics(rect)
-        if y < 0 or y > baseline_y + 18:
+        left_margin, _right_margin, slot_w, _bar_w, _plot_h, baseline_y, _, _ = (
+            self._layout_metrics(rect)
+        )
+        if y < 0 or y > baseline_y + 28:
             return None
         index = (x - left_margin) // slot_w
         if 0 <= index < len(self._buckets):
@@ -78,7 +119,7 @@ class LCCStackedBarChartWidget(QWidget):
         rect = self.rect()
         painter.fillRect(rect, QColor("#FAFAFA"))
         if not self._buckets:
-            painter.setPen(QPen(QColor("#9E9E9E")))
+            painter.setPen(QPen(QColor(DP_TEXT_SUBTLE)))
             painter.drawText(rect, Qt.AlignCenter, messages.WORKSPACE_LCC_EMPTY_STATE)
             painter.end()
             return
@@ -90,13 +131,34 @@ class LCCStackedBarChartWidget(QWidget):
             else local_max
         )
         if max_value <= 0.0:
-            painter.setPen(QPen(QColor("#9E9E9E")))
+            painter.setPen(QPen(QColor(DP_TEXT_SUBTLE)))
             painter.drawText(rect, Qt.AlignCenter, messages.WORKSPACE_LCC_EMPTY_STATE)
             painter.end()
             return
 
-        left_margin, right_margin, slot_w, bar_w, plot_h, baseline_y = self._layout_metrics(rect)
+        left_margin, right_margin, slot_w, bar_w, plot_h, baseline_y, tick_label_width, y_title_width = (
+            self._layout_metrics(rect)
+        )
         text_color = QColor("#212121")
+        correctief_color, preventief_color = self._stack_colors()
+        grid_pen = QPen(QColor(DP_TEXT_SUBTLE))
+        grid_pen.setStyle(Qt.PenStyle.DotLine)
+        for tick in range(5):
+            fraction = tick / 4
+            y_tick = baseline_y - int(plot_h * fraction)
+            painter.setPen(grid_pen)
+            painter.drawLine(left_margin, y_tick, rect.width() - right_margin, y_tick)
+            if tick > 0:
+                value = max_value * fraction
+                painter.setPen(QPen(text_color))
+                painter.drawText(
+                    y_title_width + 2,
+                    y_tick - 8,
+                    tick_label_width,
+                    16,
+                    int(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter),
+                    self._format_tick(value),
+                )
         for i, bucket in enumerate(self._buckets):
             x = left_margin + i * slot_w
             total = bucket.correctief_eur + bucket.preventief_eur
@@ -109,13 +171,32 @@ class LCCStackedBarChartWidget(QWidget):
                 painter.drawRect(
                     x - 1, baseline_y - corr_h - prev_h - 1, bar_w + 2, corr_h + prev_h + 2
                 )
-            painter.fillRect(x, baseline_y - corr_h, bar_w, corr_h, QBrush(self._CORRECTIEF_COLOR))
+            painter.fillRect(x, baseline_y - corr_h, bar_w, corr_h, QBrush(correctief_color))
             painter.fillRect(
-                x, baseline_y - corr_h - prev_h, bar_w, prev_h, QBrush(self._PREVENTIEF_COLOR)
+                x, baseline_y - corr_h - prev_h, bar_w, prev_h, QBrush(preventief_color)
             )
         painter.setPen(QPen(text_color))
+        if self._y_axis_label:
+            painter.save()
+            painter.translate(y_title_width // 2 + 2, baseline_y - plot_h // 2)
+            painter.rotate(-90)
+            painter.drawText(
+                -40,
+                0,
+                80,
+                16,
+                int(Qt.AlignmentFlag.AlignCenter),
+                self._y_axis_label,
+            )
+            painter.restore()
         first_year = self._buckets[0].calendar_year
         last_year = self._buckets[-1].calendar_year
         painter.drawText(left_margin, baseline_y + 14, str(first_year))
         painter.drawText(rect.width() - right_margin - 50, baseline_y + 14, str(last_year))
+        if self._x_axis_label:
+            painter.drawText(
+                left_margin,
+                rect.height() - 4,
+                self._x_axis_label,
+            )
         painter.end()

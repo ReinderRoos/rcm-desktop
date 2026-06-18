@@ -19,7 +19,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from rcm_core.models import RCMProject
+from rcm_desktop.adapter.view_core_facade import RCMProject
 
 from rcm_desktop import messages
 from rcm_desktop.adapter.compare_slot_state import CompareSlotState

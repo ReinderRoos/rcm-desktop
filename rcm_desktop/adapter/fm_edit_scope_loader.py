@@ -9,6 +9,11 @@ from rcm_core.editing.validation import normalize_key
 from rcm_core.models import RCMProject
 
 from rcm_desktop.adapter.editing_session import EditingSession
+from rcm_desktop.adapter.fm_create_service import (
+    allocate_fm_id,
+    default_faalwijze_row,
+    default_functie_id_for_pbs,
+)
 from rcm_desktop.adapter.fm_edit_bundle_service import FmEditBundle, _edit_current
 
 
@@ -17,6 +22,34 @@ def load_fm_edit_scope(source: RCMProject | EditingSession, fm_id: str) -> FmEdi
     if isinstance(source, EditingSession):
         return _load_from_session(source, fm_id)
     return _load_from_project(source, fm_id)
+
+
+def seed_create_bundle(session: EditingSession, pbs_id: str) -> FmEditBundle:
+    """Lege FM-scope voor create-modus op een leaf-PBS."""
+    if not session.is_loaded:
+        raise RuntimeError("EditingSession is niet geladen")
+    target_pbs = normalize_key(pbs_id)
+    current = _edit_current(session)
+    pbs_row = next(
+        (r for r in current.get("pbs", []) if normalize_key(r.get("pbs_id")) == target_pbs),
+        None,
+    )
+    if pbs_row is None:
+        raise KeyError(f"Onbekende PBS in sessie: {pbs_id}")
+    fm_id = allocate_fm_id(session)
+    functie_id = default_functie_id_for_pbs(session, target_pbs)
+    return FmEditBundle(
+        fm_id=fm_id,
+        faalwijze_row=default_faalwijze_row(
+            fm_id=fm_id, pbs_id=target_pbs, functie_id=functie_id
+        ),
+        pbs_row=copy.deepcopy(pbs_row),
+        fm_effect_rows=(),
+        pm_effect_rows=(),
+        pm_task_rows=(),
+        task_group_rows=(),
+        effect_klasse_rows=(),
+    )
 
 
 def _load_from_session(session: EditingSession, fm_id: str) -> FmEditBundle:

@@ -11,7 +11,7 @@ from rcm_desktop.adapter.presentation_cache_service import (
     build_contribution_presentation,
 )
 from rcm_desktop.adapter.qt.background_runner import BackgroundRunner
-from rcm_desktop.adapter.run_decision import RunUserIntent, resolve_run_execution
+from rcm_desktop.adapter.run_policy import DEFAULT_RUN_POLICY, RunUserIntent
 
 PHASE_MOTOR = "motor"
 PHASE_PRESENTATION = "presentation"
@@ -41,7 +41,7 @@ class _RunWorker(QObject):
             if self._force_recompute
             else RunUserIntent.START_ANALYSE
         )
-        opts = resolve_run_execution(user_intent=intent)
+        opts = DEFAULT_RUN_POLICY.resolve(user_intent=intent)
         result = run_service.run(
             self._project,
             self._project_path,

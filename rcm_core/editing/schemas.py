@@ -30,6 +30,7 @@ ENTITY_SCHEMAS: dict[str, dict[str, Any]] = {
             "ontwerpleeftijd_jaar": "float",
             "bouwjaar": "int",
             "parent_pbs_id": "str",
+            "volgorde": "int",
             "library_ref": "str",
             "notes": "str",
             "aanname_leeftijd": "str",

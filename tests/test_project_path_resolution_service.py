@@ -41,6 +41,14 @@ def test_cache_path_follows_project_file() -> None:
     )
 
 
+def test_source_workbook_path_follows_project_file() -> None:
+    project_path = Path("tests/fixtures/sample_project.rcm.json")
+    resolved = resolve_project_file_path(session_path=project_path, path_text="")
+    assert resolved.source_workbook_path() == project_path.with_suffix("").with_suffix(
+        ".rcm.source.xlsx"
+    )
+
+
 def test_default_report_output_path() -> None:
     project_path = Path("tests/fixtures/sample_project.rcm.json")
     resolved = resolve_project_file_path(session_path=project_path, path_text="")

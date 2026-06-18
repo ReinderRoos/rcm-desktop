@@ -1,7 +1,11 @@
 from __future__ import annotations
 
 from dataclasses import replace
+from pathlib import Path
 from unittest.mock import MagicMock, patch
+
+from rcm_core.models import FMResult
+from rcm_core.persistence import load_project
 
 from rcm_desktop.adapter.compare_slot_state import (
     COMPARE_SLOT_A,
@@ -15,10 +19,12 @@ from rcm_desktop.adapter.compare_view_service import (
     workspace_snapshot_for_slot,
 )
 from rcm_desktop.adapter.lcc_view_service import LCCView
-from rcm_desktop.adapter.workspace_render_index import SLOT_A, SLOT_B
+from rcm_desktop.adapter.loaded_project import LoadedProject
+from rcm_desktop.adapter.project_session import ProjectSession
+from rcm_desktop.adapter.workspace_render_index import SLOT_A, SLOT_B, WorkspaceRenderIndex
 from rcm_desktop.adapter.planning_overlay_state import PlanningOverlayState
 from rcm_desktop.adapter.results_workspace_state import _DEFAULT_SNAPSHOT
-from rcm_desktop.adapter.run_service import RunMetrics, RunResult
+from rcm_desktop.adapter.run_service import RunMetrics, RunResult, build_run_result
 
 
 def _done_run() -> RunResult:
@@ -201,3 +207,69 @@ def test_build_lcc_compare_panels_uses_workspace_lcc_view_per_slot():
     assert len(panels) == 2
     assert all(p.filled and p.lcc is not None and p.lcc.curve is not None for p in panels)
     assert captured_slots == [SLOT_A, SLOT_B]
+
+
+def _fm_result_for_pbs(pbs_id: str, *, total_cost_eur: float) -> FMResult:
+    return FMResult(
+        fm_id=f"FM-{pbs_id}",
+        pbs_id=pbs_id,
+        p_failure_lifecycle=0.5,
+        expected_failures=5.0,
+        expected_raw_downtime_hr=9.5,
+        expected_detection_delay_hr=0.5,
+        expected_total_downtime_hr=10.0,
+        expected_pm_downtime_hr=0.0,
+        expected_cm_cost_eur=total_cost_eur * 0.6,
+        pm_cost_eur=total_cost_eur * 0.4,
+        total_cost_eur=total_cost_eur,
+        risk_contribution=0.25,
+    )
+
+
+def test_build_bijdragen_compare_panels_distinct_runs_yield_distinct_rows() -> None:
+    """Guard: A/B-wiring levert per slot eigen bijdragen-rijen bij verschillende runs."""
+    project = load_project(Path("tests/fixtures/sample_project.rcm.json"))
+    pbs_id = next(iter(project.pbs_items))
+    run_a = build_run_result(project, [_fm_result_for_pbs(pbs_id, total_cost_eur=200.0)])
+    run_b = build_run_result(project, [_fm_result_for_pbs(pbs_id, total_cost_eur=900.0)])
+    slots = CompareSlotState()
+    overlay = PlanningOverlayState.inactive()
+    slots.put(
+        COMPARE_SLOT_A,
+        CompareSlotSnapshot.from_motor_run(
+            run_result=run_a,
+            presentation=None,
+            scenario_key="pm",
+            overlay_at_run=overlay,
+            label="A — PM",
+        ),
+    )
+    slots.put(
+        COMPARE_SLOT_B,
+        CompareSlotSnapshot.from_motor_run(
+            run_result=run_b,
+            presentation=None,
+            scenario_key="cm",
+            overlay_at_run=overlay,
+            label="B — CM",
+        ),
+    )
+    session = ProjectSession.from_parts(LoadedProject.from_core(project), run=run_a)
+    workspace = replace(_DEFAULT_SNAPSHOT, metric="kosten", modus="bijdragen")
+
+    panels = build_bijdragen_compare_panels(
+        session,
+        workspace,
+        slots=slots,
+        render_index=WorkspaceRenderIndex(),
+        project_total_presentation=None,
+    )
+
+    assert len(panels) == 2
+    assert panels[0].bijdragen is not None
+    assert panels[1].bijdragen is not None
+    rows_a = panels[0].bijdragen.contribution_rows
+    rows_b = panels[1].bijdragen.contribution_rows
+    assert rows_a
+    assert rows_b
+    assert rows_a[0].value != rows_b[0].value

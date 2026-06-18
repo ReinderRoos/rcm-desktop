@@ -23,7 +23,11 @@ blijven nodig voor `ValidateWindow` (`--legacy-validate`).
   blijft **ValidateWindow-only** — ADR-0006 blijft geldig voor die stack.
 - `compute_split_layout` / `CompareSplitLayoutService` mag A/B-split leveren voor Top10
   (horizontaal) en Tijdsplot (verticaal) wanneer `compare_mode` aan is.
-- v1: Top10 + Tijdsplot only; FM-detail blijft single-run; sessie-only slots (geen disk).
+- v1 (slice 56): Top10 + Tijdsplot only; FM-detail single-run; sessie-only slots.
+- **v1.1 (slice 100):** UX **Start analyse → Extra scenario → Vergelijk scenario's**
+  vervangt Run → A/B; FM-resultaten compare (split, metric-gestuurd); LCC compare
+  volgt globale metric; gemengde run-modus (analytisch vs MC P50) toegestaan;
+  dual-project *Vergelijk modellen…* blijft gescheiden product.
 
 ## Consequences
 

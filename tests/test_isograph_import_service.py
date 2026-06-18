@@ -86,6 +86,53 @@ def test_synthetic_initial_age_conflict_reported() -> None:
     assert result.project.pbs_items["L2"].bouwjaar == 0
 
 
+def test_initial_age_zero_does_not_conflict_with_real_age() -> None:
+    """InitialAge=0 (onbekend) mag een echte leeftijd niet als conflict markeren."""
+    sheets = {
+        "RcmLocations": [
+            {"Id": "L1", "Parent": "", "Description": "Loc"},
+            {"Id": "L2", "Parent": "L1", "Description": "Sub"},
+        ],
+        "RcmFunctions": [{"Id": "F1", "Parent": "L2", "Description": "Functie"}],
+        "RcmFunctionalFailures": [{"Id": "FF1", "Parent": "F1", "Description": "FF"}],
+        "RcmCauses": [
+            {
+                "Id": "FM-A",
+                "Parent": "FF1",
+                "Description": "FM met echte leeftijd",
+                "LocationId": "L2",
+                "FmMttf": 87600,
+                "FmStd": 0,
+                "InitialAge": 87600,
+                "Mttr": 8,
+                "FmDistribution": "Normal",
+            },
+            {
+                "Id": "FM-B",
+                "Parent": "FF1",
+                "Description": "FM zonder leeftijd",
+                "LocationId": "L2",
+                "FmMttf": 87600,
+                "FmStd": 0,
+                "InitialAge": 0,
+                "Mttr": 8,
+                "FmDistribution": "Normal",
+            },
+        ],
+        "RcmEffects": [{"Id": "E1", "Description": "Effect"}],
+        "RcmCauseEffectAssignments": [
+            {"Cause": "FM-A", "Effect": "E1"},
+            {"Cause": "FM-B", "Effect": "E1"},
+        ],
+        "RcmCorrectiveTasks": [],
+        "TaskGroups": [],
+        "Project": [{"LifeTime": 876000, "RcmNoSimulations": 100, "RcmRandomNoSeed": 7}],
+    }
+    result = build_from_sheets(sheets, modeljaar=2026)
+    assert not any(c.pbs_id == "L2" and c.kind == "initial_age" for c in result.conflicts)
+    assert result.project.pbs_items["L2"].bouwjaar == 2016  # 2026 - 10
+
+
 def test_build_result_types() -> None:
     result = build_from_workbook(FIXTURE, modeljaar=2026)
     assert isinstance(result, ImportBuildResult)
@@ -94,16 +141,28 @@ def test_build_result_types() -> None:
 
 
 @pytest.mark.skipif(not CM_FIXTURE.is_file(), reason="CM fixture ontbreekt")
+def test_cm_fixture_imports_aw_benchmark_columns() -> None:
+    result = build_from_workbook(CM_FIXTURE, modeljaar=2026)
+    meta = result.import_settings["isograph_causes"]["06H-350.1.1.1.1.1.A.1"]
+    assert meta["TotalCost"] == 42915
+    assert "TotalCostErrPc" in meta
+    assert meta["TotalTdt"] == pytest.approx(68.6599457000922)
+    assert meta["TotalW"] == pytest.approx(8.583)
+    assert meta["CTdt"] == pytest.approx(68.6599457000922)
+
+
+@pytest.mark.skipif(not CM_FIXTURE.is_file(), reason="CM fixture ontbreekt")
 def test_cm_fixture_pm_effect_links_resolved() -> None:
-    """Issue 02 spike: conservatieve PM-link resolutie op gevuld export."""
+    """Slice 69: PM-link resolutie met fallback, dual-scope en RF op fractie."""
     result = build_from_workbook(CM_FIXTURE, modeljaar=2026)
     assert len(result.project.fm_effect_links) == 224
-    assert len(result.project.pm_effect_links) == 54
-    assert len(result.warnings) == 15
-    assert all("PM-effect niet geïmporteerd" in w for w in result.warnings)
+    assert len(result.project.pm_effect_links) > 54
+    unresolved = [w for w in result.warnings if "PM-effect niet geïmporteerd" in w]
+    assert len(unresolved) <= 12
+    assert any(l.fractie < 1.0 for l in result.project.pm_effect_links.values())
     sample = next(iter(result.project.pm_effect_links.values()))
-    assert sample.fractie == 1.0
     assert sample.pm_id in result.project.pm_tasks
+    assert result.warning_summary["unresolved_pm"] == len(unresolved)
 
 
 def test_synthetic_aw_disabled_pm_ids_in_import_settings() -> None:
@@ -152,6 +211,108 @@ def test_synthetic_aw_disabled_pm_ids_in_import_settings() -> None:
     disabled = result.import_settings.get("aw_disabled_pm_ids", [])
     assert disabled == ["FM-A|REV|0"]
     assert "FM-A|SVO|1" not in disabled
+
+
+def test_import_repair_quality_from_corrective_task() -> None:
+    sheets = {
+        "RcmLocations": [{"Id": "L1", "Parent": "", "Description": "Loc"}],
+        "RcmFunctions": [{"Id": "F1", "Parent": "L1", "Description": "Functie"}],
+        "RcmFunctionalFailures": [{"Id": "FF1", "Parent": "F1", "Description": "FF"}],
+        "RcmCauses": [
+            {
+                "Id": "FM-A",
+                "Parent": "FF1",
+                "Description": "FM",
+                "LocationId": "L1",
+                "FmMttf": 87600,
+                "InitialAge": 0,
+                "Mttr": 8,
+                "FmDistribution": "Normal",
+            },
+        ],
+        "RcmEffects": [],
+        "RcmCauseEffectAssignments": [],
+        "RcmCorrectiveTasks": [
+            {
+                "Cause": "FM-A",
+                "TaskDuration": 8,
+                "OperationalCost": 100,
+                "RepairQuality": 0,
+            },
+        ],
+        "RcmScheduledTasks": [],
+        "TaskGroups": [],
+        "Project": [{"LifeTime": 876000}],
+    }
+    result = build_from_sheets(sheets, modeljaar=2026)
+    assert result.project.faalwijzes["FM-A"].repair_quality == 0.0
+
+
+def test_import_repair_quality_pct_scale() -> None:
+    sheets = {
+        "RcmLocations": [{"Id": "L1", "Parent": "", "Description": "Loc"}],
+        "RcmFunctions": [{"Id": "F1", "Parent": "L1", "Description": "Functie"}],
+        "RcmFunctionalFailures": [{"Id": "FF1", "Parent": "F1", "Description": "FF"}],
+        "RcmCauses": [
+            {
+                "Id": "FM-A",
+                "Parent": "FF1",
+                "Description": "FM",
+                "LocationId": "L1",
+                "FmMttf": 87600,
+                "InitialAge": 0,
+                "Mttr": 8,
+            },
+        ],
+        "RcmEffects": [],
+        "RcmCauseEffectAssignments": [],
+        "RcmCorrectiveTasks": [
+            {"Cause": "FM-A", "TaskDuration": 8, "OperationalCost": 100, "AsGoodAsNew": 25},
+        ],
+        "RcmScheduledTasks": [],
+        "TaskGroups": [],
+        "Project": [{"LifeTime": 876000}],
+    }
+    result = build_from_sheets(sheets, modeljaar=2026)
+    assert result.project.faalwijzes["FM-A"].repair_quality == pytest.approx(0.25)
+
+
+def test_import_rev_defaults_aging_effect_pct_to_100() -> None:
+    sheets = {
+        "RcmLocations": [{"Id": "L1", "Parent": "", "Description": "Loc"}],
+        "RcmFunctions": [{"Id": "F1", "Parent": "L1", "Description": "Functie"}],
+        "RcmFunctionalFailures": [{"Id": "FF1", "Parent": "F1", "Description": "FF"}],
+        "RcmCauses": [
+            {
+                "Id": "FM-A",
+                "Parent": "FF1",
+                "Description": "FM",
+                "LocationId": "L1",
+                "FmMttf": 87600,
+                "InitialAge": 0,
+                "Mttr": 8,
+            },
+        ],
+        "RcmEffects": [],
+        "RcmCauseEffectAssignments": [],
+        "RcmCorrectiveTasks": [{"Cause": "FM-A", "TaskDuration": 8, "OperationalCost": 100}],
+        "RcmScheduledTasks": [
+            {
+                "Cause": "FM-A",
+                "TaskId": "REV",
+                "SubIndex": 0,
+                "Type": "Planned",
+                "Enabled": "True",
+                "TaskInterval": 8760,
+                "TaskDuration": 4,
+            },
+        ],
+        "TaskGroups": [],
+        "Project": [{"LifeTime": 876000}],
+    }
+    result = build_from_sheets(sheets, modeljaar=2026)
+    rev = result.project.pm_tasks["FM-A|REV|0"]
+    assert rev.aging_effect_pct == 100.0
 
 
 @pytest.mark.skipif(not CM_FIXTURE.is_file(), reason="CM fixture ontbreekt")

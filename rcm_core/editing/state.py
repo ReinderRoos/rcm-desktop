@@ -34,6 +34,7 @@ def init_edit_state(project: RCMProject, session: dict[str, Any] | None = None) 
     session_state["edit_errors"] = edit_errors
     session_state["edit_dirty"] = edit_dirty
     session_state["edit_dirty_global"] = False
+    validate_all_entities(project, session=session_state)
 
 
 def set_dirty_flags(session: dict[str, Any] | None = None) -> None:
@@ -52,6 +53,30 @@ def set_dirty_flags(session: dict[str, Any] | None = None) -> None:
 def errors_count(entity: str, session: dict[str, Any] | None = None) -> int:
     errors = _resolve_session(session).get("edit_errors", {}).get(entity, {})
     return sum(len(arr) for row in errors.values() for arr in row.values())
+
+
+def edit_findings_count(
+    session: dict[str, Any] | None = None,
+    *,
+    severity: str | None = None,
+    entity: str | None = None,
+) -> int:
+    session_state = _resolve_session(session)
+    total = 0
+    for ent, rows_e in session_state.get("edit_errors", {}).items():
+        if entity is not None and ent != entity:
+            continue
+        for _rk, fields in rows_e.items():
+            for _f, arr in fields.items():
+                for err in arr:
+                    err_sev = err.get("severity", "error")
+                    if severity is None or err_sev == severity:
+                        total += 1
+    return total
+
+
+def blocking_edit_error_count(session: dict[str, Any] | None = None) -> int:
+    return edit_findings_count(session, severity="error")
 
 
 def add_error_summary_column(entity: str, rows: list[dict[str, Any]], session: dict[str, Any] | None = None) -> pd.DataFrame:
@@ -135,10 +160,8 @@ def restore_entity(entity: str, session: dict[str, Any] | None = None) -> None:
 
 def validate_all_entities(project: RCMProject, session: dict[str, Any] | None = None) -> int:
     session_state = _resolve_session(session)
-    total = 0
     for entity in ENTITY_SCHEMAS:
         rows = session_state.get("edit_current", {}).get(entity, [])
-        _, errors = apply_rows(entity, rows, project, session=session_state)
-        total += sum(len(arr) for row in errors.values() for arr in row.values())
-    return total
+        apply_rows(entity, rows, project, session=session_state)
+    return blocking_edit_error_count(session_state)
 

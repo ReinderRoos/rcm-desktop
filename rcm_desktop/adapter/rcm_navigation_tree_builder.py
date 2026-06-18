@@ -49,7 +49,7 @@ def build_rcm_navigation_tree(project: RCMProject) -> tuple[RcmNavigationNode, .
             parent_key = parent
         children_pbs.setdefault(parent_key, []).append(pbs_id)
     for child_ids in children_pbs.values():
-        child_ids.sort()
+        child_ids.sort(key=lambda pid: (project.pbs_items[pid].volgorde, pid))
 
     functies_by_pbs: dict[str, list[str]] = {}
     for fid, functie in project.functies.items():

@@ -1,4 +1,4 @@
-"""Entry point voor de RCM2 desktop-app (resultatenwerkruimte)."""
+"""Entry point voor de RCM desktop-app (resultatenwerkruimte)."""
 from __future__ import annotations
 
 import sys
@@ -26,11 +26,16 @@ def main() -> int:
         )
         return 1
 
+    from rcm_desktop.desktop_tooltip import apply_desktop_tooltip_polish
+    from rcm_desktop.theme.rcm2_theme import apply_rcm2_theme
     from rcm_desktop.views.results_workspace_window import ResultsWorkspaceWindow
 
     app = QApplication(sys.argv)
+    apply_rcm2_theme(app)
+    apply_desktop_tooltip_polish(app)
     window = ResultsWorkspaceWindow()
-    window.setWindowTitle("RCM2 — resultatenwerkruimte")
+    window.setWindowTitle("RCM — Delta Pi")
+    app.aboutToQuit.connect(window.cancel_background_runners)
     window.show()
     return app.exec()
 

@@ -20,6 +20,7 @@ from rcm_core.distributions import (
     expected_aging_lifecycle_faalmomenten_ssot,
 )
 from rcm_core.models import FMHorizonProfile, FMResult, Faalwijze, PBSItem, PMTask, RCMProject, TaskType
+from rcm_core.lifecycle_horizon import effective_lifecycle_end_age
 from rcm_core.nmf_schedule import build_horizon_profile
 
 
@@ -79,11 +80,19 @@ def _fm_horizon_context(
     """(current_age, lifecycle_end_age, multiplicity) — zelfde semantiek als compute_fm_result."""
     pbs = all_pbs.get(pbs_id)
     if pbs is None:
-        return 0.0, float(config.lifecycle_years), 1.0
+        return 0.0, effective_lifecycle_end_age(
+            float(config.lifecycle_years),
+            0.0,
+            aw_mc_horizon=config.aw_mc_lifecycle_horizon,
+        ), 1.0
     eff_bouwjaar = pbs.effective_bouwjaar(all_pbs)
     current_age = float(config.modeljaar - eff_bouwjaar) if eff_bouwjaar > 0 else 0.0
     eff_mult = float(pbs.effective_multiplicity(all_pbs))
-    lifecycle_end = float(config.lifecycle_years)
+    lifecycle_end = effective_lifecycle_end_age(
+        float(config.lifecycle_years),
+        current_age,
+        aw_mc_horizon=config.aw_mc_lifecycle_horizon,
+    )
     return current_age, lifecycle_end, eff_mult
 
 
@@ -187,7 +196,7 @@ def _legacy_cm_eur_per_fm(
             current_age=current_age,
             lifecycle_years=lifecycle_end,
             mttf=float(fm.mttf_jaar),
-            sigma=float(fm.effective_sigma(config.default_sigma_fraction)),
+            sigma=float(fm.effective_sigma(project.config.default_sigma_fraction)),
             aging_distribution=fm.aging_distribution.value,
             beta_jaar=float(fm.beta_jaar),
             repair_quality=float(fm.repair_quality),

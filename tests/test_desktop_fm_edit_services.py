@@ -255,9 +255,9 @@ def test_assembler_round_trip(sample_project) -> None:
 
 
 def test_load_bundle_from_session_after_grid_edit(sample_project) -> None:
-    from rcm_desktop.adapter.faalwijzen_edit_service import FaalwijzenEditService
+    from rcm_desktop.adapter.entity_edit_service import EntityEditService
 
-    grid = FaalwijzenEditService()
+    grid = EntityEditService.for_view("input.faalwijzen")
     grid.init(sample_project)
     grid.apply_change("FM-001", "failure_type", "random")
     bundle = load_bundle_from_session(grid.editing_session, "FM-001")

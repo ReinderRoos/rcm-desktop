@@ -13,6 +13,7 @@ from rcm_core.lcc_profile import (
     ltap_horizon_bucket_count,
 )
 from rcm_core.models import FMResult, RCMProject
+from rcm_core.lifecycle_horizon import effective_lifecycle_end_age
 
 from rcm_desktop.adapter.ltap_execution_schedule import ltap_executions_by_year
 
@@ -21,14 +22,22 @@ def fm_horizon_context(project: RCMProject, pbs_id: str) -> tuple[float, float, 
     """(current_age, lifecycle_end_age, multiplicity) — zelfde semantiek als `lcc_profile`."""
     pbs = project.pbs_items.get(pbs_id)
     if pbs is None:
-        return 0.0, float(project.config.lifecycle_years), 1.0
+        return 0.0, effective_lifecycle_end_age(
+            float(project.config.lifecycle_years),
+            0.0,
+            aw_mc_horizon=project.config.aw_mc_lifecycle_horizon,
+        ), 1.0
     all_pbs = project.pbs_items
     eff_bouwjaar = pbs.effective_bouwjaar(all_pbs)
     current_age = (
         float(project.config.modeljaar - eff_bouwjaar) if eff_bouwjaar > 0 else 0.0
     )
     eff_mult = float(pbs.effective_multiplicity(all_pbs))
-    lifecycle_end = float(project.config.lifecycle_years)
+    lifecycle_end = effective_lifecycle_end_age(
+        float(project.config.lifecycle_years),
+        current_age,
+        aw_mc_horizon=project.config.aw_mc_lifecycle_horizon,
+    )
     return current_age, lifecycle_end, eff_mult
 
 

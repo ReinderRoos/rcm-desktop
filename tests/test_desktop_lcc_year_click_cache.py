@@ -7,8 +7,8 @@ import pytest
 from PySide6.QtWidgets import QApplication, QMessageBox
 
 from rcm_desktop.adapter import lcc_planning_service
-from rcm_desktop.adapter import presentation_lazy_service as lazy_svc
-from rcm_desktop.adapter.results_workspace_state import MODE_LCC
+from rcm_desktop.adapter import tijdsplot_curve_service
+from rcm_desktop.adapter.results_workspace_state import METRIC_KOSTEN, MODE_LCC
 from rcm_desktop.views.results_workspace_window import ResultsWorkspaceWindow
 
 from tests.test_desktop_results_workspace_window import _ensure_app, _inject_run, _three_level_project
@@ -36,7 +36,8 @@ def test_lcc_year_click_reuses_curve_without_rebuild(app, monkeypatch):
         calls["n"] += 1
         return real(*args, **kwargs)
 
-    monkeypatch.setattr(lazy_svc, "build_lcc_planning_curve_reconciled", counting)
+    monkeypatch.setattr(tijdsplot_curve_service, "build_lcc_planning_curve_reconciled", counting)
+    window.workspace_state.set_metric(METRIC_KOSTEN)
     window.workspace_state.set_modus(MODE_LCC)
     app.processEvents()
     assert calls["n"] == 1

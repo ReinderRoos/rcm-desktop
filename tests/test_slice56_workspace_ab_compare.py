@@ -42,7 +42,7 @@ def test_adr_0007_exists_and_references_legacy_boundary() -> None:
 
 def test_issue56_workspace_has_ab_compare_path_not_legacy_compare_runner() -> None:
     source = WORKSPACE_WINDOW.read_text(encoding="utf-8")
-    assert "CompareSlotState" in source
+    assert "_compare_slots" in source
     assert "CompareRunner" not in source
     assert "compare_mode" in source
 

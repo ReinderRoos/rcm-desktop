@@ -226,7 +226,8 @@ def _validate_pm_tasks(project: "RCMProject") -> list[ValidationError]:
             errors.append(ValidationError(
                 "PM_COST_NEGATIVE", f"cost_eur mag niet negatief zijn", pm_id
             ))
-        if not (0.0 <= pm.unavailability_fraction <= 1.0):
+        frac = pm.unavailability_fraction
+        if frac is None or not isinstance(frac, (int, float)) or not (0.0 <= float(frac) <= 1.0):
             errors.append(ValidationError(
                 "PM_UNAVAIL_FRACTION", f"unavailability_fraction moet tussen 0 en 1 liggen", pm_id
             ))

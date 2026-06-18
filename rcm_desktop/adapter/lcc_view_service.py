@@ -12,6 +12,7 @@ from rcm_desktop.adapter.lcc_render_cache_service import build_lcc_curve_cache_k
 from rcm_desktop.adapter.presentation_lazy_service import warm_lcc_render_index
 from rcm_desktop.adapter.results_workspace_state import WorkspaceStateSnapshot
 from rcm_desktop.adapter.run_service import RunResult
+from rcm_desktop.adapter.workspace_lcc_preset_service import effective_lcc_filters
 from rcm_desktop.adapter.workspace_render_index import SLOT_CURRENT, WorkspaceRenderIndex
 
 
@@ -40,7 +41,8 @@ def build_lcc_view(
         scope_id=snapshot.scope_id,
         cache_modus_key=cache_modus,
         overlay=snapshot.planning_overlay,
-        type_filters=snapshot.lcc_filters,
+        type_filters=effective_lcc_filters(snapshot),
+        snapshot=snapshot,
         slot=slot,
     )
     planning_curve = curve if isinstance(curve, LCCPlanningCurve) else None

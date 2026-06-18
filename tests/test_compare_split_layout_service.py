@@ -26,8 +26,8 @@ def test_compare_lcc_is_vertical():
     assert layout.orientation == SPLIT_VERTICAL
 
 
-def test_compare_fm_detail_stays_single():
+def test_compare_fm_detail_is_horizontal():
     from rcm_desktop.adapter.results_workspace_state import MODE_FM_DETAIL
 
     layout = compute_compare_split_layout(compare_mode=True, modus=MODE_FM_DETAIL)
-    assert layout.orientation == SPLIT_NONE
+    assert layout.orientation == SPLIT_HORIZONTAL

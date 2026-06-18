@@ -191,9 +191,20 @@ LTAP_DETAIL_HEADER_DOWNTIME_HR = "Downtime (uur)"
 LTAP_DETAIL_NON_SHIFTABLE_TAG = "niet-verschuifbaar"
 FM_RESULTS_GROUP_TITLE = "Faalwijzen-resultaten"
 FM_RESULTS_HEADER_FM_ID = "FM-id"
-FM_RESULTS_HEADER_FAALWIJZE = "Faalwijze"
-FM_RESULTS_HEADER_PBS_ID = "PBS-id"
 FM_RESULTS_HEADER_BOUWDEEL_NAAM = "Bouwdeel"
+FM_RESULTS_HEADER_FAALWIJZE = "Faalwijze"
+FM_RESULTS_HEADER_NMF = "NMF"
+FM_RESULTS_HEADER_RF = "RF"
+FM_RESULTS_NMF_YES = "NMF"
+FM_RESULTS_FILTER_BOUWDEEL = "Filter bouwdeel"
+FM_RESULTS_FILTER_PLACEHOLDER = "Deel van bouwdeelnaam…"
+TABLE_FILTER_TEXT_PLACEHOLDER = "Filter…"
+TABLE_FILTER_NUMERIC_PLACEHOLDER = ">100, 10..50"
+TABLE_FILTER_BOOL_ALL = "Alle"
+TABLE_FILTER_CLEAR = "Wis filters"
+TABLE_FILTER_ROW_COUNT = "{visible} / {total} rijen"
+TABLE_FILTER_INVALID_TOOLTIP = "Ongeldige expressie — alle rijen worden getoond"
+FM_RESULTS_HEADER_PBS_ID = "PBS-id"
 FM_RESULTS_HEADER_FAALMOMENTEN = "Faalmomenten lifecycle"
 FM_RESULTS_HEADER_DOWNTIME_HR = "Downtime (uur)"
 FM_RESULTS_HEADER_TOTAL_COST_EUR = "Totale kosten (EUR)"
@@ -237,7 +248,28 @@ FAALWIJZEN_EDIT_HEADER_BETA = "Beta (jaar)"
 FAALWIJZEN_EDIT_HEADER_COST_CM = "CM-kosten (EUR)"
 FAALWIJZEN_EDIT_HEADER_P_EVENT = "P (ongewenste gebeurtenis)"
 WORKSPACE_WINDOW_TITLE = "RCM2 desktop — resultatenwerkruimte"
-WORKSPACE_PBS_SIDEBAR_TITLE = "Componenten"
+WORKSPACE_MENU_FILE = "Bestand"
+WORKSPACE_MENU_VIEW = "Beeld"
+WORKSPACE_MENU_WHATIF = "What-if"
+WORKSPACE_MENU_RUN = "Run"
+WORKSPACE_MENU_ANALYSIS = "Analyse"
+WORKSPACE_MENU_TOGGLE_WHATIF = "What-if planning"
+WORKSPACE_MENU_RUN_SLOT_A = "Run → A"
+WORKSPACE_MENU_RUN_SLOT_B = "Run → B"
+WORKSPACE_MENU_COMPARE_SCENARIO_CM = "Scenario CM"
+WORKSPACE_MENU_COMPARE_SCENARIO_PM = "Scenario PM"
+WORKSPACE_MENU_OPEN_PROJECT = "Project inladen…"
+WORKSPACE_MENU_OPEN_RCM_COST = "Open RCM-Cost export…"
+WORKSPACE_MENU_QUIT = "Afsluiten"
+WORKSPACE_MENU_PBS_TREE_VISIBLE = "PBS-boom zichtbaar"
+WORKSPACE_MENU_PBS_SELECT_PREV_SIBLING = "Vorige PBS op niveau"
+WORKSPACE_MENU_PBS_SELECT_NEXT_SIBLING = "Volgende PBS op niveau"
+WORKSPACE_MENU_PBS_SELECT_PARENT = "Naar parent PBS"
+WORKSPACE_MENU_PBS_SELECT_FIRST_CHILD = "Naar eerste kind"
+WORKSPACE_MENU_PBS_MOVE_UP = "PBS omhoog verplaatsen"
+WORKSPACE_MENU_PBS_MOVE_DOWN = "PBS omlaag verplaatsen"
+WORKSPACE_MENU_KPI_OVERVIEW = "KPI-overzicht"
+WORKSPACE_MENU_FAALWIJZEN_GRID = "Faalwijzen-grid…"
 WORKSPACE_PBS_TOGGLE_LABEL = "Component-kolom"
 WORKSPACE_PBS_TOGGLE_TOOLTIP = (
     "Toon of verberg de component-kolom links. Standaard zichtbaar; "
@@ -260,16 +292,55 @@ WORKSPACE_KPI_PLACEHOLDER = "Hier komt later de KPI-tabel."
 
 # Modus-segmented control (slice 23, fase B) + sub-toggles en metric-labels.
 WORKSPACE_MODE_BIJDRAGEN = "Top 10"
-WORKSPACE_MODE_LCC = "Tijdsplot"
-WORKSPACE_MODE_FM_DETAIL = "FM-detail"
+WORKSPACE_MODE_LCC = "LCC-plot"
+WORKSPACE_MODE_FM_DETAIL = "FM-resultaten"
+
+# View-registry (slice 79) — gebruikerslabels voor Input/Output-navigatie.
+WORKSPACE_SIDE_INPUT = "Input"
+WORKSPACE_SIDE_OUTPUT = "Output"
+WORKSPACE_VIEW_TOP_10 = "Top 10"
+WORKSPACE_VIEW_KPI_OVERVIEW = "KPI-overzicht"
+WORKSPACE_VIEW_LCC_PLOT = "LCC-plot"
+WORKSPACE_VIEW_LTAP = "LTAP"
+WORKSPACE_VIEW_TOP_BIJDRAGEN = "Top bijdragen"
+WORKSPACE_VIEW_FM_RESULTS = "FM-resultaten"
+WORKSPACE_VIEW_FAALWIJZEN = "Faalwijzen"
+WORKSPACE_VIEW_REV_TASKS = "REV-taken"
+WORKSPACE_VIEW_EFFECTEN = "Effecten"
+WORKSPACE_VIEW_TAAKGROEPEN = "Taakgroepen"
+WORKSPACE_VIEW_CORRECTIEF = "Correctief onderhoud"
+WORKSPACE_ENTITY_GRID_COLUMNS = "Kolommen"
+ENTITY_GRID_COLUMNS_DIALOG_TITLE = "Kolommen kiezen"
+ENTITY_GRID_SEARCH_PLACEHOLDER = "Zoeken in tabel…"
+ENTITY_GRID_ROW_COUNT = "{visible} van {total} rijen"
+ENTITY_GRID_FINDINGS_SUFFIX = " · {errors} fouten, {warnings} waarschuwingen"
+WORKSPACE_MENU_REVALIDATE_INPUT = "Controleer invoer"
+ENTITY_GRID_SCOPE_NOT_APPLICABLE = "PBS-scope niet van toepassing — toont alle {entity}"
+ENTITY_GRID_PM_FIRST_EXECUTION_YEAR = "Eerste jaar uitvoering"
+ENTITY_GRID_PM_EXECUTION_COUNT_LCC = "Aantal uitvoeringen in LCC-periode"
+ENTITY_GRID_PM_DOWNTIME_OH = "Downtime bij OH"
+ENTITY_GRID_PM_REPAIR_QUALITY = "Repair quality"
+ENTITY_GRID_PM_HERSTELDUUR = "Herstelduur"
+WORKSPACE_INPUT_PLACEHOLDER = (
+    "Invoertabellen (faalwijzen, taken, effecten) volgen in een latere slice."
+)
 
 WORKSPACE_TOP10_SUBBAR_LABEL = "Top 10:"
 WORKSPACE_SOURCE_TOGGLE_PBS = "Component"
 WORKSPACE_SOURCE_TOGGLE_FAALWIJZE = "Faalwijze"
+WORKSPACE_SOURCE_TOGGLE_EFFECTKLASSE = "Effectklasse"
 
 WORKSPACE_METRIC_NIET_BESCHIKBAARHEID = "Niet-beschikbaarheid"
 WORKSPACE_METRIC_KOSTEN = "Kosten"
+WORKSPACE_NB_EFFECT_FILTER_LABEL = "NB-effecten"
+WORKSPACE_NB_EFFECT_FILTER_DISABLED_REASON = (
+    "Geen bijdrage in kosten, faalmomenten of downtime voor de totale PBS"
+)
+WORKSPACE_NB_EFFECT_FILTER_TOOLTIP = (
+    "Filter op niet-beschikbaarheidseffecten. Geen selectie = totale NB."
+)
 WORKSPACE_METRIC_FAALMOMENTEN = "Faalmomenten"
+WORKSPACE_METRIC_EFFECTIMPACT = "Effectimpact"
 
 WORKSPACE_CONTRIBUTION_HORIZON_LIFECYCLE = "Per LCC-periode"
 WORKSPACE_CONTRIBUTION_HORIZON_PER_YEAR = "Per jaar"
@@ -304,6 +375,11 @@ WORKSPACE_LCC_TABLE_HEADER_TOTAAL = "Totaal (EUR)"
 WORKSPACE_LCC_EMPTY_STATE = (
     "Nog geen LCC-kosten. Start eerst een analyse-run en kies daarna `LCC`."
 )
+LCC_PLOT_AXIS_X_KALENDERJAREN = "Kalenderjaren"
+LCC_PLOT_AXIS_Y_FAALMOMENTEN = "Aantal keer falen (#/jaar)"
+LCC_PLOT_AXIS_Y_NB_HOURS = "Niet-beschikbaarheid (uur/jaar)"
+LCC_PLOT_AXIS_Y_NB_PERCENT = "Niet-beschikbaarheid (%/jaar)"
+LCC_PLOT_AXIS_Y_KOSTEN = "Kosten (€/jaar)"
 WORKSPACE_LCC_MODE_TOOLTIP = (
     "LCC toont kosten per kalenderjaar (correctief + preventief) voor de huidige "
     "analyse-run. De LCC-weergave is project-totaal en wordt niet beperkt door de "
@@ -383,16 +459,79 @@ WORKSPACE_RUN_SLOT_A_BUTTON_TOOLTIP = (
 WORKSPACE_RUN_SLOT_B_BUTTON_TOOLTIP = (
     "Voer analyse uit en bevries resultaat in slot B (variant)."
 )
-WORKSPACE_COMPARE_TOGGLE_LABEL = "Vergelijk A ↔ B"
-WORKSPACE_COMPARE_TOGGLE_TOOLTIP = (
-    "Toon Top 10 en Tijdsplot naast elkaar voor gevulde slots. "
-    "Geen dubbele run verplicht — gebruik Zet als A/B na validate."
+WORKSPACE_EXTRA_SCENARIO_BUTTON_LABEL = "Extra scenario"
+WORKSPACE_EXTRA_SCENARIO_BUTTON_TOOLTIP = (
+    "Bevries de huidige live run als scenario 1 en configureer een variant voor scenario 2."
 )
-WORKSPACE_SEED_SLOT_A_BUTTON_LABEL = "Zet huidige run als A"
-WORKSPACE_SEED_SLOT_B_BUTTON_LABEL = "Zet huidige run als B"
+WORKSPACE_COMPARE_TOGGLE_LABEL = "Vergelijk scenario's"
+WORKSPACE_COMPARE_TOGGLE_TOOLTIP = (
+    "Toon Top 10, Tijdsplot en FM-resultaten naast elkaar voor scenario 1 en 2."
+)
 WORKSPACE_CLEAR_COMPARE_BUTTON_LABEL = "Wis vergelijking"
-WORKSPACE_COMPARE_SLOT_PLACEHOLDER = "Nog geen run — gebruik Run → {slot}"
+WORKSPACE_COMPARE_SLOT_PLACEHOLDER = (
+    "Start analyse, daarna Extra scenario — slot {slot}"
+)
 WORKSPACE_COMPARE_SLOT_HEADER = "{label}"
+
+# Dual-project vergelijkingswerkruimte (slice 95 issue 07).
+WORKSPACE_MENU_COMPARE_MODELS = "Vergelijk modellen…"
+COMPARE_MODELS_WINDOW_TITLE = "Vergelijkingswerkruimte"
+COMPARE_MODELS_PATH_A = "Project A (baseline)"
+COMPARE_MODELS_PATH_B = "Project B (scenario)"
+COMPARE_MODELS_LOAD_BUTTON = "Vergelijk"
+COMPARE_MODELS_SELECT_BOTH = "Kies eerst project A en project B."
+COMPARE_MODELS_SUMMARY = "{label_a} ↔ {label_b} — {count} faalwijze-regels"
+COMPARE_MODELS_DETAIL_PLACEHOLDER = "Selecteer een faalwijze-regel voor invoer- en resultaatdiffs."
+COMPARE_MODELS_DETAIL_TITLE = "FM {fm_a} ↔ {fm_b} ({klasse})"
+COMPARE_MODELS_TABLE_HEADER_STATUS = "Status"
+COMPARE_MODELS_TABLE_HEADER_FM_A = "FM A"
+COMPARE_MODELS_TABLE_HEADER_FM_B = "FM B"
+COMPARE_MODELS_TABLE_HEADER_CLASS = "Klasse"
+COMPARE_MODELS_TABLE_HEADER_FIELD_DIFFS = "Invoer Δ"
+COMPARE_MODELS_TABLE_HEADER_RESULT_DIFFS = "Resultaat Δ"
+COMPARE_MODELS_DETAIL_FIELD_HEADER = ("Veld", "A", "B")
+COMPARE_MODELS_DETAIL_RESULT_HEADER = ("Metric", "A", "B")
+
+# Monte Carlo presentatie (slice 95 issue 12).
+SIMULATION_RUN_MODE_LABEL = "Run-modus"
+SIMULATION_RUN_MODE_ANALYTICAL = "Analytisch"
+SIMULATION_RUN_MODE_MONTE_CARLO = "Monte Carlo"
+SIMULATION_RUN_MODE_ONBOARDING = (
+    "Standaard: Analytisch (deterministische puntwaarden). "
+    "Monte Carlo is opt-in voor FM-onzekerheidsbanden (P10/P50/P90)."
+)
+SIMULATION_CANCEL_BUTTON_LABEL = "Annuleer MC"
+SIMULATION_MC_FM_EMPTY_CANCELLED = "Monte Carlo geannuleerd — geen banden beschikbaar."
+SIMULATION_MC_FM_MODE_BADGE = "MC P50"
+FM_MC_RESULTS_BAND_TOOLTIP = "P10: {p10} | P90: {p90}"
+FM_MC_RESULTS_HEADER_FAALMOMENTEN = "Faalmomenten (MC P50)"
+FM_MC_RESULTS_HEADER_DOWNTIME_HR = "Downtime MC P50 (uur)"
+FM_MC_RESULTS_HEADER_TOTAL_COST_EUR = "Kosten MC P50 (EUR)"
+TOP10_LCC_NO_ANALYTICAL_RUN = "Geen analytische run — schakel naar Analytisch en start analyse."
+
+# Faalwijze verwijderen (slice 99 issue 13).
+FM_DELETE_BUTTON_LABEL = "Verwijder faalwijze"
+FM_DELETE_BUTTON_TOOLTIP = "Verwijder de geselecteerde faalwijze uit het project"
+FM_DELETE_CONFIRM_TITLE = "Faalwijze verwijderen"
+FM_DELETE_CONFIRM_BODY = (
+    "Faalwijze {fm_id} verwijderen?\n\n"
+    "Gekoppelde entiteiten:\n"
+    "• PM-taken: {pm_task_count}\n"
+    "• FM-effectlinks: {fm_effect_link_count}\n"
+    "• PM-effectlinks: {pm_effect_link_count}\n"
+    "• Taakgroepen: {task_group_count}"
+)
+FM_DELETE_NO_SELECTION = "Selecteer eerst een faalwijze om te verwijderen."
+
+# Uniformeren review (slice 95 issue 10).
+NORMALIZATION_REVIEW_TITLE = "Uniformeringsvoorstellen"
+NORMALIZATION_REVIEW_APPLY = "Toepassen (goedgekeurd)"
+NORMALIZATION_REVIEW_ROLLBACK = "Laatste patch terugdraaien"
+NORMALIZATION_REVIEW_SOURCE_A_TO_B = "A → B"
+NORMALIZATION_REVIEW_SOURCE_B_TO_A = "B → A"
+NORMALIZATION_REVIEW_AUDIT = "Audit trail: {count} patch(es) toegepast"
+NORMALIZATION_REVIEW_NO_APPROVED = "Geen goedgekeurde voorstellen om toe te passen."
+NORMALIZATION_REVIEW_TABLE_HEADERS = ("Goedkeuren", "FM A", "FM B", "Veld", "Bron", "Waarde")
 
 # LCC-planning (slice 28).
 WORKSPACE_LCC_FILTER_CM = "CM"
@@ -551,15 +690,34 @@ WORKSPACE_MEEKOPPEL_COLLAPSE_TOOLTIP = (
 )
 WORKSPACE_LCC_WHATIF_BAR_TITLE = "What-if planning & LCC-filters"
 WORKSPACE_KPI_PANEL_TITLE = "KPI — huidige analyse"
+WORKSPACE_APP_WORDMARK_ORG = "Delta Pi"
+WORKSPACE_APP_WORDMARK_PRODUCT = "RCM2"
 WORKSPACE_PM_MODE_REDIRECT = (
     "Planning en PM-inzicht zitten nu in de LCC-modus (filters en jaardetail)."
 )
 WORKSPACE_FM_EVIDENT_FILTER_ALL = "Alle"
 WORKSPACE_FM_EVIDENT_FILTER_NMF = "Alleen NMF"
 WORKSPACE_FM_EVIDENT_FILTER_EVIDENT = "Alleen evident"
+WORKSPACE_FM_COLUMN_CROP = "Bijsnijden"
+WORKSPACE_FM_COLUMN_CROP_TOOLTIP = (
+    "Regelomloop uit: celtekst op één regel (… + tooltip bij afkapping). "
+    "Uit = tekst loopt over meerdere regels."
+)
+WORKSPACE_FM_COMPARE_NMF_RF = "NMF/RF"
+WORKSPACE_FM_COMPARE_NMF_RF_TOOLTIP = (
+    "Toon optionele kolommen NMF en RF in beide scenario-kolommen."
+)
+WORKSPACE_FM_COMPARE_VIEW_TABLE = "Tabel"
+WORKSPACE_FM_COMPARE_VIEW_DIAGRAM = "Diagram"
+WORKSPACE_FM_COMPARE_VIEW_TOOLTIP = (
+    "Wissel tussen uitgelijnde tabel en gepaard staafdiagram."
+)
+WORKSPACE_FM_COMPARE_DIAGRAM_EMPTY = "Geen faalwijzen om te tonen in het diagram."
 
 WORKSPACE_FM_INSPECTOR_EMPTY = "Selecteer een faalwijze in de tabel hierboven."
 WORKSPACE_FM_INSPECTOR_TITLE = "FM-inspector"
+WORKSPACE_FM_INSPECTOR_CLOSE = "Sluiten"
+WORKSPACE_FM_INSPECTOR_EDIT = "Bewerken…"
 WORKSPACE_FM_INSPECTOR_FAALMOMENTEN = "Faalmomenten (lifecycle)"
 WORKSPACE_FM_INSPECTOR_RAW_DOWNTIME = "Downtime raw (uur)"
 WORKSPACE_FM_INSPECTOR_DETECTION_DELAY = "Detection delay (uur)"
@@ -629,6 +787,90 @@ ISOGRAPH_IMPORT_VALIDATION_FAILED = (
 )
 ISOGRAPH_IMPORT_SAVE_SUCCESS = "RCM-Cost export opgeslagen als {path}."
 
+PORTFOLIO_WIZARD_BUTTON_LABEL = "Portfolio samenstellen…"
+PORTFOLIO_WIZARD_BUTTON_TOOLTIP = (
+    "Scan een sync-root met netwerkschakel-modellen en merge geselecteerde bronnen tot één portfolio."
+)
+PORTFOLIO_WIZARD_TITLE = "Portfolio samenstellen"
+PORTFOLIO_WIZARD_INTRO = (
+    "Kies welke netwerkschakel-modellen in het portfolio worden opgenomen. "
+    "Lifecycle en modeljaar blijven per bron behouden; waarschuwingen verschijnen bij afwijking."
+)
+PORTFOLIO_WIZARD_ROOT_LABEL = "Sync-root"
+PORTFOLIO_WIZARD_NAME_LABEL = "Portfolionaam"
+PORTFOLIO_WIZARD_TABLE_HEADERS = ("Netwerkschakel", "Bestand", "FM's", "Lifecycle", "Modeljaar")
+PORTFOLIO_WIZARD_WARNINGS_LABEL = "Waarschuwingen"
+PORTFOLIO_WIZARD_NO_RCM_JSON = "Alleen .rcm.json-bronnen worden gemerged; Excel vereist eerst import."
+PORTFOLIO_OPEN_ROOT_DIALOG_TITLE = "Kies portfolio sync-root"
+PORTFOLIO_SAVE_TITLE = "Portfolio opslaan"
+PORTFOLIO_SAVE_FILTER = "RCM portfolio (*.rcm.json)"
+PORTFOLIO_SAVE_SUCCESS = "Portfolio opgeslagen als {path}."
+
+RCM_COST_PARITY_BUTTON_LABEL = "Modelcontrole AW…"
+RCM_COST_PARITY_BUTTON_TOOLTIP = (
+    "Vergelijk FM-resultaten met RCM-Cost/AW-benchmarks uit import_settings "
+    "(TotalCost binnen onzekerheidsband). Vereist een run op een geïmporteerd AW-project."
+)
+RCM_COST_PARITY_TITLE = "Modelcontrole — RCM-Cost resultaten"
+RCM_COST_PARITY_INTRO = (
+    "Per faalwijze: vergelijking van RCM2-totalen met AW-export (TotalCost, TotalTdt) "
+    "plus rekendiagnostiek (# falen, REV-momenten, downtime-splitsing CM/PM/inspectie, "
+    "invoer leeftijd/MTTF). OK = binnen AW-onzekerheidsband; Afwijking = buiten band."
+)
+RCM_COST_PARITY_HEADERS = (
+    "FM",
+    "Omschrijving",
+    "Status",
+    "AW €",
+    "RCM2 €",
+    "Δ €",
+    "Tol €",
+    "AW uur",
+    "RCM2 uur",
+    "AW # falen",
+    "RCM2 # falen",
+    "Δ # falen",
+    "REV actief",
+    "REV jaren",
+    "REV interval jr",
+    "AW CM uur",
+    "RCM2 CM uur",
+    "AW PM uur",
+    "RCM2 PM uur",
+    "AW insp uur",
+    "RCM2 CM €",
+    "RCM2 PM €",
+    "P(falen)",
+    "Leeftijd jr",
+    "MTTF AW",
+    "MTTF RCM2",
+    "PM-taken",
+)
+RCM_COST_PARITY_FILTER_ALL = "Alle"
+RCM_COST_PARITY_FILTER_FAIL = "Alleen afwijkingen"
+RCM_COST_PARITY_FILTER_PASS = "Alleen OK"
+RCM_COST_PARITY_NO_BENCHMARK = (
+    "Geen AW-benchmarks in import_settings. Importeer opnieuw vanuit RCM-Cost export "
+    "of open een project met TotalCost per faalwijze."
+)
+RCM_COST_PARITY_NO_RUN = "Draai eerst een volledige analyse voordat u modelcontrole opent."
+RCM_COST_PARITY_EXPORT_BUTTON = "Validatie-export…"
+RCM_COST_PARITY_EXPORT_TOOLTIP = (
+    "Exporteer per faalwijze counterfactual # falen naar Excel "
+    "(scenario, REV, repair quality, horizon) t.o.v. AW TotalW."
+)
+RCM_COST_PARITY_EXPORT_TITLE = "Validatie-export opslaan"
+RCM_COST_PARITY_EXPORT_FILTER = "Excel (*.xlsx)"
+RCM_COST_PARITY_EXPORT_SUCCESS = "Validatie-export opgeslagen:\n{path}"
+RCM_COST_PARITY_EXPORT_FAILED = "Validatie-export mislukt:\n{error}"
+
+LIBRARY_EXPLORER_TITLE = "Faalwijze-bibliotheek"
+LIBRARY_EXPLORER_INTRO = (
+    "Gedistilleerde bibliotheekitems met bronvermelding. "
+    "Items met meerdere bronnen zijn uniform binnen tolerantie; variant clusters tonen param-afwijking."
+)
+LIBRARY_EXPLORER_HEADERS = ("Omschrijving", "Categorie", "Bronnen", "Variant", "Waarde")
+
 FM_EDITOR_TITLE = "Faalwijze bewerken — {fm_id}"
 FM_EDITOR_TAB_BASIS = "Basis"
 FM_EDITOR_TAB_EFFECTEN = "Effecten"
@@ -656,13 +898,33 @@ FM_EDITOR_AANNAME_DOWNTIME = "Aanname downtime"
 FM_EDITOR_VALIDATION_TITLE = "Bewerken niet opgeslagen"
 FM_EDITOR_COMMIT_FAILED = "Opslaan mislukt: {detail}"
 FM_EDITOR_COMMIT_BUSY = "Faalwijze opslaan en herberekenen…"
-GRID_DIRTY_GUARD_TITLE = "Ongeslagen grid-wijzigingen"
+GRID_DIRTY_GUARD_TITLE = "Onopgeslagen invoerwijzigingen"
 GRID_DIRTY_GUARD_TEXT = (
-    "Het faalwijzen-grid heeft onopgeslagen wijzigingen. Wat wilt u doen?"
+    "Er zijn onopgeslagen invoerwijzigingen in de invoertabellen. Wat wilt u doen?"
 )
-GRID_DIRTY_SAVE = "Grid opslaan"
-GRID_DIRTY_DISCARD = "Grid verwerpen"
+GRID_DIRTY_SAVE = "Invoer opslaan"
+GRID_DIRTY_DISCARD = "Invoer verwerpen"
 GRID_DIRTY_CANCEL_EDITOR = "Editor annuleren"
+GRID_DIRTY_CANCEL_SHUTDOWN = "Niet afsluiten"
+GRID_DIRTY_SAVE_FAILED_DETAIL = "Invoer opslaan mislukt."
+SHUTDOWN_BUSY_TITLE = "Achtergrondtaak actief"
+SHUTDOWN_BUSY_TEXT = (
+    "Er draait nog een berekening op de achtergrond. Afsluiten annuleert die taak. "
+    "Wilt u toch afsluiten?"
+)
+SHUTDOWN_BUSY_CONFIRM = "Afsluiten"
+SHUTDOWN_BUSY_CANCEL = "Annuleren"
+WORKSPACE_MENU_EXPORT_RCM_COST = "RCM-Cost exporteren…"
+ISOGRAPH_EXPORT_FILE_DIALOG_TITLE = "RCM-Cost export opslaan"
+ISOGRAPH_EXPORT_MISSING_SOURCE_TITLE = "AW-bron ontbreekt"
+ISOGRAPH_EXPORT_MISSING_SOURCE_TEXT = (
+    "De originele AW-workbook (bron-sidecar) ontbreekt. Kies het bronbestand om de "
+    "export te kunnen uitvoeren."
+)
+ISOGRAPH_EXPORT_SUMMARY_TITLE = "Export voltooid"
+ISOGRAPH_EXPORT_SUMMARY_BODY = (
+    "Gepatcht: {patched}\nToegevoegd: {added}\nWaarschuwingen: {warned}"
+)
 WORKSPACE_MENU_FAALWIJZEN_BATCH = "Faalwijzen batch-bewerken"
 FM_EDITOR_FM_LINKS = "Effect bij falen"
 FM_EDITOR_PM_LINKS = "Effect bij PM-taken"
@@ -688,6 +950,48 @@ FM_EDITOR_WARN_PM_BUNDLE_SUGGEST = (
     "zonder taakgroep — overweeg een gedeelde taakgroep."
 )
 FM_EDITOR_NO_PROJECT = "Laad eerst een project voordat je een faalwijze bewerkt."
+FM_EDITOR_NEW_FM = "Nieuwe faalwijze"
+FM_EDITOR_NEW_FM_TOOLTIP = "Voeg een faalwijze toe op de geselecteerde leaf-PBS in de sidebar."
+FM_EDITOR_NEW_FM_NO_LEAF_PBS = (
+    "Selecteer één leaf-PBS in de sidebar om een nieuwe faalwijze toe te voegen."
+)
+FM_EDITOR_TITLE_CREATE = "Nieuwe faalwijze — {fm_id}"
+FM_EDITOR_PBS_FIXED = "PBS (vast)"
+FM_EDITOR_CREATE_OMSCHRIJVING_REQUIRED = "Vul een faalscenario in voordat je opslaat."
+FM_EDITOR_CREATE_FUNCTIE_REQUIRED = "Selecteer een functie voordat je opslaat."
+FM_EDITOR_SAVE = "Opslaan"
+FM_EDITOR_SAVE_AND_CLOSE = "Opslaan en sluiten"
+FM_EDITOR_CANCEL_DIRTY = (
+    "Er zijn wijzigingen sinds de laatste opslag. Sluiten zonder op te slaan?"
+)
+FM_EDITOR_FILL_FROM = "Vul van…"
+FM_EDITOR_FILL_FROM_EFFECTEN = "Vul effecten van…"
+FM_EDITOR_FILL_FROM_PREVENTIEF = "Vul preventieve maatregelen van…"
+FM_EDITOR_TAB_RESULTATEN = "Resultaten"
+FM_EDITOR_LINK_MEASURE = "Koppel aan bestaande maatregel…"
+FM_EDITOR_NEW_TASK_GROUP = "Nieuwe taakgroep…"
+FM_EDITOR_RESULTS_EMPTY = "Opslaan om resultaten te berekenen."
+FM_EDITOR_FILL_FROM_CONFIRM = (
+    "Basis en Correctief van {fm_id} overschrijven huidige invoer?"
+)
+FM_EDITOR_FILL_FROM_TITLE = "Vul van faalwijze"
+FM_EDITOR_FILL_FROM_PICKER_FM = "Bron-faalwijze"
+FM_EDITOR_FILL_FROM_PICKER_FM_EFFECTEN = "Faalwijze met effecten"
+FM_EDITOR_FILL_FROM_PICKER_FM_PREVENTIEF = "Faalwijze met PM-taken"
+FM_EDITOR_FILL_FROM_PICKER_EFFECT_KLASSEN = "Effectklassen (library)"
+FM_EDITOR_FILL_FROM_PICKER_REV_TAKEN = "REV-taken (library)"
+FM_EDITOR_FILL_FROM_EFFECTEN_TITLE = "Vul van effectklassen"
+FM_EDITOR_FILL_FROM_EFFECTEN_CONFIRM = (
+    "{effect_count} effectklasse(n) overnemen en huidige effecten vervangen?"
+)
+FM_EDITOR_FILL_FROM_PREVENTIEF_TITLE = "Vul van REV-taken"
+FM_EDITOR_FILL_FROM_PREVENTIEF_CONFIRM = (
+    "{pm_count} REV-ta(a)k(en) overnemen en huidige taken vervangen?"
+)
+FM_EDITOR_FILL_FROM_CHOICE_EFFECTEN = "{fm_id} — {omschrijving} ({effect_count} effecten)"
+FM_EDITOR_FILL_FROM_CHOICE_PREVENTIEF = "{fm_id} — {omschrijving} ({pm_count} PM-taken)"
+FM_EDITOR_LINK_MEASURE_TITLE = "Koppel aan maatregel"
+FM_EDITOR_NEW_TASK_GROUP_TITLE = "Nieuwe taakgroep"
 
 MODEL_SETTINGS_BUTTON_LABEL = "Modelinstellingen"
 MODEL_SETTINGS_SECTION_PROJECT = "Project"
@@ -698,6 +1002,13 @@ MODEL_SETTINGS_SECTION_MONTE_CARLO = "Monte Carlo"
 MODEL_SETTINGS_PROJECTNAAM = "Projectnaam"
 MODEL_SETTINGS_MODELLEUR = "Modelleur"
 MODEL_SETTINGS_LIFECYCLE = "LCC-periode (jaar)"
+MODEL_SETTINGS_AW_MC_HORIZON = "AW MC-horizon (LifeTime vooruit)"
+MODEL_SETTINGS_AW_MC_HORIZON_TTIP = (
+    "Studieduur = LCC-periode vooruit vanaf huidige leeftijd (AW Monte Carlo / TotalW). "
+    "Uit: studieduur tot leeftijd LCC-periode (resterend). "
+    "Zet aan na herimport als validatie-export A2 (LifeTime-semantiek) dominant is; "
+    "combineer met CM-overlay (automatisch uit import) en validatie-export."
+)
 MODEL_SETTINGS_MODELJAAR = "Modeljaar"
 MODEL_SETTINGS_BUCKET_INTERVAL = "Bucket-interval"
 MODEL_SETTINGS_BUCKET_INTERVAL_VALUE = "1 kalenderjaar (vast)"
@@ -717,6 +1028,7 @@ MODEL_SETTINGS_APPLY_AGING_BETA_LINE = " Beta={beta:.2f}."
 MODEL_SETTINGS_MONTE_CARLO_N = "Aantal simulaties"
 MODEL_SETTINGS_MONTE_CARLO_SEED = "Random seed"
 MODEL_SETTINGS_MONTE_CARLO_DISABLED_TTIP = "Monte Carlo nog niet actief in desktop."
+MODEL_SETTINGS_MONTE_CARLO_SEED_EMPTY = "Leeg = willekeurig per run"
 MODEL_SETTINGS_RERUN_CHECKBOX = "Direct herberekenen"
 MODEL_SETTINGS_RERUN_REQUIRED = "Herbereken vereist — modelinstellingen zijn gewijzigd."
 MODEL_SETTINGS_VALIDATION_TITLE = "Modelinstellingen niet opgeslagen"

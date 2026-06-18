@@ -81,6 +81,13 @@ class TestValidators:
         codes = [e.code for e in errors]
         assert "PM_TG_FK" in codes
 
+    def test_pm_unavailability_fraction_none_is_validation_error_not_type_error(self):
+        project = _make_valid_project()
+        project.pm_tasks["PM-001"].unavailability_fraction = None  # type: ignore[assignment]
+        errors = validate_project(project)
+        codes = [e.code for e in errors]
+        assert "PM_UNAVAIL_FRACTION" in codes
+
     def test_func_pbs_fk_missing(self):
         project = _make_valid_project()
         project.functies["FUNC-001"].pbs_id = "PBS-NIET_BESTAAND"

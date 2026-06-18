@@ -68,6 +68,7 @@ class WorkspacePresentationCache:
         cache_modus_key: str,
         overlay: PlanningOverlayState,
         type_filters: LCCTypeFilterSet,
+        snapshot: WorkspaceStateSnapshot,
         slot: str = SLOT_CURRENT,
     ) -> object:
         return materialize_lcc_curve(
@@ -78,6 +79,7 @@ class WorkspacePresentationCache:
             cache_modus_key=cache_modus_key,
             overlay=overlay,
             type_filters=type_filters,
+            snapshot=snapshot,
             slot=slot,
         )
 

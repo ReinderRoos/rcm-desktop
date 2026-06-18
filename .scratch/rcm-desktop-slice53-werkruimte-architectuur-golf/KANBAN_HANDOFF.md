@@ -195,6 +195,25 @@ Daarna: slice **41** PR2 (meekoppel panel service) volgens oorspronkelijke 41-PR
 
 ---
 
+## Tijdelijke commit-notitie (issue 07)
+
+Voor later handmatig commit/pushen van alleen de issue-07 cleanup:
+
+**Bestanden**
+
+- `rcm_desktop/views/results_workspace_window.py`
+- `tests/test_slice53_issue07_legacy_pr7a.py`
+- `.scratch/rcm-desktop-slice53-werkruimte-architectuur-golf/issues/07.md`
+- `.scratch/rcm-desktop-slice53-werkruimte-architectuur-golf/KANBAN_HANDOFF.md`
+
+**Testcommando**
+
+```powershell
+python -m pytest tests/test_slice53_issue07_legacy_pr7a.py tests/test_desktop_results_workspace_window.py tests/test_desktop_scenario_compare_service.py -q
+```
+
+---
+
 ## PR1b — ProjectSession sync (issue 04)
 
 - View: geen `loaded.core()` / `_session_core`; gebruik `workspace_session_service` + `ProjectSession`.

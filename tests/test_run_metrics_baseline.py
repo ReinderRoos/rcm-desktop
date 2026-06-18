@@ -65,9 +65,9 @@ def test_haarlem_run_metrics_match_post_aging_ssot_baseline(
     """
     m = _project_metrics(haarlem_project)
     # Post slice-42: alle random-FM's → aging (121 aging, 0 random).
-    assert m["total_cost_eur"] == pytest.approx(23_283_737.99, rel=1e-4)
-    assert m["total_downtime_hr"] == pytest.approx(152_275.02, rel=1e-3)
-    assert m["unavailability_pct"] == pytest.approx(28.97, rel=1e-2)
+    assert m["total_cost_eur"] == pytest.approx(23_038_175.39, rel=1e-4)
+    assert m["total_downtime_hr"] == pytest.approx(151_885.15, rel=1e-3)
+    assert m["unavailability_pct"] == pytest.approx(28.90, rel=1e-2)
 
 
 def test_haarlem_aging_without_rev_matches_pre_ssot_total(
@@ -111,7 +111,7 @@ def test_haarlem_aging_without_rev_matches_pre_ssot_total(
         total_pm += pm_cost
 
     # Na slice-42 fixture-flip (volledig aging-portfolio); niet vergelijkbaar met pre-flip 47,8M.
-    assert total_cm_no_rev + total_pm == pytest.approx(40_984_978.26, rel=1e-4)
+    assert total_cm_no_rev + total_pm == pytest.approx(40_591_269.74, rel=1e-4)
 
 
 def test_haarlem_lcc_cm_characterization_h3(haarlem_project: RCMProject) -> None:

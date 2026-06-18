@@ -21,11 +21,8 @@ from PySide6.QtWidgets import (
 )
 
 from rcm_desktop import messages
-from rcm_desktop.adapter.faalwijzen_edit_service import (
-    EDITABLE_FIELDS,
-    FaalwijzenEditService,
-    SLICE_FIELD_KEYS,
-)
+from rcm_desktop.adapter.entity_edit_service import EntityEditService
+from rcm_desktop.adapter.faalwijzen_grid_contract import EDITABLE_FIELDS, SLICE_FIELD_KEYS
 from rcm_desktop.adapter.faalwijzen_table_model import (
     FaalwijzenAgingDistributionDelegate,
     FaalwijzenFailureTypeDelegate,
@@ -64,7 +61,7 @@ class _BulkApplyDialog(QDialog):
 class ValidateFaalwijzenPanel(QGroupBox):
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(messages.FAALWIJZEN_EDIT_GROUP_TITLE, parent)
-        self._service: FaalwijzenEditService | None = None
+        self._service: EntityEditService | None = None
         self._project = None
         self._source_model: FaalwijzenTableModel | None = None
         self._proxy = FaalwijzenFilterProxy(self)
@@ -126,7 +123,7 @@ class ValidateFaalwijzenPanel(QGroupBox):
             "p_ongewenste_gebeurtenis": messages.FAALWIJZEN_EDIT_HEADER_P_EVENT,
         }
 
-    def attach(self, service: FaalwijzenEditService, project) -> None:
+    def attach(self, service: EntityEditService, project) -> None:
         self._service = service
         self._project = project
         self._source_model = FaalwijzenTableModel(service, project, parent=self)

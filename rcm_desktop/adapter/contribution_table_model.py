@@ -21,20 +21,9 @@ from PySide6.QtCore import QAbstractTableModel, QModelIndex, Qt
 from rcm_desktop import messages
 
 from rcm_desktop.adapter.contribution_chart_service import ContributionRow
-
-from rcm_desktop.adapter.results_workspace_state import (
-
-    ContributionPresentation,
-
-    METRIC_FAALMOMENTEN,
-
-    METRIC_KOSTEN,
-
-    METRIC_NIET_BESCHIKBAARHEID,
-
-)
-
-from rcm_desktop.formatting import format_eur, format_float, format_int
+from rcm_desktop.adapter.contribution_display_service import format_contribution_value
+from rcm_desktop.adapter.results_workspace_state import ContributionPresentation
+from rcm_desktop.formatting import format_float
 
 
 
@@ -51,34 +40,6 @@ _HEADERS = (
     messages.WORKSPACE_BIJDRAGE_HEADER_AANDEEL,
 
 )
-
-
-
-
-
-def _format_value(
-
-    value: float, metric: str, presentation: ContributionPresentation
-
-) -> str:
-
-    if metric == METRIC_KOSTEN:
-
-        return format_eur(value)
-
-    if metric == METRIC_FAALMOMENTEN:
-
-        return format_int(int(round(value)))
-
-    if metric == METRIC_NIET_BESCHIKBAARHEID:
-
-        if presentation.unavailability_display == "hours":
-
-            return f"{format_float(value)} h"
-
-        return f"{format_float(value, decimals=4)} %"
-
-    return format_float(value)
 
 
 
@@ -190,7 +151,9 @@ class ContributionTableModel(QAbstractTableModel):
 
         if column == 1:
 
-            return _format_value(row.value, self._metric, self._presentation)
+            return format_contribution_value(
+                row.value, self._metric, self._presentation
+            )
 
         if column == 2:
 

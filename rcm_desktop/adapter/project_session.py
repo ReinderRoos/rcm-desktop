@@ -7,6 +7,7 @@ from pathlib import Path
 
 from rcm_desktop.adapter.loaded_project import LoadedProject
 from rcm_desktop.adapter.run_service import RunResult
+from rcm_desktop.adapter.simulation_engine_service import MCRunResult
 
 
 @dataclass(frozen=True)
@@ -16,6 +17,7 @@ class ProjectSession:
     path: Path | None
     loaded: LoadedProject
     run: RunResult | None
+    mc_run: MCRunResult | None = None
 
     @classmethod
     def from_parts(
@@ -24,8 +26,13 @@ class ProjectSession:
         *,
         path: Path | None = None,
         run: RunResult | None = None,
+        mc_run: MCRunResult | None = None,
     ) -> ProjectSession:
-        return cls(path=path, loaded=loaded, run=run)
+        return cls(path=path, loaded=loaded, run=run, mc_run=mc_run)
+
+    @property
+    def project(self):
+        return self.loaded.core()
 
     def has_completed_run(self) -> bool:
         return self.run is not None and self.run.status == "done"

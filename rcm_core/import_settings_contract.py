@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import Any, Mapping
 
 IMPORT_SETTINGS_SCHEMA_VERSION = 1
+SOURCE_WORKBOOK_PATH_KEY = "source_workbook_path"
 
 
 def normalize_import_settings(

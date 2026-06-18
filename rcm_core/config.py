@@ -11,6 +11,8 @@ class RCMConfig:
     # Levensduur en tijdshorizon
     lifecycle_years: float = 80.0
     modeljaar: int = 2026  # standaard huidig jaar; pas aan zonder bouwdelen te wijzigen
+    # False: studie tot leeftijd lifecycle_years; True: lifecycle_years vooruit (AW MC)
+    aw_mc_lifecycle_horizon: bool = True
 
     # Monte Carlo instellingen
     monte_carlo_n: int = 10_000
@@ -26,6 +28,7 @@ class RCMConfig:
         return {
             "lifecycle_years": self.lifecycle_years,
             "modeljaar": self.modeljaar,
+            "aw_mc_lifecycle_horizon": self.aw_mc_lifecycle_horizon,
             "monte_carlo_n": self.monte_carlo_n,
             "monte_carlo_seed": self.monte_carlo_seed,
             "default_mttf_multiplier": self.default_mttf_multiplier,

@@ -20,6 +20,12 @@ class ResolvedProjectPath:
         stem = self.file_path.with_suffix("")
         return stem.with_suffix(".rcm.cache.json")
 
+    def source_workbook_path(self) -> Path | None:
+        if self.file_path is None:
+            return None
+        stem = self.file_path.with_suffix("")
+        return stem.with_suffix(".rcm.source.xlsx")
+
     def default_report_output_path(self, project: RCMProject) -> Path | None:
         if self.file_path is None:
             return None

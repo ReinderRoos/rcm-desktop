@@ -31,6 +31,7 @@ def warm_lcc_render_index(
     cache_modus_key: str,
     overlay,
     type_filters,
+    snapshot: WorkspaceStateSnapshot | None = None,
     slot: str = SLOT_CURRENT,
 ) -> object:
     """Lazy LCC warmup — delegeert naar ``materialize_lcc_curve``."""
@@ -42,6 +43,7 @@ def warm_lcc_render_index(
         cache_modus_key=cache_modus_key,
         overlay=overlay,
         type_filters=type_filters,
+        snapshot=snapshot,
         slot=slot,
     )
 

@@ -83,20 +83,21 @@ def _run_for(project: RCMProject, fm_results: list[FMResult]) -> RunResult:
 
 def test_workspace_mode_labels_renamed():
     assert messages.WORKSPACE_MODE_BIJDRAGEN == "Top 10"
-    assert messages.WORKSPACE_MODE_LCC == "Tijdsplot"
+    assert messages.WORKSPACE_MODE_LCC == "LCC-plot"
     assert messages.WORKSPACE_SOURCE_TOGGLE_PBS == "Component"
 
 
-def test_workspace_window_shows_renamed_modus_buttons(monkeypatch):
+def test_workspace_window_shows_view_tab_labels(monkeypatch):
     app = _ensure_app()
     monkeypatch.setattr(QMessageBox, "critical", lambda *_a, **_k: QMessageBox.Ok)
     window = ResultsWorkspaceWindow()
     window.show()
     app.processEvents()
 
-    assert window.modus_buttons[MODE_BIJDRAGEN].text() == "Top 10"
-    assert window.modus_buttons[MODE_LCC].text() == "Tijdsplot"
-    assert window.source_toggle_pbs_button.text() == "Component"
+    nav = window._workspace_navigation
+    labels = [btn.text() for btn in nav.view_tab_buttons.values()]
+    assert labels == ["KPI", "LCC", "LTAP", "TopX"]
+    assert not hasattr(window, "source_toggle_pbs_button")
 
 
 # --- Prio 2: faalwijze label + component ---
@@ -152,10 +153,10 @@ def test_faalwijze_labels_include_component_name():
     assert "Pomp B — Sensor drift buiten kalibratie" in labels
 
 
-# --- Prio 1: KPI collapse + geen dubbele placeholder ---
+# --- Prio 1: KPI als view + geen dubbele placeholder ---
 
 
-def test_kpi_collapse_hides_table_in_lcc_modus(monkeypatch):
+def test_kpi_view_navigates_from_menu(monkeypatch) -> None:
     app = _ensure_app()
     monkeypatch.setattr(QMessageBox, "critical", lambda *_a, **_k: QMessageBox.Ok)
     window = ResultsWorkspaceWindow()
@@ -168,17 +169,14 @@ def test_kpi_collapse_hides_table_in_lcc_modus(monkeypatch):
     window.workspace_state.set_modus(MODE_LCC)
     app.processEvents()
 
-    assert window.kpi_collapse_button.isVisible() is True
-    assert window.workspace_state.snapshot().kpi_collapsed_in_lcc is True
-    assert window.kpi_table_view.isVisible() is False
-    assert window.kpi_collapse_button.text() == "▶"
-
-    window.kpi_collapse_button.click()
+    kpi_action = window._workspace_menu.actions_by_id["view.output.kpi_overview"]
+    assert kpi_action.isVisible() is True
+    kpi_action.trigger()
     app.processEvents()
 
-    assert window.workspace_state.snapshot().kpi_collapsed_in_lcc is False
+    assert window.workspace_state.snapshot().active_view_id == "output.kpi_overview"
+    assert window.detail_stack.currentWidget() is window.kpi_overview_page
     assert window.kpi_table_view.isVisible() is True
-    assert window.kpi_collapse_button.text() == "▼"
 
     window.kpi_collapse_button.click()
     app.processEvents()
