@@ -114,7 +114,7 @@ def test_patch_apply_blocked_when_validation_fails() -> None:
         apply_patch(project, patch)
 
 
-def test_compare_models_window_shows_normalization_proposals(qtbot, tmp_path) -> None:
+def test_compare_models_window_hides_normalization_review(qtbot, tmp_path) -> None:
     pytest.importorskip("PySide6")
     import json
     import shutil
@@ -132,6 +132,5 @@ def test_compare_models_window_shows_normalization_proposals(qtbot, tmp_path) ->
     window = CompareModelsWindow()
     qtbot.addWidget(window)
     window.load_paths(path_a, path_b)
-    model = window.normalization_model()
-    assert model.rowCount() >= 1
-    assert model.row_at(0).source_label == "A → B"
+    assert not hasattr(window, "_normalization_table") or not window._normalization_table.isVisible()
+    assert window.table_model().rowCount() >= 1
